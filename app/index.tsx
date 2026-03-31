@@ -1,154 +1,173 @@
-// SafeBuddy MVP — Fixed TTS + Progress Bar + AsyncStorage
+// SafeBuddy v5 — Demo mission + reduced TTS + simplified voice lines
+// Tickets: P0.1, P0.2, P0.3, P2.1, P2.2
+//
 // npx expo install expo-speech @react-native-async-storage/async-storage
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Platform,
+  ActivityIndicator,
+  Animated,
+  Platform,
   SafeAreaView, ScrollView,
   StyleSheet,
   Text, TouchableOpacity,
   View,
 } from 'react-native';
 
-// ── STORAGE KEYS ──────────────────────────────────────────────────────────────
+// ── SCREEN TYPE (P2.1) ────────────────────────────────────────────────────────
+// type Screen = 'home' | 'demo' | 'demo_step' | 'pick' | 'active' | 'celebrate' | 'rewards'
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
 
 const K = {
   STARS:           'sb_stars_v2',
   TOTAL_EVER:      'sb_total_v2',
   COMPLETED_TODAY: 'sb_today_v2',
   LAST_DATE:       'sb_date_v2',
+  DEMO_DONE:       'sb_demo_done',   // has child completed demo at least once?
 };
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 
-const MISSIONS = [
-  { id: 1, title: 'Постой на одной ноге',     subtitle: 'Держись 5 секунд!',       stars: 1, emoji: '🦩' },
-  { id: 2, title: 'Потянись к пальцам ног',   subtitle: 'Медленно наклонись вниз', stars: 1, emoji: '🙆' },
-  { id: 3, title: 'Прыгни три раза',          subtitle: 'Как можно выше!',         stars: 1, emoji: '🦘' },
-  { id: 4, title: 'Выпей стакан воды',        subtitle: 'Не спеши, пей медленно',  stars: 1, emoji: '💧' },
-  { id: 5, title: 'Убери игрушки',            subtitle: 'Хотя бы один уголок',     stars: 2, emoji: '🧸' },
-  { id: 6, title: 'Обними кого-нибудь',       subtitle: 'Подари тепло!',           stars: 2, emoji: '💛' },
+// P0.1 — Demo steps (always easy, always win)
+const DEMO_STEPS = [
+  { id: 'd1', title: 'Хлопни в ладоши',  emoji: '👏', praise: 'Отлично!' },
+  { id: 'd2', title: 'Прыгни!',           emoji: '🦘', praise: 'Супер!' },
+  { id: 'd3', title: 'Коснись носа',      emoji: '👃', praise: 'Молодец!' },
+];
+
+// P1.2 — Easy missions always shown first to new users
+const MISSIONS_EASY = [
+  { id: 1, title: 'Постой на одной ноге',   subtitle: 'Держись 5 секунд', stars: 1, emoji: '🦩' },
+  { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно вниз',    stars: 1, emoji: '🙆' },
+  { id: 3, title: 'Прыгни три раза',        subtitle: 'Как можно выше',   stars: 1, emoji: '🦘' },
+  { id: 4, title: 'Выпей стакан воды',      subtitle: 'Не спеши',         stars: 1, emoji: '💧' },
+];
+
+const MISSIONS_BIGGER = [
+  { id: 5, title: 'Убери игрушки',       subtitle: 'Хотя бы один уголок', stars: 2, emoji: '🧸' },
+  { id: 6, title: 'Обними кого-нибудь',  subtitle: 'Подари тепло',        stars: 2, emoji: '💛' },
 ];
 
 const REWARDS = [
-  { id: 1, title: 'Дополнительный мультик',        cost: 3, emoji: '📺' },
-  { id: 2, title: 'Выбрать ужин сегодня',           cost: 4, emoji: '🍕' },
-  { id: 3, title: 'Лечь спать на тридцать минут позже', cost: 5, emoji: '🌙' },
-  { id: 4, title: 'Любимый перекус',                cost: 3, emoji: '🍭' },
-  { id: 5, title: 'Игра с папой',                   cost: 2, emoji: '🎮' },
+  { id: 1, title: 'Дополнительный мультик',         cost: 3, emoji: '📺' },
+  { id: 2, title: 'Выбрать ужин сегодня',            cost: 4, emoji: '🍕' },
+  { id: 3, title: 'Лечь спать на 30 минут позже',    cost: 5, emoji: '🌙' },
+  { id: 4, title: 'Любимый перекус',                 cost: 3, emoji: '🍭' },
+  { id: 5, title: 'Игра с папой',                    cost: 2, emoji: '🎮' },
 ];
 
+// P0.3 — Simplified voice lines (1–2 max per state, repetition builds trust)
 const MSG = {
-  idle:   ['Привет! Готов к миссии?', 'Что будем делать сегодня?', 'Я здесь, рядом с тобой!'],
-  start:  ['Давай сделаем это вместе!', 'У тебя получится!', 'Я верю в тебя!'],
-  done:   ['Невероятно! Ты справился!', 'Ты настоящая звезда!', 'Я знал, что ты сможешь!'],
-  reward: ['Посмотри сколько звёзд!', 'Ты так старался!', 'Вау, ты заработал награду!'],
+  idle:     'Привет! Нажми на меня',
+  start:    'Давай вместе!',
+  done:     'Молодец!',
+  reward:   'Посмотри сколько звёзд!',
+  demo_end: 'Хочешь попробовать настоящую миссию?',
+  idle_alt: 'Я рядом',  // P1.3 idle presence — used occasionally
 };
+
+// ── MILESTONES ────────────────────────────────────────────────────────────────
 
 const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
-const todayStr  = () => new Date().toISOString().split('T')[0];
-const pick      = arr => arr[Math.floor(Math.random() * arr.length)];
+const todayStr = () => new Date().toISOString().split('T')[0];
 
 function getProgress(total) {
   const next = MILESTONES.find(m => m > total) ?? MILESTONES[MILESTONES.length - 1] * 2;
-  const prev = (() => {
-    let p = 0;
-    for (const m of [0, ...MILESTONES]) { if (m <= total) p = m; else break; }
-    return p;
-  })();
+  let prev = 0;
+  for (const m of [0, ...MILESTONES]) { if (m <= total) prev = m; else break; }
   const pct = next === prev ? 1 : Math.min((total - prev) / (next - prev), 1);
   return { next, pct };
 }
 
-// ── TTS ───────────────────────────────────────────────────────────────────────
-
-// We resolve the best Russian voice ONCE at startup and cache it.
-// This prevents iOS from switching voices mid-session.
+// ── TTS (P0.2 — speak only on explicit tap, not auto) ─────────────────────────
 
 async function resolveRussianVoice() {
   try {
-    // iOS sometimes needs a small delay before voices are ready
     await new Promise(r => setTimeout(r, 800));
     const voices = await Speech.getAvailableVoicesAsync();
-
     if (!voices || voices.length === 0) return null;
-
-    // Prefer high-quality Russian voice
-    const preferred = voices.find(v =>
-      v.language === 'ru-RU' && v.quality === Speech.VoiceQuality?.Enhanced
+    return (
+      voices.find(v => v.language === 'ru-RU' && v.quality === Speech.VoiceQuality?.Enhanced) ||
+      voices.find(v => v.language?.startsWith('ru')) ||
+      null
     );
-    if (preferred) return preferred;
-
-    // Any Russian voice
-    const anyRu = voices.find(v => v.language?.startsWith('ru'));
-    if (anyRu) return anyRu;
-
-    return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function useSpeech() {
   const voiceRef = useRef(null);
-  const readyRef = useRef(false);
 
   useEffect(() => {
-    resolveRussianVoice().then(v => {
-      voiceRef.current = v;
-      readyRef.current = true;
-    });
+    resolveRussianVoice().then(v => { voiceRef.current = v; });
     return () => { try { Speech.stop(); } catch {} };
   }, []);
 
+  // P0.2 — only called on explicit tap, never auto
   const speak = useCallback((text) => {
     if (!text) return;
     try { Speech.stop(); } catch {}
-
-    const options = {
+    const opts = {
       language: 'ru-RU',
-      pitch:    1.05,
-      rate:     Platform.OS === 'ios' ? 0.52 : 0.85,
+      pitch: 1.05,
+      rate: Platform.OS === 'ios' ? 0.52 : 0.85,
     };
-
-    if (voiceRef.current?.identifier) {
-      options.voice = voiceRef.current.identifier;
-    }
-
-    // Small delay on iOS prevents audio session conflicts
-    const delay = Platform.OS === 'ios' ? 120 : 0;
+    if (voiceRef.current?.identifier) opts.voice = voiceRef.current.identifier;
     setTimeout(() => {
-      try { Speech.speak(text, options); } catch (e) { console.log('TTS error:', e); }
-    }, delay);
+      try { Speech.speak(text, opts); } catch (e) { console.log('TTS:', e); }
+    }, Platform.OS === 'ios' ? 120 : 0);
   }, []);
 
   return speak;
 }
 
-// ── REUSABLE: SPEAKABLE TEXT ──────────────────────────────────────────────────
+// ── COMPONENTS ────────────────────────────────────────────────────────────────
 
+// P0.5 — Tap animation on Buddy (scale on press)
+function Buddy({ mood = 'happy', speak }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const faces = { happy: '😊', excited: '🤩', proud: '😄', calm: '🙂', demo: '👀' };
+  // TODO P0.4: replace with <Image source={require('./assets/buddy-' + mood + '.png')} />
+
+  function handlePress() {
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 1.12, duration: 100, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1.0,  duration: 150, useNativeDriver: true }),
+    ]).start();
+    speak(MSG[mood] || MSG.idle);
+  }
+
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
+      <Animated.View style={[s.buddy, { transform: [{ scale }] }]}>
+        <Text style={s.buddyFace}>{faces[mood] || '😊'}</Text>
+        <Text style={s.buddyName}>Бадди</Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+// Speakable text — tap to hear (P0.2: explicit only)
 function T({ children, style, speak }) {
   if (!children) return null;
   const str = typeof children === 'string' ? children : String(children);
   return (
-    <TouchableOpacity onPress={() => speak(str)} activeOpacity={0.6}>
+    <TouchableOpacity onPress={() => speak(str)} activeOpacity={0.65}>
       <Text style={style}>{children}</Text>
     </TouchableOpacity>
   );
 }
 
-// ── PROGRESS BAR ─────────────────────────────────────────────────────────────
-
 function ProgressBar({ total, speak }) {
   const { next, pct } = getProgress(total);
   const fillPct = `${Math.round(pct * 100)}%`;
-  const label = `У тебя ${total} ${total === 1 ? 'звезда' : 'звёзд'}. До следующей цели: ${next}`;
-
+  const label = `У тебя ${total} звёзд. До цели: ${next}`;
   return (
     <TouchableOpacity style={s.pbWrap} onPress={() => speak(label)} activeOpacity={0.75}>
       <View style={s.pbRow}>
@@ -162,38 +181,92 @@ function ProgressBar({ total, speak }) {
   );
 }
 
-// ── BUDDY ─────────────────────────────────────────────────────────────────────
+// ── SCREENS ───────────────────────────────────────────────────────────────────
 
-const BUDDY_FACES = { happy:'😊', excited:'🤩', proud:'😄', calm:'🙂' };
-const BUDDY_LINES = {
-  happy:   'Привет, я Бадди! Нажми на меня!',
-  excited: 'Давай, ты можешь это сделать!',
-  proud:   'Я так горжусь тобой!',
-  calm:    'Всё хорошо, я рядом.',
-};
-
-function Buddy({ mood = 'happy', speak }) {
+// P0.1 — Demo intro screen
+function DemoIntroScreen({ onStart, onSkip, speak }) {
   return (
-    <TouchableOpacity style={s.buddy} onPress={() => speak(BUDDY_LINES[mood])} activeOpacity={0.7}>
-      <Text style={s.buddyFace}>{BUDDY_FACES[mood]}</Text>
-      <Text style={s.buddyName}>Бадди</Text>
-    </TouchableOpacity>
+    <View style={s.screen}>
+      <Buddy mood="demo" speak={speak} />
+      <T style={s.msg} speak={speak}>Давай попробуем вместе!</T>
+      <T style={s.sub} speak={speak}>Три простых задания — просто для fun!</T>
+      <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
+        <Text style={s.btnPrimaryTxt}>▶ Попробовать</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
+        <Text style={s.btnSkipTxt}>Пропустить</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
-// ── SCREENS ───────────────────────────────────────────────────────────────────
+// P0.1 — Single demo step
+function DemoStepScreen({ step, stepIndex, total, onDone, speak }) {
+  const [done, setDone] = useState(false);
+
+  function handleDone() {
+    setDone(true);
+    speak(step.praise);
+    setTimeout(onDone, 900);
+  }
+
+  return (
+    <View style={s.screen}>
+      <Buddy mood={done ? 'proud' : 'excited'} speak={speak} />
+      <View style={s.stepCounter}>
+        {Array(total).fill(0).map((_, i) => (
+          <View key={i} style={[s.stepDot, i <= stepIndex && s.stepDotActive]} />
+        ))}
+      </View>
+      <TouchableOpacity
+        style={s.demoCard}
+        onPress={() => speak(`${step.title}`)}
+        activeOpacity={0.85}
+      >
+        <Text style={s.demoEmoji}>{step.emoji}</Text>
+        <Text style={s.demoTitle}>{step.title}</Text>
+        <Text style={s.tapHint}>нажми чтобы услышать</Text>
+      </TouchableOpacity>
+      {!done ? (
+        <TouchableOpacity style={s.btnPrimary} onPress={handleDone}>
+          <Text style={s.btnPrimaryTxt}>✅ Сделал!</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={s.praiseRow}>
+          <Text style={s.praiseText}>{step.praise} 🎉</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// P0.1 — Demo complete, offer real mission
+function DemoCompleteScreen({ onYes, onLater, speak }) {
+  return (
+    <View style={s.screen}>
+      <Buddy mood="proud" speak={speak} />
+      <Text style={s.celebTitle}>Отлично! Всё получилось! 🎉</Text>
+      <T style={s.msg} speak={speak}>{MSG.demo_end}</T>
+      <TouchableOpacity style={s.btnPrimary} onPress={onYes}>
+        <Text style={s.btnPrimaryTxt}>🚀 Да!</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={s.btnSecondary} onPress={onLater}>
+        <Text style={s.btnSecondaryTxt}>⏳ Потом</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 function HomeScreen({ stars, totalEver, completedToday, onStart, onRewards, speak }) {
-  const msg = pick(MSG.idle);
+  // P1.3 — idle presence: show alt message occasionally
+  const [idleMsg] = useState(() => Math.random() > 0.7 ? MSG.idle_alt : MSG.idle);
   return (
     <View style={s.screen}>
       <ProgressBar total={totalEver} speak={speak} />
       <Buddy mood="happy" speak={speak} />
-      <T style={s.msg} speak={speak}>{msg}</T>
+      <T style={s.msg} speak={speak}>{idleMsg}</T>
       {completedToday > 0 && (
-        <T style={s.sub} speak={speak}>
-          {`Сегодня выполнено миссий: ${completedToday}`}
-        </T>
+        <T style={s.sub} speak={speak}>{`Сегодня: ${completedToday} миссии`}</T>
       )}
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
         <Text style={s.btnPrimaryTxt}>🚀 Выбрать миссию</Text>
@@ -205,13 +278,14 @@ function HomeScreen({ stars, totalEver, completedToday, onStart, onRewards, spea
   );
 }
 
-function MissionPickScreen({ onPick, onBack, speak }) {
-  const easy   = MISSIONS.filter(m => m.stars === 1);
-  const bigger = MISSIONS.filter(m => m.stars === 2);
+function MissionPickScreen({ onPick, onBack, speak, firstTime }) {
+  // P1.2 — first real mission: show only easy missions
+  const easy   = MISSIONS_EASY;
+  const bigger = firstTime ? [] : MISSIONS_BIGGER;
+
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
-
       <T style={s.tier} speak={speak}>Лёгкие — одна звезда</T>
       {easy.map(m => (
         <TouchableOpacity
@@ -227,24 +301,26 @@ function MissionPickScreen({ onPick, onBack, speak }) {
           <Text style={s.mStar}>⭐</Text>
         </TouchableOpacity>
       ))}
-
-      <T style={s.tier} speak={speak}>Большие — две звезды</T>
-      {bigger.map(m => (
-        <TouchableOpacity
-          key={m.id} style={[s.mCard, s.mCardBig]}
-          onPress={() => onPick(m)}
-          onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
-        >
-          <Text style={s.mEmoji}>{m.emoji}</Text>
-          <View style={s.mInfo}>
-            <Text style={s.mTitle}>{m.title}</Text>
-            <Text style={s.mSub}>{m.subtitle}</Text>
-          </View>
-          <Text style={s.mStar}>⭐⭐</Text>
-        </TouchableOpacity>
-      ))}
-
-      <T style={s.hint} speak={speak}>Удержи карточку, чтобы услышать миссию</T>
+      {bigger.length > 0 && (
+        <>
+          <T style={s.tier} speak={speak}>Большие — две звезды</T>
+          {bigger.map(m => (
+            <TouchableOpacity
+              key={m.id} style={[s.mCard, s.mCardBig]}
+              onPress={() => onPick(m)}
+              onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
+            >
+              <Text style={s.mEmoji}>{m.emoji}</Text>
+              <View style={s.mInfo}>
+                <Text style={s.mTitle}>{m.title}</Text>
+                <Text style={s.mSub}>{m.subtitle}</Text>
+              </View>
+              <Text style={s.mStar}>⭐⭐</Text>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+      <T style={s.hint} speak={speak}>Удержи карточку, чтобы услышать</T>
       <TouchableOpacity style={s.btnBack} onPress={onBack}>
         <Text style={s.btnBackTxt}>← Назад</Text>
       </TouchableOpacity>
@@ -253,11 +329,11 @@ function MissionPickScreen({ onPick, onBack, speak }) {
 }
 
 function ActiveScreen({ mission, onDone, onSkip, speak }) {
-  const msg = pick(MSG.start);
+  if (!mission) return null; // P2.2 guard
   return (
     <View style={s.screen}>
       <Buddy mood="excited" speak={speak} />
-      <T style={s.msg} speak={speak}>{msg}</T>
+      <T style={s.msg} speak={speak}>{MSG.start}</T>
       <TouchableOpacity
         style={s.activeCard}
         onPress={() => speak(`${mission.title}. ${mission.subtitle}`)}
@@ -267,11 +343,9 @@ function ActiveScreen({ mission, onDone, onSkip, speak }) {
         <Text style={s.activeTitle}>{mission.title}</Text>
         <Text style={s.activeSub}>{mission.subtitle}</Text>
         <View style={s.starsRow}>
-          {Array(mission.stars).fill('⭐').map((_, i) => (
-            <Text key={i} style={s.starBig}>⭐</Text>
-          ))}
+          {Array(mission.stars).fill('⭐').map((_, i) => <Text key={i} style={s.starBig}>⭐</Text>)}
         </View>
-        <Text style={s.tapHint}>нажми, чтобы услышать ещё раз</Text>
+        <Text style={s.tapHint}>нажми чтобы услышать ещё раз</Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnPrimary} onPress={onDone}>
         <Text style={s.btnPrimaryTxt}>✅ Я сделал!</Text>
@@ -284,21 +358,15 @@ function ActiveScreen({ mission, onDone, onSkip, speak }) {
 }
 
 function CelebrateScreen({ mission, stars, totalEver, onContinue, onRewards, speak }) {
-  const msg = pick(MSG.done);
-  useEffect(() => {
-    const t = setTimeout(() => speak(msg), 400);
-    return () => clearTimeout(t);
-  }, []);
-
+  if (!mission) return null; // P2.2 guard
   return (
     <View style={s.screen}>
       <ProgressBar total={totalEver} speak={speak} />
       <Buddy mood="proud" speak={speak} />
-      <T style={s.celebTitle} speak={speak}>Миссия выполнена!</T>
-      <T style={s.msg} speak={speak}>{msg}</T>
+      <T style={s.celebTitle} speak={speak}>Миссия выполнена! 🎉</T>
       <TouchableOpacity
         style={s.earnedCard}
-        onPress={() => speak(`Ты заработал ${mission.stars === 1 ? 'одну звезду' : 'две звезды'}. Всего звёзд: ${stars}`)}
+        onPress={() => speak(MSG.done)}
         activeOpacity={0.85}
       >
         <Text style={s.earnedEmoji}>{mission.emoji}</Text>
@@ -317,23 +385,22 @@ function CelebrateScreen({ mission, stars, totalEver, onContinue, onRewards, spe
 }
 
 function RewardsScreen({ stars, totalEver, onBack, speak }) {
-  const msg = pick(MSG.reward);
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood="excited" speak={speak} />
-      <T style={s.msg} speak={speak}>{msg}</T>
+      <Buddy mood="happy" speak={speak} />
       <T style={s.pageTitle} speak={speak}>Твои награды</T>
       {REWARDS.map(r => {
         const can = stars >= r.cost;
-        const line = can
-          ? `${r.title}. Готово к получению!`
-          : `${r.title}. Нужно ещё ${r.cost - stars} звёзд`;
+        // P1.1 — softer language
+        const statusText = can
+          ? `${r.title}. Готово!`
+          : `${r.title}. Ещё немного — и готово`;
         return (
           <TouchableOpacity
             key={r.id}
             style={[s.rCard, !can && s.rLocked]}
-            onPress={() => speak(line)}
+            onPress={() => speak(statusText)}
             activeOpacity={0.7}
           >
             <Text style={s.rEmoji}>{r.emoji}</Text>
@@ -341,16 +408,15 @@ function RewardsScreen({ stars, totalEver, onBack, speak }) {
               <Text style={s.rTitle}>{r.title}</Text>
               <Text style={s.rCost}>{Array(r.cost).fill('⭐').join('')}</Text>
             </View>
+            {/* P1.1 — "ещё немного" instead of "нужно ещё N звёзд" */}
             {can
               ? <Text style={s.rReady}>Готово!</Text>
-              : <Text style={s.rNeed}>ещё {r.cost - stars} ⭐</Text>
+              : <Text style={s.rNeed}>ещё немного</Text>
             }
           </TouchableOpacity>
         );
       })}
-      <T style={s.hint} speak={speak}>
-        Попроси папу или маму разблокировать награду
-      </T>
+      <T style={s.hint} speak={speak}>Попроси папу или маму разблокировать</T>
       <TouchableOpacity style={s.btnBack} onPress={onBack}>
         <Text style={s.btnBackTxt}>← Назад</Text>
       </TouchableOpacity>
@@ -363,35 +429,44 @@ function RewardsScreen({ stars, totalEver, onBack, speak }) {
 export default function App() {
   const [ready,          setReady]          = useState(false);
   const [screen,         setScreen]         = useState('home');
+  const [demoStep,       setDemoStep]       = useState(0);
+  const [demoDone,       setDemoDone]       = useState(false);
   const [stars,          setStars]          = useState(0);
   const [totalEver,      setTotalEver]      = useState(0);
   const [completedToday, setCompletedToday] = useState(0);
   const [mission,        setMission]        = useState(null);
+  const [firstMission,   setFirstMission]   = useState(true);
   const speak = useSpeech();
 
   // Load
   useEffect(() => {
     (async () => {
       try {
-        const [sv, tv, cv, dv] = await Promise.all([
+        const [sv, tv, cv, dv, ddv] = await Promise.all([
           AsyncStorage.getItem(K.STARS),
           AsyncStorage.getItem(K.TOTAL_EVER),
           AsyncStorage.getItem(K.COMPLETED_TODAY),
           AsyncStorage.getItem(K.LAST_DATE),
+          AsyncStorage.getItem(K.DEMO_DONE),
         ]);
-        const today    = todayStr();
-        const newDay   = dv !== today;
-        const st       = sv ? parseInt(sv, 10) : 0;
-        const tot      = tv ? parseInt(tv, 10) : (sv ? parseInt(sv, 10) : 0);
-        const comp     = newDay ? 0 : (cv ? parseInt(cv, 10) : 0);
+        const today  = todayStr();
+        const newDay = dv !== today;
+        const st     = sv  ? parseInt(sv,  10) : 0;
+        const tot    = tv  ? parseInt(tv,  10) : (sv ? parseInt(sv, 10) : 0);
+        const comp   = newDay ? 0 : (cv ? parseInt(cv, 10) : 0);
+        const dd     = ddv === 'true';
+
         setStars(st);
         setTotalEver(tot);
         setCompletedToday(comp);
+        setDemoDone(dd);
+        setFirstMission(comp === 0 && st === 0);
+
+        // P0.1 — show demo on first ever launch
+        if (!dd) setScreen('demo_intro');
+
         if (newDay) {
-          await AsyncStorage.multiSet([
-            [K.LAST_DATE,       today],
-            [K.COMPLETED_TODAY, '0'],
-          ]);
+          await AsyncStorage.multiSet([[K.LAST_DATE, today], [K.COMPLETED_TODAY, '0']]);
         }
       } catch (e) {
         console.log('Load error', e);
@@ -404,17 +479,27 @@ export default function App() {
   // Persist stars
   useEffect(() => {
     if (!ready) return;
-    AsyncStorage.multiSet([
-      [K.STARS,      String(stars)],
-      [K.TOTAL_EVER, String(totalEver)],
-    ]).catch(console.log);
+    AsyncStorage.multiSet([[K.STARS, String(stars)], [K.TOTAL_EVER, String(totalEver)]]).catch(console.log);
   }, [stars, totalEver, ready]);
 
-  // Persist daily count
   useEffect(() => {
     if (!ready) return;
     AsyncStorage.setItem(K.COMPLETED_TODAY, String(completedToday)).catch(console.log);
   }, [completedToday, ready]);
+
+  // Demo handlers
+  function handleDemoStepDone() {
+    if (demoStep < DEMO_STEPS.length - 1) {
+      setDemoStep(i => i + 1);
+    } else {
+      setScreen('demo_complete');
+    }
+  }
+
+  async function handleDemoFinish() {
+    await AsyncStorage.setItem(K.DEMO_DONE, 'true');
+    setDemoDone(true);
+  }
 
   function pickMission(m) {
     setMission(m);
@@ -423,9 +508,11 @@ export default function App() {
   }
 
   function completeMission() {
-    setStars(n    => n   + mission.stars);
-    setTotalEver(n => n   + mission.stars);
+    if (!mission) return; // P2.2
+    setStars(n    => n + mission.stars);
+    setTotalEver(n => n + mission.stars);
     setCompletedToday(n => n + 1);
+    setFirstMission(false);
     setScreen('celebrate');
   }
 
@@ -441,22 +528,52 @@ export default function App() {
 
   return (
     <SafeAreaView style={s.root}>
+
+      {screen === 'demo_intro' && (
+        <DemoIntroScreen
+          speak={speak}
+          onStart={() => { setDemoStep(0); setScreen('demo_step'); }}
+          onSkip={async () => { await handleDemoFinish(); setScreen('home'); }}
+        />
+      )}
+
+      {screen === 'demo_step' && (
+        <DemoStepScreen
+          speak={speak}
+          step={DEMO_STEPS[demoStep]}
+          stepIndex={demoStep}
+          total={DEMO_STEPS.length}
+          onDone={handleDemoStepDone}
+        />
+      )}
+
+      {screen === 'demo_complete' && (
+        <DemoCompleteScreen
+          speak={speak}
+          onYes={async () => { await handleDemoFinish(); setScreen('pick'); }}
+          onLater={async () => { await handleDemoFinish(); setScreen('home'); }}
+        />
+      )}
+
       {screen === 'home' && (
         <HomeScreen
           {...p}
           completedToday={completedToday}
-          onStart={()     => setScreen('pick')}
-          onRewards={()   => setScreen('rewards')}
+          onStart={() => setScreen('pick')}
+          onRewards={() => setScreen('rewards')}
         />
       )}
+
       {screen === 'pick' && (
         <MissionPickScreen
           {...p}
+          firstTime={firstMission}
           onPick={pickMission}
           onBack={() => setScreen('home')}
         />
       )}
-      {screen === 'active' && mission && (
+
+      {screen === 'active' && (
         <ActiveScreen
           {...p}
           mission={mission}
@@ -464,20 +581,23 @@ export default function App() {
           onSkip={() => { setMission(null); setScreen('home'); }}
         />
       )}
-      {screen === 'celebrate' && mission && (
+
+      {screen === 'celebrate' && (
         <CelebrateScreen
           {...p}
           mission={mission}
           onContinue={() => setScreen('pick')}
-          onRewards={()  => setScreen('rewards')}
+          onRewards={() => setScreen('rewards')}
         />
       )}
+
       {screen === 'rewards' && (
         <RewardsScreen
           {...p}
           onBack={() => setScreen('home')}
         />
       )}
+
     </SafeAreaView>
   );
 }
@@ -512,7 +632,7 @@ const s = StyleSheet.create({
   pbFill:   { height: 10, backgroundColor: C.green, borderRadius: 5, minWidth: 8 },
 
   // Buddy
-  buddy:     { alignItems: 'center', marginBottom: 4 },
+  buddy:     { alignItems: 'center', marginBottom: 4, padding: 8 },
   buddyFace: { fontSize: 66 },
   buddyName: { fontSize: 12, color: C.muted, marginTop: 2, fontWeight: '500' },
 
@@ -523,6 +643,7 @@ const s = StyleSheet.create({
   tier:      { fontSize: 12, fontWeight: '600', color: C.muted, alignSelf: 'flex-start', marginTop: 10, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 },
   hint:      { fontSize: 11, color: C.muted, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
   tapHint:   { fontSize: 11, color: C.muted, marginTop: 10, fontStyle: 'italic' },
+  celebTitle:{ fontSize: 24, fontWeight: '800', color: C.green, marginBottom: 4, textAlign: 'center' },
 
   // Buttons
   btnPrimary:    { backgroundColor: C.green, borderRadius: 16, paddingVertical: 17, paddingHorizontal: 32, marginTop: 10, width: '100%', alignItems: 'center' },
@@ -534,6 +655,16 @@ const s = StyleSheet.create({
   btnBack:    { marginTop: 18, padding: 12 },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: '500' },
 
+  // Demo
+  stepCounter: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  stepDot:     { width: 10, height: 10, borderRadius: 5, backgroundColor: C.border },
+  stepDotActive: { backgroundColor: C.green },
+  demoCard:    { backgroundColor: C.white, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 32, alignItems: 'center', width: '100%', marginVertical: 12 },
+  demoEmoji:   { fontSize: 64, marginBottom: 12 },
+  demoTitle:   { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
+  praiseRow:   { marginTop: 16, alignItems: 'center' },
+  praiseText:  { fontSize: 24, fontWeight: '800', color: C.green },
+
   // Mission cards
   mCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 13, marginBottom: 7, width: '100%' },
   mCardBig: { backgroundColor: C.gold, borderColor: C.goldBdr },
@@ -543,7 +674,7 @@ const s = StyleSheet.create({
   mSub:     { fontSize: 12, color: C.muted, marginTop: 2 },
   mStar:    { fontSize: 17 },
 
-  // Active mission
+  // Active
   activeCard:  { backgroundColor: C.white, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 26, alignItems: 'center', width: '100%', marginVertical: 12 },
   activeEmoji: { fontSize: 58, marginBottom: 10 },
   activeTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
@@ -551,8 +682,7 @@ const s = StyleSheet.create({
   starsRow:    { flexDirection: 'row', marginTop: 12, gap: 4 },
   starBig:     { fontSize: 24 },
 
-  // Celebration
-  celebTitle: { fontSize: 25, fontWeight: '800', color: C.green, marginBottom: 4, textAlign: 'center' },
+  // Celebrate
   earnedCard:  { backgroundColor: C.greenLt, borderRadius: 20, padding: 22, alignItems: 'center', width: '100%', marginVertical: 12 },
   earnedEmoji: { fontSize: 44, marginBottom: 6 },
   earnedName:  { fontSize: 16, fontWeight: '600', color: C.green },

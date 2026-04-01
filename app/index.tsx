@@ -356,7 +356,7 @@ function DailySuggestion({ suggestion, onAccept, onSkip, speak }: {
 }) {
   return (
     <View style={s.suggestionCard}>
-      <Buddy mood="encouraging" speak={speak} size={70} />
+      <Text style={s.suggestionIcon}>💡</Text>
       <T style={s.suggestionText} speak={speak}>{suggestion.text}</T>
       <View style={s.suggestionRow}>
         <TouchableOpacity style={s.suggestionYes} onPress={onAccept}>
@@ -497,7 +497,7 @@ function MissionPickScreen({ onPick, onBack, speak, firstTime }: any) {
   const bigger = firstTime ? [] : MISSIONS_BIGGER;
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <Buddy mood="encouraging" speak={speak} size={90} />
+      <Buddy mood="encouraging" speak={speak} />
       <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
       <T style={s.tier} speak={speak}>Лёгкие — одна звезда</T>
       {MISSIONS_EASY.map(m => (
@@ -618,7 +618,7 @@ function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem }: any) {
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood="serene" speak={speak} size={90} />
+      <Buddy mood="serene" speak={speak} />
       <T style={s.pageTitle} speak={speak}>Твои награды</T>
       {REWARDS.map(r => {
         const can = stars >= r.cost;
@@ -786,8 +786,10 @@ export default function App() {
   }
 
   function handleDemoStepDone() {
-    if (demoStep < DEMO_STEPS.length - 1) {
-      setDemoStep(i => i + 1);
+    const nextStep = demoStep + 1;
+    if (nextStep < DEMO_STEPS.length) {
+      setDemoStep(nextStep);
+      setScreen('demo_step');
     } else {
       setScreen('demo_complete');
     }
@@ -926,6 +928,7 @@ export default function App() {
 
       {screen === 'demo_step' && (
         <DemoStepScreen
+          key={demoStep}
           speak={speak}
           step={DEMO_STEPS[demoStep]}
           stepIndex={demoStep}
@@ -1097,6 +1100,7 @@ const s = StyleSheet.create({
 
   // Daily suggestion
   suggestionCard:  { backgroundColor: C.gold, borderRadius: 14, borderWidth: 1, borderColor: C.goldBdr, padding: 14, width: '100%', alignItems: 'center', marginBottom: 10 },
+  suggestionIcon:  { fontSize: 28, marginBottom: 4 },
   suggestionText:  { fontSize: 14, color: '#92400E', textAlign: 'center', marginVertical: 8, lineHeight: 20 },
   suggestionRow:   { flexDirection: 'row', gap: 10 },
   suggestionYes:   { backgroundColor: C.green, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 18 },

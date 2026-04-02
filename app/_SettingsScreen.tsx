@@ -19,6 +19,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -1032,7 +1034,11 @@ export default function SettingsScreen({
 
       {/* PIN overlay for protected actions */}
       {showPin && (
-        <View style={ss.pinOverlay}>
+        <KeyboardAvoidingView
+          style={ss.pinOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={0}
+        >
           <View style={ss.pinCard}>
             <Text style={ss.pinTitle}>Введи PIN родителя</Text>
             <TextInput
@@ -1045,17 +1051,17 @@ export default function SettingsScreen({
               autoFocus
               onSubmitEditing={verifyAndRun}
             />
-            <TouchableOpacity style={u.btnPrimary} onPress={verifyAndRun}>
-              <Text style={u.btnPrimaryTxt}>Подтвердить</Text>
+            <TouchableOpacity style={ss.pinBtnPrimary} onPress={verifyAndRun}>
+              <Text style={ss.pinBtnPrimaryTxt}>Подтвердить</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[u.btnCancel, { marginTop: 8 }]}
+              style={ss.pinBtnCancel}
               onPress={() => { setShowPin(false); setPinInput(''); setPendingAction(null); }}
             >
-              <Text style={u.btnCancelTxt}>Отмена</Text>
+              <Text style={ss.pinBtnCancelTxt}>Отмена</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       )}
     </SafeAreaView>
   );
@@ -1074,10 +1080,14 @@ const ss = StyleSheet.create({
   scroll:       { flex: 1 },
   content:      { padding: 16 },
   spacer:       { height: 24 },
-  pinOverlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', padding: 24 },
+  pinOverlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', padding: 24, paddingBottom: 32 },
   pinCard:      { backgroundColor: C.white, borderRadius: 20, padding: 28, alignItems: 'center' },
   pinTitle:     { fontSize: 18, fontWeight: '600', color: C.text, marginBottom: 16 },
-  pinInput:     { fontSize: 32, textAlign: 'center', letterSpacing: 12, marginBottom: 20, width: '100%', borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
+  pinInput:     { fontSize: 28, textAlign: 'center', letterSpacing: 8, marginBottom: 24, width: '100%', height: 52, borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
+  pinBtnPrimary:    { backgroundColor: C.green, borderRadius: 12, paddingVertical: 14, alignItems: 'center', width: '100%', marginBottom: 10 },
+  pinBtnPrimaryTxt: { fontSize: 15, color: C.white, fontWeight: '600' },
+  pinBtnCancel:     { backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingVertical: 14, alignItems: 'center', width: '100%' },
+  pinBtnCancelTxt:  { fontSize: 15, color: C.text, fontWeight: '500' },
 });
 
 const u = StyleSheet.create({
@@ -1094,7 +1104,7 @@ const u = StyleSheet.create({
   rowLabels:     { flex: 1 },
   rowLabel:      { fontSize: 14, fontWeight: '500', color: C.text },
   rowSublabel:   { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 17 },
-  rowControl:    { alignItems: 'flex-end', justifyContent: 'center' },
+  rowControl:    { alignItems: 'flex-end', justifyContent: 'center', flexShrink: 0 },
   subheading:    { fontSize: 13, fontWeight: '500', color: C.muted, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 6 },
 
   divider:       { height: 0.5, backgroundColor: C.border, marginHorizontal: 14 },

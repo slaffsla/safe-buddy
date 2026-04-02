@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings } from './_SettingsScreen';
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -445,7 +446,7 @@ function DemoCompleteScreen({ onGoToMissions, onGoHome, speak }: any) {
 function HomeScreen({
   stars, totalEver, completedToday, totalMissions,
   childName, lastMission, showSuggestion,
-  onStart, onRewards, onSuggestionAccept, onSuggestionSkip,
+  onStart, onRewards, onSettings, onSuggestionAccept, onSuggestionSkip,
   skipCount, speak,
 }: any) {
   const [homeMood] = useState<BuddyMood>(() =>
@@ -488,6 +489,9 @@ function HomeScreen({
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
         <Text style={s.btnSecondaryTxt}>🎁 Мои награды</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={s.btnSettings} onPress={onSettings}>
+        <Text style={s.btnSettingsTxt}>⚙️ Настройки для родителей</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -686,6 +690,9 @@ export default function App() {
   const [enteredPin,      setEnteredPin]      = useState('');
   const [pendingReward,   setPendingReward]   = useState<any>(null);
 
+  // Settings
+  const [appSettings,   setAppSettings]   = useState<AppSettings>(DEFAULT_SETTINGS);
+
   const speak = useSpeech();
 
   // ── Load all state ──────────────────────────────────────────────────────────
@@ -720,6 +727,10 @@ export default function App() {
         setFirstMission(tm === 0);
         setOnboardingDone(v[K.ONBOARDING_DONE] === 'true');
         setParentPin(v[K.PARENT_PIN] || '');
+
+        // Load full settings
+        const s = await loadSettings();
+        setAppSettings(s);
         setPinEnabled(v[K.PIN_ENABLED] === 'true');
 
         // Only go to demo if onboarding is already done
@@ -953,6 +964,7 @@ export default function App() {
           childName={childName}
           lastMission={lastMission}
           showSuggestion={showSuggestion}
+          onSettings={() => setScreen('settings')}
           skipCount={skipCount}
           onStart={() => setScreen('pick')}
           onRewards={() => setScreen('rewards')}
@@ -998,6 +1010,20 @@ export default function App() {
           onRedeem={handleRewardRedeem}
         />
       )}
+
+      {screen === 'settings' && (
+        <SettingsScreen
+          onClose={() => setScreen('home')}
+          onSettingsChange={(s: { childName: React.SetStateAction<string>; parentPin: React.SetStateAction<string>; pinEnabled: boolean | ((prevState: boolean) => boolean); }) => {
+            setAppSettings(s);
+            setChildName(s.childName);
+            setParentPin(s.parentPin);
+            setPinEnabled(s.pinEnabled);
+          }}
+          currentPin={parentPin}
+          pinEnabled={pinEnabled}
+        />
+)}
 
       {/* ── PARENT PIN OVERLAY ─────────────────────────────────────────────── */}
       {showPinScreen && (
@@ -1128,6 +1154,8 @@ const s = StyleSheet.create({
   btnBack:    { marginTop: 18, padding: 12 },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: '500' },
   demoCompleteButtons: { width: '100%', marginTop: 8 },
+  btnSettings:    { marginTop: 8, padding: 12, alignItems: 'center' },
+  btnSettingsTxt: { fontSize: 14, color: C.muted },
 
   // Demo
   stepCounter:   { flexDirection: 'row', gap: 8, marginBottom: 16 },

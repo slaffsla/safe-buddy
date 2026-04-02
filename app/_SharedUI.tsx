@@ -90,7 +90,6 @@ export function DailySuggestion({ suggestion, onAccept, onSkip, speak }: {
 }
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
-
 export function Confetti({ trigger }: { trigger: boolean }) {
   if (!trigger) return null;
   return (
@@ -99,9 +98,8 @@ export function Confetti({ trigger }: { trigger: boolean }) {
       origin={{ x: -20, y: 0 }}
       autoStart={true}
       fadeOut={true}
-      fallSpeed={3000}
+      fallSpeed={3200}
       colors={['#1D6B4F', '#F59E0B', '#E1F5EE', '#FFD700', '#FF6B6B', '#4ECDC4']}
-      style={StyleSheet.absoluteFillObject}
     />
   );
 }

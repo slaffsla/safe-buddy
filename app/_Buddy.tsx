@@ -22,7 +22,7 @@ export default function Buddy({ mood = 'calm', speak, size = 130 }: BuddyProps) 
     if (isAmbient) {
       breathAnim.current = Animated.loop(
         Animated.sequence([
-          Animated.timing(breathScale, { toValue: 1.05, duration: 2800, useNativeDriver: true }),
+          Animated.timing(breathScale, { toValue: 1.03, duration: 2800, useNativeDriver: true }),
           Animated.timing(breathScale, { toValue: 1.0,  duration: 2800, useNativeDriver: true }),
         ])
       );

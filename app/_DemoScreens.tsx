@@ -122,3 +122,6 @@ const s = StyleSheet.create({
   btnSkip:    { marginTop: 10, padding: 12 },
   btnSkipTxt: { fontSize: 15, color: C.muted },
 });
+
+// Expo Router: suppress "missing default export" warning for non-route files
+export default function _DemoScreens() { return null; }

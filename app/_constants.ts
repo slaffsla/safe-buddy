@@ -153,3 +153,6 @@ export function getMilestoneMessage(totalEver: number): string {
   if (totalEver >= 100 && totalEver < 102) return 'Сто звёзд. Ты настоящая звезда!';
   return `${totalEver} звёзд — и ты продолжаешь!`;
 }
+
+// Expo Router: suppress "missing default export" warning for non-route files
+export default {};

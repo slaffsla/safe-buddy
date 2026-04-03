@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Buddy from './_Buddy';
+import { DailySuggestion, ReflectiveBoost, T } from './_SharedUI';
 import { BuddyMood, C, MSG, getDailySuggestion, getProgressionMessage } from './_constants';
-import { DailySuggestion, ProgressBar, ReflectiveBoost, T } from './_SharedUI';
+import { ProgressBar } from './_SharedUI';
 
 interface HomeScreenProps {
   stars: number;
@@ -50,7 +51,7 @@ export default function HomeScreen({
     <ScrollView contentContainerStyle={s.homeScroll}>
       <ProgressBar total={totalEver} speak={speak} />
       <T style={s.greeting} speak={speak}>{greeting}</T>
-      <Buddy mood={homeMood} speak={speak} size={130}/>
+      <Buddy mood={homeMood} speak={speak} />
       <ReflectiveBoost lastMission={lastMission} speak={speak} />
       {progressMsg && <T style={s.progressionMsg} speak={speak}>{progressMsg}</T>}
       <T style={s.msg} speak={speak}>{idleMsg}</T>

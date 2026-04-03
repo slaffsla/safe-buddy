@@ -129,3 +129,6 @@ const s = StyleSheet.create({
   suggestionNo:     { backgroundColor: 'transparent', borderRadius: 12, paddingVertical: 9, paddingHorizontal: 14 },
   suggestionNoTxt:  { fontSize: 14, color: C.muted },
 });
+
+// Expo Router: suppress "missing default export" warning for non-route files
+export default function _SharedUI() { return null; }

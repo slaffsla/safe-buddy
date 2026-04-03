@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
@@ -18,6 +17,9 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
+import HomeScreen from './_HomeScreen';
+import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings } from './_SettingsScreen';
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -257,7 +259,10 @@ export default function App() {
           K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
           K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE,
         ]);
-        const v = Object.fromEntries(vals);
+        // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
+        const v: Record<string, string> = Object.fromEntries(
+          vals.map(([k, val]) => [k, val ?? ''])
+        );
         const today  = todayStr();
         const newDay = v[K.LAST_DATE] !== today;
 
@@ -282,6 +287,8 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
+        // TODO(rotation): after loadSettings, call initRotation(s) here
+        // See ticket: task rotation logic
         setAppSettings(s);
         setPinEnabled(v[K.PIN_ENABLED] === 'true');
 
@@ -531,6 +538,7 @@ export default function App() {
           firstTime={firstMission}
           onPick={pickMission}
           onBack={() => setScreen('home')}
+          // missions={visibleMissions}  TODO(rotation): pass computed list here
         />
       )}
 
@@ -579,11 +587,7 @@ export default function App() {
 
              {/* ── PARENT PIN OVERLAY ─────────────────────────────────────────────── */}
       {showPinScreen && (
-        <KeyboardAvoidingView
-          style={s.pinOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}  // Higher offset for iPhone 13 Pro
-        >
+        <View style={s.pinOverlay}>
           <View style={s.pinCard}>
             <Image
               source={BUDDY.calm}
@@ -618,7 +622,7 @@ export default function App() {
               <Text style={s.pinCancelTxt}>Отмена</Text>
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       )}
     </SafeAreaView>
   );

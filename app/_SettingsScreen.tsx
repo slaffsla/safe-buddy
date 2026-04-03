@@ -152,14 +152,14 @@ export async function loadSettings(): Promise<AppSettings> {
       return { ...DEFAULT_SETTINGS, ...parsed };
     }
     // First load — pull legacy individual keys if they exist
-    const [name, pin, pinEnabled] = await AsyncStorage.multiGet([
+    const legacy = await AsyncStorage.multiGet([
       SK.CHILD_NAME, SK.PARENT_PIN, SK.PIN_ENABLED,
     ]);
     return {
       ...DEFAULT_SETTINGS,
-      childName:  name[1]  || '',
-      parentPin:  pin[1]   || '',
-      pinEnabled: pinEnabled[1] === 'true',
+      childName:  legacy[0][1] ?? '',
+      parentPin:  legacy[1][1] ?? '',
+      pinEnabled: legacy[2][1] === 'true',
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -197,12 +197,14 @@ async function loadProgress(): Promise<ProgressData> {
       SK.STARS, SK.TOTAL_EVER, SK.TOTAL_MISSIONS,
       SK.COMPLETED_TODAY, SK.LAST_MISSION, SK.FIRST_REWARD,
     ]);
-    const v = Object.fromEntries(vals);
+    const v: Record<string, string> = Object.fromEntries(
+      vals.map(([k, val]) => [k, val ?? ''])
+    );
     return {
-      stars:               v[SK.STARS]           ? parseInt(v[SK.STARS],          10) : 0,
-      totalEver:           v[SK.TOTAL_EVER]       ? parseInt(v[SK.TOTAL_EVER],     10) : 0,
-      totalMissions:       v[SK.TOTAL_MISSIONS]   ? parseInt(v[SK.TOTAL_MISSIONS], 10) : 0,
-      completedToday:      v[SK.COMPLETED_TODAY]  ? parseInt(v[SK.COMPLETED_TODAY],10) : 0,
+      stars:               v[SK.STARS]          ? parseInt(v[SK.STARS],           10) : 0,
+      totalEver:           v[SK.TOTAL_EVER]      ? parseInt(v[SK.TOTAL_EVER],      10) : 0,
+      totalMissions:       v[SK.TOTAL_MISSIONS]  ? parseInt(v[SK.TOTAL_MISSIONS],  10) : 0,
+      completedToday:      v[SK.COMPLETED_TODAY] ? parseInt(v[SK.COMPLETED_TODAY], 10) : 0,
       lastMission:         v[SK.LAST_MISSION] || null,
       firstRewardRedeemed: v[SK.FIRST_REWARD] === 'true',
     };

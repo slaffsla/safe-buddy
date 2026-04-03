@@ -19,8 +19,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -154,14 +152,14 @@ export async function loadSettings(): Promise<AppSettings> {
       return { ...DEFAULT_SETTINGS, ...parsed };
     }
     // First load — pull legacy individual keys if they exist
-    const [name, pin, pinEnabled] = await AsyncStorage.multiGet([
+    const legacy = await AsyncStorage.multiGet([
       SK.CHILD_NAME, SK.PARENT_PIN, SK.PIN_ENABLED,
     ]);
     return {
       ...DEFAULT_SETTINGS,
-      childName:  name[1]  || '',
-      parentPin:  pin[1]   || '',
-      pinEnabled: pinEnabled[1] === 'true',
+      childName:  legacy[0][1] ?? '',
+      parentPin:  legacy[1][1] ?? '',
+      pinEnabled: legacy[2][1] === 'true',
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -199,12 +197,14 @@ async function loadProgress(): Promise<ProgressData> {
       SK.STARS, SK.TOTAL_EVER, SK.TOTAL_MISSIONS,
       SK.COMPLETED_TODAY, SK.LAST_MISSION, SK.FIRST_REWARD,
     ]);
-    const v = Object.fromEntries(vals);
+    const v: Record<string, string> = Object.fromEntries(
+      vals.map(([k, val]) => [k, val ?? ''])
+    );
     return {
-      stars:               v[SK.STARS]           ? parseInt(v[SK.STARS],          10) : 0,
-      totalEver:           v[SK.TOTAL_EVER]       ? parseInt(v[SK.TOTAL_EVER],     10) : 0,
-      totalMissions:       v[SK.TOTAL_MISSIONS]   ? parseInt(v[SK.TOTAL_MISSIONS], 10) : 0,
-      completedToday:      v[SK.COMPLETED_TODAY]  ? parseInt(v[SK.COMPLETED_TODAY],10) : 0,
+      stars:               v[SK.STARS]          ? parseInt(v[SK.STARS],           10) : 0,
+      totalEver:           v[SK.TOTAL_EVER]      ? parseInt(v[SK.TOTAL_EVER],      10) : 0,
+      totalMissions:       v[SK.TOTAL_MISSIONS]  ? parseInt(v[SK.TOTAL_MISSIONS],  10) : 0,
+      completedToday:      v[SK.COMPLETED_TODAY] ? parseInt(v[SK.COMPLETED_TODAY], 10) : 0,
       lastMission:         v[SK.LAST_MISSION] || null,
       firstRewardRedeemed: v[SK.FIRST_REWARD] === 'true',
     };
@@ -1034,11 +1034,7 @@ export default function SettingsScreen({
 
       {/* PIN overlay for protected actions */}
       {showPin && (
-        <KeyboardAvoidingView
-          style={ss.pinOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={0}
-        >
+        <View style={ss.pinOverlay}>
           <View style={ss.pinCard}>
             <Text style={ss.pinTitle}>Введи PIN родителя</Text>
             <TextInput
@@ -1061,7 +1057,7 @@ export default function SettingsScreen({
               <Text style={ss.pinBtnCancelTxt}>Отмена</Text>
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -1080,10 +1076,10 @@ const ss = StyleSheet.create({
   scroll:       { flex: 1 },
   content:      { padding: 16 },
   spacer:       { height: 24 },
-  pinOverlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', padding: 24, paddingBottom: 32 },
-  pinCard:      { backgroundColor: C.white, borderRadius: 20, padding: 28, alignItems: 'center' },
-  pinTitle:     { fontSize: 18, fontWeight: '600', color: C.text, marginBottom: 16 },
-  pinInput:     { fontSize: 28, textAlign: 'center', letterSpacing: 8, marginBottom: 24, width: '100%', height: 52, borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
+  pinOverlay:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  pinCard:          { backgroundColor: C.white, borderRadius: 20, padding: 28, alignItems: 'center', width: '100%' },
+  pinTitle:         { fontSize: 18, fontWeight: '600', color: C.text, marginBottom: 16 },
+  pinInput:         { fontSize: 28, textAlign: 'center', letterSpacing: 8, marginBottom: 24, width: '100%', height: 52, borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
   pinBtnPrimary:    { backgroundColor: C.green, borderRadius: 12, paddingVertical: 14, alignItems: 'center', width: '100%', marginBottom: 10 },
   pinBtnPrimaryTxt: { fontSize: 15, color: C.white, fontWeight: '600' },
   pinBtnCancel:     { backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingVertical: 14, alignItems: 'center', width: '100%' },

@@ -9,9 +9,10 @@ interface BuddyProps {
   mood?: BuddyMood;
   speak: (t: string) => void;
   size?: number;
+  celebrate: boolean;
 }
 
-export default function Buddy({ mood = 'calm', speak, size = 130 }: BuddyProps) {
+export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false}: BuddyProps) {
   const tapScale    = useRef(new Animated.Value(1)).current;
   const breathScale = useRef(new Animated.Value(1)).current;
   const breathAnim  = useRef<Animated.CompositeAnimation | null>(null);
@@ -33,6 +34,16 @@ export default function Buddy({ mood = 'calm', speak, size = 130 }: BuddyProps) 
     }
     return () => { breathAnim.current?.stop(); };
   }, [mood]);
+
+  useEffect(() => {
+  if (!celebrate) return;
+  Animated.sequence([
+    Animated.timing(tapScale, { toValue: 1.2,  duration: 180, useNativeDriver: true }),
+    Animated.timing(tapScale, { toValue: 1.08, duration: 120, useNativeDriver: true }),
+    Animated.timing(tapScale, { toValue: 1.15, duration: 100, useNativeDriver: true }),
+    Animated.timing(tapScale, { toValue: 1.0,  duration: 250, useNativeDriver: true }),
+  ]).start();
+}, [celebrate]);
 
   const lines: Record<string, string> = {
     calm:              MSG.idle,

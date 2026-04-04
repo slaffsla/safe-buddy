@@ -39,6 +39,11 @@ export const K = {
 
 export const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
 
+export const EXAMPLE_ERROR = "This is an example error.";
+
+const PlaceholderComponent = () => null; //Router patch
+export default PlaceholderComponent;
+
 export const DEMO_STEPS = [
   { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },
   { id: 'd2', title: 'Прыгни один раз',  emoji: '🦘', praise: 'Хорошо' },

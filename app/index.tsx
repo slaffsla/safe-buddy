@@ -20,7 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
 import HomeScreen from './_HomeScreen';
-import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
+import RewardsScreen, { ActiveScreen, CelebrateScreen, MissionPickScreen } from './_MissionScreens';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings } from './_SettingsScreen';
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 

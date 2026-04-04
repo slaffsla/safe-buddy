@@ -21,7 +21,7 @@ export function MissionPickScreen({ onPick, onBack, speak, firstTime }: {
   const bigger = firstTime ? [] : MISSIONS_BIGGER;
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <Buddy mood="encouraging" speak={speak} />
+      <Buddy mood="encouraging" speak={speak} celebrate = {false}/>
       <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
       <T style={s.tier} speak={speak}>Лёгкие — одна звезда</T>
       {MISSIONS_EASY.map(m => (
@@ -76,7 +76,7 @@ export function ActiveScreen({ mission, onDone, onSkip, speak }: {
   if (!mission) return null;
   return (
     <View style={s.screen}>
-      <Buddy mood="excited" speak={speak} />
+      <Buddy mood="excited" speak={speak} celebrate={false}/>
       <T style={s.msg} speak={speak}>{MSG.start}</T>
       <TouchableOpacity
         style={s.activeCard}
@@ -167,7 +167,7 @@ export default function RewardsScreen({ stars, totalEver, onBack, speak, onRedee
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood="serene" speak={speak} />
+      <Buddy mood="serene" speak={speak} celebrate={true} />
       <T style={s.pageTitle} speak={speak}>Твои награды</T>
       {REWARDS.map(r => {
         const can = stars >= r.cost;

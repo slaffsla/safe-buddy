@@ -135,8 +135,7 @@ export function CelebrateScreen({
     <View style={s.screen}>
       {showConfetti && <Confetti trigger={true} />}
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood={buddyMood} speak={speak} />
-      <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
+<Buddy mood={buddyMood} speak={speak} celebrate={true} />      <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
         {isVeryExcited ? '🏆 Невероятно!' : 'Миссия выполнена! 🎉'}
       </T>
       <T style={s.progressionMsg} speak={speak}>{emotionalMsg}</T>
@@ -158,7 +157,7 @@ export function CelebrateScreen({
 
 // ── RewardsScreen ─────────────────────────────────────────────────────────────
 
-export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem }: {
+export default function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem }: {
   stars: number;
   totalEver: number;
   onBack: () => void;

@@ -40,49 +40,54 @@ export const K = {
 export const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
 
 export const DEMO_STEPS = [
-  { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Отлично!' },
-  { id: 'd2', title: 'Прыгни!',          emoji: '🦘', praise: 'Супер!' },
-  { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Молодец!' },
+  { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },
+  { id: 'd2', title: 'Прыгни один раз',  emoji: '🦘', praise: 'Хорошо' },
+  { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Отлично получилось' },
 ];
 
 export const MISSIONS_EASY = [
-  { id: 1, title: 'Постой на одной ноге',   subtitle: 'Держись 5 секунд', stars: 1, emoji: '🦩' },
-  { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно вниз',    stars: 1, emoji: '🙆' },
-  { id: 3, title: 'Прыгни три раза',        subtitle: 'Как можно выше',   stars: 1, emoji: '🦘' },
-  { id: 4, title: 'Выпей стакан воды',      subtitle: 'Не спеши',         stars: 1, emoji: '💧' },
+  { id: 1, title: 'Постой на одной ноге', subtitle: 'Пять секунд', stars: 1, emoji: '🦩' },
+  { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно', stars: 1, emoji: '🙆' },
+  { id: 3, title: 'Прыгни три раза', subtitle: 'Спокойно', stars: 1, emoji: '🦘' },
+  { id: 4, title: 'Выпей воду', subtitle: 'Медленно', stars: 1, emoji: '💧' },
+  { id: 5, title: 'Побудь без телефона', subtitle: 'Одна минута', stars: 1, emoji: '📱' },
 ];
 
 export const MISSIONS_BIGGER = [
-  { id: 5, title: 'Убери игрушки',      subtitle: 'Хотя бы один уголок', stars: 2, emoji: '🧸' },
-  { id: 6, title: 'Обними кого-нибудь', subtitle: 'Подари тепло',        stars: 2, emoji: '💛' },
+  { id: 9,  title: 'Убери игрушки',                         subtitle: 'Один уголок',          stars: 2, emoji: '🧸' },
+  { id: 10, title: 'Обними кого-нибудь',                subtitle: 'Тихо и спокойно',          stars: 2, emoji: '💛' },
+  { id: 7,  title: 'Сожми кулачки',                        subtitle: 'Три секунды',           stars: 2, emoji: '✊' },
+  { id: 8,  title: 'Побудь без телефона',                subtitle: 'Две минуты',            stars: 2, emoji: '📱' },
+  { id: 11, title: 'Спроси папу или маму, чем помочь', subtitle: 'Небольшое дело',       stars: 2, emoji: '👨' },
+  { id: 12, title: 'Убери немного дома',                   subtitle: 'Совсем чуть-чуть',     stars: 2, emoji: '🏠' },
 ];
 
 export const REWARDS = [
-  { id: 1, title: 'Дополнительный мультик',      cost: 3, emoji: '📺' },
-  { id: 2, title: 'Выбрать ужин сегодня',         cost: 4, emoji: '🍕' },
-  { id: 3, title: 'Лечь спать на 30 минут позже', cost: 5, emoji: '🌙' },
+  { id: 1, title: 'Дополнительный мультик или видео', cost: 3, emoji: '📺' },
+  { id: 2, title: 'Выбрать ужин',                    cost: 4, emoji: '🍕' },
+  { id: 3, title: 'Лечь спать позже',           cost: 5, emoji: '🌙' },
   { id: 4, title: 'Любимый перекус',              cost: 3, emoji: '🍭' },
-  { id: 5, title: 'Игра с папой',                 cost: 2, emoji: '🎮' },
+  { id: 5, title: 'Игра с папой',                       cost: 2, emoji: '🎮' },
 ];
 
 export const DAILY_SUGGESTIONS = [
-  { text: 'Попробуй сегодня выпить больше воды',       missionId: 4 },
-  { text: 'Сделай что-то приятное для кого-то рядом',  missionId: 6 },
-  { text: 'Потянись — твоё тело скажет спасибо',       missionId: 2 },
-  { text: 'Прыгни немного — станет веселее',           missionId: 3 },
-  { text: 'Убери один маленький уголок — сразу легче', missionId: 5 },
+  { text: 'Попробуй выпить воду',       missionId: 4 },
+  { text: 'Скажи что-то хорошее кому-то',      missionId: 10 },
+  { text: 'Потянись немного',               missionId: 2 },
+  { text: 'Прыгни немного',                    missionId: 3 },
+  { text: 'Убери один уголок',                  missionId: 9 },
 ];
 
 export const MSG = {
-  idle:           'Привет! Нажми на меня',
-  idle_alt:       'Я рядом',
-  start:          'Давай вместе!',
-  done:           'Молодец!',
-  reward:         'Посмотри сколько всего!',
-  encouraging:    'Ты можешь это сделать',
-  thinking:       'Знаешь ли ты...',
-  serene:         'Всё хорошо. Я рядом.',
-  'very-excited': 'Невероятно!!!',
+  idle:           'Я рядом',
+  idle_alt:       'Нажми на меня',
+  start:          'Давай вместе',
+  done:           'Отлично получилось',
+  reward:         'Смотри',
+  encouraging:    'Попробуй ещё',
+  thinking:       'Интересно...',
+  serene:         'Всё хорошо',
+  'very-excited': 'Это важно',
 };
 
 export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200];
@@ -136,14 +141,14 @@ export function shouldBeVeryExcited(
 }
 
 export function getProgressionMessage(totalMissions: number, completedToday: number): string {
-  if (totalMissions === 1) return 'Первая миссия! Ты начал!';
-  if (completedToday === 1) return 'Сегодня ты уже начал — это главное';
-  if (completedToday === 2) return 'Две миссии сегодня — ты становишься сильнее';
-  if (completedToday === 3) return 'Три миссии! Бадди очень гордится тобой';
-  if (completedToday >= 4) return 'Ты сегодня настоящий герой!';
-  if (totalMissions === 5) return 'Пять миссий всего! Ты растёшь!';
-  if (totalMissions === 10) return 'Десять миссий — ты уже совсем другой!';
-  return 'Бадди видит как ты растёшь';
+  if (totalMissions === 1) return 'Первая миссия';
+  if (completedToday === 1) return 'Ты начал сегодня';
+  if (completedToday === 2) return 'Две миссии сегодня';
+  if (completedToday === 3) return 'Три миссии сегодня';
+  if (completedToday >= 4) return 'Ты продолжаешь';
+  if (totalMissions === 5) return 'Пять миссий всего';
+  if (totalMissions === 10) return 'Десять миссий';
+  return 'Я вижу твой прогресс';
 }
 
 export function getMilestoneMessage(totalEver: number): string {
@@ -153,6 +158,3 @@ export function getMilestoneMessage(totalEver: number): string {
   if (totalEver >= 100 && totalEver < 102) return 'Сто звёзд. Ты настоящая звезда!';
   return `${totalEver} звёзд — и ты продолжаешь!`;
 }
-
-// Expo Router: suppress "missing default export" warning for non-route files
-export default {};

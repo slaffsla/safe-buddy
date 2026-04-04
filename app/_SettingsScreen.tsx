@@ -2,7 +2,7 @@
 // Self-contained component. Import into app/index.tsx.
 // Engineered for easy extension — add new setting by:
 //   1. Add key to AppSettings type
-//   2. Add default to DEFAULT_SETTINGS
+//   2. Add    to DEFAULT_SETTINGS
 //   3. Add storage key to SK
 //   4. Add UI row to the relevant section
 //

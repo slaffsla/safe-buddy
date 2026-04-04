@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
@@ -105,29 +106,34 @@ const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
 // ── DATA ──────────────────────────────────────────────────────────────────────
 
 const DEMO_STEPS = [
-  { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Отлично!' },
-  { id: 'd2', title: 'Прыгни!',          emoji: '🦘', praise: 'Супер!' },
-  { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Молодец!' },
+  { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },
+  { id: 'd2', title: 'Прыгни один раз',  emoji: '🦘', praise: 'Хорошо' },
+  { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Отлично получилось' },
 ];
 
 const MISSIONS_EASY = [
-  { id: 1, title: 'Постой на одной ноге',   subtitle: 'Держись 5 секунд', stars: 1, emoji: '🦩' },
-  { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно вниз',    stars: 1, emoji: '🙆' },
-  { id: 3, title: 'Прыгни три раза',        subtitle: 'Как можно выше',   stars: 1, emoji: '🦘' },
-  { id: 4, title: 'Выпей стакан воды',      subtitle: 'Не спеши',         stars: 1, emoji: '💧' },
+  { id: 1, title: 'Постой на одной ноге', subtitle: 'Пять секунд', stars: 1, emoji: '🦩' },
+  { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно', stars: 1, emoji: '🙆' },
+  { id: 3, title: 'Прыгни три раза', subtitle: 'Спокойно', stars: 1, emoji: '🦘' },
+  { id: 4, title: 'Выпей воду', subtitle: 'Медленно', stars: 1, emoji: '💧' },
+  { id: 5, title: 'Побудь без телефона', subtitle: 'Одна минута', stars: 1, emoji: '📱' },
 ];
 
 const MISSIONS_BIGGER = [
-  { id: 5, title: 'Убери игрушки',      subtitle: 'Хотя бы один уголок', stars: 2, emoji: '🧸' },
-  { id: 6, title: 'Обними кого-нибудь', subtitle: 'Подари тепло',        stars: 2, emoji: '💛' },
+  { id: 9,  title: 'Убери игрушки',                         subtitle: 'Один уголок',             stars: 2, emoji: '🧸' },
+  { id: 10, title: 'Обними кого-нибудь',                subtitle: 'Тихо и спокойно',          stars: 2, emoji: '💛' },
+  { id: 7,  title: 'Сожми кулачки',                        subtitle: 'Три секунды',              stars: 2, emoji: '✊' },
+  { id: 8,  title: 'Побудь без телефона',                subtitle: 'Две минуты',             stars: 2, emoji: '📱' },
+  { id: 11, title: 'Спроси папу или маму, чем помочь', subtitle: 'Небольшое дело',        stars: 2, emoji: '👨' },
+  { id: 12, title: 'Убери немного дома',                   subtitle: 'Совсем чуть-чуть',      stars: 2, emoji: '🏠' },
 ];
 
 const REWARDS = [
-  { id: 1, title: 'Дополнительный мультик',      cost: 3, emoji: '📺' },
-  { id: 2, title: 'Выбрать ужин сегодня',         cost: 4, emoji: '🍕' },
-  { id: 3, title: 'Лечь спать на 30 минут позже', cost: 5, emoji: '🌙' },
+  { id: 1, title: 'Дополнительный мультик или видео', cost: 3, emoji: '📺' },
+  { id: 2, title: 'Выбрать ужин',                    cost: 4, emoji: '🍕' },
+  { id: 3, title: 'Лечь спать позже',           cost: 5, emoji: '🌙' },
   { id: 4, title: 'Любимый перекус',              cost: 3, emoji: '🍭' },
-  { id: 5, title: 'Игра с папой',                 cost: 2, emoji: '🎮' },
+  { id: 5, title: 'Игра с папой',                       cost: 2, emoji: '🎮' },
 ];
 
 const DAILY_SUGGESTIONS = [
@@ -251,26 +257,27 @@ export default function App() {
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
-    (async () => {
-      try {
-        const vals = await AsyncStorage.multiGet([
-          K.STARS, K.TOTAL_EVER, K.COMPLETED_TODAY,
-          K.LAST_DATE, K.DEMO_DONE, K.TOTAL_MISSIONS,
-          K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
-          K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE,
-        ]);
-        // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
-        const v: Record<string, string> = Object.fromEntries(
-          vals.map(([k, val]) => [k, val ?? ''])
-        );
-        const today  = todayStr();
-        const newDay = v[K.LAST_DATE] !== today;
+      (async () => {
+        try {
+          const vals = await AsyncStorage.multiGet([
+            K.STARS, K.TOTAL_EVER, K.COMPLETED_TODAY,
+            K.LAST_DATE, K.DEMO_DONE, K.TOTAL_MISSIONS,
+            K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
+            K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE,
+          ]);
+          // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
+          const v: Record<string, string> = Object.fromEntries(
+            vals.map(([k, val]) => [k, val ?? ''])
+          );
+          const today  = todayStr();
+          const newDay = v[K.LAST_DATE] !== today;
 
-        const st   = v[K.STARS]          ? parseInt(v[K.STARS],          10) : 0;
-        const tot  = v[K.TOTAL_EVER]     ? parseInt(v[K.TOTAL_EVER],     10) : st;
-        const tm   = v[K.TOTAL_MISSIONS] ? parseInt(v[K.TOTAL_MISSIONS], 10) : 0;
-        const comp = newDay ? 0 : (v[K.COMPLETED_TODAY] ? parseInt(v[K.COMPLETED_TODAY], 10) : 0);
-        const sk   = newDay ? 0 : (v[K.SKIP_COUNT]      ? parseInt(v[K.SKIP_COUNT],      10) : 0);
+          const st   = v[K.STARS]          ? parseInt(v[K.STARS],          10) : 0;
+          const tot  = v[K.TOTAL_EVER]     ? parseInt(v[K.TOTAL_EVER],     10) : st;
+          const tm   = v[K.TOTAL_MISSIONS] ? parseInt(v[K.TOTAL_MISSIONS], 10) : 0;
+          const comp = newDay ? 0 : (v[K.COMPLETED_TODAY] ? parseInt(v[K.COMPLETED_TODAY], 10) : 0);
+          const sk   = newDay ? 0 : (v[K.SKIP_COUNT]      ? parseInt(v[K.SKIP_COUNT],      10) : 0);
+
 
         setStars(st);
         setTotalEver(tot);
@@ -287,8 +294,6 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
-        // TODO(rotation): after loadSettings, call initRotation(s) here
-        // See ticket: task rotation logic
         setAppSettings(s);
         setPinEnabled(v[K.PIN_ENABLED] === 'true');
 
@@ -398,7 +403,7 @@ export default function App() {
   }
 
   function handleSuggestionAccept(suggestion: any) {
-    const m = MISSIONS_EASY.find(ms => ms.id === suggestion.missionId) || MISSIONS_EASY[0];
+    const m = [...MISSIONS_EASY, ...MISSIONS_BIGGER].find(ms => ms.id === suggestion.missionId) || MISSIONS_EASY[0];
     setShowSuggestion(false);
     pickMission(m);
   }
@@ -538,7 +543,6 @@ export default function App() {
           firstTime={firstMission}
           onPick={pickMission}
           onBack={() => setScreen('home')}
-          // missions={visibleMissions}  TODO(rotation): pass computed list here
         />
       )}
 
@@ -574,7 +578,7 @@ export default function App() {
       {screen === 'settings' && (
         <SettingsScreen
           onClose={() => setScreen('home')}
-          onSettingsChange={(s: { childName: React.SetStateAction<string>; parentPin: React.SetStateAction<string>; pinEnabled: boolean | ((prevState: boolean) => boolean); }) => {
+          onSettingsChange={(s: AppSettings) => {
             setAppSettings(s);
             setChildName(s.childName);
             setParentPin(s.parentPin);
@@ -587,7 +591,11 @@ export default function App() {
 
              {/* ── PARENT PIN OVERLAY ─────────────────────────────────────────────── */}
       {showPinScreen && (
-        <View style={s.pinOverlay}>
+        <KeyboardAvoidingView
+          style={s.pinOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}  // Higher offset for iPhone 13 Pro
+        >
           <View style={s.pinCard}>
             <Image
               source={BUDDY.calm}
@@ -622,7 +630,7 @@ export default function App() {
               <Text style={s.pinCancelTxt}>Отмена</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       )}
     </SafeAreaView>
   );

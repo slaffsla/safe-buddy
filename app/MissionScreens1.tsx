@@ -43,31 +43,42 @@ interface MissionPickProps {
   onBack: () => void;
   speak: (t: string) => void;
   firstTime: boolean;
-  missions?: PoolMission[] | null;
+  dayMissions?: PoolMission[] | null; // null = use full pool defaults
 }
 
 export function MissionPickScreen({
-  onPick, onBack, speak, firstTime, missions,
+  onPick, onBack, speak, firstTime, dayMissions,
 }: MissionPickProps) {
-  const pool = (!missions || missions.length === 0)
-    ? MISSION_POOL
-    : missions;
+  // Resolve the mission list for today
+  const missions: PoolMission[] = (() => {
+    if (dayMissions && dayMissions.length > 0) return dayMissions;
+    // Fallback: use full pool, hide 2-star on firstTime
+    return firstTime
+      ? MISSION_POOL.filter(m => m.stars === 1)
+      : MISSION_POOL;
+  })();
 
+  // Figure out which slot to expand first
   const active = currentSlot();
-  const orderedSlots = [active, ...SLOT_ORDER.filter(s => s !== active)] as MissionSlot[];
+
+  // Group by slot in display order, current slot first
+  const orderedSlots = [
+    active,
+    ...SLOT_ORDER.filter(s => s !== active),
+  ] as MissionSlot[];
 
   const grouped: Record<MissionSlot, PoolMission[]> = {
-    morning:   pool.filter(m => m.slot === 'morning'),
-    afternoon: pool.filter(m => m.slot === 'afternoon'),
-    evening:   pool.filter(m => m.slot === 'evening'),
-    any:       pool.filter(m => m.slot === 'any'),
+    morning:   missions.filter(m => m.slot === 'morning'),
+    afternoon: missions.filter(m => m.slot === 'afternoon'),
+    evening:   missions.filter(m => m.slot === 'evening'),
+    any:       missions.filter(m => m.slot === 'any'),
   };
 
   const [expanded, setExpanded] = React.useState<MissionSlot>(active);
 
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <Buddy mood="encouraging" speak={speak} celebrate={false}/>
+      <Buddy mood="encouraging" speak={speak} />
       <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
 
       {orderedSlots.map(slot => {
@@ -78,6 +89,7 @@ export function MissionPickScreen({
 
         return (
           <View key={slot} style={s.slotSection}>
+            {/* Slot header — tappable to expand/collapse */}
             <TouchableOpacity
               style={[s.slotHeader, { backgroundColor: colors.bg, borderColor: colors.border }]}
               onPress={() => setExpanded(isOpen ? 'any' : slot)}
@@ -90,6 +102,7 @@ export function MissionPickScreen({
               </View>
             </TouchableOpacity>
 
+            {/* Mission cards */}
             {isOpen && items.map(m => (
               <TouchableOpacity
                 key={m.id}
@@ -116,7 +129,6 @@ export function MissionPickScreen({
     </ScrollView>
   );
 }
-  
 
 // ── ActiveScreen ──────────────────────────────────────────────────────────────
 
@@ -129,7 +141,7 @@ export function ActiveScreen({ mission, onDone, onSkip, speak }: {
   if (!mission) return null;
   return (
     <View style={s.screen}>
-      <Buddy mood="excited" speak={speak} celebrate={false} />
+      <Buddy mood="excited" speak={speak} />
       <T style={s.msg} speak={speak}>{MSG.start}</T>
       <TouchableOpacity
         style={s.activeCard}
@@ -222,7 +234,7 @@ export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem }: {
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood="serene" speak={speak} celebrate={false} />
+      <Buddy mood="serene" speak={speak} />
       <T style={s.pageTitle} speak={speak}>Твои награды</T>
       {REWARDS.map(r => {
         const can = stars >= r.cost;

@@ -104,7 +104,7 @@ const K = {
   MORNING_DONE:    'sb_morning_done',
 };
 
-const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
+const CONFETTI_AT = [1, 5, 10, 25, 50, 100];  
 
 const [morningDoneDate, setMorningDoneDate] = useState('');
 const [showMorning, setShowMorning] = useState(false);

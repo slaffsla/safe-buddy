@@ -10,9 +10,10 @@ interface BuddyProps {
   speak: (t: string) => void;
   size?: number;
   celebrate: boolean;
+  topSpacing?: number;
 }
 
-export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false}: BuddyProps) {
+export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false, topSpacing = 20  }: BuddyProps) {
   const tapScale    = useRef(new Animated.Value(1)).current;
   const breathScale = useRef(new Animated.Value(1)).current;
   const breathAnim  = useRef<Animated.CompositeAnimation | null>(null);
@@ -23,7 +24,7 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
     if (isAmbient) {
       breathAnim.current = Animated.loop(
         Animated.sequence([
-          Animated.timing(breathScale, { toValue: 1.12, duration: 2800, useNativeDriver: true }),
+          Animated.timing(breathScale, { toValue: 1.1, duration: 2800, useNativeDriver: true }),
           Animated.timing(breathScale, { toValue: 1.0,  duration: 2800, useNativeDriver: true }),
         ])
       );
@@ -68,20 +69,25 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
   const image = BUDDY[mood] || BUDDY.calm;
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
-      <Animated.View style={[s.buddy, { transform: [{ scale: Animated.multiply(tapScale, breathScale) }] }]}>
-        <Image
-          source={image}
-          style={{ width: size, height: size, backgroundColor: 'transparent' }}
-          resizeMode="contain"
-        />
-        <Text style={s.buddyName}>Бадди</Text>
-      </Animated.View>
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={1}
+      style={[s.buddyWrapper, topSpacing !== undefined && { marginTop: topSpacing }]}
+    >
+    <Animated.View style={[s.buddyAnimated, { transform: [{ scale: Animated.multiply(tapScale, breathScale) }] }]}>
+      <Image
+        source={image}
+        style={{ width: size, height: size, backgroundColor: 'transparent' }}
+        resizeMode="contain"
+      />
+    </Animated.View>
+    <Text style={s.buddyName}>Бадди</Text>
     </TouchableOpacity>
   );
 }
 
 const s = StyleSheet.create({
-  buddy:     { alignItems: 'center', marginBottom: 4, padding: 4 },
-  buddyName: { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: '500' },
+  buddyWrapper:  { alignItems: 'center', marginBottom: 4, padding: 4 },
+  buddyAnimated: { alignItems: 'center' },
+  buddyName:     { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: '500' },
 });

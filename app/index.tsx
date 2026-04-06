@@ -104,10 +104,7 @@ const K = {
   MORNING_DONE:    'sb_morning_done',
 };
 
-const CONFETTI_AT = [1, 5, 10, 25, 50, 100];  
-
-const [morningDoneDate, setMorningDoneDate] = useState('');
-const [showMorning, setShowMorning] = useState(false);
+const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 
@@ -201,7 +198,7 @@ function useSpeech() {
     const opts: any = {
       language: 'ru-RU',
       pitch: 1.05,
-      rate: Platform.OS === 'ios' ? 0.52 : 0.85,
+      rate: Platform.OS === 'ios' ? 0.52 : 0.65,
     };
     if (voiceRef.current?.identifier) opts.voice = voiceRef.current.identifier;
     setTimeout(() => {
@@ -239,6 +236,8 @@ export default function App() {
   const [isVeryExcited,   setIsVeryExcited]   = useState(false);
   const [showSuggestion,  setShowSuggestion]  = useState(true);
   const [firstReward,     setFirstReward]     = useState(false);
+  const [morningDoneDate, setMorningDoneDate] = useState('');
+  const [showMorning, setShowMorning] = useState(false);
 
   // Onboarding
   const [childName,       setChildName]       = useState('');
@@ -508,22 +507,13 @@ export default function App() {
 
   const dayMissions = MISSION_POOL.filter(m => selectedIds.includes(m.id));
 
-  return (
-    <SafeAreaView style={s.root}>
-      <StatusBar style="dark" />
-
-      {screen === 'demo_intro' && (
-        <DemoIntroScreen
-          speak={speak}
-          onStart={() => { setDemoStep(0); setScreen('demo_step'); }}
-          onSkip={async () => { await finishDemo(); setScreen('home'); }}
-        />
-      )}
-
-      {showMorning && (
+  if (showMorning) {
+    return (
+      <SafeAreaView style={s.root}>
+        <StatusBar style="dark" />
         <MorningRoutineScreen
           childName={childName}
-          steps={appSettings.morningSteps ?? DEFAULT_MORNING_STEPS}
+          steps={appSettings.morningSteps?.length > 0 ? appSettings.morningSteps : DEFAULT_MORNING_STEPS}
           stars={appSettings.morningStars ?? 1}
           speak={speak}
           onComplete={async (earned) => {
@@ -535,6 +525,19 @@ export default function App() {
             await AsyncStorage.setItem(K.MORNING_DONE, today);
           }}
           onSkip={() => setShowMorning(false)}
+        />
+      </SafeAreaView>
+    );
+  }
+  return (
+    <SafeAreaView style={s.root}>
+      <StatusBar style="dark" />
+
+      {screen === 'demo_intro' && (
+        <DemoIntroScreen
+          speak={speak}
+          onStart={() => { setDemoStep(0); setScreen('demo_step'); }}
+          onSkip={async () => { await finishDemo(); setScreen('home'); }}
         />
       )}
 

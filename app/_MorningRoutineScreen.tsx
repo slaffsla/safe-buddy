@@ -18,14 +18,14 @@ import { C, MorningStep } from './_constants';
     }
 
     export default function MorningRoutineScreen({
-    childName, steps, stars, speak, onComplete, onSkip,
+    childName, steps=[], stars, speak, onComplete, onSkip,
     }: Props) {
     const [doneIds, setDoneIds]   = useState<number[]>([]);
     const [finished, setFinished] = useState(false);
 
     const allDone  = doneIds.length === steps.length && steps.length > 0;
     const greeting = childName ? `Доброе утро, ${childName}!` : 'Доброе утро!';
-
+    console.log('steps:', steps);
     function toggleStep(step: MorningStep) {
         if (finished) return;
         setDoneIds(prev => {
@@ -58,8 +58,6 @@ import { C, MorningStep } from './_constants';
 
     return (
         <ScrollView contentContainerStyle={s.scroll}>
-        {/* Buddy + greeting side by side — feels warmer than stacked */}
-        <View style={s.headerRow}>
             <Buddy mood="calm" speak={speak} size={90} celebrate={false} />
             <View style={s.headerText}>
             <Text style={s.greeting}>{greeting}</Text>
@@ -67,7 +65,6 @@ import { C, MorningStep } from './_constants';
                 <Text style={s.subGreeting}>Начнём день вместе?</Text>
             </TouchableOpacity>
             </View>
-        </View>
 
         {/* Step checklist */}
         <View style={s.card}>

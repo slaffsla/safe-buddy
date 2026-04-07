@@ -25,7 +25,6 @@ import { C, MorningStep } from './_constants';
 
     const allDone  = doneIds.length === steps.length && steps.length > 0;
     const greeting = childName ? `Доброе утро, ${childName}!` : 'Доброе утро!';
-    console.log('steps:', steps);
     function toggleStep(step: MorningStep) {
         if (finished) return;
         setDoneIds(prev => {
@@ -39,7 +38,7 @@ import { C, MorningStep } from './_constants';
         setFinished(true);
         speak('Отлично! Ты готов к новому дню!');
         // Small delay so the child sees the celebrate state before transitioning
-        setTimeout(() => onComplete(stars), 1800);
+        setTimeout(() => onComplete(stars), 1600);
     }
 
     // Celebrate state — shown briefly before onComplete fires
@@ -58,7 +57,7 @@ import { C, MorningStep } from './_constants';
 
     return (
         <ScrollView contentContainerStyle={s.scroll}>
-            <Buddy mood="calm" speak={speak} size={90} celebrate={false} />
+            <Buddy mood="calm" speak={speak} size={90} topSpacing={16}/>
             <View style={s.headerText}>
             <Text style={s.greeting}>{greeting}</Text>
             <TouchableOpacity onPress={() => speak('Доброе утро! Начнём день вместе?')}>

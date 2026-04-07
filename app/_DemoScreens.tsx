@@ -48,7 +48,7 @@ export function DemoStepScreen({ step, stepIndex, totalSteps, onDone, speak }: {
 
   return (
     <View style={s.screen}>
-      <Buddy mood={done ? 'happy' : 'excited'} speak={speak} celebrate={false} topSpacing={32}/>
+      <Buddy mood={done ? 'happy' : 'excited'} speak={speak} topSpacing={32}/>
       <View style={s.stepCounter}>
         {Array(totalSteps).fill(0).map((_: any, i: number) => (
           <View key={i} style={[s.stepDot, i <= stepIndex && s.stepDotActive]} />
@@ -81,7 +81,7 @@ export function DemoCompleteScreen({ onGoToMissions, onGoHome, speak }: {
 }) {
   return (
     <View style={s.screen}>
-      <Buddy mood="proud" speak={speak} celebrate={false} topSpacing={32} />
+      <Buddy mood="proud" speak={speak} topSpacing={32} />
       <Text style={s.celebTitle}>Ты справился! 🎉</Text>
       <T style={s.msg} speak={speak}>Хочешь попробовать настоящую миссию?</T>
       <View style={s.demoCompleteButtons}>

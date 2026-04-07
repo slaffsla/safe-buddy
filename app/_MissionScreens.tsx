@@ -67,7 +67,7 @@ export function MissionPickScreen({
 
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <Buddy mood="encouraging" speak={speak} celebrate={false}  topSpacing={24}/>
+      <Buddy mood="encouraging" speak={speak} topSpacing={24}/>
       <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
 
       {orderedSlots.map(slot => {
@@ -129,7 +129,7 @@ export function ActiveScreen({ mission, onDone, onSkip, speak }: {
   if (!mission) return null;
   return (
     <View style={s.screen}>
-      <Buddy mood="excited" speak={speak} celebrate={false}  topSpacing={16}/>
+      <Buddy mood="excited" speak={speak} topSpacing={16}/>
       <T style={s.msg} speak={speak}>{MSG.start}</T>
       <TouchableOpacity
         style={s.activeCard}
@@ -222,7 +222,7 @@ export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem }: {
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood="serene" speak={speak} celebrate={false} topSpacing={8}/>
+      <Buddy mood="serene" speak={speak} topSpacing={8}/>
       <T style={s.pageTitle} speak={speak}>Твои награды</T>
       {REWARDS.map(r => {
         const can = stars >= r.cost;

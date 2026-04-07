@@ -9,7 +9,7 @@ interface BuddyProps {
   mood?: BuddyMood;
   speak: (t: string) => void;
   size?: number;
-  celebrate: boolean;
+  celebrate?: boolean;
   topSpacing?: number;
 }
 

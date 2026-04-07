@@ -378,18 +378,18 @@ export default function App() {
   }
 
   // ── Missions ────────────────────────────────────────────────────────────────
-  function pickMission(m: any) {
+  const pickMission = useCallback((m: any) => {
     setMission(m);
     setSkipCount(0);
     speak(`${m.title}. ${m.subtitle}`);
     setScreen('active');
-  }
+  }, [speak]);
 
-  function handleSkip() {
+  const handleSkip = useCallback(() => {
     setSkipCount(n => n + 1);
     setMission(null);
     setScreen('home');
-  }
+  }, []);
 
   function completeMission() {
     if (!mission) return;
@@ -416,17 +416,16 @@ export default function App() {
   }
 
   // ── PIN / Reward redemption ─────────────────────────────────────────────────
-  function handleRewardRedeem(reward: any) {
+  const handleRewardRedeem = useCallback((reward: any) => {
     if (stars < reward.cost) return;
     if (pinEnabled && parentPin) {
       setPendingReward(reward);
       setEnteredPin('');
       setShowPinScreen(true);
     } else {
-      // No PIN set — redeem directly
       redeemReward(reward);
     }
-  }
+    }, [stars, pinEnabled, parentPin]);
 
   function redeemReward(reward: any) {
     const isFirst = !firstReward;

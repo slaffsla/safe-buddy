@@ -5,8 +5,8 @@
     import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Buddy from './_Buddy';
-import { Confetti } from './_SharedUI';
 import { C, MorningStep } from './_constants';
+import { Confetti } from './_SharedUI';
 
     interface Props {
     childName: string;
@@ -37,9 +37,9 @@ import { C, MorningStep } from './_constants';
     function handleComplete() {
         setFinished(true);
         speak('Отлично! Ты готов к новому дню!');
-        // Small delay so the child sees the celebrate state before transitioning
-        setTimeout(() => onComplete(stars), 1600);
-    }
+        setTimeout(() => onComplete(stars), 1900);
+        console.log('Morning routine complete! Stars earned:', stars);
+    }   
 
     // Celebrate state — shown briefly before onComplete fires
     if (finished) {
@@ -51,8 +51,11 @@ import { C, MorningStep } from './_constants';
             <Text style={s.celebSub}>
             {stars === 1 ? 'Ты заработал ⭐' : `Ты заработал ${Array(stars).fill('⭐').join('')}`}
             </Text>
+            <TouchableOpacity onPress={() => onComplete(stars)} style={s.subGreeting}>
+                <Text style={s.btnPrimaryTxt}>Пoехали!</Text>
+            </TouchableOpacity>
         </View>
-        );
+        )
     }
 
     return (

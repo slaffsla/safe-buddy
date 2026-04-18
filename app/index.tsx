@@ -14,7 +14,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
@@ -505,7 +505,6 @@ export default function App() {
     : (appSettings.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS);
 
   const dayMissions = MISSION_POOL.filter(m => selectedIds.includes(m.id));
-
   if (showMorning) {
     return (
       <SafeAreaView style={s.root}>
@@ -521,13 +520,15 @@ export default function App() {
             setTotalEver(n => n + earned);
             setMorningDoneDate(today);
             setShowMorning(false);
+            setScreen('home');
             await AsyncStorage.setItem(K.MORNING_DONE, today);
           }}
-          onSkip={() => setShowMorning(false)}
+          onSkip={() => { setShowMorning(false); setScreen('home'); }}
         />
       </SafeAreaView>
     );
   }
+  
   return (
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
@@ -577,13 +578,13 @@ export default function App() {
       )}
 
       {screen === 'pick' && (
-      <MissionPickScreen
-        {...p}
-        firstTime={firstMission}
-        missions={dayMissions.length > 0 ? dayMissions : null}
-        onPick={pickMission}
-        onBack={() => setScreen('home')}
-      />
+        <MissionPickScreen
+          {...p}
+          firstTime={firstMission}
+          missions={dayMissions.length > 0 ? dayMissions : null}
+          onPick={pickMission}
+          onBack={() => setScreen('home')}
+        />
       )}
 
       {screen === 'active' && (
@@ -627,9 +628,9 @@ export default function App() {
           currentPin={parentPin}
           pinEnabled={pinEnabled}
         />
-)}
+      )}
 
-             {/* ── PARENT PIN OVERLAY ─────────────────────────────────────────────── */}
+      {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
       {showPinScreen && (
         <View style={s.pinOverlay}>
           <View style={s.pinCard}>
@@ -638,7 +639,7 @@ export default function App() {
               style={{ width: 80, height: 80, backgroundColor: 'transparent', marginBottom: 16 }}
               resizeMode="contain"
             />
-            <Text style={s.pinTitle}>PIN родителя</Text>
+            <Text style={s.pinTitle}>ПИН родителя</Text>
             {pendingReward && (
               <Text style={s.pinSub}>Разблокировать: {pendingReward.title}</Text>
             )}

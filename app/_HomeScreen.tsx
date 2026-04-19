@@ -3,9 +3,8 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Buddy from './_Buddy';
-import { DailySuggestion, ReflectiveBoost, T } from './_SharedUI';
 import { BuddyMood, C, MSG, getDailySuggestion, getProgressionMessage } from './_constants';
-import { ProgressBar } from './_SharedUI';
+import { DailySuggestion, ProgressBar, ReflectiveBoost, T } from './_SharedUI';
 
 interface HomeScreenProps {
   stars: number;
@@ -15,6 +14,7 @@ interface HomeScreenProps {
   childName: string;
   lastMission: string | null;
   showSuggestion: boolean;
+  skipSensitivity: number;
   skipCount: number;
   onStart: () => void;
   onRewards: () => void;
@@ -26,17 +26,18 @@ interface HomeScreenProps {
 
 export default function HomeScreen({
   totalEver, completedToday, totalMissions,
-  childName, lastMission, showSuggestion,
+  childName, lastMission, showSuggestion, skipSensitivity,
   onStart, onRewards, onSettings, onSuggestionAccept, onSuggestionSkip,
   skipCount, speak,
 }: HomeScreenProps) {
+  const threshold = Math.max(1, skipSensitivity ?? 2);
   const [homeMood] = useState<BuddyMood>(() =>
-    skipCount >= 2 ? 'gentle-reminder'
+    skipCount >= threshold ? 'gentle-reminder'
     : Math.random() > 0.7 ? 'gentle-reminder'
     : 'calm'
   );
   const [idleMsg] = useState(() =>
-    skipCount >= 2 ? 'Всё нормально. Я здесь с тобой'
+    skipCount >= threshold ? 'Всё нормально. Я здесь с тобой'
     : Math.random() > 0.7 ? MSG.idle_alt
     : MSG.idle
   );
@@ -50,8 +51,8 @@ export default function HomeScreen({
   return (
     <ScrollView contentContainerStyle={s.homeScroll}>
       <ProgressBar total={totalEver} speak={speak} />
+      <Buddy mood={homeMood} speak={speak} celebrate ={true} />
       <T style={s.greeting} speak={speak}>{greeting}</T>
-      <Buddy mood={homeMood} speak={speak} />
       <ReflectiveBoost lastMission={lastMission} speak={speak} />
       {progressMsg && <T style={s.progressionMsg} speak={speak}>{progressMsg}</T>}
       <T style={s.msg} speak={speak}>{idleMsg}</T>

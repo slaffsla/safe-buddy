@@ -14,13 +14,18 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
 import HomeScreen from './_HomeScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
-import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings } from './_SettingsScreen';
+import MorningRoutineScreen from './_MorningRoutineScreen';
+import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
+import { DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, shouldShowMorning } from './_constants';
+import Buddy from './_Buddy';
+
+
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
 const BUDDY = {
@@ -98,6 +103,7 @@ const K = {
   PARENT_PIN:      'sb_parent_pin',
   PIN_ENABLED:     'sb_pin_enabled',
   ONBOARDING_DONE: 'sb_onboarding_done',
+  MORNING_DONE:    'sb_morning_done',
 };
 
 const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
@@ -166,6 +172,13 @@ function getProgress(total: number) {
 
 const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
 
+function getRotationSeed(freq: RotationFrequency) {
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  if (freq === 'weekly') return Math.floor(dayIndex / 7);
+  if (freq === 'every3') return Math.floor(dayIndex / 3);
+  return dayIndex;
+}
+
 // ── TTS ───────────────────────────────────────────────────────────────────────
 
 async function resolveRussianVoice() {
@@ -181,7 +194,7 @@ async function resolveRussianVoice() {
   } catch { return null; }
 }
 
-function useSpeech() {
+function useSpeech(enabled: boolean) {
   const voiceRef = useRef<any>(null);
   useEffect(() => {
     resolveRussianVoice().then(v => { voiceRef.current = v; });
@@ -189,18 +202,19 @@ function useSpeech() {
   }, []);
 
   return useCallback((text: string) => {
-    if (!text) return;
+    if (!enabled || !text) return;
     try { Speech.stop(); } catch {}
+    const cleanedText = text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
     const opts: any = {
       language: 'ru-RU',
       pitch: 1.05,
-      rate: Platform.OS === 'ios' ? 0.52 : 0.85,
+      rate: Platform.OS === 'ios' ? 0.52 : 0.65,
     };
     if (voiceRef.current?.identifier) opts.voice = voiceRef.current.identifier;
     setTimeout(() => {
-      try { Speech.speak(text, opts); } catch (e) { console.log('TTS:', e); }
+      try { Speech.speak(cleanedText, opts); } catch {};
     }, Platform.OS === 'ios' ? 120 : 0);
-  }, []);
+  }, [enabled]);
 }
 
 // Speakable text
@@ -232,6 +246,8 @@ export default function App() {
   const [isVeryExcited,   setIsVeryExcited]   = useState(false);
   const [showSuggestion,  setShowSuggestion]  = useState(true);
   const [firstReward,     setFirstReward]     = useState(false);
+  const [morningDoneDate, setMorningDoneDate] = useState('');
+  const [showMorning, setShowMorning] = useState(false);
 
   // Onboarding
   const [childName,       setChildName]       = useState('');
@@ -246,8 +262,9 @@ export default function App() {
 
   // Settings
   const [appSettings,   setAppSettings]   = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [ttsEnabled,    setTtsEnabled]    = useState(DEFAULT_SETTINGS.ttsEnabled);
 
-  const speak = useSpeech();
+  const speak = useSpeech(ttsEnabled);
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -257,7 +274,7 @@ export default function App() {
           K.STARS, K.TOTAL_EVER, K.COMPLETED_TODAY,
           K.LAST_DATE, K.DEMO_DONE, K.TOTAL_MISSIONS,
           K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
-          K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE,
+          K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE, K.MORNING_DONE
         ]);
         // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
         const v: Record<string, string> = Object.fromEntries(
@@ -287,9 +304,15 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
-        // TODO(rotation): after loadSettings, call initRotation(s) here
-        // See ticket: task rotation logic
+         const morningDone = v[K.MORNING_DONE] ?? '';
+        setMorningDoneDate(morningDone);
+        if (s.morningEnabled && shouldShowMorning(morningDone)) {
+          setShowMorning(true);
+        }
+        
         setAppSettings(s);
+        setTtsEnabled(s.ttsEnabled);
+        setShowSuggestion(s.nudgingEnabled);
         setPinEnabled(v[K.PIN_ENABLED] === 'true');
 
         // Only go to demo if onboarding is already done
@@ -366,18 +389,18 @@ export default function App() {
   }
 
   // ── Missions ────────────────────────────────────────────────────────────────
-  function pickMission(m: any) {
+  const pickMission = useCallback((m: any) => {
     setMission(m);
     setSkipCount(0);
     speak(`${m.title}. ${m.subtitle}`);
     setScreen('active');
-  }
+  }, [speak]);
 
-  function handleSkip() {
+  const handleSkip = useCallback(() => {
     setSkipCount(n => n + 1);
     setMission(null);
     setScreen('home');
-  }
+  }, []);
 
   function completeMission() {
     if (!mission) return;
@@ -404,17 +427,16 @@ export default function App() {
   }
 
   // ── PIN / Reward redemption ─────────────────────────────────────────────────
-  function handleRewardRedeem(reward: any) {
+  const handleRewardRedeem = useCallback((reward: any) => {
     if (stars < reward.cost) return;
     if (pinEnabled && parentPin) {
       setPendingReward(reward);
       setEnteredPin('');
       setShowPinScreen(true);
     } else {
-      // No PIN set — redeem directly
       redeemReward(reward);
     }
-  }
+    }, [stars, pinEnabled, parentPin]);
 
   function redeemReward(reward: any) {
     const isFirst = !firstReward;
@@ -483,7 +505,57 @@ export default function App() {
 
   // ── MAIN APP ────────────────────────────────────────────────────────────────
   const p = { speak, stars, totalEver };
+  // Compute which missions to show based on day mode + settings
+  const isWeekendDay = isWeekend();
+  const dayModeActive = (appSettings.dayModeOverride ?? 'auto') === 'auto'
+    ? isWeekendDay
+    : appSettings.dayModeOverride === 'weekend';
 
+  const selectedIds = dayModeActive
+    ? (appSettings.weekendMissionIds ?? DEFAULT_WEEKEND_IDS)
+    : (appSettings.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS);
+
+  const missionTypeById = Object.fromEntries(
+    appSettings.missions.map(m => [m.id, m.type])
+  );
+
+  let dayMissions = MISSION_POOL.filter(m =>
+    selectedIds.includes(m.id) && missionTypeById[m.id] !== 'inactive'
+  );
+
+  if (appSettings.rotationEnabled) {
+    const permanent = dayMissions.filter(m => missionTypeById[m.id] === 'permanent');
+    const rotating = dayMissions.filter(m => missionTypeById[m.id] === 'rotating');
+    const rotateCount = Math.min(appSettings.rotatingPoolSize, rotating.length);
+    const seed = rotating.length ? getRotationSeed(appSettings.rotationFrequency) % rotating.length : 0;
+    const rotated = Array.from({ length: rotateCount }, (_, index) => (
+      rotating[(seed + index) % rotating.length]
+    ));
+    dayMissions = [...permanent, ...rotated];
+  }
+  if (showMorning) {
+    return (
+      <SafeAreaView style={s.root}>
+        <StatusBar style="dark" />
+        <MorningRoutineScreen
+          childName={childName}
+          steps={appSettings.morningSteps?.length > 0 ? appSettings.morningSteps : DEFAULT_MORNING_STEPS}
+          stars={appSettings.morningStars ?? 1}
+          speak={speak}
+          onComplete={async (earned) => {
+            const today = todayStr();
+            setStars(n => n + earned);
+            setTotalEver(n => n + earned);
+            setMorningDoneDate(today);
+            setShowMorning(false);
+            setScreen('home');
+            await AsyncStorage.setItem(K.MORNING_DONE, today);
+          }}
+          onSkip={() => { setShowMorning(false); setScreen('home'); }}
+        />
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
@@ -522,7 +594,8 @@ export default function App() {
           totalMissions={totalMissions}
           childName={childName}
           lastMission={lastMission}
-          showSuggestion={showSuggestion}
+          showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
+          skipSensitivity={appSettings.skipSensitivity}
           onSettings={() => setScreen('settings')}
           skipCount={skipCount}
           onStart={() => setScreen('pick')}
@@ -536,9 +609,9 @@ export default function App() {
         <MissionPickScreen
           {...p}
           firstTime={firstMission}
+          missions={dayMissions.length > 0 ? dayMissions : null}
           onPick={pickMission}
           onBack={() => setScreen('home')}
-          // missions={visibleMissions}  TODO(rotation): pass computed list here
         />
       )}
 
@@ -568,13 +641,14 @@ export default function App() {
           {...p}
           onBack={() => setScreen('home')}
           onRedeem={handleRewardRedeem}
+          showExactStarCost={appSettings.showExactStarCost}
         />
       )}
 
       {screen === 'settings' && (
         <SettingsScreen
           onClose={() => setScreen('home')}
-          onSettingsChange={(s: { childName: React.SetStateAction<string>; parentPin: React.SetStateAction<string>; pinEnabled: boolean | ((prevState: boolean) => boolean); }) => {
+          onSettingsChange={(s: AppSettings) => {
             setAppSettings(s);
             setChildName(s.childName);
             setParentPin(s.parentPin);
@@ -583,9 +657,14 @@ export default function App() {
           currentPin={parentPin}
           pinEnabled={pinEnabled}
         />
-)}
+      )}
 
-             {/* ── PARENT PIN OVERLAY ─────────────────────────────────────────────── */}
+      {/* ── FIXED BUDDY OVERLAY (stays on screen at all times) ──────────────── */}
+      {onboardingDone && !showPinScreen && (
+        <Buddy mood="calm" speak={speak} size={100} fixed fixedBottom={200} />
+      )}
+
+      {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
       {showPinScreen && (
         <View style={s.pinOverlay}>
           <View style={s.pinCard}>
@@ -594,7 +673,7 @@ export default function App() {
               style={{ width: 80, height: 80, backgroundColor: 'transparent', marginBottom: 16 }}
               resizeMode="contain"
             />
-            <Text style={s.pinTitle}>PIN родителя</Text>
+            <Text style={s.pinTitle}>ПИН родителя</Text>
             {pendingReward && (
               <Text style={s.pinSub}>Разблокировать: {pendingReward.title}</Text>
             )}

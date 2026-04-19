@@ -2,7 +2,7 @@
 // Breathing animation on ambient moods, tap bounce on all moods.
 
 import React, { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BUDDY, BuddyMood, C, MSG } from './_constants';
 
 interface BuddyProps {
@@ -10,9 +10,11 @@ interface BuddyProps {
   speak: (t: string) => void;
   size?: number;
   celebrate?: boolean;
+  fixed?: boolean;        // If true, Buddy stays fixed on screen (absolute positioning)
+  fixedBottom?: number;   // Distance from bottom when fixed (default: 180)
 }
 
-export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false }: BuddyProps) {
+export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false, fixed = false, fixedBottom = 180 }: BuddyProps) {
   const tapScale    = useRef(new Animated.Value(1)).current;
   const breathScale = useRef(new Animated.Value(1)).current;
   const breathAnim  = useRef<Animated.CompositeAnimation | null>(null);
@@ -67,25 +69,44 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
 
   const image = BUDDY[mood] || BUDDY.calm;
 
-  return (
+  const buddyContent = (
     <TouchableOpacity
       onPress={handlePress}
       activeOpacity={1}
       style={[s.buddyWrapper]}
     >
-    <Animated.View style={[s.buddyAnimated, { transform: [{ scale: Animated.multiply(tapScale, breathScale) }] }]}>
-      <Image
-        source={image}
-        style={{ width: size, height: size, backgroundColor: 'transparent' }}
-        resizeMode="contain"
-      />
-    </Animated.View>
-    <Text style={s.buddyName}>Бадди</Text>
+      <Animated.View style={[s.buddyAnimated, { transform: [{ scale: Animated.multiply(tapScale, breathScale) }] }]}>
+        <Image
+          source={image}
+          style={{ width: size, height: size, backgroundColor: 'transparent' }}
+          resizeMode="contain"
+        />
+      </Animated.View>
+      <Text style={s.buddyName}>Бадди</Text>
     </TouchableOpacity>
   );
+
+  // If fixed mode is enabled, render Buddy in a fixed position overlay
+  if (fixed) {
+    return (
+      <View style={[s.buddyFixedContainer, { bottom: fixedBottom }]}>
+        {buddyContent}
+      </View>
+    );
+  }
+
+  return buddyContent;
 }
 
 const s = StyleSheet.create({
+  buddyFixedContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1000,
+    pointerEvents: 'box-none',
+  },
   buddyWrapper:  { alignItems: 'center', marginBottom: 4, padding: 4, marginTop: 20 },
   buddyAnimated: { alignItems: 'center' },
   buddyName:     { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: '500' },

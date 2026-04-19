@@ -20,12 +20,21 @@ import { Confetti } from './_SharedUI';
     export default function MorningRoutineScreen({
     childName, steps=[], stars, speak, onComplete, onSkip,
     }: Props) {
+    // Defensive: handle empty or invalid steps
+    const validSteps = steps.filter(s => s && s.id != null);
+    if (validSteps.length === 0) {
+        // If no valid steps, skip directly to avoid soft lock
+        setTimeout(() => onSkip(), 100);
+        return null;
+    }
+    
     const [doneIds, setDoneIds]   = useState<number[]>([]);
     const [finished, setFinished] = useState(false);
 
-    const allDone  = doneIds.length === steps.length && steps.length > 0;
+    const allDone  = doneIds.length === validSteps.length && validSteps.length > 0;
     const greeting = childName ? `Доброе утро, ${childName}!` : 'Доброе утро!';
     function toggleStep(step: MorningStep) {
+        if (!step?.id) return;  // Defensive check
         if (finished) return;
         setDoneIds(prev => {
         if (prev.includes(step.id)) return prev.filter(x => x !== step.id);
@@ -38,7 +47,6 @@ import { Confetti } from './_SharedUI';
         setFinished(true);
         speak('Отлично! Ты готов к новому дню!');
         setTimeout(() => onComplete(stars), 1900);
-        console.log('Morning routine complete! Stars earned:', stars);
     }   
 
     // Celebrate state — shown briefly before onComplete fires
@@ -46,21 +54,22 @@ import { Confetti } from './_SharedUI';
         return (
         <View style={s.screen}>
             <Confetti trigger />
-            <Buddy mood="proud" speak={speak} celebrate />
+            <View style={{marginTop: 70}}>
+                <Buddy mood="proud" speak={speak} celebrate />
+            </View>
             <Text style={s.celebTitle}>Утро начато! 🌟</Text>
             <Text style={s.celebSub}>
             {stars === 1 ? 'Ты заработал ⭐' : `Ты заработал ${Array(stars).fill('⭐').join('')}`}
             </Text>
-            <TouchableOpacity onPress={() => onComplete(stars)} style={s.subGreeting}>
-                <Text style={s.btnPrimaryTxt}>Пoехали!</Text>
-            </TouchableOpacity>
         </View>
         )
     }
 
     return (
         <ScrollView contentContainerStyle={s.scroll}>
-            <Buddy mood="calm" speak={speak} size={90} topSpacing={16}/>
+            <View style={{marginTop: 70}}>
+                <Buddy mood="calm" speak={speak} size={90} />
+            </View>
             <View style={s.headerText}>
             <Text style={s.greeting}>{greeting}</Text>
             <TouchableOpacity onPress={() => speak('Доброе утро! Начнём день вместе?')}>
@@ -70,7 +79,7 @@ import { Confetti } from './_SharedUI';
 
         {/* Step checklist */}
         <View style={s.card}>
-            {steps.map((step, idx) => {
+            {validSteps.map((step, idx) => {
             const done = doneIds.includes(step.id);
             return (
                 <View key={step.id}>
@@ -93,7 +102,7 @@ import { Confetti } from './_SharedUI';
 
         {/* Progress dots */}
         <View style={s.dotsRow}>
-            {steps.map(step => (
+            {validSteps.map(step => (
             <View key={step.id} style={[s.dot, doneIds.includes(step.id) && s.dotDone]} />
             ))}
         </View>
@@ -111,7 +120,7 @@ import { Confetti } from './_SharedUI';
             <Text style={s.btnPrimaryTxt}>
             {allDone
                 ? '🌟 Готово!'
-                : `Осталось ${steps.length - doneIds.length}`}
+                : `Осталось ${validSteps.length - doneIds.length}`}
             </Text>
         </TouchableOpacity>
 

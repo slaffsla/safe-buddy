@@ -10,10 +10,9 @@ interface BuddyProps {
   speak: (t: string) => void;
   size?: number;
   celebrate?: boolean;
-  topSpacing?: number;
 }
 
-export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false, topSpacing = 20  }: BuddyProps) {
+export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false }: BuddyProps) {
   const tapScale    = useRef(new Animated.Value(1)).current;
   const breathScale = useRef(new Animated.Value(1)).current;
   const breathAnim  = useRef<Animated.CompositeAnimation | null>(null);
@@ -72,7 +71,7 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
     <TouchableOpacity
       onPress={handlePress}
       activeOpacity={1}
-      style={[s.buddyWrapper, topSpacing !== undefined && { marginTop: topSpacing }]}
+      style={[s.buddyWrapper]}
     >
     <Animated.View style={[s.buddyAnimated, { transform: [{ scale: Animated.multiply(tapScale, breathScale) }] }]}>
       <Image
@@ -87,7 +86,7 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
 }
 
 const s = StyleSheet.create({
-  buddyWrapper:  { alignItems: 'center', marginBottom: 4, padding: 4 },
+  buddyWrapper:  { alignItems: 'center', marginBottom: 4, padding: 4, marginTop: 20 },
   buddyAnimated: { alignItems: 'center' },
   buddyName:     { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: '500' },
 });

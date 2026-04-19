@@ -192,12 +192,13 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     await AsyncStorage.setItem(SK.SETTINGS, JSON.stringify(settings));
     // Keep legacy keys in sync for backward compatibility with index.tsx
     await AsyncStorage.multiSet([
-      [SK.CHILD_NAME,  settings.childName],
-      [SK.PARENT_PIN,  settings.parentPin],
+      [SK.CHILD_NAME,  settings.childName || ''],
+      [SK.PARENT_PIN,  settings.parentPin || ''],
       [SK.PIN_ENABLED, String(settings.pinEnabled)],
     ]);
   } catch (e) {
-    console.log('Settings save error:', e);
+    // Non-critical persistence error — app will continue but data may be lost
+    // User's device storage may be full or permissions issue
   }
 }
 
@@ -561,52 +562,17 @@ function MissionsSection({
       </Card>
 
       <Card>
-        <SettingRow label="Ротация задач" sublabel="Задачи с типом «Ротация» меняются по расписанию">
+        <SettingRow
+          label="Ротация задач 🔜"
+          sublabel="Задачи меняются по расписанию (скоро)"
+        >
           <Switch
-            value={settings.rotationEnabled}
-            onValueChange={v => onChange({ rotationEnabled: v })}
+            value={false}
+            disabled
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
         </SettingRow>
-
-        {settings.rotationEnabled && (
-          <>
-            <Divider />
-            <Text style={u.subheading}>Частота смены</Text>
-            <PillSelector
-              options={[
-                { label: 'Каждый день', value: 'daily' },
-                { label: 'Каждые 3 дня', value: 'every3' },
-                { label: 'Еженедельно', value: 'weekly' },
-                { label: 'Вручную', value: 'manual' },
-              ]}
-              value={settings.rotationFrequency}
-              onChange={v => onChange({ rotationFrequency: v })}
-            />
-            <Divider />
-            <SettingRow
-              label="Слотов ротации"
-              sublabel={`Показывать ${settings.rotatingPoolSize} задач из пула одновременно`}
-            >
-              <View style={u.stepperRow}>
-                <TouchableOpacity
-                  style={u.stepperBtn}
-                  onPress={() => onChange({ rotatingPoolSize: Math.max(1, settings.rotatingPoolSize - 1) })}
-                >
-                  <Text style={u.stepperTxt}>−</Text>
-                </TouchableOpacity>
-                <Text style={u.stepperVal}>{settings.rotatingPoolSize}</Text>
-                <TouchableOpacity
-                  style={u.stepperBtn}
-                  onPress={() => onChange({ rotatingPoolSize: Math.min(3, settings.rotatingPoolSize + 1) })}
-                >
-                  <Text style={u.stepperTxt}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </SettingRow>
-          </>
-        )}
       </Card>
     </View>
   );

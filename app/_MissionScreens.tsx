@@ -67,7 +67,9 @@ export function MissionPickScreen({
 
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <Buddy mood="encouraging" speak={speak} topSpacing={24}/>
+      <View style={{marginTop: 70}}>
+        <Buddy mood="encouraging" speak={speak} />
+      </View>
       <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
 
       {orderedSlots.map(slot => {
@@ -129,7 +131,9 @@ export function ActiveScreen({ mission, onDone, onSkip, speak }: {
   if (!mission) return null;
   return (
     <View style={s.screen}>
-      <Buddy mood="excited" speak={speak} topSpacing={16}/>
+      <View style={{marginTop: 70}}>
+        <Buddy mood="excited" speak={speak} />
+      </View>
       <T style={s.msg} speak={speak}>{MSG.start}</T>
       <TouchableOpacity
         style={s.activeCard}
@@ -189,7 +193,7 @@ export function CelebrateScreen({
     <View style={s.screen}>
       {showConfetti && <Confetti trigger={true} />}
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood={buddyMood} speak={speak} celebrate={true}  topSpacing={8}/>
+      <Buddy mood={buddyMood} speak={speak} celebrate={true} />
       <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
         {isVeryExcited ? '🏆 Невероятно!' : 'Миссия выполнена! 🎉'}
       </T>
@@ -212,25 +216,29 @@ export function CelebrateScreen({
 
 // ── RewardsScreen ─────────────────────────────────────────────────────────────
 
-export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem }: {
+export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem, showExactStarCost }: {
   stars: number;
   totalEver: number;
   onBack: () => void;
   speak: (t: string) => void;
   onRedeem: (r: any) => void;
+  showExactStarCost: boolean;
 }) {
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood="serene" speak={speak} topSpacing={8}/>
+      <Buddy mood="serene" speak={speak} />
       <T style={s.pageTitle} speak={speak}>Твои награды</T>
       {REWARDS.map(r => {
         const can = stars >= r.cost;
+        const needText = showExactStarCost
+          ? `Нужно ещё ${Math.max(0, r.cost - stars)} ⭐`
+          : 'ещё немного';
         return (
           <TouchableOpacity
             key={r.id}
             style={[s.rCard, !can && s.rLocked]}
-            onPress={() => can ? onRedeem(r) : speak(`${r.title}. Ещё немного — и готово`)}
+            onPress={() => can ? onRedeem(r) : speak(`${r.title}. ${needText}`)}
             activeOpacity={0.7}
           >
             <Text style={s.rEmoji}>{r.emoji}</Text>
@@ -240,7 +248,7 @@ export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem }: {
             </View>
             {can
               ? <Text style={s.rReady}>Получить!</Text>
-              : <Text style={s.rNeed}>ещё немного</Text>
+              : <Text style={s.rNeed}>{needText}</Text>
             }
           </TouchableOpacity>
         );

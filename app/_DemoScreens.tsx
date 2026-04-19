@@ -15,7 +15,9 @@ export function DemoIntroScreen({ onStart, onSkip, speak }: {
 }) {
   return (
     <View style={s.screen}>
-      <Buddy mood="calm" speak={speak} celebrate = {false}  topSpacing={24} />
+      <View style={{marginTop: 70}}>
+        <Buddy mood="calm" speak={speak} celebrate = {false} />
+      </View>
       <T style={s.msg} speak={speak}>Давай попробуем вместе!</T>
       <T style={s.sub} speak={speak}>Три простых задания — для разминки</T>
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
@@ -48,7 +50,9 @@ export function DemoStepScreen({ step, stepIndex, totalSteps, onDone, speak }: {
 
   return (
     <View style={s.screen}>
-      <Buddy mood={done ? 'happy' : 'excited'} speak={speak} topSpacing={32}/>
+      <View style={{marginTop: 70}}>
+        <Buddy mood={done ? 'happy' : 'excited'} speak={speak} />
+      </View>
       <View style={s.stepCounter}>
         {Array(totalSteps).fill(0).map((_: any, i: number) => (
           <View key={i} style={[s.stepDot, i <= stepIndex && s.stepDotActive]} />
@@ -81,7 +85,9 @@ export function DemoCompleteScreen({ onGoToMissions, onGoHome, speak }: {
 }) {
   return (
     <View style={s.screen}>
-      <Buddy mood="proud" speak={speak} topSpacing={32} />
+      <View style={{marginTop: 70}}>
+        <Buddy mood="proud" speak={speak} />
+      </View>
       <Text style={s.celebTitle}>Ты справился! 🎉</Text>
       <T style={s.msg} speak={speak}>Хочешь попробовать настоящую миссию?</T>
       <View style={s.demoCompleteButtons}>

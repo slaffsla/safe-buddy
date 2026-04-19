@@ -21,8 +21,9 @@ import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScre
 import HomeScreen from './_HomeScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import MorningRoutineScreen from './_MorningRoutineScreen';
-import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings } from './_SettingsScreen';
+import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
 import { DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, shouldShowMorning } from './_constants';
+
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -170,6 +171,13 @@ function getProgress(total: number) {
 
 const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
 
+function getRotationSeed(freq: RotationFrequency) {
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  if (freq === 'weekly') return Math.floor(dayIndex / 7);
+  if (freq === 'every3') return Math.floor(dayIndex / 3);
+  return dayIndex;
+}
+
 // ── TTS ───────────────────────────────────────────────────────────────────────
 
 async function resolveRussianVoice() {
@@ -185,7 +193,7 @@ async function resolveRussianVoice() {
   } catch { return null; }
 }
 
-function useSpeech() {
+function useSpeech(enabled: boolean) {
   const voiceRef = useRef<any>(null);
   useEffect(() => {
     resolveRussianVoice().then(v => { voiceRef.current = v; });
@@ -193,7 +201,7 @@ function useSpeech() {
   }, []);
 
   return useCallback((text: string) => {
-    if (!text) return;
+    if (!enabled || !text) return;
     try { Speech.stop(); } catch {}
     const opts: any = {
       language: 'ru-RU',
@@ -202,9 +210,9 @@ function useSpeech() {
     };
     if (voiceRef.current?.identifier) opts.voice = voiceRef.current.identifier;
     setTimeout(() => {
-      try { Speech.speak(text, opts); } catch (e) { console.log('TTS:', e); }
+      try { Speech.speak(text, opts); } catch {};
     }, Platform.OS === 'ios' ? 120 : 0);
-  }, []);
+  }, [enabled]);
 }
 
 // Speakable text
@@ -252,8 +260,9 @@ export default function App() {
 
   // Settings
   const [appSettings,   setAppSettings]   = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [ttsEnabled,    setTtsEnabled]    = useState(DEFAULT_SETTINGS.ttsEnabled);
 
-  const speak = useSpeech();
+  const speak = useSpeech(ttsEnabled);
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -299,9 +308,9 @@ export default function App() {
           setShowMorning(true);
         }
         
-        // TODO(rotation): after loadSettings, call initRotation(s) here
-        // See ticket: task rotation logic
         setAppSettings(s);
+        setTtsEnabled(s.ttsEnabled);
+        setShowSuggestion(s.nudgingEnabled);
         setPinEnabled(v[K.PIN_ENABLED] === 'true');
 
         // Only go to demo if onboarding is already done
@@ -504,7 +513,24 @@ export default function App() {
     ? (appSettings.weekendMissionIds ?? DEFAULT_WEEKEND_IDS)
     : (appSettings.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS);
 
-  const dayMissions = MISSION_POOL.filter(m => selectedIds.includes(m.id));
+  const missionTypeById = Object.fromEntries(
+    appSettings.missions.map(m => [m.id, m.type])
+  );
+
+  let dayMissions = MISSION_POOL.filter(m =>
+    selectedIds.includes(m.id) && missionTypeById[m.id] !== 'inactive'
+  );
+
+  if (appSettings.rotationEnabled) {
+    const permanent = dayMissions.filter(m => missionTypeById[m.id] === 'permanent');
+    const rotating = dayMissions.filter(m => missionTypeById[m.id] === 'rotating');
+    const rotateCount = Math.min(appSettings.rotatingPoolSize, rotating.length);
+    const seed = rotating.length ? getRotationSeed(appSettings.rotationFrequency) % rotating.length : 0;
+    const rotated = Array.from({ length: rotateCount }, (_, index) => (
+      rotating[(seed + index) % rotating.length]
+    ));
+    dayMissions = [...permanent, ...rotated];
+  }
   if (showMorning) {
     return (
       <SafeAreaView style={s.root}>
@@ -528,7 +554,6 @@ export default function App() {
       </SafeAreaView>
     );
   }
-  
   return (
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
@@ -567,7 +592,8 @@ export default function App() {
           totalMissions={totalMissions}
           childName={childName}
           lastMission={lastMission}
-          showSuggestion={showSuggestion}
+          showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
+          skipSensitivity={appSettings.skipSensitivity}
           onSettings={() => setScreen('settings')}
           skipCount={skipCount}
           onStart={() => setScreen('pick')}
@@ -613,6 +639,7 @@ export default function App() {
           {...p}
           onBack={() => setScreen('home')}
           onRedeem={handleRewardRedeem}
+          showExactStarCost={appSettings.showExactStarCost}
         />
       )}
 

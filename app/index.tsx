@@ -23,6 +23,7 @@ import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from 
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
 import { DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, shouldShowMorning } from './_constants';
+import Buddy from './_Buddy';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -656,6 +657,11 @@ export default function App() {
           currentPin={parentPin}
           pinEnabled={pinEnabled}
         />
+      )}
+
+      {/* ── FIXED BUDDY OVERLAY (stays on screen at all times) ──────────────── */}
+      {onboardingDone && !showPinScreen && (
+        <Buddy mood="calm" speak={speak} size={100} fixed fixedBottom={200} />
       )}
 
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}

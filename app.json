@@ -1,30 +1,45 @@
 {
   "expo": {
-    "name": "small-steps",
-    "slug": "small-steps",
+    "name": "SafeBuddy",
+    "slug": "safe-buddy",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "smallsteps",
+    "icon": "./assets/Character/buddy-happy.png",
+    "scheme": "safebuddy",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/Character/buddy-happy.png",
+        "backgroundColor": "#F7F6F2"
       },
+      "splash": {
+        "image": "./assets/Character/buddy-happy.png",
+        "backgroundColor": "#F7F6F2",
+        "resizeMode": "contain",
+        "imageWidth": 200
+      }
+    },
+    "ios": {
+      "icon": "./assets/Character/buddy-happy.png",
+      "supportsTablet": true,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.slaff.smallsteps"
+      "package": "com.slaff.safebuddy",
+      "splash": {
+        "image": "./assets/Character/buddy-happy.png",
+        "backgroundColor": "#F7F6F2",
+        "resizeMode": "contain",
+        "imageWidth": 200
+      }
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
+    },
+    "splash": {
+      "image": "./assets/Character/buddy-happy.png",
+      "backgroundColor": "#F7F6F2",
+      "resizeMode": "contain",
+      "imageWidth": 200
     },
     "plugins": [
       "expo-router",

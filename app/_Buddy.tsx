@@ -12,9 +12,10 @@ interface BuddyProps {
   celebrate?: boolean;
   fixed?: boolean;        // If true, Buddy stays fixed on screen (absolute positioning)
   fixedBottom?: number;   // Distance from bottom when fixed (default: 180)
+  fixedTop?: number;      // Distance from top when fixed
 }
 
-export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false, fixed = false, fixedBottom = 180 }: BuddyProps) {
+export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false, fixed = false, fixedBottom = 180, fixedTop }: BuddyProps) {
   const tapScale    = useRef(new Animated.Value(1)).current;
   const breathScale = useRef(new Animated.Value(1)).current;
   const breathAnim  = useRef<Animated.CompositeAnimation | null>(null);
@@ -89,7 +90,10 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
   // If fixed mode is enabled, render Buddy in a fixed position overlay
   if (fixed) {
     return (
-      <View style={[s.buddyFixedContainer, { bottom: fixedBottom }]}>
+      <View style={[
+        s.buddyFixedContainer,
+        fixedTop != null ? { top: fixedTop } : { bottom: fixedBottom }
+      ]}>
         {buddyContent}
       </View>
     );

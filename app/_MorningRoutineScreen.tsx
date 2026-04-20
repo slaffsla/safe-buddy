@@ -4,7 +4,6 @@
 
     import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Buddy from './_Buddy';
 import { C, MorningStep } from './_constants';
 import { Confetti } from './_SharedUI';
 
@@ -54,9 +53,7 @@ import { Confetti } from './_SharedUI';
         return (
         <View style={s.screen}>
             <Confetti trigger />
-            <View style={{marginTop: 70}}>
-                <Buddy mood="proud" speak={speak} celebrate />
-            </View>
+            <View style={{height: 220}} />
             <Text style={s.celebTitle}>Утро начато! 🌟</Text>
             <Text style={s.celebSub}>
             {stars === 1 ? 'Ты заработал ⭐' : `Ты заработал ${Array(stars).fill('⭐').join('')}`}
@@ -67,9 +64,7 @@ import { Confetti } from './_SharedUI';
 
     return (
         <ScrollView contentContainerStyle={s.scroll}>
-            <View style={{marginTop: 70}}>
-                <Buddy mood="calm" speak={speak} size={90} />
-            </View>
+            <View style={{height: 220}} />
             <View style={s.headerText}>
             <Text style={s.greeting}>{greeting}</Text>
             <TouchableOpacity onPress={() => speak('Доброе утро! Начнём день вместе?')}>

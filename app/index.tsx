@@ -659,9 +659,9 @@ export default function App() {
         />
       )}
 
-      {/* ── FIXED BUDDY OVERLAY (stays on screen at all times) ──────────────── */}
-      {onboardingDone && !showPinScreen && (
-        <Buddy mood="calm" speak={speak} size={100} fixed fixedBottom={200} />
+      {/* ── FIXED BUDDY OVERLAY (stays on screen at all times, except Settings) ─── */}
+      {onboardingDone && !showPinScreen && screen !== 'settings' && (
+        <Buddy mood="calm" speak={speak} size={130} fixed fixedTop={70} />
       )}
 
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
@@ -742,7 +742,8 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.75)', 
     justifyContent: 'center', 
     alignItems: 'center', 
-    padding: 24 
+    padding: 24,
+    zIndex: 2000,
   },
   pinCard: { 
     backgroundColor: C.white, 

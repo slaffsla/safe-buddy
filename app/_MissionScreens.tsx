@@ -4,7 +4,6 @@
 
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Buddy from './_Buddy';
 import { Confetti, ProgressBar, T } from './_SharedUI';
 import {
   BuddyMood, C,
@@ -67,9 +66,7 @@ export function MissionPickScreen({
 
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{marginTop: 70}}>
-        <Buddy mood="encouraging" speak={speak} />
-      </View>
+      <View style={{height: 220}} />
       <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
 
       {orderedSlots.map(slot => {
@@ -131,9 +128,7 @@ export function ActiveScreen({ mission, onDone, onSkip, speak }: {
   if (!mission) return null;
   return (
     <View style={s.screen}>
-      <View style={{marginTop: 70}}>
-        <Buddy mood="excited" speak={speak} />
-      </View>
+      <View style={{height: 220}} />
       <T style={s.msg} speak={speak}>{MSG.start}</T>
       <TouchableOpacity
         style={s.activeCard}
@@ -193,7 +188,7 @@ export function CelebrateScreen({
     <View style={s.screen}>
       {showConfetti && <Confetti trigger={true} />}
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood={buddyMood} speak={speak} celebrate={true} />
+      <View style={{height: 220}} />
       <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
         {isVeryExcited ? '🏆 Невероятно!' : 'Миссия выполнена! 🎉'}
       </T>
@@ -227,7 +222,7 @@ export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem, showE
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood="serene" speak={speak} />
+      <View style={{height: 220}} />
       <T style={s.pageTitle} speak={speak}>Твои награды</T>
       {REWARDS.map(r => {
         const can = stars >= r.cost;

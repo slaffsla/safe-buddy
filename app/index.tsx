@@ -449,7 +449,7 @@ export default function App() {
     const newEver     = totalEver + mission.stars;
     const newTotal    = totalMissions + 1;
     const veryExcited = shouldBeVeryExcited(newEver, prevTotalEver, false);
-    const completionMood = veryExcited ? 'very-excited' : 'happy';
+    const completionMood = veryExcited ? 'very-excited' : (mission.stars >= 2 ? 'excited' : 'happy');
 
     setStars(n => n + mission.stars);
     setPrevTotalEver(totalEver);

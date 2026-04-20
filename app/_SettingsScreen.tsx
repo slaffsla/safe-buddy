@@ -2,7 +2,7 @@
 // Self-contained component. Import into app/index.tsx.
 // Engineered for easy extension — add new setting by:
 //   1. Add key to AppSettings type
-//   2. Add default to DEFAULT_SETTINGS
+//   2. Add    to DEFAULT_SETTINGS
 //   3. Add storage key to SK
 //   4. Add UI row to the relevant section
 //
@@ -19,8 +19,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -30,6 +28,10 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS,
+  MISSION_POOL, MorningStep
+} from './_constants';
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
 
@@ -38,6 +40,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export type ControlLevel = 'hands-on' | 'balanced' | 'independent';
 export type RotationFrequency = 'daily' | 'every3' | 'weekly' | 'manual';
 export type MissionType = 'permanent' | 'rotating' | 'inactive';
+export type DayModeOverride = 'auto' | 'weekday' | 'weekend';
 
 export interface MissionConfig {
   id: number;
@@ -82,6 +85,16 @@ export interface AppSettings {
   // Rewards
   rewards: RewardConfig[];
 
+  // Morning routine
+  morningEnabled: boolean;
+  morningStars: number;          // stars awarded on completion (1-5)
+  morningSteps: MorningStep[];   // ordered checklist steps
+
+  // Daily routine — day mode
+  weekdayMissionIds: number[];
+  weekendMissionIds: number[];
+  dayModeOverride: DayModeOverride;
+
   // Notifications (V1.5 — stored but UI placeholder only)
   morningReminderEnabled: boolean;
   morningReminderTime: string;   // HH:MM
@@ -119,6 +132,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
     { id: 4, title: 'Любимый перекус',              cost: 3, emoji: '🍭', active: true },
     { id: 5, title: 'Игра с папой',                 cost: 2, emoji: '🎮', active: true },
   ],
+  morningEnabled: true,
+  morningStars: 1,
+  morningSteps: DEFAULT_MORNING_STEPS,
+  weekdayMissionIds: DEFAULT_WEEKDAY_IDS,
+  weekendMissionIds: DEFAULT_WEEKEND_IDS,
+  dayModeOverride: 'auto' as DayModeOverride,
   morningReminderEnabled: false,
   morningReminderTime: '08:00',
 };
@@ -154,14 +173,14 @@ export async function loadSettings(): Promise<AppSettings> {
       return { ...DEFAULT_SETTINGS, ...parsed };
     }
     // First load — pull legacy individual keys if they exist
-    const [name, pin, pinEnabled] = await AsyncStorage.multiGet([
+    const legacy = await AsyncStorage.multiGet([
       SK.CHILD_NAME, SK.PARENT_PIN, SK.PIN_ENABLED,
     ]);
     return {
       ...DEFAULT_SETTINGS,
-      childName:  name[1]  || '',
-      parentPin:  pin[1]   || '',
-      pinEnabled: pinEnabled[1] === 'true',
+      childName:  legacy[0][1] ?? '',
+      parentPin:  legacy[1][1] ?? '',
+      pinEnabled: legacy[2][1] === 'true',
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -173,12 +192,13 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     await AsyncStorage.setItem(SK.SETTINGS, JSON.stringify(settings));
     // Keep legacy keys in sync for backward compatibility with index.tsx
     await AsyncStorage.multiSet([
-      [SK.CHILD_NAME,  settings.childName],
-      [SK.PARENT_PIN,  settings.parentPin],
+      [SK.CHILD_NAME,  settings.childName || ''],
+      [SK.PARENT_PIN,  settings.parentPin || ''],
       [SK.PIN_ENABLED, String(settings.pinEnabled)],
     ]);
   } catch (e) {
-    console.log('Settings save error:', e);
+    // Non-critical persistence error — app will continue but data may be lost
+    // User's device storage may be full or permissions issue
   }
 }
 
@@ -199,12 +219,14 @@ async function loadProgress(): Promise<ProgressData> {
       SK.STARS, SK.TOTAL_EVER, SK.TOTAL_MISSIONS,
       SK.COMPLETED_TODAY, SK.LAST_MISSION, SK.FIRST_REWARD,
     ]);
-    const v = Object.fromEntries(vals);
+    const v: Record<string, string> = Object.fromEntries(
+      vals.map(([k, val]) => [k, val ?? ''])
+    );
     return {
-      stars:               v[SK.STARS]           ? parseInt(v[SK.STARS],          10) : 0,
-      totalEver:           v[SK.TOTAL_EVER]       ? parseInt(v[SK.TOTAL_EVER],     10) : 0,
-      totalMissions:       v[SK.TOTAL_MISSIONS]   ? parseInt(v[SK.TOTAL_MISSIONS], 10) : 0,
-      completedToday:      v[SK.COMPLETED_TODAY]  ? parseInt(v[SK.COMPLETED_TODAY],10) : 0,
+      stars:               v[SK.STARS]          ? parseInt(v[SK.STARS],           10) : 0,
+      totalEver:           v[SK.TOTAL_EVER]      ? parseInt(v[SK.TOTAL_EVER],      10) : 0,
+      totalMissions:       v[SK.TOTAL_MISSIONS]  ? parseInt(v[SK.TOTAL_MISSIONS],  10) : 0,
+      completedToday:      v[SK.COMPLETED_TODAY] ? parseInt(v[SK.COMPLETED_TODAY], 10) : 0,
       lastMission:         v[SK.LAST_MISSION] || null,
       firstRewardRedeemed: v[SK.FIRST_REWARD] === 'true',
     };
@@ -540,52 +562,17 @@ function MissionsSection({
       </Card>
 
       <Card>
-        <SettingRow label="Ротация задач" sublabel="Задачи с типом «Ротация» меняются по расписанию">
+        <SettingRow
+          label="Ротация задач 🔜"
+          sublabel="Задачи меняются по расписанию (скоро)"
+        >
           <Switch
-            value={settings.rotationEnabled}
-            onValueChange={v => onChange({ rotationEnabled: v })}
+            value={false}
+            disabled
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
         </SettingRow>
-
-        {settings.rotationEnabled && (
-          <>
-            <Divider />
-            <Text style={u.subheading}>Частота смены</Text>
-            <PillSelector
-              options={[
-                { label: 'Каждый день', value: 'daily' },
-                { label: 'Каждые 3 дня', value: 'every3' },
-                { label: 'Еженедельно', value: 'weekly' },
-                { label: 'Вручную', value: 'manual' },
-              ]}
-              value={settings.rotationFrequency}
-              onChange={v => onChange({ rotationFrequency: v })}
-            />
-            <Divider />
-            <SettingRow
-              label="Слотов ротации"
-              sublabel={`Показывать ${settings.rotatingPoolSize} задач из пула одновременно`}
-            >
-              <View style={u.stepperRow}>
-                <TouchableOpacity
-                  style={u.stepperBtn}
-                  onPress={() => onChange({ rotatingPoolSize: Math.max(1, settings.rotatingPoolSize - 1) })}
-                >
-                  <Text style={u.stepperTxt}>−</Text>
-                </TouchableOpacity>
-                <Text style={u.stepperVal}>{settings.rotatingPoolSize}</Text>
-                <TouchableOpacity
-                  style={u.stepperBtn}
-                  onPress={() => onChange({ rotatingPoolSize: Math.min(3, settings.rotatingPoolSize + 1) })}
-                >
-                  <Text style={u.stepperTxt}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </SettingRow>
-          </>
-        )}
       </Card>
     </View>
   );
@@ -847,6 +834,219 @@ function ChildSection({
   );
 }
 
+
+// ── DAILY ROUTINE SECTION ─────────────────────────────────────────────────────
+
+function DailyRoutineSection({
+  settings, onChange,
+}: {
+  settings: AppSettings;
+  onChange: (patch: Partial<AppSettings>) => void;
+}) {
+  const [editingId, setEditingId]   = useState<number | null>(null);
+  const [stepTitle, setStepTitle]   = useState('');
+  const [stepEmoji, setStepEmoji]   = useState('');
+
+  const weekdayIds = settings.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS;
+  const weekendIds = settings.weekendMissionIds ?? DEFAULT_WEEKEND_IDS;
+
+  // Move a morning step up or down by index offset (-1 or +1)
+  function moveStep(id: number, dir: -1 | 1) {
+    const steps = [...settings.morningSteps];
+    const idx   = steps.findIndex(s => s.id === id);
+    const swap  = idx + dir;
+    if (swap < 0 || swap >= steps.length) return;
+    [steps[idx], steps[swap]] = [steps[swap], steps[idx]];
+    onChange({ morningSteps: steps });
+  }
+
+  function saveStep() {
+    if (!stepTitle.trim()) return;
+    if (editingId === -1) {
+      const newId = Math.max(0, ...settings.morningSteps.map(s => s.id)) + 1;
+      onChange({ morningSteps: [...settings.morningSteps,
+        { id: newId, title: stepTitle.trim(), emoji: stepEmoji || '✅' }] });
+    } else {
+      onChange({ morningSteps: settings.morningSteps.map(s =>
+        s.id === editingId ? { ...s, title: stepTitle.trim(), emoji: stepEmoji || s.emoji } : s
+      )});
+    }
+    setEditingId(null); setStepTitle(''); setStepEmoji('');
+  }
+
+  function deleteStep(id: number) {
+    onChange({ morningSteps: settings.morningSteps.filter(s => s.id !== id) });
+  }
+
+  function toggleMission(id: number, mode: 'weekday' | 'weekend') {
+    const key = mode === 'weekday' ? 'weekdayMissionIds' : 'weekendMissionIds';
+    const cur = mode === 'weekday' ? weekdayIds : weekendIds;
+    const next = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+    onChange({ [key]: next });
+  }
+
+  return (
+    <View>
+      <SectionHeader title="Распорядок дня" icon="🌅" />
+
+      {/* Morning routine toggle + star count + steps editor */}
+      <Card>
+        <SettingRow label="Утренняя рутина" sublabel="При первом открытии до 12:00">
+          <Switch
+            value={settings.morningEnabled}
+            onValueChange={v => onChange({ morningEnabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </SettingRow>
+
+        {settings.morningEnabled && (
+          <>
+            <Divider />
+            <SettingRow label="Звёзд за рутину" sublabel="За весь комплект шагов">
+              <View style={u.stepperRow}>
+                <TouchableOpacity style={u.stepperBtn} onPress={() => onChange({ morningStars: Math.max(1, settings.morningStars - 1) })}>
+                  <Text style={u.stepperTxt}>−</Text>
+                </TouchableOpacity>
+                <Text style={u.stepperVal}>{settings.morningStars}</Text>
+                <TouchableOpacity style={u.stepperBtn} onPress={() => onChange({ morningStars: Math.min(5, settings.morningStars + 1) })}>
+                  <Text style={u.stepperTxt}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </SettingRow>
+
+            <Divider />
+            <Text style={u.subheading}>Шаги утренней рутины</Text>
+
+            {settings.morningSteps.map((step, idx) => (
+              <View key={step.id}>
+                {idx > 0 && <Divider />}
+                {editingId === step.id ? (
+                  <View style={u.editBlock}>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TextInput style={[u.editInput, { width: 52 }]} value={stepEmoji} onChangeText={setStepEmoji} placeholder="🌟" placeholderTextColor={C.muted} />
+                      <TextInput style={[u.editInput, { flex: 1 }]} value={stepTitle} onChangeText={setStepTitle} placeholder="Название шага" placeholderTextColor={C.muted} autoFocus />
+                    </View>
+                    <View style={u.rowBtns}>
+                      <TouchableOpacity style={u.btnPrimary} onPress={saveStep}><Text style={u.btnPrimaryTxt}>Сохранить</Text></TouchableOpacity>
+                      <TouchableOpacity style={u.btnCancel} onPress={() => { setEditingId(null); setStepTitle(''); setStepEmoji(''); }}><Text style={u.btnCancelTxt}>Отмена</Text></TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={u.row}>
+                    <Text style={{ fontSize: 22, marginRight: 10 }}>{step.emoji}</Text>
+                    <Text style={[u.rowLabel, { flex: 1 }]}>{step.title}</Text>
+                    <TouchableOpacity style={u.stepperBtn} onPress={() => moveStep(step.id, -1)} disabled={idx === 0}>
+                      <Text style={[u.stepperTxt, idx === 0 && { opacity: 0.25 }]}>↑</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[u.stepperBtn, { marginLeft: 4 }]} onPress={() => moveStep(step.id, 1)} disabled={idx === settings.morningSteps.length - 1}>
+                      <Text style={[u.stepperTxt, idx === settings.morningSteps.length - 1 && { opacity: 0.25 }]}>↓</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[u.linkBtn, { marginLeft: 4 }]} onPress={() => { setEditingId(step.id); setStepTitle(step.title); setStepEmoji(step.emoji); }}>
+                      <Text style={u.linkBtnTxt}>Изм.</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={u.dangerBtn} onPress={() => deleteStep(step.id)}>
+                      <Text style={u.dangerBtnTxt}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            ))}
+
+            {settings.morningSteps.length < 6 && editingId !== -1 && (
+              <>
+                <Divider />
+                <TouchableOpacity style={u.inlineAction} onPress={() => { setEditingId(-1); setStepTitle(''); setStepEmoji(''); }}>
+                  <Text style={u.inlineActionTxt}>+ Добавить шаг</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            {editingId === -1 && (
+              <View style={u.editBlock}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TextInput style={[u.editInput, { width: 52 }]} value={stepEmoji} onChangeText={setStepEmoji} placeholder="🌟" placeholderTextColor={C.muted} />
+                  <TextInput style={[u.editInput, { flex: 1 }]} value={stepTitle} onChangeText={setStepTitle} placeholder="Название шага" placeholderTextColor={C.muted} autoFocus />
+                </View>
+                <View style={u.rowBtns}>
+                  <TouchableOpacity style={u.btnPrimary} onPress={saveStep}><Text style={u.btnPrimaryTxt}>Добавить</Text></TouchableOpacity>
+                  <TouchableOpacity style={u.btnCancel} onPress={() => { setEditingId(null); setStepTitle(''); setStepEmoji(''); }}><Text style={u.btnCancelTxt}>Отмена</Text></TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </>
+        )}
+      </Card>
+
+      {/* Day mode override */}
+      <Card>
+        <Text style={[u.rowLabel, { padding: 14, paddingBottom: 4 }]}>Режим дня</Text>
+        <Text style={[u.rowSublabel, { paddingHorizontal: 14, paddingBottom: 8 }]}>
+          {(settings.dayModeOverride ?? 'auto') === 'auto'
+            ? 'Авто — будни / выходные по дате'
+            : settings.dayModeOverride === 'weekday'
+            ? 'Всегда режим буднего дня'
+            : 'Всегда режим выходного дня'}
+        </Text>
+        <PillSelector
+          options={[
+            { label: 'Авто',     value: 'auto'    },
+            { label: 'Будни',    value: 'weekday' },
+            { label: 'Выходной', value: 'weekend' },
+          ]}
+          value={settings.dayModeOverride ?? 'auto'}
+          onChange={v => onChange({ dayModeOverride: v as DayModeOverride })}
+        />
+      </Card>
+
+      {/* Weekday mission selection */}
+      <Card>
+        <Text style={u.subheading}>Миссии в будни</Text>
+        {MISSION_POOL.map((m, idx) => (
+          <View key={m.id}>
+            {idx > 0 && <Divider />}
+            <View style={u.row}>
+              <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={u.rowLabel}>{m.title}</Text>
+                <Text style={u.rowSublabel}>{m.subtitle}</Text>
+              </View>
+              <Switch
+                value={weekdayIds.includes(m.id)}
+                onValueChange={() => toggleMission(m.id, 'weekday')}
+                trackColor={{ false: C.track, true: C.green }}
+                thumbColor={C.white}
+              />
+            </View>
+          </View>
+        ))}
+      </Card>
+
+      {/* Weekend mission selection */}
+      <Card>
+        <Text style={u.subheading}>Миссии в выходные</Text>
+        {MISSION_POOL.map((m, idx) => (
+          <View key={m.id}>
+            {idx > 0 && <Divider />}
+            <View style={u.row}>
+              <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={u.rowLabel}>{m.title}</Text>
+                <Text style={u.rowSublabel}>{m.subtitle}</Text>
+              </View>
+              <Switch
+                value={weekendIds.includes(m.id)}
+                onValueChange={() => toggleMission(m.id, 'weekend')}
+                trackColor={{ false: C.track, true: C.green }}
+                thumbColor={C.white}
+              />
+            </View>
+          </View>
+        ))}
+      </Card>
+    </View>
+  );
+}
+
 // ── NOTIFICATIONS SECTION (placeholder) ───────────────────────────────────────
 
 function NotificationsSection({ settings, onChange }: {
@@ -1021,6 +1221,11 @@ export default function SettingsScreen({
 
         <View style={ss.spacer} />
 
+        {/* Daily routine */}
+        <DailyRoutineSection settings={settings} onChange={updateSettings} />
+
+        <View style={ss.spacer} />
+
         {/* Buddy behavior */}
         <BuddySection settings={settings} onChange={updateSettings} />
 
@@ -1034,11 +1239,7 @@ export default function SettingsScreen({
 
       {/* PIN overlay for protected actions */}
       {showPin && (
-        <KeyboardAvoidingView
-          style={ss.pinOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={0}
-        >
+        <View style={ss.pinOverlay}>
           <View style={ss.pinCard}>
             <Text style={ss.pinTitle}>Введи PIN родителя</Text>
             <TextInput
@@ -1061,7 +1262,7 @@ export default function SettingsScreen({
               <Text style={ss.pinBtnCancelTxt}>Отмена</Text>
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -1080,10 +1281,10 @@ const ss = StyleSheet.create({
   scroll:       { flex: 1 },
   content:      { padding: 16 },
   spacer:       { height: 24 },
-  pinOverlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', padding: 24, paddingBottom: 32 },
-  pinCard:      { backgroundColor: C.white, borderRadius: 20, padding: 28, alignItems: 'center' },
-  pinTitle:     { fontSize: 18, fontWeight: '600', color: C.text, marginBottom: 16 },
-  pinInput:     { fontSize: 28, textAlign: 'center', letterSpacing: 8, marginBottom: 24, width: '100%', height: 52, borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
+  pinOverlay:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  pinCard:          { backgroundColor: C.white, borderRadius: 20, padding: 28, alignItems: 'center', width: '100%' },
+  pinTitle:         { fontSize: 18, fontWeight: '600', color: C.text, marginBottom: 16 },
+  pinInput:         { fontSize: 28, textAlign: 'center', letterSpacing: 8, marginBottom: 24, width: '100%', height: 52, borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
   pinBtnPrimary:    { backgroundColor: C.green, borderRadius: 12, paddingVertical: 14, alignItems: 'center', width: '100%', marginBottom: 10 },
   pinBtnPrimaryTxt: { fontSize: 15, color: C.white, fontWeight: '600' },
   pinBtnCancel:     { backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingVertical: 14, alignItems: 'center', width: '100%' },

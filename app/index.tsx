@@ -8,19 +8,23 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Image,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import ConfettiCannon from 'react-native-confetti-cannon';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings } from './_SettingsScreen';
+import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
+import HomeScreen from './_HomeScreen';
+import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
+import MorningRoutineScreen from './_MorningRoutineScreen';
+import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
+import { DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, shouldShowMorning } from './_constants';
+import Buddy from './_Buddy';
+
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -99,6 +103,7 @@ const K = {
   PARENT_PIN:      'sb_parent_pin',
   PIN_ENABLED:     'sb_pin_enabled',
   ONBOARDING_DONE: 'sb_onboarding_done',
+  MORNING_DONE:    'sb_morning_done',
 };
 
 const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
@@ -167,9 +172,11 @@ function getProgress(total: number) {
 
 const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
 
-function getDailySuggestion() {
-  const dayOfYear = Math.floor(Date.now() / 86400000);
-  return DAILY_SUGGESTIONS[dayOfYear % DAILY_SUGGESTIONS.length];
+function getRotationSeed(freq: RotationFrequency) {
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  if (freq === 'weekly') return Math.floor(dayIndex / 7);
+  if (freq === 'every3') return Math.floor(dayIndex / 3);
+  return dayIndex;
 }
 
 // ── TTS ───────────────────────────────────────────────────────────────────────
@@ -187,7 +194,7 @@ async function resolveRussianVoice() {
   } catch { return null; }
 }
 
-function useSpeech() {
+function useSpeech(enabled: boolean) {
   const voiceRef = useRef<any>(null);
   useEffect(() => {
     resolveRussianVoice().then(v => { voiceRef.current = v; });
@@ -195,105 +202,19 @@ function useSpeech() {
   }, []);
 
   return useCallback((text: string) => {
-    if (!text) return;
+    if (!enabled || !text) return;
     try { Speech.stop(); } catch {}
+    const cleanedText = text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
     const opts: any = {
       language: 'ru-RU',
       pitch: 1.05,
-      rate: Platform.OS === 'ios' ? 0.52 : 0.85,
+      rate: Platform.OS === 'ios' ? 0.52 : 0.65,
     };
     if (voiceRef.current?.identifier) opts.voice = voiceRef.current.identifier;
     setTimeout(() => {
-      try { Speech.speak(text, opts); } catch (e) { console.log('TTS:', e); }
+      try { Speech.speak(cleanedText, opts); } catch {};
     }, Platform.OS === 'ios' ? 120 : 0);
-  }, []);
-}
-
-// ── CONFETTI ──────────────────────────────────────────────────────────────────
-
-function Confetti({ trigger }: { trigger: boolean }) {
-  if (!trigger) return null;
-  return (
-    <ConfettiCannon
-      count={130}
-      origin={{ x: -20, y: 0 }}
-      autoStart={true}
-      fadeOut={true}
-      fallSpeed={3000}
-      colors={['#1D6B4F', '#F59E0B', '#E1F5EE', '#FFD700', '#FF6B6B', '#4ECDC4']}
-      style={StyleSheet.absoluteFillObject}
-    />
-  );
-}
-
-// ── BUDDY ─────────────────────────────────────────────────────────────────────
-// Breathing animation on ambient states (calm, gentle-reminder, serene)
-// Tap bounce on all states
-// Transparent background on all images
-
-type BuddyMood = keyof typeof BUDDY;
-
-function Buddy({ mood = 'calm', speak, size = 130 }: {
-  mood?: BuddyMood;
-  speak: (t: string) => void;
-  size?: number;
-}) {
-  const tapScale    = useRef(new Animated.Value(1)).current;
-  const breathScale = useRef(new Animated.Value(1)).current;
-  const breathAnim  = useRef<Animated.CompositeAnimation | null>(null);
-
-  const isAmbient = mood === 'calm' || mood === 'gentle-reminder' || mood === 'serene';
-
-  useEffect(() => {
-    if (isAmbient) {
-      breathAnim.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(breathScale, { toValue: 1.03, duration: 2800, useNativeDriver: true }),
-          Animated.timing(breathScale, { toValue: 1.0,  duration: 2800, useNativeDriver: true }),
-        ])
-      );
-      breathAnim.current.start();
-    } else {
-      breathAnim.current?.stop();
-      breathScale.setValue(1);
-    }
-    return () => { breathAnim.current?.stop(); };
-  }, [mood]);
-
-  const lines: Record<string, string> = {
-    calm:              MSG.idle,
-    'gentle-reminder': MSG.idle_alt,
-    serene:            MSG.serene,
-    encouraging:       MSG.encouraging,
-    thinking:          MSG.thinking,
-    excited:           MSG.start,
-    happy:             MSG.done,
-    proud:             MSG.done,
-    'very-excited':    MSG['very-excited'],
-  };
-
-  function handlePress() {
-    Animated.sequence([
-      Animated.timing(tapScale, { toValue: 1.12, duration: 100, useNativeDriver: true }),
-      Animated.timing(tapScale, { toValue: 1.0,  duration: 150, useNativeDriver: true }),
-    ]).start();
-    speak(lines[mood] || MSG.idle);
-  }
-
-  const image = BUDDY[mood] || BUDDY.calm;
-
-  return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
-      <Animated.View style={[s.buddy, { transform: [{ scale: Animated.multiply(tapScale, breathScale) }] }]}>
-        <Image
-          source={image}
-          style={{ width: size, height: size, backgroundColor: 'transparent' }}
-          resizeMode="contain"
-        />
-        <Text style={s.buddyName}>Бадди</Text>
-      </Animated.View>
-    </TouchableOpacity>
-  );
+  }, [enabled]);
 }
 
 // Speakable text
@@ -303,359 +224,6 @@ function T({ children, style, speak }: { children: any; style: any; speak: (t: s
     <TouchableOpacity onPress={() => speak(String(children))} activeOpacity={0.65}>
       <Text style={style}>{children}</Text>
     </TouchableOpacity>
-  );
-}
-
-// ── PROGRESS BAR ──────────────────────────────────────────────────────────────
-
-function ProgressBar({ total, speak }: { total: number; speak: (t: string) => void }) {
-  const { next, pct } = getProgress(total);
-  const emotionalLabel =
-    total === 0  ? 'Первая звезда ждёт тебя!'
-    : total < 5  ? 'Ты только начинаешь — это здорово'
-    : total < 10 ? 'Ты уже так много сделал'
-    : total < 20 ? 'Ты становишься сильнее каждый день'
-    : total < 50 ? 'Бадди видит твой рост'
-    : 'Ты настоящая звезда';
-
-  return (
-    <TouchableOpacity
-      style={s.pbWrap}
-      onPress={() => speak(`${emotionalLabel}. Звёзд: ${total}`)}
-      activeOpacity={0.75}
-    >
-      <View style={s.pbRow}>
-        <Text style={s.pbEmotion}>{emotionalLabel}</Text>
-        <Text style={s.pbStars}>⭐ {total}</Text>
-      </View>
-      <View style={s.pbTrack}>
-        <View style={[s.pbFill, { width: `${Math.round(pct * 100)}%` }]} />
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// ── REFLECTIVE BOOST ──────────────────────────────────────────────────────────
-
-function ReflectiveBoost({ lastMission, speak }: { lastMission: string | null; speak: (t: string) => void }) {
-  if (!lastMission) return null;
-  const text = `Вчера ты справился с "${lastMission}" — Бадди помнит это`;
-  return (
-    <TouchableOpacity style={s.reflectCard} onPress={() => speak(text)} activeOpacity={0.8}>
-      <Text style={s.reflectText}>{text}</Text>
-    </TouchableOpacity>
-  );
-}
-
-// ── DAILY SUGGESTION ──────────────────────────────────────────────────────────
-
-function DailySuggestion({ suggestion, onAccept, onSkip, speak }: {
-  suggestion: typeof DAILY_SUGGESTIONS[0];
-  onAccept: () => void;
-  onSkip: () => void;
-  speak: (t: string) => void;
-}) {
-  return (
-    <View style={s.suggestionCard}>
-      <Text style={s.suggestionIcon}>💡</Text>
-      <T style={s.suggestionText} speak={speak}>{suggestion.text}</T>
-      <View style={s.suggestionRow}>
-        <TouchableOpacity style={s.suggestionYes} onPress={onAccept}>
-          <Text style={s.suggestionYesTxt}>Попробую!</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={s.suggestionNo} onPress={onSkip}>
-          <Text style={s.suggestionNoTxt}>Не сейчас</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-// ── SCREENS ───────────────────────────────────────────────────────────────────
-
-function DemoIntroScreen({ onStart, onSkip, speak }: any) {
-  return (
-    <View style={s.screen}>
-      <Buddy mood="calm" speak={speak} />
-      <T style={s.msg} speak={speak}>Давай попробуем вместе!</T>
-      <T style={s.sub} speak={speak}>Три простых задания — для разминки</T>
-      <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>▶ Начать разминку</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-        <Text style={s.btnSkipTxt}>Пропустить</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function DemoStepScreen({ step, stepIndex, totalSteps, onDone, speak }: any) {
-  const [done, setDone] = useState(false);
-
-  function handleDone() {
-    if (done) return;
-    setDone(true);
-    speak(step.praise);
-    setTimeout(onDone, 1000);
-  }
-
-  return (
-    <View style={s.screen}>
-      <Buddy mood={done ? 'happy' : 'excited'} speak={speak} />
-      <View style={s.stepCounter}>
-        {Array(totalSteps).fill(0).map((_: any, i: number) => (
-          <View key={i} style={[s.stepDot, i <= stepIndex && s.stepDotActive]} />
-        ))}
-      </View>
-      <TouchableOpacity style={s.demoCard} onPress={() => speak(step.title)} activeOpacity={0.85}>
-        <Text style={s.demoEmoji}>{step.emoji}</Text>
-        <Text style={s.demoTitle}>{step.title}</Text>
-        <Text style={s.tapHint}>нажми чтобы услышать</Text>
-      </TouchableOpacity>
-      {!done ? (
-        <TouchableOpacity style={s.btnPrimary} onPress={handleDone}>
-          <Text style={s.btnPrimaryTxt}>✅ Сделал!</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={s.praiseRow}>
-          <Text style={s.praiseText}>{step.praise} 🎉</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-function DemoCompleteScreen({ onGoToMissions, onGoHome, speak }: any) {
-  return (
-    <View style={s.screen}>
-      <Buddy mood="proud" speak={speak} />
-      <Text style={s.celebTitle}>Ты справился! 🎉</Text>
-      <T style={s.msg} speak={speak}>Хочешь попробовать настоящую миссию?</T>
-      <View style={s.demoCompleteButtons}>
-        <TouchableOpacity style={s.btnPrimary} onPress={onGoToMissions}>
-          <Text style={s.btnPrimaryTxt}>🚀 Да, хочу!</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={s.btnSecondary} onPress={onGoHome}>
-          <Text style={s.btnSecondaryTxt}>⏳ Попозже</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-function HomeScreen({
-  stars, totalEver, completedToday, totalMissions,
-  childName, lastMission, showSuggestion,
-  onStart, onRewards, onSettings, onSuggestionAccept, onSuggestionSkip,
-  skipCount, speak,
-}: any) {
-  const [homeMood] = useState<BuddyMood>(() =>
-    skipCount >= 2 ? 'gentle-reminder'
-    : Math.random() > 0.7 ? 'gentle-reminder'
-    : 'calm'
-  );
-  const [idleMsg] = useState(() =>
-    skipCount >= 2 ? 'Всё нормально. Я здесь с тобой'
-    : Math.random() > 0.7 ? MSG.idle_alt
-    : MSG.idle
-  );
-
-  const greeting = childName ? `Привет, ${childName}!` : 'Привет!';
-  const suggestion = getDailySuggestion();
-  const progressMsg = totalMissions > 0
-    ? getProgressionMessage(totalMissions, completedToday)
-    : null;
-
-  return (
-    <ScrollView contentContainerStyle={s.homeScroll}>
-      <ProgressBar total={totalEver} speak={speak} />
-      <View style={s.greetingRow}>
-        <T style={s.greeting} speak={speak}>{greeting}</T>
-      </View>
-      <Buddy mood={homeMood} speak={speak} />
-      <ReflectiveBoost lastMission={lastMission} speak={speak} />
-      {progressMsg && <T style={s.progressionMsg} speak={speak}>{progressMsg}</T>}
-      <T style={s.msg} speak={speak}>{idleMsg}</T>
-      {showSuggestion && (
-        <DailySuggestion
-          suggestion={suggestion}
-          onAccept={() => onSuggestionAccept(suggestion)}
-          onSkip={onSuggestionSkip}
-          speak={speak}
-        />
-      )}
-      <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>🚀 Выбрать миссию</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>🎁 Мои награды</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={s.btnSettings} onPress={onSettings}>
-        <Text style={s.btnSettingsTxt}>⚙️ Настройки для родителей</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
-}
-
-function MissionPickScreen({ onPick, onBack, speak, firstTime }: any) {
-  const bigger = firstTime ? [] : MISSIONS_BIGGER;
-  return (
-    <ScrollView contentContainerStyle={s.scroll}>
-      <Buddy mood="encouraging" speak={speak} />
-      <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
-      <T style={s.tier} speak={speak}>Лёгкие — одна звезда</T>
-      {MISSIONS_EASY.map(m => (
-        <TouchableOpacity
-          key={m.id} style={s.mCard}
-          onPress={() => onPick(m)}
-          onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
-        >
-          <Text style={s.mEmoji}>{m.emoji}</Text>
-          <View style={s.mInfo}>
-            <Text style={s.mTitle}>{m.title}</Text>
-            <Text style={s.mSub}>{m.subtitle}</Text>
-          </View>
-          <Text style={s.mStar}>⭐</Text>
-        </TouchableOpacity>
-      ))}
-      {bigger.length > 0 && (
-        <>
-          <T style={s.tier} speak={speak}>Большие — две звезды</T>
-          {bigger.map((m: any) => (
-            <TouchableOpacity
-              key={m.id} style={[s.mCard, s.mCardBig]}
-              onPress={() => onPick(m)}
-              onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
-            >
-              <Text style={s.mEmoji}>{m.emoji}</Text>
-              <View style={s.mInfo}>
-                <Text style={s.mTitle}>{m.title}</Text>
-                <Text style={s.mSub}>{m.subtitle}</Text>
-              </View>
-              <Text style={s.mStar}>⭐⭐</Text>
-            </TouchableOpacity>
-          ))}
-        </>
-      )}
-      <T style={s.hint} speak={speak}>Удержи карточку, чтобы услышать</T>
-      <TouchableOpacity style={s.btnBack} onPress={onBack}>
-        <Text style={s.btnBackTxt}>← Назад</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
-}
-
-function ActiveScreen({ mission, onDone, onSkip, speak }: any) {
-  if (!mission) return null;
-  return (
-    <View style={s.screen}>
-      <Buddy mood="excited" speak={speak} />
-      <T style={s.msg} speak={speak}>{MSG.start}</T>
-      <TouchableOpacity
-        style={s.activeCard}
-        onPress={() => speak(`${mission.title}. ${mission.subtitle}`)}
-        activeOpacity={0.85}
-      >
-        <Text style={s.activeEmoji}>{mission.emoji}</Text>
-        <Text style={s.activeTitle}>{mission.title}</Text>
-        <Text style={s.activeSub}>{mission.subtitle}</Text>
-        <View style={s.starsRow}>
-          {Array(mission.stars).fill('⭐').map((_: any, i: number) => (
-            <Text key={i} style={s.starBig}>⭐</Text>
-          ))}
-        </View>
-        <Text style={s.tapHint}>нажми чтобы услышать ещё раз</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={s.btnPrimary} onPress={onDone}>
-        <Text style={s.btnPrimaryTxt}>✅ Я сделал!</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-        <Text style={s.btnSkipTxt}>Пропустить</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function CelebrateScreen({
-  mission, stars, totalEver, totalMissions, completedToday,
-  isVeryExcited, onContinue, onRewards, speak,
-}: any) {
-  if (!mission) return null;
-  const showConfetti = shouldShowConfetti(totalMissions) || isVeryExcited;
-  const isBig        = mission.stars >= 2;
-  const buddyMood: BuddyMood =
-    isVeryExcited ? 'very-excited'
-    : showConfetti ? 'proud'
-    : isBig        ? 'proud'
-    :                'happy';
-  const emotionalMsg = isVeryExcited
-    ? getMilestoneMessage(totalEver)
-    : getProgressionMessage(totalMissions, completedToday);
-
-  return (
-    <View style={s.screen}>
-      {showConfetti && <Confetti trigger={true} />}
-      <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood={buddyMood} speak={speak} />
-      <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
-        {isVeryExcited ? '🏆 Невероятно!' : 'Миссия выполнена! 🎉'}
-      </T>
-      <T style={s.progressionMsg} speak={speak}>{emotionalMsg}</T>
-      <TouchableOpacity style={s.earnedCard} onPress={() => speak(MSG.done)} activeOpacity={0.85}>
-        <Text style={s.earnedEmoji}>{mission.emoji}</Text>
-        <Text style={s.earnedName}>{mission.title}</Text>
-        <Text style={s.earnedStars}>{Array(mission.stars).fill('⭐').join(' ')}</Text>
-        <Text style={s.earnedTotal}>Всего: ⭐ {stars}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={s.btnPrimary} onPress={onContinue}>
-        <Text style={s.btnPrimaryTxt}>🚀 Ещё миссию!</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>🎁 Посмотреть награды</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-// RewardsScreen now receives onRedeem so reward cards trigger PIN flow
-function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem }: any) {
-  return (
-    <ScrollView contentContainerStyle={s.scroll}>
-      <ProgressBar total={totalEver} speak={speak} />
-      <Buddy mood="serene" speak={speak} />
-      <T style={s.pageTitle} speak={speak}>Твои награды</T>
-      {REWARDS.map(r => {
-        const can = stars >= r.cost;
-        return (
-          <TouchableOpacity
-            key={r.id}
-            style={[s.rCard, !can && s.rLocked]}
-            onPress={() => {
-              if (can) {
-                onRedeem(r);
-              } else {
-                speak(`${r.title}. Ещё немного — и готово`);
-              }
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={s.rEmoji}>{r.emoji}</Text>
-            <View style={s.rInfo}>
-              <Text style={s.rTitle}>{r.title}</Text>
-              <Text style={s.rCost}>{Array(r.cost).fill('⭐').join('')}</Text>
-            </View>
-            {can
-              ? <Text style={s.rReady}>Получить!</Text>
-              : <Text style={s.rNeed}>ещё немного</Text>
-            }
-          </TouchableOpacity>
-        );
-      })}
-      <T style={s.hint} speak={speak}>Нажми на награду, чтобы получить её</T>
-      <TouchableOpacity style={s.btnBack} onPress={onBack}>
-        <Text style={s.btnBackTxt}>← Назад</Text>
-      </TouchableOpacity>
-    </ScrollView>
   );
 }
 
@@ -678,6 +246,8 @@ export default function App() {
   const [isVeryExcited,   setIsVeryExcited]   = useState(false);
   const [showSuggestion,  setShowSuggestion]  = useState(true);
   const [firstReward,     setFirstReward]     = useState(false);
+  const [morningDoneDate, setMorningDoneDate] = useState('');
+  const [showMorning, setShowMorning] = useState(false);
 
   // Onboarding
   const [childName,       setChildName]       = useState('');
@@ -692,8 +262,9 @@ export default function App() {
 
   // Settings
   const [appSettings,   setAppSettings]   = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [ttsEnabled,    setTtsEnabled]    = useState(DEFAULT_SETTINGS.ttsEnabled);
 
-  const speak = useSpeech();
+  const speak = useSpeech(ttsEnabled);
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -703,9 +274,12 @@ export default function App() {
           K.STARS, K.TOTAL_EVER, K.COMPLETED_TODAY,
           K.LAST_DATE, K.DEMO_DONE, K.TOTAL_MISSIONS,
           K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
-          K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE,
+          K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE, K.MORNING_DONE
         ]);
-        const v = Object.fromEntries(vals);
+        // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
+        const v: Record<string, string> = Object.fromEntries(
+          vals.map(([k, val]) => [k, val ?? ''])
+        );
         const today  = todayStr();
         const newDay = v[K.LAST_DATE] !== today;
 
@@ -730,7 +304,15 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
+         const morningDone = v[K.MORNING_DONE] ?? '';
+        setMorningDoneDate(morningDone);
+        if (s.morningEnabled && shouldShowMorning(morningDone)) {
+          setShowMorning(true);
+        }
+        
         setAppSettings(s);
+        setTtsEnabled(s.ttsEnabled);
+        setShowSuggestion(s.nudgingEnabled);
         setPinEnabled(v[K.PIN_ENABLED] === 'true');
 
         // Only go to demo if onboarding is already done
@@ -807,18 +389,18 @@ export default function App() {
   }
 
   // ── Missions ────────────────────────────────────────────────────────────────
-  function pickMission(m: any) {
+  const pickMission = useCallback((m: any) => {
     setMission(m);
     setSkipCount(0);
     speak(`${m.title}. ${m.subtitle}`);
     setScreen('active');
-  }
+  }, [speak]);
 
-  function handleSkip() {
+  const handleSkip = useCallback(() => {
     setSkipCount(n => n + 1);
     setMission(null);
     setScreen('home');
-  }
+  }, []);
 
   function completeMission() {
     if (!mission) return;
@@ -845,17 +427,16 @@ export default function App() {
   }
 
   // ── PIN / Reward redemption ─────────────────────────────────────────────────
-  function handleRewardRedeem(reward: any) {
+  const handleRewardRedeem = useCallback((reward: any) => {
     if (stars < reward.cost) return;
     if (pinEnabled && parentPin) {
       setPendingReward(reward);
       setEnteredPin('');
       setShowPinScreen(true);
     } else {
-      // No PIN set — redeem directly
       redeemReward(reward);
     }
-  }
+    }, [stars, pinEnabled, parentPin]);
 
   function redeemReward(reward: any) {
     const isFirst = !firstReward;
@@ -924,7 +505,57 @@ export default function App() {
 
   // ── MAIN APP ────────────────────────────────────────────────────────────────
   const p = { speak, stars, totalEver };
+  // Compute which missions to show based on day mode + settings
+  const isWeekendDay = isWeekend();
+  const dayModeActive = (appSettings.dayModeOverride ?? 'auto') === 'auto'
+    ? isWeekendDay
+    : appSettings.dayModeOverride === 'weekend';
 
+  const selectedIds = dayModeActive
+    ? (appSettings.weekendMissionIds ?? DEFAULT_WEEKEND_IDS)
+    : (appSettings.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS);
+
+  const missionTypeById = Object.fromEntries(
+    appSettings.missions.map(m => [m.id, m.type])
+  );
+
+  let dayMissions = MISSION_POOL.filter(m =>
+    selectedIds.includes(m.id) && missionTypeById[m.id] !== 'inactive'
+  );
+
+  if (appSettings.rotationEnabled) {
+    const permanent = dayMissions.filter(m => missionTypeById[m.id] === 'permanent');
+    const rotating = dayMissions.filter(m => missionTypeById[m.id] === 'rotating');
+    const rotateCount = Math.min(appSettings.rotatingPoolSize, rotating.length);
+    const seed = rotating.length ? getRotationSeed(appSettings.rotationFrequency) % rotating.length : 0;
+    const rotated = Array.from({ length: rotateCount }, (_, index) => (
+      rotating[(seed + index) % rotating.length]
+    ));
+    dayMissions = [...permanent, ...rotated];
+  }
+  if (showMorning) {
+    return (
+      <SafeAreaView style={s.root}>
+        <StatusBar style="dark" />
+        <MorningRoutineScreen
+          childName={childName}
+          steps={appSettings.morningSteps?.length > 0 ? appSettings.morningSteps : DEFAULT_MORNING_STEPS}
+          stars={appSettings.morningStars ?? 1}
+          speak={speak}
+          onComplete={async (earned) => {
+            const today = todayStr();
+            setStars(n => n + earned);
+            setTotalEver(n => n + earned);
+            setMorningDoneDate(today);
+            setShowMorning(false);
+            setScreen('home');
+            await AsyncStorage.setItem(K.MORNING_DONE, today);
+          }}
+          onSkip={() => { setShowMorning(false); setScreen('home'); }}
+        />
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
@@ -963,7 +594,8 @@ export default function App() {
           totalMissions={totalMissions}
           childName={childName}
           lastMission={lastMission}
-          showSuggestion={showSuggestion}
+          showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
+          skipSensitivity={appSettings.skipSensitivity}
           onSettings={() => setScreen('settings')}
           skipCount={skipCount}
           onStart={() => setScreen('pick')}
@@ -977,6 +609,7 @@ export default function App() {
         <MissionPickScreen
           {...p}
           firstTime={firstMission}
+          missions={dayMissions.length > 0 ? dayMissions : null}
           onPick={pickMission}
           onBack={() => setScreen('home')}
         />
@@ -1008,13 +641,14 @@ export default function App() {
           {...p}
           onBack={() => setScreen('home')}
           onRedeem={handleRewardRedeem}
+          showExactStarCost={appSettings.showExactStarCost}
         />
       )}
 
       {screen === 'settings' && (
         <SettingsScreen
           onClose={() => setScreen('home')}
-          onSettingsChange={(s: { childName: React.SetStateAction<string>; parentPin: React.SetStateAction<string>; pinEnabled: boolean | ((prevState: boolean) => boolean); }) => {
+          onSettingsChange={(s: AppSettings) => {
             setAppSettings(s);
             setChildName(s.childName);
             setParentPin(s.parentPin);
@@ -1023,21 +657,26 @@ export default function App() {
           currentPin={parentPin}
           pinEnabled={pinEnabled}
         />
-)}
+      )}
 
-      {/* ── PARENT PIN OVERLAY ─────────────────────────────────────────────── */}
+      {/* ── FIXED BUDDY OVERLAY (stays on screen at all times) ──────────────── */}
+      {onboardingDone && !showPinScreen && (
+        <Buddy mood="calm" speak={speak} size={100} fixed fixedBottom={200} />
+      )}
+
+      {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
       {showPinScreen && (
         <View style={s.pinOverlay}>
           <View style={s.pinCard}>
             <Image
               source={BUDDY.calm}
-              style={{ width: 80, height: 80, backgroundColor: 'transparent', marginBottom: 12 }}
+              style={{ width: 80, height: 80, backgroundColor: 'transparent', marginBottom: 16 }}
               resizeMode="contain"
             />
-            <Text style={s.pinTitle}>PIN родителя</Text>
-            <Text style={s.pinSub}>
-              {pendingReward ? `Разблокировать: ${pendingReward.title}` : ''}
-            </Text>
+            <Text style={s.pinTitle}>ПИН родителя</Text>
+            {pendingReward && (
+              <Text style={s.pinSub}>Разблокировать: {pendingReward.title}</Text>
+            )}
             <TextInput
               style={s.pinInput}
               keyboardType="numeric"
@@ -1052,15 +691,18 @@ export default function App() {
               <Text style={s.pinConfirmTxt}>Подтвердить</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={s.btnSkip}
-              onPress={() => { setShowPinScreen(false); setEnteredPin(''); setPendingReward(null); }}
+              style={s.pinCancel}
+              onPress={() => {
+                setShowPinScreen(false);
+                setEnteredPin('');
+                setPendingReward(null);
+              }}
             >
-              <Text style={s.btnSkipTxt}>Отмена</Text>
+              <Text style={s.pinCancelTxt}>Отмена</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
-
     </SafeAreaView>
   );
 }
@@ -1094,14 +736,54 @@ const s = StyleSheet.create({
   onboardingBtn:   { marginTop: 32, backgroundColor: C.green, paddingVertical: 16, paddingHorizontal: 48, borderRadius: 999 },
   onboardingBtnTxt:{ color: C.white, fontSize: 20, fontWeight: '600' },
 
-  // PIN overlay — uses View not position:fixed (iframe safe)
-  pinOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', padding: 24 },
-  pinCard:    { backgroundColor: C.white, borderRadius: 20, padding: 28, alignItems: 'center' },
+    pinOverlay: { 
+    position: 'absolute', 
+    top: 0, left: 0, right: 0, bottom: 0, 
+    backgroundColor: 'rgba(0,0,0,0.75)', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 24 
+  },
+  pinCard: { 
+    backgroundColor: C.white, 
+    borderRadius: 20, 
+    padding: 28, 
+    alignItems: 'center', 
+    width: '100%' 
+  },
   pinTitle:   { fontSize: 20, fontWeight: '700', color: C.text, marginBottom: 4 },
-  pinSub:     { fontSize: 13, color: C.muted, marginBottom: 20, textAlign: 'center' },
-  pinInput:   { fontSize: 36, textAlign: 'center', letterSpacing: 12, marginBottom: 24, width: '100%', borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
-  pinConfirm:    { backgroundColor: C.green, padding: 14, borderRadius: 12, width: '100%', alignItems: 'center' },
+  pinSub:     { fontSize: 13, color: C.muted, marginBottom: 16, textAlign: 'center' },
+  pinInput: { 
+    fontSize: 36, 
+    textAlign: 'center', 
+    letterSpacing: 12, 
+    marginBottom: 24, 
+    width: '100%', 
+    height: 52, 
+    borderBottomWidth: 2, 
+    borderColor: C.border, 
+    paddingBottom: 8, 
+    color: C.text 
+  },
+  pinConfirm: { 
+    backgroundColor: C.green, 
+    padding: 14, 
+    borderRadius: 12, 
+    width: '100%', 
+    alignItems: 'center', 
+    marginBottom: 12 
+  },
   pinConfirmTxt: { color: C.white, textAlign: 'center', fontSize: 18, fontWeight: '600' },
+  pinCancel: { 
+    backgroundColor: C.bg, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: C.border, 
+    padding: 14, 
+    width: '100%', 
+    alignItems: 'center' 
+  },
+  pinCancelTxt: { fontSize: 15, color: C.text, fontWeight: '500' },
 
   // Progress bar
   pbWrap:    { width: '100%', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 14 },

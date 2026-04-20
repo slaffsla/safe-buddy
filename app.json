@@ -16,7 +16,8 @@
         "backgroundColor": "#F7F6F2",
         "resizeMode": "contain",
         "imageWidth": 200
-      }
+      },
+      "package": "com.slaff.safebuddy"
     },
     "ios": {
       "icon": "./assets/Character/buddy-happy.png",
@@ -29,7 +30,8 @@
         "backgroundColor": "#F7F6F2",
         "resizeMode": "contain",
         "imageWidth": 200
-      }
+      },
+      "bundleIdentifier": "com.slaff.safebuddy"
     },
     "web": {
       "output": "static",
@@ -63,7 +65,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "78ab1b33-4629-4e73-9213-6a89efe7baae"
+        "projectId": "aed5fa10-e8e4-451a-8bed-3371c14235a5"
       }
     },
     "runtimeVersion": {
@@ -71,6 +73,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/78ab1b33-4629-4e73-9213-6a89efe7baae"
-    }
+    },
+    "owner": "slaff"
   }
 }

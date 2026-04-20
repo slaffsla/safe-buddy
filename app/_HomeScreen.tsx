@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { BuddyMood, C, MSG, getDailySuggestion, getProgressionMessage } from './_constants';
+import { BuddyMood, BUDDY_FIXED_SPACER, C, MSG, getDailySuggestion, getProgressionMessage } from './_constants';
 import { DailySuggestion, ProgressBar, ReflectiveBoost, T } from './_SharedUI';
 
 interface HomeScreenProps {
@@ -44,7 +44,6 @@ export default function HomeScreen({
 
   return (
     <ScrollView contentContainerStyle={s.homeScroll}>
-      <ProgressBar total={totalEver} speak={speak} />
       <T style={s.greeting} speak={speak}>{greeting}</T>
       <ReflectiveBoost lastMission={lastMission} speak={speak} />
       {progressMsg && <T style={s.progressionMsg} speak={speak}>{progressMsg}</T>}
@@ -71,7 +70,7 @@ export default function HomeScreen({
 }
 
 const s = StyleSheet.create({
-  homeScroll:    { alignItems: 'center', padding: 20, paddingBottom: 52, paddingTop: 220 },
+  homeScroll:    { alignItems: 'center', padding: 20, paddingBottom: 52, paddingTop: BUDDY_FIXED_SPACER },
   greeting:      { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center', marginBottom: 4 },
   progressionMsg:{ fontSize: 15, color: C.green, textAlign: 'center', marginVertical: 6, fontWeight: '500', lineHeight: 22 },
   msg:           { fontSize: 17, color: C.text, textAlign: 'center', marginVertical: 8, lineHeight: 25, paddingHorizontal: 8 },

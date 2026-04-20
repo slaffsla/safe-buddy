@@ -4,7 +4,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,8 +22,9 @@ import HomeScreen from './_HomeScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
-import { DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, shouldShowMorning } from './_constants';
+import { BUDDY_FIXED_TOP, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, shouldShowMorning } from './_constants';
 import Buddy from './_Buddy';
+import { ProgressBar } from './_SharedUI';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -264,7 +265,34 @@ export default function App() {
   const [appSettings,   setAppSettings]   = useState<AppSettings>(DEFAULT_SETTINGS);
   const [ttsEnabled,    setTtsEnabled]    = useState(DEFAULT_SETTINGS.ttsEnabled);
 
+  const [transientMood, setTransientMood] = useState<BuddyMood | null>(null);
+  const transientMoodTimer = useRef<any>(null);
+
   const speak = useSpeech(ttsEnabled);
+
+  const fixedOverlayMood = useMemo(() => {
+    if (transientMood) return transientMood;
+    if (screen === 'home') {
+      const threshold = Math.max(1, appSettings.skipSensitivity ?? 2);
+      return skipCount >= threshold ? 'gentle-reminder'
+        : Math.random() > 0.7 ? 'gentle-reminder'
+        : 'calm';
+    }
+    if (screen === 'pick') return 'encouraging';
+    if (screen === 'active') {
+      return 'encouraging';
+    }
+    if (screen === 'celebrate') {
+      return isVeryExcited ? 'very-excited' : 'proud';
+    }
+    if (screen === 'rewards') return 'serene';
+    if (screen === 'demo_intro') return 'calm';
+    if (screen === 'demo_step') return 'excited';
+    if (screen === 'demo_complete') return 'proud';
+    return 'calm';
+  }, [screen, skipCount, appSettings.skipSensitivity, isVeryExcited, mission, transientMood]);
+
+  const fixedOverlayCelebrate = screen === 'celebrate';
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -402,11 +430,26 @@ export default function App() {
     setScreen('home');
   }, []);
 
+  function flashBuddyMood(mood: BuddyMood, duration = 2200) {
+    setTransientMood(mood);
+    if (transientMoodTimer.current) {
+      clearTimeout(transientMoodTimer.current);
+    }
+    transientMoodTimer.current = setTimeout(() => setTransientMood(null), duration);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (transientMoodTimer.current) clearTimeout(transientMoodTimer.current);
+    };
+  }, []);
+
   function completeMission() {
     if (!mission) return;
     const newEver     = totalEver + mission.stars;
     const newTotal    = totalMissions + 1;
     const veryExcited = shouldBeVeryExcited(newEver, prevTotalEver, false);
+    const completionMood = veryExcited ? 'very-excited' : 'happy';
 
     setStars(n => n + mission.stars);
     setPrevTotalEver(totalEver);
@@ -417,6 +460,7 @@ export default function App() {
     setFirstMission(false);
     setIsVeryExcited(veryExcited);
     AsyncStorage.setItem(K.LAST_MISSION, mission.title).catch(console.log);
+    flashBuddyMood(completionMood);
     setScreen('celebrate');
   }
 
@@ -659,9 +703,19 @@ export default function App() {
         />
       )}
 
-      {/* ── FIXED BUDDY OVERLAY (stays on screen at all times, except Settings) ─── */}
+      {/* ── FIXED BUDDY + PROGRESS BAR OVERLAY (all screens except Settings) ───────── */}
       {onboardingDone && !showPinScreen && screen !== 'settings' && (
-        <Buddy mood="calm" speak={speak} size={130} fixed fixedTop={70} />
+        <View style={s.topOverlay} pointerEvents="box-none">
+          <View style={s.topOverlayContent}>
+            <Buddy
+              mood={fixedOverlayMood}
+              speak={speak}
+              size={130}
+              celebrate={fixedOverlayCelebrate}
+            />
+            <ProgressBar total={totalEver} speak={speak} />
+          </View>
+        </View>
       )}
 
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
@@ -729,6 +783,8 @@ const s = StyleSheet.create({
   screen:  { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
   scroll:  { alignItems: 'center', padding: 20, paddingBottom: 52 },
   homeScroll: { alignItems: 'center', padding: 20, paddingBottom: 52 },
+  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000, alignItems: 'center', paddingTop: 18, paddingHorizontal: 20, pointerEvents: 'box-none' },
+  topOverlayContent: { width: '100%', alignItems: 'center', pointerEvents: 'auto' },
 
   // Onboarding
   onboardingTitle: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginVertical: 24, color: C.text, paddingHorizontal: 20 },

@@ -15,6 +15,8 @@ export const BUDDY = {
   'very-excited':    require('../assets/Character/buddy-very-excited.png'),
 };
 
+export const BUDDY_FIXED_SPACER = 280;
+export const BUDDY_FIXED_TOP = 90;
 export type BuddyMood = keyof typeof BUDDY;
 
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────

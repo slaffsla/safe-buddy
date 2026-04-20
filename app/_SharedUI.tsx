@@ -37,7 +37,7 @@ export function ProgressBar({ total, speak }: { total: number; speak: (t: string
     <TouchableOpacity
       style={s.pbWrap}
       onPress={() => speak(`${emotionalLabel}. Звёзд: ${total}`)}
-      activeOpacity={0.75}
+      activeOpacity={0.82}
     >
       <View style={s.pbRow}>
         <Text style={s.pbEmotion}>{emotionalLabel}</Text>
@@ -108,7 +108,7 @@ export function Confetti({ trigger }: { trigger: boolean }) {
 
 const s = StyleSheet.create({
   // Progress bar
-  pbWrap:    { width: '100%', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 14 },
+  pbWrap:    { width: '100%', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 10, marginBottom: 14 },
   pbRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   pbEmotion: { fontSize: 12, color: C.green, fontWeight: '500', flex: 1, marginRight: 8 },
   pbStars:   { fontSize: 13, fontWeight: '700', color: C.green },

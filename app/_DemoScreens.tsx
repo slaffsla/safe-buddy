@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { T } from './_SharedUI';
-import { C } from './_constants';
+import { BUDDY_FIXED_SPACER, C } from './_constants';
 
 // ── DemoIntroScreen ───────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ export function DemoIntroScreen({ onStart, onSkip, speak }: {
 }) {
   return (
     <View style={s.screen}>
-      <View style={{height: 220}} />
+      <View style={{height: BUDDY_FIXED_SPACER}} />
       <T style={s.msg} speak={speak}>Давай попробуем вместе!</T>
       <T style={s.sub} speak={speak}>Три простых задания — для разминки</T>
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
@@ -47,7 +47,7 @@ export function DemoStepScreen({ step, stepIndex, totalSteps, onDone, speak }: {
 
   return (
     <View style={s.screen}>
-      <View style={{height: 220}} />
+      <View style={{height: BUDDY_FIXED_SPACER}} />
       <View style={s.stepCounter}>
         {Array(totalSteps).fill(0).map((_: any, i: number) => (
           <View key={i} style={[s.stepDot, i <= stepIndex && s.stepDotActive]} />
@@ -80,7 +80,7 @@ export function DemoCompleteScreen({ onGoToMissions, onGoHome, speak }: {
 }) {
   return (
     <View style={s.screen}>
-      <View style={{height: 220}} />
+      <View style={{height: BUDDY_FIXED_SPACER}} />
       <Text style={s.celebTitle}>Ты справился! 🎉</Text>
       <T style={s.msg} speak={speak}>Хочешь попробовать настоящую миссию?</T>
       <View style={s.demoCompleteButtons}>

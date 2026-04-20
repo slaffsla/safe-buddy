@@ -15,7 +15,7 @@ interface BuddyProps {
   fixedTop?: number;      // Distance from top when fixed
 }
 
-export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false, fixed = false, fixedBottom = 180, fixedTop }: BuddyProps) {
+export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = false, fixed = false, fixedBottom, fixedTop=90}: BuddyProps) {
   const tapScale    = useRef(new Animated.Value(1)).current;
   const breathScale = useRef(new Animated.Value(1)).current;
   const breathAnim  = useRef<Animated.CompositeAnimation | null>(null);

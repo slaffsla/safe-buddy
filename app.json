@@ -22,9 +22,6 @@
     "ios": {
       "icon": "./assets/Character/buddy-happy.png",
       "supportsTablet": true,
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.slaff.safebuddy",
       "splash": {
         "image": "./assets/Character/buddy-happy.png",
         "backgroundColor": "#F7F6F2",

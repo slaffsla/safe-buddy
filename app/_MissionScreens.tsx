@@ -43,14 +43,21 @@ interface MissionPickProps {
   speak: (t: string) => void;
   firstTime: boolean;
   missions?: PoolMission[] | null;
+  doneIds?: number[];
+  bonusMission?: PoolMission | null;
 }
 
 export function MissionPickScreen({
-  onPick, onBack, speak, firstTime, missions,
+  onPick, onBack, speak, firstTime, missions, doneIds, bonusMission,
 }: MissionPickProps) {
   const pool = (!missions || missions.length === 0)
     ? MISSION_POOL
     : missions;
+
+  const done = new Set<number>(doneIds ?? []);
+  const remaining = pool.filter(m => !done.has(m.id)).length;
+  const allDone = pool.length > 0 && remaining === 0;
+  const showBonus = allDone && !!bonusMission && !done.has(bonusMission.id);
 
   const active = currentSlot();
   const orderedSlots = [active, ...SLOT_ORDER.filter(s => s !== active)] as MissionSlot[];
@@ -69,11 +76,43 @@ export function MissionPickScreen({
       <View style={{height: BUDDY_FIXED_SPACER}} />
       <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
 
+      {allDone && (
+        <View style={s.encoreCard}>
+          <Text style={s.encoreEmoji}>🌙</Text>
+          <T style={s.encoreTitle} speak={speak}>
+            Ты сделал всё на сегодня!
+          </T>
+          <T style={s.encoreSub} speak={speak}>
+            Завтра Бадди принесёт новые миссии
+          </T>
+          {showBonus && bonusMission && (
+            <>
+              <T style={s.encoreBonusLabel} speak={speak}>
+                Хочешь ещё одну — бонус?
+              </T>
+              <TouchableOpacity
+                style={[s.mCard, s.bonusCard]}
+                onPress={() => onPick(bonusMission)}
+                onLongPress={() => speak(`${bonusMission.title}. ${bonusMission.subtitle}`)}
+              >
+                <Text style={s.mEmoji}>{bonusMission.emoji}</Text>
+                <View style={s.mInfo}>
+                  <Text style={s.mTitle}>{bonusMission.title}</Text>
+                  <Text style={s.mSub}>{bonusMission.subtitle}</Text>
+                </View>
+                <Text style={s.mStar}>{Array(bonusMission.stars).fill('⭐').join('')}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
+
       {orderedSlots.map(slot => {
         const items = grouped[slot];
         if (items.length === 0) return null;
         const isOpen = expanded === slot;
         const colors = SLOT_COLORS[slot];
+        const slotDone = items.filter(m => done.has(m.id)).length;
 
         return (
           <View key={slot} style={s.slotSection}>
@@ -84,26 +123,33 @@ export function MissionPickScreen({
             >
               <Text style={s.slotLabel}>{SLOT_LABELS[slot]}</Text>
               <View style={s.slotMeta}>
-                <Text style={s.slotCount}>{items.length}</Text>
+                <Text style={s.slotCount}>{slotDone}/{items.length}</Text>
                 <Text style={s.slotChevron}>{isOpen ? '▲' : '▼'}</Text>
               </View>
             </TouchableOpacity>
 
-            {isOpen && items.map(m => (
-              <TouchableOpacity
-                key={m.id}
-                style={[s.mCard, m.stars >= 2 && s.mCardBig]}
-                onPress={() => onPick(m)}
-                onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
-              >
-                <Text style={s.mEmoji}>{m.emoji}</Text>
-                <View style={s.mInfo}>
-                  <Text style={s.mTitle}>{m.title}</Text>
-                  <Text style={s.mSub}>{m.subtitle}</Text>
-                </View>
-                <Text style={s.mStar}>{Array(m.stars).fill('⭐').join('')}</Text>
-              </TouchableOpacity>
-            ))}
+            {isOpen && items.map(m => {
+              const isDone = done.has(m.id);
+              return (
+                <TouchableOpacity
+                  key={m.id}
+                  style={[s.mCard, m.stars >= 2 && s.mCardBig, isDone && s.mCardDone]}
+                  onPress={() => { if (!isDone) onPick(m); else speak(`${m.title}. Уже сделано сегодня`); }}
+                  onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
+                  activeOpacity={isDone ? 1 : 0.7}
+                >
+                  <Text style={[s.mEmoji, isDone && s.mEmojiDone]}>{m.emoji}</Text>
+                  <View style={s.mInfo}>
+                    <Text style={[s.mTitle, isDone && s.mTxtDone]}>{m.title}</Text>
+                    <Text style={[s.mSub, isDone && s.mTxtDone]}>{m.subtitle}</Text>
+                  </View>
+                  {isDone
+                    ? <Text style={s.mDoneBadge}>✓</Text>
+                    : <Text style={s.mStar}>{Array(m.stars).fill('⭐').join('')}</Text>
+                  }
+                </TouchableOpacity>
+              );
+            })}
           </View>
         );
       })}
@@ -286,11 +332,23 @@ const s = StyleSheet.create({
   // Mission cards
   mCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 13, marginBottom: 7, width: '100%' },
   mCardBig: { backgroundColor: C.gold, borderColor: C.goldBdr },
+  mCardDone:{ backgroundColor: C.greenLt, borderColor: C.green, opacity: 0.75 },
   mEmoji:   { fontSize: 30, marginRight: 11 },
+  mEmojiDone:{ opacity: 0.55 },
   mInfo:    { flex: 1 },
   mTitle:   { fontSize: 15, fontWeight: '600', color: C.text },
   mSub:     { fontSize: 12, color: C.muted, marginTop: 2 },
   mStar:    { fontSize: 17 },
+  mTxtDone: { textDecorationLine: 'line-through', color: C.muted },
+  mDoneBadge:{ fontSize: 20, color: C.green, fontWeight: '800', marginLeft: 4 },
+
+  // Encore / bonus
+  encoreCard:   { width: '100%', backgroundColor: C.greenLt, borderRadius: 18, borderWidth: 1, borderColor: C.green, padding: 18, alignItems: 'center', marginBottom: 14 },
+  encoreEmoji:  { fontSize: 40, marginBottom: 6 },
+  encoreTitle:  { fontSize: 18, fontWeight: '700', color: C.green, textAlign: 'center' },
+  encoreSub:    { fontSize: 13, color: C.green, textAlign: 'center', marginTop: 4, marginBottom: 10 },
+  encoreBonusLabel: { fontSize: 13, color: C.green, fontWeight: '600', marginTop: 6, marginBottom: 6, alignSelf: 'flex-start' },
+  bonusCard:    { backgroundColor: C.gold, borderColor: C.goldBdr },
 
   celebTitle:    { fontSize: 24, fontWeight: '800', color: C.green, marginBottom: 4, textAlign: 'center' },
   milestoneTitle:{ fontSize: 26, fontWeight: '900', color: C.green, marginBottom: 4, textAlign: 'center' },

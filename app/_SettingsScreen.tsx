@@ -82,6 +82,11 @@ export interface AppSettings {
   rotatingPoolSize: number;      // how many rotating slots shown (1-3)
   missions: MissionConfig[];     // per-mission config
 
+  // Infinity loop — daily picker (shows a small stable subset per day)
+  infinityLoopEnabled: boolean;
+  dailyPickerSize: number;       // 3–6; default 5
+  bonusAfterCompletion: boolean; // offer one extra mission once subset is done
+
   // Rewards
   rewards: RewardConfig[];
 
@@ -117,6 +122,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   rotationEnabled: false,
   rotationFrequency: 'weekly',
   rotatingPoolSize: 2,
+  infinityLoopEnabled: true,
+  dailyPickerSize: 5,
+  bonusAfterCompletion: true,
   missions: [
     { id: 1, title: 'Постой на одной ноге',   subtitle: 'Держись 5 секунд', stars: 1, emoji: '🦩', type: 'permanent' },
     { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно вниз',    stars: 1, emoji: '🙆', type: 'permanent' },
@@ -559,6 +567,52 @@ function MissionsSection({
         <Text style={[u.rowSublabel, { padding: 8, textAlign: 'center' }]}>
           Нажми на тип, чтобы переключить: Всегда → Ротация → Выкл
         </Text>
+      </Card>
+
+      <Card>
+        <SettingRow
+          label="Бесконечный цикл"
+          sublabel="Каждый день — небольшой набор миссий, обновляется к утру"
+        >
+          <Switch
+            value={settings.infinityLoopEnabled}
+            onValueChange={v => onChange({ infinityLoopEnabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </SettingRow>
+        {settings.infinityLoopEnabled && (
+          <>
+            <Divider />
+            <SettingRow
+              label="Миссий в день"
+              sublabel="Сколько показывать на экране выбора"
+            >
+              <PillSelector
+                options={[
+                  { label: '3', value: '3' },
+                  { label: '4', value: '4' },
+                  { label: '5', value: '5' },
+                  { label: '6', value: '6' },
+                ]}
+                value={String(settings.dailyPickerSize) as '3' | '4' | '5' | '6'}
+                onChange={v => onChange({ dailyPickerSize: parseInt(v, 10) })}
+              />
+            </SettingRow>
+            <Divider />
+            <SettingRow
+              label="Бонусная миссия"
+              sublabel="Предложить одну дополнительную, когда все выполнены"
+            >
+              <Switch
+                value={settings.bonusAfterCompletion}
+                onValueChange={v => onChange({ bonusAfterCompletion: v })}
+                trackColor={{ false: C.track, true: C.green }}
+                thumbColor={C.white}
+              />
+            </SettingRow>
+          </>
+        )}
       </Card>
 
       <Card>

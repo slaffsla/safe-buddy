@@ -37,6 +37,7 @@ export const K = {
   ONBOARDING_DONE:   'sb_onboarding_done',
   MORNING_DONE:      'sb_morning_done',    // ISO date of last completed morning routine
   DAY_MODE_OVERRIDE: 'sb_day_mode',        // 'weekday' | 'weekend' | '' (auto)
+  DONE_IDS_TODAY:    'sb_done_ids_today',  // JSON array of mission IDs completed today
 };
 
 // ── MISSION TYPES ─────────────────────────────────────────────────────────────
@@ -178,6 +179,84 @@ export const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
 export function getDailySuggestion() {
   const dayOfYear = Math.floor(Date.now() / 86400000);
   return DAILY_SUGGESTIONS[dayOfYear % DAILY_SUGGESTIONS.length];
+}
+
+// ── INFINITY LOOP — Daily subset picker ───────────────────────────────────────
+// Deterministic per date string, slot-diverse, stable all day, rotates tomorrow.
+
+function seedFromDateStr(dateStr: string): number {
+  // FNV-1a 32-bit hash of the YYYY-MM-DD string
+  let h = 2166136261;
+  for (let i = 0; i < dateStr.length; i++) {
+    h ^= dateStr.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Deterministic daily picker.
+// - Stable within a given `dateStr` (same list all day).
+// - Different `dateStr` → different shuffle (feels "alive" next day).
+// - Prefers slot diversity: try to include at least one morning/afternoon/evening
+//   before filling the rest, so the screen doesn't feel lopsided.
+export function pickDailySubset(
+  pool: PoolMission[],
+  dateStr: string,
+  size: number,
+): PoolMission[] {
+  if (size <= 0 || pool.length === 0) return [];
+  if (pool.length <= size) return pool.slice();
+
+  const rng = mulberry32(seedFromDateStr(dateStr));
+  // Deterministic shuffle (Fisher–Yates with seeded rng)
+  const arr = pool.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  const picked: PoolMission[] = [];
+  const usedSlots = new Set<MissionSlot>();
+  // First pass: one from each time-bound slot if possible
+  for (const m of arr) {
+    if (picked.length >= size) break;
+    if (m.slot === 'morning' || m.slot === 'afternoon' || m.slot === 'evening') {
+      if (!usedSlots.has(m.slot)) {
+        picked.push(m);
+        usedSlots.add(m.slot);
+      }
+    }
+  }
+  // Second pass: fill remaining slots in shuffled order
+  for (const m of arr) {
+    if (picked.length >= size) break;
+    if (!picked.includes(m)) picked.push(m);
+  }
+  return picked;
+}
+
+// Pick a single "bonus" mission from the leftover pool (those not in today's subset).
+// Uses a shifted seed so the bonus is different from today's picks but still
+// deterministic for the given date.
+export function pickBonusMission(
+  leftover: PoolMission[],
+  dateStr: string,
+): PoolMission | null {
+  if (leftover.length === 0) return null;
+  const rng = mulberry32(seedFromDateStr(dateStr) ^ 0x9E3779B9);
+  const idx = Math.floor(rng() * leftover.length);
+  return leftover[idx] ?? null;
 }
 
 // True if today is Saturday or Sunday

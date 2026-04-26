@@ -1,0 +1,7 @@
+Summary: Safe
+
+Issues:
+- None identified in this diff. The change is a type annotation addition fo[2D[K
+for the `CONFETTI_AT` constant array, which does not affect the functionali[11D[K
+functionality of the code.
+

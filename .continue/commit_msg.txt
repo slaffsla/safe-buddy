@@ -1,0 +1,6 @@
+```
+chore(SafeBuddy): explicitly type CONFETTI_AT array
+
+- Explicitly typed CONFETTI_AT as a number array for clarity.
+```
+

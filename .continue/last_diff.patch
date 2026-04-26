@@ -1,0 +1,5 @@
+--- a/_constants.ts
++++ b/_constants.ts
+@@
+-const CONFETTI_AT = [5, 10, 25, 50, 100];
++const CONFETTI_AT: number[] = [5, 10, 25, 50, 100];

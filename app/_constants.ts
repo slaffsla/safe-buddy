@@ -196,6 +196,29 @@ export function getDailySuggestion() {
   return DAILY_SUGGESTIONS[dayOfYear % DAILY_SUGGESTIONS.length];
 }
 
+export function getBuddyImage(mood: BuddyMood) {
+  return BUDDY[mood] ?? BUDDY.calm;
+}
+
+export function getBuddyLine(mood: BuddyMood): string {
+  switch (mood) {
+    case 'calm':              return MSG.idle;
+    case 'gentle-reminder':   return MSG.idle_alt;
+    case 'serene':            return MSG.serene;
+    case 'encouraging':       return MSG.encouraging;
+    case 'thinking':          return MSG.thinking;
+    case 'excited':           return MSG.start;
+    case 'happy':
+    case 'proud':             return MSG.done;
+    case 'very-excited':      return MSG['very-excited'];
+    default:                  return MSG.idle;
+  }
+}
+
+export function isAmbientMood(mood: BuddyMood): boolean {
+  return mood === 'calm' || mood === 'gentle-reminder' || mood === 'serene';
+}
+
 // ── INFINITY LOOP — Daily subset picker ───────────────────────────────────────
 // Deterministic per date string, slot-diverse, stable all day, rotates tomorrow.
 

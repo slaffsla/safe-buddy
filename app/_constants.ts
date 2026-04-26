@@ -353,6 +353,7 @@ export function getDailySuggestion() {
 
 export function getBuddyImage(mood: BuddyMood) {
   return BUDDY[mood] ?? BUDDY.calm;
+
 }
 
 export function getBuddyLine(mood: BuddyMood): string {
@@ -372,6 +373,19 @@ export function getBuddyLine(mood: BuddyMood): string {
 
 export function isAmbientMood(mood: BuddyMood): boolean {
   return mood === 'calm' || mood === 'gentle-reminder' || mood === 'serene';
+}
+
+// ── INFINITY LOOP — Daily subset picker ───────────────────────────────────────
+// Deterministic per date string, slot-diverse, stable all day, rotates tomorrow.
+
+function seedFromDateStr(dateStr: string): number {
+  // FNV-1a 32-bit hash of the YYYY-MM-DD string
+  let h = 2166136261;
+  for (let i = 0; i < dateStr.length; i++) {
+    h ^= dateStr.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
 }
 
 // ── DAILY MISSION SELECTION ────────────────────────────────────────────────────

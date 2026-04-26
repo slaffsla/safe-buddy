@@ -13,7 +13,7 @@ export const BUDDY = {
   happy:             require('../assets/Character/buddy-happy.png'),
   proud:             require('../assets/Character/buddy-proud.png'),
   'very-excited':    require('../assets/Character/buddy-very-excited.png'),
-};
+} as const;
 
 export const BUDDY_FIXED_SPACER = 280;
 export const BUDDY_FIXED_TOP = 90;
@@ -57,8 +57,21 @@ export interface PoolMission {
   weekendDefault: boolean;
 }
 
+export interface Reward {
+  id: number;
+  title: string;
+  cost: number;
+  emoji: string;
+  maxPerDay?: number; // future-safe, unused
+}
+
+export interface DailySuggestion {
+  text: string;
+  missionId: number;
+}
+
 // ── FULL MISSION POOL ─────────────────────────────────────────────────────────
-// IDs match your son's lists: 1-5 easy, 7-12 bigger.
+// IDs match son's lists: 1-5 easy, 7-12 bigger.
 
 export const MISSION_POOL: PoolMission[] = [
   { id: 1,  title: 'Постой на одной ноге',              subtitle: 'Пять секунд',      stars: 1, emoji: '🦩', category: 'movement', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
@@ -100,7 +113,7 @@ export const MORNING_CUTOFF_HOUR = 12;
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────
 
-export const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
+export const CONFETTI_AT = [1, 5, 10, 25, 50, 100] as const;
 
 export const DEMO_STEPS = [
   { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },
@@ -108,7 +121,7 @@ export const DEMO_STEPS = [
   { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Отлично получилось' },
 ];
 
-export const REWARDS = [
+export const REWARDS: Reward[] = [
   { id: 1, title: 'Дополнительный мультик или видео', cost: 3, emoji: '📺' },
   { id: 2, title: 'Выбрать ужин',                    cost: 4, emoji: '🍕' },
   { id: 3, title: 'Лечь спать позже',                cost: 5, emoji: '🌙' },
@@ -116,7 +129,7 @@ export const REWARDS = [
   { id: 5, title: 'Игра с папой',                    cost: 2, emoji: '🎮' },
 ];
 
-export const DAILY_SUGGESTIONS = [
+export const DAILY_SUGGESTIONS: DailySuggestion[] = [
   { text: 'Попробуй выпить воду',          missionId: 4  },
   { text: 'Скажи что-то хорошее кому-то', missionId: 10 },
   { text: 'Потянись немного',              missionId: 2  },
@@ -135,9 +148,11 @@ export const MSG = {
   serene:         'Всё хорошо',
   'very-excited': 'Это важно',
   morning:        'Доброе утро! Начнём день вместе?',
-};
+} as const;
 
-export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200];
+export type MsgKey = keyof typeof MSG;
+
+export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200] as const;
 
 // ── COLORS ────────────────────────────────────────────────────────────────────
 

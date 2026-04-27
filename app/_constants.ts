@@ -13,7 +13,7 @@ export const BUDDY = {
   happy:             require('../assets/Character/buddy-happy.png'),
   proud:             require('../assets/Character/buddy-proud.png'),
   'very-excited':    require('../assets/Character/buddy-very-excited.png'),
-};
+} as const;
 
 export const BUDDY_FIXED_SPACER = 280;
 export const BUDDY_FIXED_TOP = 90;
@@ -37,6 +37,7 @@ export const K = {
   ONBOARDING_DONE:   'sb_onboarding_done',
   MORNING_DONE:      'sb_morning_done',    // ISO date of last completed morning routine
   DAY_MODE_OVERRIDE: 'sb_day_mode',        // 'weekday' | 'weekend' | '' (auto)
+  DONE_IDS_TODAY:    'sb_done_ids_today',  // JSON array of mission IDs completed today
 };
 
 // ── MISSION TYPES ─────────────────────────────────────────────────────────────
@@ -56,8 +57,21 @@ export interface PoolMission {
   weekendDefault: boolean;
 }
 
+export interface Reward {
+  id: number;
+  title: string;
+  cost: number;
+  emoji: string;
+  maxPerDay?: number; // future-safe, unused
+}
+
+export interface DailySuggestion {
+  text: string;
+  missionId: number;
+}
+
 // ── FULL MISSION POOL ─────────────────────────────────────────────────────────
-// IDs match your son's lists: 1-5 easy, 7-12 bigger.
+// IDs match son's lists: 1-5 easy, 7-12 bigger.
 
 export const MISSION_POOL: PoolMission[] = [
   { id: 1,  title: 'Постой на одной ноге',              subtitle: 'Пять секунд',      stars: 1, emoji: '🦩', category: 'movement', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
@@ -99,7 +113,7 @@ export const MORNING_CUTOFF_HOUR = 12;
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────
 
-export const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
+export const CONFETTI_AT = [1, 5, 10, 25, 50, 100] as const;
 
 export const DEMO_STEPS = [
   { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },
@@ -107,7 +121,7 @@ export const DEMO_STEPS = [
   { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Отлично получилось' },
 ];
 
-export const REWARDS = [
+export const REWARDS: Reward[] = [
   { id: 1, title: 'Дополнительный мультик или видео', cost: 3, emoji: '📺' },
   { id: 2, title: 'Выбрать ужин',                    cost: 4, emoji: '🍕' },
   { id: 3, title: 'Лечь спать позже',                cost: 5, emoji: '🌙' },
@@ -115,7 +129,7 @@ export const REWARDS = [
   { id: 5, title: 'Игра с папой',                    cost: 2, emoji: '🎮' },
 ];
 
-export const DAILY_SUGGESTIONS = [
+export const DAILY_SUGGESTIONS: DailySuggestion[] = [
   { text: 'Попробуй выпить воду',          missionId: 4  },
   { text: 'Скажи что-то хорошее кому-то', missionId: 10 },
   { text: 'Потянись немного',              missionId: 2  },
@@ -134,9 +148,11 @@ export const MSG = {
   serene:         'Всё хорошо',
   'very-excited': 'Это важно',
   morning:        'Доброе утро! Начнём день вместе?',
-};
+} as const;
 
-export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200];
+export type MsgKey = keyof typeof MSG;
+
+export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200] as const;
 
 // ── COLORS ────────────────────────────────────────────────────────────────────
 
@@ -178,6 +194,147 @@ export const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
 export function getDailySuggestion() {
   const dayOfYear = Math.floor(Date.now() / 86400000);
   return DAILY_SUGGESTIONS[dayOfYear % DAILY_SUGGESTIONS.length];
+}
+
+export function getBuddyImage(mood: BuddyMood) {
+  return BUDDY[mood] ?? BUDDY.calm;
+}
+
+export function getBuddyLine(mood: BuddyMood): string {
+  switch (mood) {
+    case 'calm':              return MSG.idle;
+    case 'gentle-reminder':   return MSG.idle_alt;
+    case 'serene':            return MSG.serene;
+    case 'encouraging':       return MSG.encouraging;
+    case 'thinking':          return MSG.thinking;
+    case 'excited':           return MSG.start;
+    case 'happy':
+    case 'proud':             return MSG.done;
+    case 'very-excited':      return MSG['very-excited'];
+    default:                  return MSG.idle;
+  }
+}
+
+export function isAmbientMood(mood: BuddyMood): boolean {
+  return mood === 'calm' || mood === 'gentle-reminder' || mood === 'serene';
+}
+
+// ── DAILY MISSION SELECTION ────────────────────────────────────────────────────
+// Deterministic daily picker that produces a stable, slot-diverse subset of missions.
+// - Same date string → same selection all day
+// - Different date → different shuffle (feels "alive" next day)
+// - Ensures variety across morning/afternoon/evening slots before filling remaining spots
+
+/**
+ * Generates a deterministic 32-bit seed from a date string (YYYY-MM-DD format)
+ * using the FNV-1a hash algorithm.
+ */
+function hashDateToSeed(dateStr: string): number {
+  const FNV_PRIME = 16777619;
+  const FNV_OFFSET_BASIS = 2166136261;
+
+  let hash = FNV_OFFSET_BASIS;
+  for (let i = 0; i < dateStr.length; i++) {
+    hash ^= dateStr.charCodeAt(i);
+    hash = Math.imul(hash, FNV_PRIME);
+  }
+  return hash >>> 0; // Ensure unsigned 32-bit integer
+}
+
+/**
+ * Creates a seeded pseudo-random number generator using the Mulberry32 algorithm.
+ * Returns a function that produces deterministic random values between 0 and 1.
+ */
+function createSeededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+
+  return function random(): number {
+    state = (state + 0x6D2B79F5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Selects a deterministic subset of missions for the given date.
+ *
+ * The selection algorithm:
+ * 1. Shuffles the pool deterministically based on the date
+ * 2. First pass: picks one mission from each time slot (morning/afternoon/evening)
+ *    to ensure variety throughout the day
+ * 3. Second pass: fills remaining slots from the shuffled pool
+ *
+ * @param pool - Available missions to choose from
+ * @param dateStr - Date string in YYYY-MM-DD format
+ * @param size - Number of missions to select
+ * @returns Selected subset of missions
+ */
+export function selectDailyMissions(
+  pool: PoolMission[],
+  dateStr: string,
+  size: number,
+): PoolMission[] {
+  if (size <= 0 || pool.length === 0) return [];
+  if (pool.length <= size) return pool.slice();
+
+  const random = createSeededRandom(hashDateToSeed(dateStr));
+
+  // Create a deterministic shuffle using Fisher-Yates algorithm
+  const shuffled = pool.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  const selected: PoolMission[] = [];
+  const usedSlots = new Set<MissionSlot>();
+
+  // First pass: ensure diversity by picking one from each time-bound slot
+  const TIME_BOUND_SLOTS: MissionSlot[] = ['morning', 'afternoon', 'evening'];
+
+  for (const mission of shuffled) {
+    if (selected.length >= size) break;
+
+    if (TIME_BOUND_SLOTS.includes(mission.slot) && !usedSlots.has(mission.slot)) {
+      selected.push(mission);
+      usedSlots.add(mission.slot);
+    }
+  }
+
+  // Second pass: fill remaining slots from the shuffled pool
+  for (const mission of shuffled) {
+    if (selected.length >= size) break;
+    if (!selected.includes(mission)) {
+      selected.push(mission);
+    }
+  }
+
+  return selected;
+}
+
+/**
+ * Selects a bonus mission from the remaining pool (missions not in today's main selection).
+ * Uses a shifted seed to ensure the bonus is different from today's picks but still
+ * deterministic for the given date.
+ *
+ * @param leftover - Missions not included in the daily selection
+ * @param dateStr - Date string in YYYY-MM-DD format
+ * @returns A single bonus mission, or null if no leftovers available
+ */
+export function selectBonusMission(
+  leftover: PoolMission[],
+  dateStr: string,
+): PoolMission | null {
+  if (leftover.length === 0) return null;
+
+  // XOR with golden ratio constant to shift the seed
+  const BONUS_SEED_SHIFT = 0x9E3779B9;
+  const random = createSeededRandom(hashDateToSeed(dateStr) ^ BONUS_SEED_SHIFT);
+
+  const index = Math.floor(random() * leftover.length);
+  return leftover[index] ?? null;
 }
 
 // True if today is Saturday or Sunday

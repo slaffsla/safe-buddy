@@ -22,7 +22,7 @@ import HomeScreen from './_HomeScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
-import { BUDDY_FIXED_TOP, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, shouldShowMorning } from './_constants';
+import { BUDDY_FIXED_TOP, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, selectBonusMission, selectDailyMissions, PoolMission, shouldShowMorning } from './_constants';
 import Buddy from './_Buddy';
 import { ProgressBar } from './_SharedUI';
 
@@ -105,6 +105,7 @@ const K = {
   PIN_ENABLED:     'sb_pin_enabled',
   ONBOARDING_DONE: 'sb_onboarding_done',
   MORNING_DONE:    'sb_morning_done',
+  DONE_IDS_TODAY:  'sb_done_ids_today',
 };
 
 const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
@@ -249,6 +250,7 @@ export default function App() {
   const [firstReward,     setFirstReward]     = useState(false);
   const [morningDoneDate, setMorningDoneDate] = useState('');
   const [showMorning, setShowMorning] = useState(false);
+  const [doneIdsToday, setDoneIdsToday] = useState<number[]>([]);
 
   // Onboarding
   const [childName,       setChildName]       = useState('');
@@ -302,7 +304,8 @@ export default function App() {
           K.STARS, K.TOTAL_EVER, K.COMPLETED_TODAY,
           K.LAST_DATE, K.DEMO_DONE, K.TOTAL_MISSIONS,
           K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
-          K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE, K.MORNING_DONE
+          K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE, K.MORNING_DONE,
+          K.DONE_IDS_TODAY,
         ]);
         // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
         const v: Record<string, string> = Object.fromEntries(
@@ -329,6 +332,16 @@ export default function App() {
         setFirstMission(tm === 0);
         setOnboardingDone(v[K.ONBOARDING_DONE] === 'true');
         setParentPin(v[K.PARENT_PIN] || '');
+
+        // Restore today's completed mission IDs (reset on new day)
+        if (newDay) {
+          setDoneIdsToday([]);
+        } else {
+          try {
+            const parsed = v[K.DONE_IDS_TODAY] ? JSON.parse(v[K.DONE_IDS_TODAY]) : [];
+            setDoneIdsToday(Array.isArray(parsed) ? parsed.filter((n: any) => typeof n === 'number') : []);
+          } catch { setDoneIdsToday([]); }
+        }
 
         // Load full settings
         const s = await loadSettings();
@@ -378,6 +391,11 @@ export default function App() {
     if (!ready) return;
     AsyncStorage.setItem(K.COMPLETED_TODAY, String(completedToday)).catch(console.log);
   }, [completedToday, ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    AsyncStorage.setItem(K.DONE_IDS_TODAY, JSON.stringify(doneIdsToday)).catch(console.log);
+  }, [doneIdsToday, ready]);
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
   async function saveChildName() {
@@ -459,6 +477,9 @@ export default function App() {
     setSkipCount(0);
     setFirstMission(false);
     setIsVeryExcited(veryExcited);
+    if (typeof mission.id === 'number') {
+      setDoneIdsToday(ids => (ids.includes(mission.id) ? ids : [...ids, mission.id]));
+    }
     AsyncStorage.setItem(K.LAST_MISSION, mission.title).catch(console.log);
     flashBuddyMood(completionMood);
     setScreen('celebrate');
@@ -563,13 +584,35 @@ export default function App() {
     appSettings.missions.map(m => [m.id, m.type])
   );
 
-  let dayMissions = MISSION_POOL.filter(m =>
+  // Active pool respects day-mode selection + excludes "inactive"
+  const activePool: PoolMission[] = MISSION_POOL.filter(m =>
     selectedIds.includes(m.id) && missionTypeById[m.id] !== 'inactive'
   );
 
-  if (appSettings.rotationEnabled) {
-    const permanent = dayMissions.filter(m => missionTypeById[m.id] === 'permanent');
-    const rotating = dayMissions.filter(m => missionTypeById[m.id] === 'rotating');
+  let dayMissions: PoolMission[] = activePool;
+  let bonusMission: PoolMission | null = null;
+
+  if (appSettings.infinityLoopEnabled) {
+    // Infinity Loop: small, stable, date-seeded subset.
+    // Permanents are always included first; remaining slots filled from the
+    // rest of the active pool via the deterministic daily picker.
+    const size = Math.max(1, Math.min(6, appSettings.dailyPickerSize ?? 5));
+    const today = todayStr();
+    const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');
+    const others    = activePool.filter(m => missionTypeById[m.id] !== 'permanent');
+    const remaining = Math.max(0, size - permanent.length);
+    const fillers   = selectDailyMissions(others, today, remaining);
+    const subsetIds = new Set<number>([...permanent.map(m => m.id), ...fillers.map(m => m.id)]);
+    // Keep MISSION_POOL order within the subset for stable slot-grouping in UI
+    dayMissions = MISSION_POOL.filter(m => subsetIds.has(m.id));
+
+    if (appSettings.bonusAfterCompletion) {
+      const leftover = activePool.filter(m => !subsetIds.has(m.id) && !doneIdsToday.includes(m.id));
+      bonusMission = selectBonusMission(leftover, today);
+    }
+  } else if (appSettings.rotationEnabled) {
+    const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');
+    const rotating = activePool.filter(m => missionTypeById[m.id] === 'rotating');
     const rotateCount = Math.min(appSettings.rotatingPoolSize, rotating.length);
     const seed = rotating.length ? getRotationSeed(appSettings.rotationFrequency) % rotating.length : 0;
     const rotated = Array.from({ length: rotateCount }, (_, index) => (
@@ -654,6 +697,8 @@ export default function App() {
           {...p}
           firstTime={firstMission}
           missions={dayMissions.length > 0 ? dayMissions : null}
+          doneIds={doneIdsToday}
+          bonusMission={appSettings.infinityLoopEnabled && appSettings.bonusAfterCompletion ? bonusMission : null}
           onPick={pickMission}
           onBack={() => setScreen('home')}
         />

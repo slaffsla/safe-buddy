@@ -219,36 +219,59 @@ export function isAmbientMood(mood: BuddyMood): boolean {
   return mood === 'calm' || mood === 'gentle-reminder' || mood === 'serene';
 }
 
-// ── INFINITY LOOP — Daily subset picker ───────────────────────────────────────
-// Deterministic per date string, slot-diverse, stable all day, rotates tomorrow.
+// ── DAILY MISSION SELECTION ────────────────────────────────────────────────────
+// Deterministic daily picker that produces a stable, slot-diverse subset of missions.
+// - Same date string → same selection all day
+// - Different date → different shuffle (feels "alive" next day)
+// - Ensures variety across morning/afternoon/evening slots before filling remaining spots
 
-function seedFromDateStr(dateStr: string): number {
-  // FNV-1a 32-bit hash of the YYYY-MM-DD string
-  let h = 2166136261;
+/**
+ * Generates a deterministic 32-bit seed from a date string (YYYY-MM-DD format)
+ * using the FNV-1a hash algorithm.
+ */
+function hashDateToSeed(dateStr: string): number {
+  const FNV_PRIME = 16777619;
+  const FNV_OFFSET_BASIS = 2166136261;
+
+  let hash = FNV_OFFSET_BASIS;
   for (let i = 0; i < dateStr.length; i++) {
-    h ^= dateStr.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+    hash ^= dateStr.charCodeAt(i);
+    hash = Math.imul(hash, FNV_PRIME);
   }
-  return h >>> 0;
+  return hash >>> 0; // Ensure unsigned 32-bit integer
 }
 
-function mulberry32(seed: number) {
-  let a = seed >>> 0;
-  return function () {
-    a = (a + 0x6D2B79F5) >>> 0;
-    let t = a;
+/**
+ * Creates a seeded pseudo-random number generator using the Mulberry32 algorithm.
+ * Returns a function that produces deterministic random values between 0 and 1.
+ */
+function createSeededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+
+  return function random(): number {
+    state = (state + 0x6D2B79F5) >>> 0;
+    let t = state;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
-// Deterministic daily picker.
-// - Stable within a given `dateStr` (same list all day).
-// - Different `dateStr` → different shuffle (feels "alive" next day).
-// - Prefers slot diversity: try to include at least one morning/afternoon/evening
-//   before filling the rest, so the screen doesn't feel lopsided.
-export function pickDailySubset(
+/**
+ * Selects a deterministic subset of missions for the given date.
+ *
+ * The selection algorithm:
+ * 1. Shuffles the pool deterministically based on the date
+ * 2. First pass: picks one mission from each time slot (morning/afternoon/evening)
+ *    to ensure variety throughout the day
+ * 3. Second pass: fills remaining slots from the shuffled pool
+ *
+ * @param pool - Available missions to choose from
+ * @param dateStr - Date string in YYYY-MM-DD format
+ * @param size - Number of missions to select
+ * @returns Selected subset of missions
+ */
+export function selectDailyMissions(
   pool: PoolMission[],
   dateStr: string,
   size: number,
@@ -256,45 +279,62 @@ export function pickDailySubset(
   if (size <= 0 || pool.length === 0) return [];
   if (pool.length <= size) return pool.slice();
 
-  const rng = mulberry32(seedFromDateStr(dateStr));
-  // Deterministic shuffle (Fisher–Yates with seeded rng)
-  const arr = pool.slice();
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  const random = createSeededRandom(hashDateToSeed(dateStr));
+
+  // Create a deterministic shuffle using Fisher-Yates algorithm
+  const shuffled = pool.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  const picked: PoolMission[] = [];
+  const selected: PoolMission[] = [];
   const usedSlots = new Set<MissionSlot>();
-  // First pass: one from each time-bound slot if possible
-  for (const m of arr) {
-    if (picked.length >= size) break;
-    if (m.slot === 'morning' || m.slot === 'afternoon' || m.slot === 'evening') {
-      if (!usedSlots.has(m.slot)) {
-        picked.push(m);
-        usedSlots.add(m.slot);
-      }
+
+  // First pass: ensure diversity by picking one from each time-bound slot
+  const TIME_BOUND_SLOTS: MissionSlot[] = ['morning', 'afternoon', 'evening'];
+
+  for (const mission of shuffled) {
+    if (selected.length >= size) break;
+
+    if (TIME_BOUND_SLOTS.includes(mission.slot) && !usedSlots.has(mission.slot)) {
+      selected.push(mission);
+      usedSlots.add(mission.slot);
     }
   }
-  // Second pass: fill remaining slots in shuffled order
-  for (const m of arr) {
-    if (picked.length >= size) break;
-    if (!picked.includes(m)) picked.push(m);
+
+  // Second pass: fill remaining slots from the shuffled pool
+  for (const mission of shuffled) {
+    if (selected.length >= size) break;
+    if (!selected.includes(mission)) {
+      selected.push(mission);
+    }
   }
-  return picked;
+
+  return selected;
 }
 
-// Pick a single "bonus" mission from the leftover pool (those not in today's subset).
-// Uses a shifted seed so the bonus is different from today's picks but still
-// deterministic for the given date.
-export function pickBonusMission(
+/**
+ * Selects a bonus mission from the remaining pool (missions not in today's main selection).
+ * Uses a shifted seed to ensure the bonus is different from today's picks but still
+ * deterministic for the given date.
+ *
+ * @param leftover - Missions not included in the daily selection
+ * @param dateStr - Date string in YYYY-MM-DD format
+ * @returns A single bonus mission, or null if no leftovers available
+ */
+export function selectBonusMission(
   leftover: PoolMission[],
   dateStr: string,
 ): PoolMission | null {
   if (leftover.length === 0) return null;
-  const rng = mulberry32(seedFromDateStr(dateStr) ^ 0x9E3779B9);
-  const idx = Math.floor(rng() * leftover.length);
-  return leftover[idx] ?? null;
+
+  // XOR with golden ratio constant to shift the seed
+  const BONUS_SEED_SHIFT = 0x9E3779B9;
+  const random = createSeededRandom(hashDateToSeed(dateStr) ^ BONUS_SEED_SHIFT);
+
+  const index = Math.floor(random() * leftover.length);
+  return leftover[index] ?? null;
 }
 
 // True if today is Saturday or Sunday

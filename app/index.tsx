@@ -22,7 +22,7 @@ import HomeScreen from './_HomeScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
-import { BUDDY_FIXED_TOP, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, pickBonusMission, pickDailySubset, PoolMission, shouldShowMorning } from './_constants';
+import { BUDDY_FIXED_TOP, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, selectBonusMission, selectDailyMissions, PoolMission, shouldShowMorning } from './_constants';
 import Buddy from './_Buddy';
 import { ProgressBar } from './_SharedUI';
 
@@ -601,14 +601,14 @@ export default function App() {
     const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');
     const others    = activePool.filter(m => missionTypeById[m.id] !== 'permanent');
     const remaining = Math.max(0, size - permanent.length);
-    const fillers   = pickDailySubset(others, today, remaining);
+    const fillers   = selectDailyMissions(others, today, remaining);
     const subsetIds = new Set<number>([...permanent.map(m => m.id), ...fillers.map(m => m.id)]);
     // Keep MISSION_POOL order within the subset for stable slot-grouping in UI
     dayMissions = MISSION_POOL.filter(m => subsetIds.has(m.id));
 
     if (appSettings.bonusAfterCompletion) {
       const leftover = activePool.filter(m => !subsetIds.has(m.id) && !doneIdsToday.includes(m.id));
-      bonusMission = pickBonusMission(leftover, today);
+      bonusMission = selectBonusMission(leftover, today);
     }
   } else if (appSettings.rotationEnabled) {
     const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');

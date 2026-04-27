@@ -23,7 +23,7 @@ import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from 
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
 import { ProgressBar } from './_SharedUI';
-import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, effectiveMissionEnabled, effectiveMissionStars, effectiveRewardCost, effectiveRewardEnabled, getAgeProfile, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, Reward, REWARDS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
+import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEMO_STEPS, effectiveMissionEnabled, effectiveMissionStars, effectiveRewardCost, effectiveRewardEnabled, getAgeProfile, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, Reward, REWARDS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────

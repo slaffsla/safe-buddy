@@ -17,14 +17,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Buddy from './_Buddy';
 import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
 import HomeScreen from './_HomeScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
-import { BUDDY_FIXED_TOP, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, selectBonusMission, selectDailyMissions, PoolMission, shouldShowMorning } from './_constants';
-import Buddy from './_Buddy';
 import { ProgressBar } from './_SharedUI';
+import { BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, isWeekend, MILESTONES, MISSION_POOL, PoolMission, selectBonusMission, selectDailyMissions, shouldShowMorning } from './_constants';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -67,27 +67,6 @@ function shouldBeVeryExcited(
   return false;
 }
 
-// ── EMOTIONAL PROGRESSION ─────────────────────────────────────────────────────
-
-function getProgressionMessage(totalMissions: number, completedToday: number): string {
-  if (totalMissions === 1) return 'Первая миссия! Ты начал!';
-  if (completedToday === 1) return 'Сегодня ты уже начал — это главное';
-  if (completedToday === 2) return 'Две миссии сегодня — ты становишься сильнее';
-  if (completedToday === 3) return 'Три миссии! Бадди очень гордится тобой';
-  if (completedToday >= 4) return 'Ты сегодня настоящий герой!';
-  if (totalMissions === 5) return 'Пять миссий всего! Ты растёшь!';
-  if (totalMissions === 10) return 'Десять миссий — ты уже совсем другой!';
-  return 'Бадди видит как ты растёшь';
-}
-
-function getMilestoneMessage(totalEver: number): string {
-  if (totalEver >= 10  && totalEver < 11)  return 'Десять звёзд! Ты сияешь!';
-  if (totalEver >= 20  && totalEver < 22)  return 'Двадцать звёзд — ты растёшь каждый день';
-  if (totalEver >= 50  && totalEver < 52)  return 'Пятьдесят звёзд! Бадди так тобой гордится!';
-  if (totalEver >= 100 && totalEver < 102) return 'Сто звёзд. Ты настоящая звезда!';
-  return `${totalEver} звёзд — и ты продолжаешь!`;
-}
-
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 
 const K = {
@@ -109,56 +88,6 @@ const K = {
 };
 
 const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
-
-// ── DATA ──────────────────────────────────────────────────────────────────────
-
-const DEMO_STEPS = [
-  { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Отлично!' },
-  { id: 'd2', title: 'Прыгни!',          emoji: '🦘', praise: 'Супер!' },
-  { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Молодец!' },
-];
-
-const MISSIONS_EASY = [
-  { id: 1, title: 'Постой на одной ноге',   subtitle: 'Держись 5 секунд', stars: 1, emoji: '🦩' },
-  { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно вниз',    stars: 1, emoji: '🙆' },
-  { id: 3, title: 'Прыгни три раза',        subtitle: 'Как можно выше',   stars: 1, emoji: '🦘' },
-  { id: 4, title: 'Выпей стакан воды',      subtitle: 'Не спеши',         stars: 1, emoji: '💧' },
-];
-
-const MISSIONS_BIGGER = [
-  { id: 5, title: 'Убери игрушки',      subtitle: 'Хотя бы один уголок', stars: 2, emoji: '🧸' },
-  { id: 6, title: 'Обними кого-нибудь', subtitle: 'Подари тепло',        stars: 2, emoji: '💛' },
-];
-
-const REWARDS = [
-  { id: 1, title: 'Дополнительный мультик',      cost: 3, emoji: '📺' },
-  { id: 2, title: 'Выбрать ужин сегодня',         cost: 4, emoji: '🍕' },
-  { id: 3, title: 'Лечь спать на 30 минут позже', cost: 5, emoji: '🌙' },
-  { id: 4, title: 'Любимый перекус',              cost: 3, emoji: '🍭' },
-  { id: 5, title: 'Игра с папой',                 cost: 2, emoji: '🎮' },
-];
-
-const DAILY_SUGGESTIONS = [
-  { text: 'Попробуй сегодня выпить больше воды',       missionId: 4 },
-  { text: 'Сделай что-то приятное для кого-то рядом',  missionId: 6 },
-  { text: 'Потянись — твоё тело скажет спасибо',       missionId: 2 },
-  { text: 'Прыгни немного — станет веселее',           missionId: 3 },
-  { text: 'Убери один маленький уголок — сразу легче', missionId: 5 },
-];
-
-const MSG = {
-  idle:             'Привет! Нажми на меня',
-  idle_alt:         'Я рядом',
-  start:            'Давай вместе!',
-  done:             'Молодец!',
-  reward:           'Посмотри сколько всего!',
-  encouraging:      'Ты можешь это сделать',
-  thinking:         'Знаешь ли ты...',
-  serene:           'Всё хорошо. Я рядом.',
-  'very-excited':   'Невероятно!!!',
-};
-
-const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 

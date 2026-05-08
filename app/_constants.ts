@@ -113,7 +113,8 @@ export const MORNING_CUTOFF_HOUR = 12;
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────
 
-export const CONFETTI_AT = [1, 5, 10, 25, 50, 100] as const;
+export const CONFETTI_AT: number[] = [1, 5, 10, 25, 50, 100];
+
 
 export const DEMO_STEPS = [
   { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },

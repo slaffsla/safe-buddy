@@ -23,8 +23,7 @@ import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from 
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
 import { ProgressBar } from './_SharedUI';
-import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEMO_STEPS, effectiveMissionEnabled, effectiveMissionStars, effectiveRewardCost, effectiveRewardEnabled, getAgeProfile, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, Reward, REWARDS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
-
+import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEMO_STEPS, effectiveMissionEnabled, effectiveMissionStars, effectiveRewardCost, effectiveRewardEnabled, getAgeProfile, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, Reward, REWARDS, selectBonusMission, selectDailyMissions, shouldShowMorning, todayStr } from './_constants';
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -51,6 +50,21 @@ const BUDDY = {
 // proud           → demo complete, milestone, reward redemption
 // very-excited    → first 10 stars, every 50 stars, first reward redeemed (RARE)
 
+// ── VERY-EXCITED TRIGGERS ─────────────────────────────────────────────────────
+
+function shouldBeVeryExcited(
+  totalEver: number,
+  prevTotalEver: number,
+  isFirstReward: boolean
+): boolean {
+  if (isFirstReward) return true;
+  if (prevTotalEver < 10 && totalEver >= 10) return true;
+  const prevFifty = Math.floor(prevTotalEver / 50);
+  const currFifty = Math.floor(totalEver / 50);
+  if (currFifty > prevFifty && currFifty > 0) return true;
+  return false;
+}
+
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 
 const K = {
@@ -71,6 +85,8 @@ const K = {
   DONE_IDS_TODAY:  'sb_done_ids_today',
   CHILD_AGE: 'sb_child_age'
 };
+
+const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 

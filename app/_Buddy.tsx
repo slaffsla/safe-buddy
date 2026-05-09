@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BUDDY, BuddyMood, C, MSG } from './_constants';
+import { BuddyMood, C, getBuddyImage, getBuddyLine, isAmbientMood } from './_constants';
 
 interface BuddyProps {
   mood?: BuddyMood;
@@ -20,13 +20,13 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
   const breathScale = useRef(new Animated.Value(1)).current;
   const breathAnim  = useRef<Animated.CompositeAnimation | null>(null);
 
-  const isAmbient = mood === 'calm' || mood === 'gentle-reminder' || mood === 'serene';
+  const isAmbient = isAmbientMood(mood);
 
   useEffect(() => {
     if (isAmbient) {
       breathAnim.current = Animated.loop(
         Animated.sequence([
-          Animated.timing(breathScale, { toValue: 1.1, duration: 2800, useNativeDriver: true }),
+          Animated.timing(breathScale, { toValue: 1.17, duration: 2800, useNativeDriver: true }),
           Animated.timing(breathScale, { toValue: 1.0,  duration: 2800, useNativeDriver: true }),
         ])
       );
@@ -36,7 +36,7 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
       breathScale.setValue(1);
     }
     return () => { breathAnim.current?.stop(); };
-  }, [mood]);
+  }, [isAmbient]);
 
   useEffect(() => {
   if (!celebrate) return;
@@ -48,28 +48,15 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
   ]).start();
 }, [celebrate]);
 
-  const lines: Record<string, string> = {
-    calm:              MSG.idle,
-    'gentle-reminder': MSG.idle_alt,
-    serene:            MSG.serene,
-    encouraging:       MSG.encouraging,
-    thinking:          MSG.thinking,
-    excited:           MSG.start,
-    happy:             MSG.done,
-    proud:             MSG.done,
-    'very-excited':    MSG['very-excited'],
-  };
-
   function handlePress() {
     Animated.sequence([
       Animated.timing(tapScale, { toValue: 1.12, duration: 100, useNativeDriver: true }),
       Animated.timing(tapScale, { toValue: 1.0,  duration: 150, useNativeDriver: true }),
     ]).start();
-    speak(lines[mood] || MSG.idle);
+    speak(getBuddyLine(mood));
   }
 
-  const image = BUDDY[mood] || BUDDY.calm;
-
+  const image = getBuddyImage(mood);
   const buddyContent = (
     <TouchableOpacity
       onPress={handlePress}
@@ -92,7 +79,7 @@ export default function Buddy({ mood = 'calm', speak, size = 130, celebrate = fa
     return (
       <View style={[
         s.buddyFixedContainer,
-        fixedTop != null ? { top: fixedTop } : { bottom: fixedBottom }
+        fixedTop != null ? { top: fixedTop } : { bottom: fixedBottom ?? 180 }
       ]}>
         {buddyContent}
       </View>

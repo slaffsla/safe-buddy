@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AI Apply Diff",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ai_apply.sh",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    }
+  ]
+}

@@ -29,8 +29,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS,
-  MISSION_POOL, MorningStep
+  DEFAULT_MISSION_CONFIGS,
+  DEFAULT_MORNING_STEPS,
+  DEFAULT_REWARD_CONFIGS,
+  DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS,
+  MISSION_POOL,
+  MissionConfig,
+  MissionType,
+  MorningStep
 } from './_constants';
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
@@ -39,17 +45,7 @@ import {
 // Adding a field: update type + DEFAULT_SETTINGS + SK + load/save + UI.
 export type ControlLevel = 'hands-on' | 'balanced' | 'independent';
 export type RotationFrequency = 'daily' | 'every3' | 'weekly' | 'manual';
-export type MissionType = 'permanent' | 'rotating' | 'inactive';
 export type DayModeOverride = 'auto' | 'weekday' | 'weekend';
-
-export interface MissionConfig {
-  id: number;
-  title: string;
-  subtitle: string;
-  stars: number;
-  emoji: string;
-  type: MissionType;
-}
 
 export interface RewardConfig {
   id: number;
@@ -84,7 +80,7 @@ export interface AppSettings {
 
   // Infinity loop — daily picker (shows a small stable subset per day)
   infinityLoopEnabled: boolean;
-  dailyPickerSize: number;       // 4–10; default 5
+  dailyPickerSize: number;       // 3–20; default 8
   bonusAfterCompletion: boolean; // offer one extra mission once subset is done
 
   // Rewards
@@ -108,7 +104,8 @@ export interface AppSettings {
   // (see ProgressSection which reads directly from AsyncStorage)
 }
 
-export const DEFAULT_SETTINGS: AppSettings = {
+function buildDefaultSettings(): AppSettings {
+  return {
   childName: '',
   parentPin: '',
   pinEnabled: false,
@@ -123,23 +120,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   rotationFrequency: 'weekly',
   rotatingPoolSize: 2,
   infinityLoopEnabled: true,
-  dailyPickerSize: 5,
+  dailyPickerSize: 8,
   bonusAfterCompletion: true,
-  missions: [
-    { id: 1, title: 'Постой на одной ноге',   subtitle: 'Держись 5 секунд', stars: 1, emoji: '🦩', type: 'permanent' },
-    { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно вниз',    stars: 1, emoji: '🙆', type: 'permanent' },
-    { id: 3, title: 'Прыгни три раза',        subtitle: 'Как можно выше',   stars: 1, emoji: '🦘', type: 'rotating' },
-    { id: 4, title: 'Выпей стакан воды',      subtitle: 'Не спеши',         stars: 1, emoji: '💧', type: 'permanent' },
-    { id: 5, title: 'Убери игрушки',          subtitle: 'Хотя бы один уголок', stars: 2, emoji: '🧸', type: 'rotating' },
-    { id: 6, title: 'Обними кого-нибудь',     subtitle: 'Подари тепло',     stars: 2, emoji: '💛', type: 'rotating' },
-  ],
-  rewards: [
-    { id: 1, title: 'Дополнительный мультик',      cost: 3, emoji: '📺', active: true },
-    { id: 2, title: 'Выбрать ужин сегодня',         cost: 4, emoji: '🍕', active: true },
-    { id: 3, title: 'Лечь спать на 30 минут позже', cost: 5, emoji: '🌙', active: true },
-    { id: 4, title: 'Любимый перекус',              cost: 3, emoji: '🍭', active: true },
-    { id: 5, title: 'Игра с папой',                 cost: 2, emoji: '🎮', active: true },
-  ],
+  missions: DEFAULT_MISSION_CONFIGS,
+  rewards: DEFAULT_REWARD_CONFIGS,
   morningEnabled: true,
   morningStars: 1,
   morningSteps: DEFAULT_MORNING_STEPS,
@@ -148,7 +132,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dayModeOverride: 'auto' as DayModeOverride,
   morningReminderEnabled: false,
   morningReminderTime: '08:00',
-};
+  };
+}
+
+export const DEFAULT_SETTINGS = buildDefaultSettings();
 
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 // All settings stored as one JSON blob for atomicity.
@@ -175,11 +162,39 @@ const SK = {
 export async function loadSettings(): Promise<AppSettings> {
   try {
     const raw = await AsyncStorage.getItem(SK.SETTINGS);
+    
     if (raw) {
       const parsed = JSON.parse(raw);
       // Merge with defaults so new fields added later always have values
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      const merged = { ...DEFAULT_SETTINGS, ...parsed };
+
+      // Upgrade: if stored missions array is smaller than the full pool,
+      // merge in any missing IDs from DEFAULT_MISSION_CONFIGS
+      const storedIds = new Set(merged.missions.map((m: MissionConfig) => m.id));
+      const missingMissions = DEFAULT_MISSION_CONFIGS.filter(m => !storedIds.has(m.id));
+      if (missingMissions.length > 0) {
+        merged.missions = [...merged.missions, ...missingMissions];
+      }
+      const storedRewardIds = new Set(merged.rewards.map((r: RewardConfig) => r.id));
+      const missingRewards = DEFAULT_REWARD_CONFIGS.filter(r => !storedRewardIds.has(r.id));
+      if (missingRewards.length > 0) {
+        merged.rewards = [...merged.rewards, ...missingRewards];
+      }
+      const storedWeekdayIds = new Set(merged.weekdayMissionIds ?? []);
+      const storedWeekendIds = new Set(merged.weekendMissionIds ?? []);
+
+      const missingWeekday = DEFAULT_WEEKDAY_IDS.filter(id => !storedWeekdayIds.has(id));
+      const missingWeekend = DEFAULT_WEEKEND_IDS.filter(id => !storedWeekendIds.has(id));
+
+      if (missingWeekday.length > 0) {
+        merged.weekdayMissionIds = [...(merged.weekdayMissionIds ?? []), ...missingWeekday];
+      }
+      if (missingWeekend.length > 0) {
+        merged.weekendMissionIds = [...(merged.weekendMissionIds ?? []), ...missingWeekend];
+      }
+      return merged;
     }
+
     // First load — pull legacy individual keys if they exist
     const legacy = await AsyncStorage.multiGet([
       SK.CHILD_NAME, SK.PARENT_PIN, SK.PIN_ENABLED,

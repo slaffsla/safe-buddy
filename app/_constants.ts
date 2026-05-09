@@ -13,7 +13,7 @@ export const BUDDY = {
   happy:             require('../assets/Character/buddy-happy.png'),
   proud:             require('../assets/Character/buddy-proud.png'),
   'very-excited':    require('../assets/Character/buddy-very-excited.png'),
-};
+} as const;
 
 export const BUDDY_FIXED_SPACER = 280;
 export const BUDDY_FIXED_TOP = 90;
@@ -57,8 +57,21 @@ export interface PoolMission {
   weekendDefault: boolean;
 }
 
+export interface Reward {
+  id: number;
+  title: string;
+  cost: number;
+  emoji: string;
+  maxPerDay?: number; // future-safe, unused
+}
+
+export interface DailySuggestion {
+  text: string;
+  missionId: number;
+}
+
 // ── FULL MISSION POOL ─────────────────────────────────────────────────────────
-// IDs match your son's lists: 1-5 easy, 7-12 bigger.
+// IDs match son's lists: 1-5 easy, 7-12 bigger.
 
 export const MISSION_POOL: PoolMission[] = [
   { id: 1,  title: 'Постой на одной ноге',              subtitle: 'Пять секунд',      stars: 1, emoji: '🦩', category: 'movement', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
@@ -72,7 +85,62 @@ export const MISSION_POOL: PoolMission[] = [
   { id: 10, title: 'Обними кого-нибудь',                subtitle: 'Тихо и спокойно',   stars: 2, emoji: '💛', category: 'social',   slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
   { id: 11, title: 'Спроси папу или маму, чем помочь', subtitle: 'Небольшое дело',    stars: 2, emoji: '👨', category: 'social',   slot: 'afternoon', weekdayDefault: true,  weekendDefault: true  },
   { id: 12, title: 'Убери немного дома',                subtitle: 'Совсем чуть-чуть',  stars: 2, emoji: '🏠', category: 'tidy',     slot: 'evening',   weekdayDefault: false, weekendDefault: true  },
+  // ── Movement (new) ──────────────────────────────────────────────────
+  { id: 13, title: 'Потряси руками',        subtitle: 'Десять секунд',         stars: 1, emoji: '🙌', category: 'movement', slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 14, title: 'Пройди по комнате',     subtitle: 'Туда и обратно',        stars: 1, emoji: '🚶', category: 'movement', slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
+  { id: 15, title: 'Потянись вверх',        subtitle: 'Руки как можно выше',   stars: 1, emoji: '🙋', category: 'movement', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
+
+  // ── Self-care (new) ──────────────────────────────────────────────────
+  { id: 16, title: 'Умойся',                subtitle: 'Холодной водой',        stars: 1, emoji: '🚿', category: 'selfcare', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
+  { id: 17, title: 'Три глубоких вдоха',    subtitle: 'Медленно и спокойно',   stars: 1, emoji: '🌬️', category: 'selfcare', slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 18, title: 'Выпей воду ещё раз',    subtitle: 'Второй стакан',         stars: 1, emoji: '💦', category: 'selfcare', slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
+
+  // ── Tidy (new) ───────────────────────────────────────────────────────
+  { id: 19, title: 'Застели кровать',       subtitle: 'Разгладь одеяло',       stars: 2, emoji: '🛏️', category: 'tidy',     slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
+  { id: 20, title: 'Убери тарелку',         subtitle: 'В раковину',            stars: 1, emoji: '🍽️', category: 'tidy',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 21, title: 'Сложи одежду',          subtitle: 'Аккуратной стопкой',    stars: 2, emoji: '👕', category: 'tidy',     slot: 'evening',   weekdayDefault: false, weekendDefault: true  },
+
+  // ── Social (new) ─────────────────────────────────────────────────────
+  { id: 22, title: 'Скажи спасибо',         subtitle: 'Кому-нибудь сегодня',   stars: 1, emoji: '🙏', category: 'social',   slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 23, title: 'Улыбнись кому-нибудь',  subtitle: 'Просто так',            stars: 1, emoji: '😊', category: 'social',   slot: 'any',       weekdayDefault: false, weekendDefault: true  },
+  { id: 24, title: 'Расскажи что-то хорошее', subtitle: 'Маме или папе',       stars: 2, emoji: '💬', category: 'social',   slot: 'evening',   weekdayDefault: true,  weekendDefault: true  },
+
+  // ── Calm (new category) ──────────────────────────────────────────────
+  { id: 25, title: 'Посиди тихо',           subtitle: 'Одну минуту',           stars: 1, emoji: '🧘', category: 'calm',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 26, title: 'Нарисуй что-нибудь',    subtitle: 'Что угодно',            stars: 2, emoji: '🎨', category: 'calm',     slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
+  { id: 27, title: 'Посмотри в окно',       subtitle: 'Одну минуту',           stars: 1, emoji: '🪟', category: 'calm',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
 ];
+
+// Derives the AppSettings missions array from MISSION_POOL.
+// The first 6 original missions keep their proven types.
+// All new missions default to 'rotating' so they appear in the daily picker.
+
+export type MissionType = 'permanent' | 'rotating' | 'inactive';
+
+export interface MissionConfig {
+  id: number;
+  title: string;
+  subtitle: string;
+  stars: number;
+  emoji: string;
+  type: MissionType;
+}
+
+const LEGACY_TYPES: Record<number, MissionType> = {
+  1: 'permanent', 2: 'permanent', 3: 'rotating',
+  4: 'permanent', 5: 'rotating',  6: 'rotating',
+  7: 'rotating',  8: 'rotating',  9: 'rotating',
+  10: 'rotating', 11: 'rotating', 12: 'rotating',
+};
+
+export const DEFAULT_MISSION_CONFIGS: MissionConfig[] = MISSION_POOL.map(m => ({
+  id:       m.id,
+  title:    m.title,
+  subtitle: m.subtitle,
+  stars:    m.stars,
+  emoji:    m.emoji,
+  type:     LEGACY_TYPES[m.id] ?? 'rotating',
+}));
 
 // Flat lists — backward-compatible with index.tsx inline arrays
 export const MISSIONS_EASY   = MISSION_POOL.filter(m => m.stars === 1);
@@ -100,7 +168,8 @@ export const MORNING_CUTOFF_HOUR = 12;
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────
 
-export const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
+export const CONFETTI_AT: number[] = [1, 5, 10, 25, 50, 100];
+
 
 export const DEMO_STEPS = [
   { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },
@@ -108,20 +177,46 @@ export const DEMO_STEPS = [
   { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Отлично получилось' },
 ];
 
-export const REWARDS = [
+export const REWARDS: Reward[] = [
   { id: 1, title: 'Дополнительный мультик или видео', cost: 3, emoji: '📺' },
   { id: 2, title: 'Выбрать ужин',                    cost: 4, emoji: '🍕' },
   { id: 3, title: 'Лечь спать позже',                cost: 5, emoji: '🌙' },
   { id: 4, title: 'Любимый перекус',                 cost: 3, emoji: '🍭' },
   { id: 5, title: 'Игра с папой',                    cost: 2, emoji: '🎮' },
+  { id: 6,  title: 'Выбрать мультфильм вечером', cost: 3, emoji: '🎬' },
+  { id: 7,  title: 'Игра с мамой',                cost: 2, emoji: '🎲' },
+  { id: 8,  title: 'Лечь спать позже на пять минут', cost: 1, emoji: '⏰' },
+  { id: 9,  title: 'Любимая музыка в машине',      cost: 2, emoji: '🎵' },
+  { id: 10, title: 'Выбрать место для прогулки',   cost: 4, emoji: '🌳' },
 ];
 
-export const DAILY_SUGGESTIONS = [
+export interface RewardConfig {
+  id: number;
+  title: string;
+  cost: number;
+  emoji: string;
+  active: boolean;
+}
+
+export const DEFAULT_REWARD_CONFIGS: RewardConfig[] = REWARDS.map(r => ({
+  id:     r.id,
+  title:  r.title,
+  cost:   r.cost,
+  emoji:  r.emoji,
+  active: true,
+}));
+
+export const DAILY_SUGGESTIONS: DailySuggestion[] = [
   { text: 'Попробуй выпить воду',          missionId: 4  },
   { text: 'Скажи что-то хорошее кому-то', missionId: 10 },
   { text: 'Потянись немного',              missionId: 2  },
   { text: 'Прыгни немного',               missionId: 3  },
   { text: 'Убери один уголок',            missionId: 9  },
+  { text: 'Попробуй посидеть тихо минуту',  missionId: 25 },
+  { text: 'Застели кровать — сразу лучше',  missionId: 19 },
+  { text: 'Скажи кому-то спасибо сегодня',  missionId: 22 },
+  { text: 'Сделай глубокий вдох',           missionId: 17 },
+  { text: 'Потянись вверх как можно выше',  missionId: 15 },
 ];
 
 export const MSG = {
@@ -135,9 +230,11 @@ export const MSG = {
   serene:         'Всё хорошо',
   'very-excited': 'Это важно',
   morning:        'Доброе утро! Начнём день вместе?',
-};
+} as const;
 
-export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200];
+export type MsgKey = keyof typeof MSG;
+
+export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200] as const;
 
 // ── COLORS ────────────────────────────────────────────────────────────────────
 
@@ -181,36 +278,82 @@ export function getDailySuggestion() {
   return DAILY_SUGGESTIONS[dayOfYear % DAILY_SUGGESTIONS.length];
 }
 
-// ── INFINITY LOOP — Daily subset picker ───────────────────────────────────────
-// Deterministic per date string, slot-diverse, stable all day, rotates tomorrow.
-
-function seedFromDateStr(dateStr: string): number {
-  // FNV-1a 32-bit hash of the YYYY-MM-DD string
-  let h = 2166136261;
-  for (let i = 0; i < dateStr.length; i++) {
-    h ^= dateStr.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
+export function getBuddyImage(mood: BuddyMood) {
+  return BUDDY[mood] ?? BUDDY.calm;
 }
 
-function mulberry32(seed: number) {
-  let a = seed >>> 0;
-  return function () {
-    a = (a + 0x6D2B79F5) >>> 0;
-    let t = a;
+export function getBuddyLine(mood: BuddyMood): string {
+  switch (mood) {
+    case 'calm':              return MSG.idle;
+    case 'gentle-reminder':   return MSG.idle_alt;
+    case 'serene':            return MSG.serene;
+    case 'encouraging':       return MSG.encouraging;
+    case 'thinking':          return MSG.thinking;
+    case 'excited':           return MSG.start;
+    case 'happy':
+    case 'proud':             return MSG.done;
+    case 'very-excited':      return MSG['very-excited'];
+    default:                  return MSG.idle;
+  }
+}
+
+export function isAmbientMood(mood: BuddyMood): boolean {
+  return mood === 'calm' || mood === 'gentle-reminder' || mood === 'serene';
+}
+
+// ── DAILY MISSION SELECTION ────────────────────────────────────────────────────
+// Deterministic daily picker that produces a stable, slot-diverse subset of missions.
+// - Same date string → same selection all day
+// - Different date → different shuffle (feels "alive" next day)
+// - Ensures variety across morning/afternoon/evening slots before filling remaining spots
+
+/**
+ * Generates a deterministic 32-bit seed from a date string (YYYY-MM-DD format)
+ * using the FNV-1a hash algorithm.
+ */
+function hashDateToSeed(dateStr: string): number {
+  const FNV_PRIME = 16777619;
+  const FNV_OFFSET_BASIS = 2166136261;
+
+  let hash = FNV_OFFSET_BASIS;
+  for (let i = 0; i < dateStr.length; i++) {
+    hash ^= dateStr.charCodeAt(i);
+    hash = Math.imul(hash, FNV_PRIME);
+  }
+  return hash >>> 0; // Ensure unsigned 32-bit integer
+}
+
+/**
+ * Creates a seeded pseudo-random number generator using the Mulberry32 algorithm.
+ * Returns a function that produces deterministic random values between 0 and 1.
+ */
+function createSeededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+
+  return function random(): number {
+    state = (state + 0x6D2B79F5) >>> 0;
+    let t = state;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
-// Deterministic daily picker.
-// - Stable within a given `dateStr` (same list all day).
-// - Different `dateStr` → different shuffle (feels "alive" next day).
-// - Prefers slot diversity: try to include at least one morning/afternoon/evening
-//   before filling the rest, so the screen doesn't feel lopsided.
-export function pickDailySubset(
+/**
+ * Selects a deterministic subset of missions for the given date.
+ *
+ * The selection algorithm:
+ * 1. Shuffles the pool deterministically based on the date
+ * 2. First pass: picks one mission from each time slot (morning/afternoon/evening)
+ *    to ensure variety throughout the day
+ * 3. Second pass: fills remaining slots from the shuffled pool
+ *
+ * @param pool - Available missions to choose from
+ * @param dateStr - Date string in YYYY-MM-DD format
+ * @param size - Number of missions to select
+ * @returns Selected subset of missions
+ */
+export function selectDailyMissions(
   pool: PoolMission[],
   dateStr: string,
   size: number,
@@ -218,45 +361,62 @@ export function pickDailySubset(
   if (size <= 0 || pool.length === 0) return [];
   if (pool.length <= size) return pool.slice();
 
-  const rng = mulberry32(seedFromDateStr(dateStr));
-  // Deterministic shuffle (Fisher–Yates with seeded rng)
-  const arr = pool.slice();
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  const random = createSeededRandom(hashDateToSeed(dateStr));
+
+  // Create a deterministic shuffle using Fisher-Yates algorithm
+  const shuffled = pool.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  const picked: PoolMission[] = [];
+  const selected: PoolMission[] = [];
   const usedSlots = new Set<MissionSlot>();
-  // First pass: one from each time-bound slot if possible
-  for (const m of arr) {
-    if (picked.length >= size) break;
-    if (m.slot === 'morning' || m.slot === 'afternoon' || m.slot === 'evening') {
-      if (!usedSlots.has(m.slot)) {
-        picked.push(m);
-        usedSlots.add(m.slot);
-      }
+
+  // First pass: ensure diversity by picking one from each time-bound slot
+  const TIME_BOUND_SLOTS: MissionSlot[] = ['morning', 'afternoon', 'evening'];
+
+  for (const mission of shuffled) {
+    if (selected.length >= size) break;
+
+    if (TIME_BOUND_SLOTS.includes(mission.slot) && !usedSlots.has(mission.slot)) {
+      selected.push(mission);
+      usedSlots.add(mission.slot);
     }
   }
-  // Second pass: fill remaining slots in shuffled order
-  for (const m of arr) {
-    if (picked.length >= size) break;
-    if (!picked.includes(m)) picked.push(m);
+
+  // Second pass: fill remaining slots from the shuffled pool
+  for (const mission of shuffled) {
+    if (selected.length >= size) break;
+    if (!selected.includes(mission)) {
+      selected.push(mission);
+    }
   }
-  return picked;
+
+  return selected;
 }
 
-// Pick a single "bonus" mission from the leftover pool (those not in today's subset).
-// Uses a shifted seed so the bonus is different from today's picks but still
-// deterministic for the given date.
-export function pickBonusMission(
+/**
+ * Selects a bonus mission from the remaining pool (missions not in today's main selection).
+ * Uses a shifted seed to ensure the bonus is different from today's picks but still
+ * deterministic for the given date.
+ *
+ * @param leftover - Missions not included in the daily selection
+ * @param dateStr - Date string in YYYY-MM-DD format
+ * @returns A single bonus mission, or null if no leftovers available
+ */
+export function selectBonusMission(
   leftover: PoolMission[],
   dateStr: string,
 ): PoolMission | null {
   if (leftover.length === 0) return null;
-  const rng = mulberry32(seedFromDateStr(dateStr) ^ 0x9E3779B9);
-  const idx = Math.floor(rng() * leftover.length);
-  return leftover[idx] ?? null;
+
+  // XOR with golden ratio constant to shift the seed
+  const BONUS_SEED_SHIFT = 0x9E3779B9;
+  const random = createSeededRandom(hashDateToSeed(dateStr) ^ BONUS_SEED_SHIFT);
+
+  const index = Math.floor(random() * leftover.length);
+  return leftover[index] ?? null;
 }
 
 // True if today is Saturday or Sunday

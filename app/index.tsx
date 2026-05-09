@@ -24,7 +24,7 @@ import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from 
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
 import { ProgressBar } from './_SharedUI';
-import { BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, isWeekend, MILESTONES, MISSION_POOL, PoolMission, selectBonusMission, selectDailyMissions, shouldShowMorning } from './_constants';
+import { BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -52,21 +52,6 @@ const BUDDY = {
 // proud           → demo complete, milestone, reward redemption
 // very-excited    → first 10 stars, every 50 stars, first reward redeemed (RARE)
 
-// ── VERY-EXCITED TRIGGERS ─────────────────────────────────────────────────────
-
-function shouldBeVeryExcited(
-  totalEver: number,
-  prevTotalEver: number,
-  isFirstReward: boolean
-): boolean {
-  if (isFirstReward) return true;
-  if (prevTotalEver < 10 && totalEver >= 10) return true;
-  const prevFifty = Math.floor(prevTotalEver / 50);
-  const currFifty = Math.floor(totalEver / 50);
-  if (currFifty > prevFifty && currFifty > 0) return true;
-  return false;
-}
-
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 
 const K = {
@@ -87,21 +72,7 @@ const K = {
   DONE_IDS_TODAY:  'sb_done_ids_today',
 };
 
-const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
-
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-
-const todayStr = () => new Date().toISOString().split('T')[0];
-
-function getProgress(total: number) {
-  const next = MILESTONES.find(m => m > total) ?? MILESTONES[MILESTONES.length - 1] * 2;
-  let prev = 0;
-  for (const m of [0, ...MILESTONES]) { if (m <= total) prev = m; else break; }
-  const pct = next === prev ? 1 : Math.min((total - prev) / (next - prev), 1);
-  return { next, pct };
-}
-
-const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
 
 function getRotationSeed(freq: RotationFrequency) {
   const dayIndex = Math.floor(Date.now() / 86400000);

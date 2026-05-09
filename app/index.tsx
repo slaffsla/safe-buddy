@@ -596,7 +596,7 @@ export default function App() {
     // Infinity Loop: small, stable, date-seeded subset.
     // Permanents are always included first; remaining slots filled from the
     // rest of the active pool via the deterministic daily picker.
-    const size = Math.max(1, Math.min(6, appSettings.dailyPickerSize ?? 5));
+    const size = Math.max(4, Math.min(10, appSettings.dailyPickerSize ?? 5));
     const today = todayStr();
     const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');
     const others    = activePool.filter(m => missionTypeById[m.id] !== 'permanent');

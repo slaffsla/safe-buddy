@@ -85,7 +85,62 @@ export const MISSION_POOL: PoolMission[] = [
   { id: 10, title: 'Обними кого-нибудь',                subtitle: 'Тихо и спокойно',   stars: 2, emoji: '💛', category: 'social',   slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
   { id: 11, title: 'Спроси папу или маму, чем помочь', subtitle: 'Небольшое дело',    stars: 2, emoji: '👨', category: 'social',   slot: 'afternoon', weekdayDefault: true,  weekendDefault: true  },
   { id: 12, title: 'Убери немного дома',                subtitle: 'Совсем чуть-чуть',  stars: 2, emoji: '🏠', category: 'tidy',     slot: 'evening',   weekdayDefault: false, weekendDefault: true  },
+  // ── Movement (new) ──────────────────────────────────────────────────
+  { id: 13, title: 'Потряси руками',        subtitle: 'Десять секунд',         stars: 1, emoji: '🙌', category: 'movement', slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 14, title: 'Пройди по комнате',     subtitle: 'Туда и обратно',        stars: 1, emoji: '🚶', category: 'movement', slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
+  { id: 15, title: 'Потянись вверх',        subtitle: 'Руки как можно выше',   stars: 1, emoji: '🙋', category: 'movement', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
+
+  // ── Self-care (new) ──────────────────────────────────────────────────
+  { id: 16, title: 'Умойся',                subtitle: 'Холодной водой',        stars: 1, emoji: '🚿', category: 'selfcare', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
+  { id: 17, title: 'Три глубоких вдоха',    subtitle: 'Медленно и спокойно',   stars: 1, emoji: '🌬️', category: 'selfcare', slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 18, title: 'Выпей воду ещё раз',    subtitle: 'Второй стакан',         stars: 1, emoji: '💦', category: 'selfcare', slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
+
+  // ── Tidy (new) ───────────────────────────────────────────────────────
+  { id: 19, title: 'Застели кровать',       subtitle: 'Разгладь одеяло',       stars: 2, emoji: '🛏️', category: 'tidy',     slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
+  { id: 20, title: 'Убери тарелку',         subtitle: 'В раковину',            stars: 1, emoji: '🍽️', category: 'tidy',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 21, title: 'Сложи одежду',          subtitle: 'Аккуратной стопкой',    stars: 2, emoji: '👕', category: 'tidy',     slot: 'evening',   weekdayDefault: false, weekendDefault: true  },
+
+  // ── Social (new) ─────────────────────────────────────────────────────
+  { id: 22, title: 'Скажи спасибо',         subtitle: 'Кому-нибудь сегодня',   stars: 1, emoji: '🙏', category: 'social',   slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 23, title: 'Улыбнись кому-нибудь',  subtitle: 'Просто так',            stars: 1, emoji: '😊', category: 'social',   slot: 'any',       weekdayDefault: false, weekendDefault: true  },
+  { id: 24, title: 'Расскажи что-то хорошее', subtitle: 'Маме или папе',       stars: 2, emoji: '💬', category: 'social',   slot: 'evening',   weekdayDefault: true,  weekendDefault: true  },
+
+  // ── Calm (new category) ──────────────────────────────────────────────
+  { id: 25, title: 'Посиди тихо',           subtitle: 'Одну минуту',           stars: 1, emoji: '🧘', category: 'calm',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  { id: 26, title: 'Нарисуй что-нибудь',    subtitle: 'Что угодно',            stars: 2, emoji: '🎨', category: 'calm',     slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
+  { id: 27, title: 'Посмотри в окно',       subtitle: 'Одну минуту',           stars: 1, emoji: '🪟', category: 'calm',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
 ];
+
+// Derives the AppSettings missions array from MISSION_POOL.
+// The first 6 original missions keep their proven types.
+// All new missions default to 'rotating' so they appear in the daily picker.
+
+export type MissionType = 'permanent' | 'rotating' | 'inactive';
+
+export interface MissionConfig {
+  id: number;
+  title: string;
+  subtitle: string;
+  stars: number;
+  emoji: string;
+  type: MissionType;
+}
+
+const LEGACY_TYPES: Record<number, MissionType> = {
+  1: 'permanent', 2: 'permanent', 3: 'rotating',
+  4: 'permanent', 5: 'rotating',  6: 'rotating',
+  7: 'rotating',  8: 'rotating',  9: 'rotating',
+  10: 'rotating', 11: 'rotating', 12: 'rotating',
+};
+
+export const DEFAULT_MISSION_CONFIGS: MissionConfig[] = MISSION_POOL.map(m => ({
+  id:       m.id,
+  title:    m.title,
+  subtitle: m.subtitle,
+  stars:    m.stars,
+  emoji:    m.emoji,
+  type:     LEGACY_TYPES[m.id] ?? 'rotating',
+}));
 
 // Flat lists — backward-compatible with index.tsx inline arrays
 export const MISSIONS_EASY   = MISSION_POOL.filter(m => m.stars === 1);
@@ -113,7 +168,8 @@ export const MORNING_CUTOFF_HOUR = 12;
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────
 
-export const CONFETTI_AT = [1, 5, 10, 25, 50, 100] as const;
+export const CONFETTI_AT: number[] = [1, 5, 10, 25, 50, 100];
+
 
 export const DEMO_STEPS = [
   { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },
@@ -127,7 +183,28 @@ export const REWARDS: Reward[] = [
   { id: 3, title: 'Лечь спать позже',                cost: 5, emoji: '🌙' },
   { id: 4, title: 'Любимый перекус',                 cost: 3, emoji: '🍭' },
   { id: 5, title: 'Игра с папой',                    cost: 2, emoji: '🎮' },
+  { id: 6,  title: 'Выбрать мультфильм вечером', cost: 3, emoji: '🎬' },
+  { id: 7,  title: 'Игра с мамой',                cost: 2, emoji: '🎲' },
+  { id: 8,  title: 'Лечь спать позже на пять минут', cost: 1, emoji: '⏰' },
+  { id: 9,  title: 'Любимая музыка в машине',      cost: 2, emoji: '🎵' },
+  { id: 10, title: 'Выбрать место для прогулки',   cost: 4, emoji: '🌳' },
 ];
+
+export interface RewardConfig {
+  id: number;
+  title: string;
+  cost: number;
+  emoji: string;
+  active: boolean;
+}
+
+export const DEFAULT_REWARD_CONFIGS: RewardConfig[] = REWARDS.map(r => ({
+  id:     r.id,
+  title:  r.title,
+  cost:   r.cost,
+  emoji:  r.emoji,
+  active: true,
+}));
 
 export const DAILY_SUGGESTIONS: DailySuggestion[] = [
   { text: 'Попробуй выпить воду',          missionId: 4  },
@@ -135,6 +212,11 @@ export const DAILY_SUGGESTIONS: DailySuggestion[] = [
   { text: 'Потянись немного',              missionId: 2  },
   { text: 'Прыгни немного',               missionId: 3  },
   { text: 'Убери один уголок',            missionId: 9  },
+  { text: 'Попробуй посидеть тихо минуту',  missionId: 25 },
+  { text: 'Застели кровать — сразу лучше',  missionId: 19 },
+  { text: 'Скажи кому-то спасибо сегодня',  missionId: 22 },
+  { text: 'Сделай глубокий вдох',           missionId: 17 },
+  { text: 'Потянись вверх как можно выше',  missionId: 15 },
 ];
 
 export const MSG = {

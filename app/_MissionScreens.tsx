@@ -4,9 +4,9 @@
 
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Confetti, ProgressBar, T } from './_SharedUI';
+import { Confetti, T } from './_SharedUI';
 import {
-  BuddyMood, BUDDY_FIXED_SPACER, C,
+  BUDDY_FIXED_SPACER, C,
   currentSlot,
   getMilestoneMessage, getProgressionMessage,
   MISSION_POOL,
@@ -14,7 +14,7 @@ import {
   MSG,
   PoolMission,
   REWARDS,
-  shouldShowConfetti,
+  shouldShowConfetti
 } from './_constants';
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
@@ -219,13 +219,6 @@ export function CelebrateScreen({
 }) {
   if (!mission) return null;
   const showConfetti = shouldShowConfetti(totalMissions) || isVeryExcited;
-  const isBig = mission.stars >= 2;
-  const buddyMood = (
-    isVeryExcited ? 'very-excited'
-    : showConfetti ? 'proud'
-    : isBig        ? 'proud'
-    :                'happy'
-  ) as BuddyMood;
   const emotionalMsg = isVeryExcited
     ? getMilestoneMessage(totalEver)
     : getProgressionMessage(totalMissions, completedToday);

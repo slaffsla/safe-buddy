@@ -38,7 +38,31 @@ export const K = {
   MORNING_DONE:      'sb_morning_done',    // ISO date of last completed morning routine
   DAY_MODE_OVERRIDE: 'sb_day_mode',        // 'weekday' | 'weekend' | '' (auto)
   DONE_IDS_TODAY:    'sb_done_ids_today',  // JSON array of mission IDs completed today
+  CHILD_AGE: 'sb_child_age',
 };
+
+// ── AGE PROFILE ───────────────────────────────────────────────────────
+export type AgeProfile = 'little' | 'middle' | 'teen';
+
+export interface ProfileConfig {
+  buddySize: number;
+  ttsEnabledByDefault: boolean;
+  showBuddyName: boolean;
+  celebrationIntensity: 'full' | 'subtle';
+  colorTheme: 'warm' | 'cool';
+}
+
+export const PROFILE_CONFIGS: Record<AgeProfile, ProfileConfig> = {
+  little: { buddySize: 130, ttsEnabledByDefault: true,  showBuddyName: true,  celebrationIntensity: 'full',   colorTheme: 'warm' },
+  middle: { buddySize: 110, ttsEnabledByDefault: true,  showBuddyName: false, celebrationIntensity: 'full',   colorTheme: 'warm' },
+  teen:   { buddySize: 90,  ttsEnabledByDefault: false, showBuddyName: false, celebrationIntensity: 'subtle', colorTheme: 'cool' },
+};
+
+export function getAgeProfile(age: number): AgeProfile {
+  if (age <= 7)  return 'little';
+  if (age <= 11) return 'middle';
+  return 'teen';
+}
 
 // ── MISSION TYPES ─────────────────────────────────────────────────────────────
 

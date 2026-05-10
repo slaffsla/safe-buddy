@@ -1,4 +1,3 @@
-// SafeBuddy v7 — Clean rebuild with onboarding, PIN, transparent images
 // npx expo install expo-speech @react-native-async-storage/async-storage react-native-confetti-cannon
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,7 +23,7 @@ import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from 
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
 import { ProgressBar } from './_SharedUI';
-import { BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
+import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, getAgeProfile, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -70,6 +69,7 @@ const K = {
   ONBOARDING_DONE: 'sb_onboarding_done',
   MORNING_DONE:    'sb_morning_done',
   DONE_IDS_TODAY:  'sb_done_ids_today',
+  CHILD_AGE: 'sb_child_age'
 };
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -155,6 +155,8 @@ export default function App() {
   // Onboarding
   const [childName,       setChildName]       = useState('');
   const [onboardingDone,  setOnboardingDone]  = useState(false);
+  const [childAge,    setChildAge]    = useState(7);
+  const [ageProfile,  setAgeProfile]  = useState<AgeProfile>('little');
 
   // PIN
   const [parentPin,       setParentPin]       = useState('');
@@ -205,7 +207,7 @@ export default function App() {
           K.LAST_DATE, K.DEMO_DONE, K.TOTAL_MISSIONS,
           K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
           K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE, K.MORNING_DONE,
-          K.DONE_IDS_TODAY,
+          K.DONE_IDS_TODAY, K.CHILD_AGE
         ]);
         // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
         const v: Record<string, string> = Object.fromEntries(
@@ -232,6 +234,9 @@ export default function App() {
         setFirstMission(tm === 0);
         setOnboardingDone(v[K.ONBOARDING_DONE] === 'true');
         setParentPin(v[K.PARENT_PIN] || '');
+        const age = v[K.CHILD_AGE] ? parseInt(v[K.CHILD_AGE], 10) : 7;
+        setChildAge(age);
+        setAgeProfile(getAgeProfile(age));
 
         // Restore today's completed mission IDs (reset on new day)
         if (newDay) {
@@ -306,9 +311,11 @@ export default function App() {
     }
     try {
       await AsyncStorage.multiSet([
-        [K.CHILD_NAME,      name],
-        [K.ONBOARDING_DONE, 'true'],
+          [K.CHILD_NAME, name],
+          [K.CHILD_AGE,  String(childAge)],
+          [K.ONBOARDING_DONE, 'true'],
       ]);
+      setAgeProfile(getAgeProfile(childAge));
       setChildName(name);
       setOnboardingDone(true);
       speak(`Привет, ${name}! Рад тебя видеть!`);
@@ -460,6 +467,15 @@ export default function App() {
           autoFocus
           returnKeyType="done"
           onSubmitEditing={saveChildName}
+        />
+        <TextInput
+          style={s.onboardingInput}
+          placeholder="Возраст"
+          placeholderTextColor={C.muted}
+          value={childAge > 0 ? String(childAge) : ''}
+          onChangeText={t => setChildAge(parseInt(t) || 7)}
+          keyboardType="numeric"
+          maxLength={2}
         />
         <TouchableOpacity style={s.onboardingBtn} onPress={saveChildName}>
           <Text style={s.onboardingBtnTxt}>Начать приключение</Text>
@@ -655,7 +671,7 @@ export default function App() {
             <Buddy
               mood={fixedOverlayMood}
               speak={speak}
-              size={130}
+              size={PROFILE_CONFIGS[ageProfile].buddySize}
               celebrate={fixedOverlayCelebrate}
             />
             <ProgressBar total={totalEver} speak={speak} />

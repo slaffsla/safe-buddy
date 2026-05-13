@@ -1,6 +1,6 @@
 // _DemoScreens.tsx — SafeBuddy demo / onboarding flow screens
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { T } from './_SharedUI';
 import { BUDDY_FIXED_SPACER, C } from './_constants';

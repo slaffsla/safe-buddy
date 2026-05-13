@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { BuddyMood, BUDDY_FIXED_SPACER, C, MSG, getDailySuggestion, getProgressionMessage } from './_constants';
-import { DailySuggestion, ProgressBar, ReflectiveBoost, T } from './_SharedUI';
+import { BUDDY_FIXED_SPACER, C, MSG, getDailySuggestion, getProgressionMessage } from './_constants';
+import { DailySuggestion, ReflectiveBoost, T } from './_SharedUI';
 
 interface HomeScreenProps {
   stars: number;

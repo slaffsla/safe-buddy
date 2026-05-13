@@ -1,4 +1,3 @@
-// SafeBuddy v7 — Clean rebuild with onboarding, PIN, transparent images
 // npx expo install expo-speech @react-native-async-storage/async-storage react-native-confetti-cannon
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,14 +16,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Buddy from './_Buddy';
 import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
 import HomeScreen from './_HomeScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
-import { BUDDY_FIXED_TOP, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, isWeekend, MISSION_POOL, pickBonusMission, pickDailySubset, PoolMission, shouldShowMorning } from './_constants';
-import Buddy from './_Buddy';
 import { ProgressBar } from './_SharedUI';
+import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, getAgeProfile, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -52,42 +51,6 @@ const BUDDY = {
 // proud           → demo complete, milestone, reward redemption
 // very-excited    → first 10 stars, every 50 stars, first reward redeemed (RARE)
 
-// ── VERY-EXCITED TRIGGERS ─────────────────────────────────────────────────────
-
-function shouldBeVeryExcited(
-  totalEver: number,
-  prevTotalEver: number,
-  isFirstReward: boolean
-): boolean {
-  if (isFirstReward) return true;
-  if (prevTotalEver < 10 && totalEver >= 10) return true;
-  const prevFifty = Math.floor(prevTotalEver / 50);
-  const currFifty = Math.floor(totalEver / 50);
-  if (currFifty > prevFifty && currFifty > 0) return true;
-  return false;
-}
-
-// ── EMOTIONAL PROGRESSION ─────────────────────────────────────────────────────
-
-function getProgressionMessage(totalMissions: number, completedToday: number): string {
-  if (totalMissions === 1) return 'Первая миссия! Ты начал!';
-  if (completedToday === 1) return 'Сегодня ты уже начал — это главное';
-  if (completedToday === 2) return 'Две миссии сегодня — ты становишься сильнее';
-  if (completedToday === 3) return 'Три миссии! Бадди очень гордится тобой';
-  if (completedToday >= 4) return 'Ты сегодня настоящий герой!';
-  if (totalMissions === 5) return 'Пять миссий всего! Ты растёшь!';
-  if (totalMissions === 10) return 'Десять миссий — ты уже совсем другой!';
-  return 'Бадди видит как ты растёшь';
-}
-
-function getMilestoneMessage(totalEver: number): string {
-  if (totalEver >= 10  && totalEver < 11)  return 'Десять звёзд! Ты сияешь!';
-  if (totalEver >= 20  && totalEver < 22)  return 'Двадцать звёзд — ты растёшь каждый день';
-  if (totalEver >= 50  && totalEver < 52)  return 'Пятьдесят звёзд! Бадди так тобой гордится!';
-  if (totalEver >= 100 && totalEver < 102) return 'Сто звёзд. Ты настоящая звезда!';
-  return `${totalEver} звёзд — и ты продолжаешь!`;
-}
-
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 
 const K = {
@@ -106,73 +69,10 @@ const K = {
   ONBOARDING_DONE: 'sb_onboarding_done',
   MORNING_DONE:    'sb_morning_done',
   DONE_IDS_TODAY:  'sb_done_ids_today',
+  CHILD_AGE: 'sb_child_age'
 };
-
-const CONFETTI_AT = [1, 5, 10, 25, 50, 100];
-
-// ── DATA ──────────────────────────────────────────────────────────────────────
-
-const DEMO_STEPS = [
-  { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Отлично!' },
-  { id: 'd2', title: 'Прыгни!',          emoji: '🦘', praise: 'Супер!' },
-  { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Молодец!' },
-];
-
-const MISSIONS_EASY = [
-  { id: 1, title: 'Постой на одной ноге',   subtitle: 'Держись 5 секунд', stars: 1, emoji: '🦩' },
-  { id: 2, title: 'Потянись к пальцам ног', subtitle: 'Медленно вниз',    stars: 1, emoji: '🙆' },
-  { id: 3, title: 'Прыгни три раза',        subtitle: 'Как можно выше',   stars: 1, emoji: '🦘' },
-  { id: 4, title: 'Выпей стакан воды',      subtitle: 'Не спеши',         stars: 1, emoji: '💧' },
-];
-
-const MISSIONS_BIGGER = [
-  { id: 5, title: 'Убери игрушки',      subtitle: 'Хотя бы один уголок', stars: 2, emoji: '🧸' },
-  { id: 6, title: 'Обними кого-нибудь', subtitle: 'Подари тепло',        stars: 2, emoji: '💛' },
-];
-
-const REWARDS = [
-  { id: 1, title: 'Дополнительный мультик',      cost: 3, emoji: '📺' },
-  { id: 2, title: 'Выбрать ужин сегодня',         cost: 4, emoji: '🍕' },
-  { id: 3, title: 'Лечь спать на 30 минут позже', cost: 5, emoji: '🌙' },
-  { id: 4, title: 'Любимый перекус',              cost: 3, emoji: '🍭' },
-  { id: 5, title: 'Игра с папой',                 cost: 2, emoji: '🎮' },
-];
-
-const DAILY_SUGGESTIONS = [
-  { text: 'Попробуй сегодня выпить больше воды',       missionId: 4 },
-  { text: 'Сделай что-то приятное для кого-то рядом',  missionId: 6 },
-  { text: 'Потянись — твоё тело скажет спасибо',       missionId: 2 },
-  { text: 'Прыгни немного — станет веселее',           missionId: 3 },
-  { text: 'Убери один маленький уголок — сразу легче', missionId: 5 },
-];
-
-const MSG = {
-  idle:             'Привет! Нажми на меня',
-  idle_alt:         'Я рядом',
-  start:            'Давай вместе!',
-  done:             'Молодец!',
-  reward:           'Посмотри сколько всего!',
-  encouraging:      'Ты можешь это сделать',
-  thinking:         'Знаешь ли ты...',
-  serene:           'Всё хорошо. Я рядом.',
-  'very-excited':   'Невероятно!!!',
-};
-
-const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-
-const todayStr = () => new Date().toISOString().split('T')[0];
-
-function getProgress(total: number) {
-  const next = MILESTONES.find(m => m > total) ?? MILESTONES[MILESTONES.length - 1] * 2;
-  let prev = 0;
-  for (const m of [0, ...MILESTONES]) { if (m <= total) prev = m; else break; }
-  const pct = next === prev ? 1 : Math.min((total - prev) / (next - prev), 1);
-  return { next, pct };
-}
-
-const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
 
 function getRotationSeed(freq: RotationFrequency) {
   const dayIndex = Math.floor(Date.now() / 86400000);
@@ -255,6 +155,8 @@ export default function App() {
   // Onboarding
   const [childName,       setChildName]       = useState('');
   const [onboardingDone,  setOnboardingDone]  = useState(false);
+  const [childAge,    setChildAge]    = useState(7);
+  const [ageProfile,  setAgeProfile]  = useState<AgeProfile>('little');
 
   // PIN
   const [parentPin,       setParentPin]       = useState('');
@@ -305,7 +207,7 @@ export default function App() {
           K.LAST_DATE, K.DEMO_DONE, K.TOTAL_MISSIONS,
           K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
           K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE, K.MORNING_DONE,
-          K.DONE_IDS_TODAY,
+          K.DONE_IDS_TODAY, K.CHILD_AGE
         ]);
         // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
         const v: Record<string, string> = Object.fromEntries(
@@ -332,6 +234,9 @@ export default function App() {
         setFirstMission(tm === 0);
         setOnboardingDone(v[K.ONBOARDING_DONE] === 'true');
         setParentPin(v[K.PARENT_PIN] || '');
+        const age = v[K.CHILD_AGE] ? parseInt(v[K.CHILD_AGE], 10) : 7;
+        setChildAge(age);
+        setAgeProfile(getAgeProfile(age));
 
         // Restore today's completed mission IDs (reset on new day)
         if (newDay) {
@@ -406,9 +311,11 @@ export default function App() {
     }
     try {
       await AsyncStorage.multiSet([
-        [K.CHILD_NAME,      name],
-        [K.ONBOARDING_DONE, 'true'],
+          [K.CHILD_NAME, name],
+          [K.CHILD_AGE,  String(childAge)],
+          [K.ONBOARDING_DONE, 'true'],
       ]);
+      setAgeProfile(getAgeProfile(childAge));
       setChildName(name);
       setOnboardingDone(true);
       speak(`Привет, ${name}! Рад тебя видеть!`);
@@ -561,6 +468,15 @@ export default function App() {
           returnKeyType="done"
           onSubmitEditing={saveChildName}
         />
+        <TextInput
+          style={s.onboardingInput}
+          placeholder="Возраст"
+          placeholderTextColor={C.muted}
+          value={childAge > 0 ? String(childAge) : ''}
+          onChangeText={t => setChildAge(parseInt(t) || 7)}
+          keyboardType="numeric"
+          maxLength={2}
+        />
         <TouchableOpacity style={s.onboardingBtn} onPress={saveChildName}>
           <Text style={s.onboardingBtnTxt}>Начать приключение</Text>
         </TouchableOpacity>
@@ -601,14 +517,14 @@ export default function App() {
     const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');
     const others    = activePool.filter(m => missionTypeById[m.id] !== 'permanent');
     const remaining = Math.max(0, size - permanent.length);
-    const fillers   = pickDailySubset(others, today, remaining);
+    const fillers   = selectDailyMissions(others, today, remaining);
     const subsetIds = new Set<number>([...permanent.map(m => m.id), ...fillers.map(m => m.id)]);
     // Keep MISSION_POOL order within the subset for stable slot-grouping in UI
     dayMissions = MISSION_POOL.filter(m => subsetIds.has(m.id));
 
     if (appSettings.bonusAfterCompletion) {
       const leftover = activePool.filter(m => !subsetIds.has(m.id) && !doneIdsToday.includes(m.id));
-      bonusMission = pickBonusMission(leftover, today);
+      bonusMission = selectBonusMission(leftover, today);
     }
   } else if (appSettings.rotationEnabled) {
     const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');
@@ -755,7 +671,7 @@ export default function App() {
             <Buddy
               mood={fixedOverlayMood}
               speak={speak}
-              size={130}
+              size={PROFILE_CONFIGS[ageProfile].buddySize}
               celebrate={fixedOverlayCelebrate}
             />
             <ProgressBar total={totalEver} speak={speak} />

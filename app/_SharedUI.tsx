@@ -1,7 +1,6 @@
 // _SharedUI.tsx — SafeBuddy small shared UI components
 // T, ProgressBar, ReflectiveBoost, DailySuggestion, Confetti
 
-import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { C, DAILY_SUGGESTIONS, getProgress } from './_constants';

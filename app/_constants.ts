@@ -39,6 +39,8 @@ export const K = {
   DAY_MODE_OVERRIDE: 'sb_day_mode',        // 'weekday' | 'weekend' | '' (auto)
   DONE_IDS_TODAY:    'sb_done_ids_today',  // JSON array of mission IDs completed today
   CHILD_AGE: 'sb_child_age',
+  MISSION_OVERRIDES: 'sb_mission_overrides', // JSON map { [id]: MissionOverride }
+  REWARD_OVERRIDES:  'sb_reward_overrides',  // JSON map { [id]: RewardOverride }
 };
 
 // ── AGE PROFILE ───────────────────────────────────────────────────────
@@ -173,6 +175,53 @@ export const MISSIONS_BIGGER = MISSION_POOL.filter(m => m.stars === 2);
 // Default ID selections by day type
 export const DEFAULT_WEEKDAY_IDS = MISSION_POOL.filter(m => m.weekdayDefault).map(m => m.id);
 export const DEFAULT_WEEKEND_IDS = MISSION_POOL.filter(m => m.weekendDefault).map(m => m.id);
+
+// ── PARENT ZONE OVERRIDES ─────────────────────────────────────────────────────
+// Per-id parent overrides for mission enabled-state + stars and reward enabled + cost.
+// When no override entry exists for an id, fall back to MISSION_POOL / REWARDS defaults.
+
+export interface MissionOverride {
+  enabledWeekday: boolean;
+  enabledWeekend: boolean;
+  stars: number; // 1 | 2 | 3
+}
+
+export interface RewardOverride {
+  enabled: boolean;
+  cost: number;
+}
+
+export type MissionOverrideMap = Record<number, MissionOverride>;
+export type RewardOverrideMap  = Record<number, RewardOverride>;
+
+export function effectiveMissionStars(id: number, overrides: MissionOverrideMap): number {
+  const o = overrides?.[id];
+  if (o && typeof o.stars === 'number') return o.stars;
+  return MISSION_POOL.find(m => m.id === id)?.stars ?? 1;
+}
+
+export function effectiveMissionEnabled(
+  id: number,
+  mode: 'weekday' | 'weekend',
+  overrides: MissionOverrideMap,
+): boolean {
+  const o = overrides?.[id];
+  if (o) return mode === 'weekday' ? o.enabledWeekday : o.enabledWeekend;
+  const m = MISSION_POOL.find(x => x.id === id);
+  return mode === 'weekday' ? !!m?.weekdayDefault : !!m?.weekendDefault;
+}
+
+export function effectiveRewardCost(id: number, overrides: RewardOverrideMap): number {
+  const o = overrides?.[id];
+  if (o && typeof o.cost === 'number') return o.cost;
+  return REWARDS.find(r => r.id === id)?.cost ?? 1;
+}
+
+export function effectiveRewardEnabled(id: number, overrides: RewardOverrideMap): boolean {
+  const o = overrides?.[id];
+  if (o) return o.enabled;
+  return true;
+}
 
 // ── MORNING ROUTINE ───────────────────────────────────────────────────────────
 

@@ -249,19 +249,21 @@ export function CelebrateScreen({
 
 // ── RewardsScreen ─────────────────────────────────────────────────────────────
 
-export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem, showExactStarCost }: {
+export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem, showExactStarCost, rewards }: {
   stars: number;
   totalEver: number;
   onBack: () => void;
   speak: (t: string) => void;
   onRedeem: (r: any) => void;
   showExactStarCost: boolean;
+  rewards?: typeof REWARDS;
 }) {
+  const list = rewards ?? REWARDS;
   return (
     <ScrollView contentContainerStyle={s.scroll}>
       <View style={{height: BUDDY_FIXED_SPACER}} />
       <T style={s.pageTitle} speak={speak}>Твои награды</T>
-      {REWARDS.map(r => {
+      {list.map(r => {
         const can = stars >= r.cost;
         const needText = showExactStarCost
           ? `Нужно ещё ${Math.max(0, r.cost - stars)} ⭐`

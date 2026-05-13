@@ -33,10 +33,20 @@ import {
   DEFAULT_MORNING_STEPS,
   DEFAULT_REWARD_CONFIGS,
   DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS,
+  effectiveMissionEnabled,
+  effectiveMissionStars,
+  effectiveRewardCost,
+  effectiveRewardEnabled,
+  K,
   MISSION_POOL,
   MissionConfig,
+  MissionOverride,
+  MissionOverrideMap,
   MissionType,
-  MorningStep
+  MorningStep,
+  REWARDS,
+  RewardOverride,
+  RewardOverrideMap,
 } from './_constants';
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
@@ -97,6 +107,10 @@ export interface AppSettings {
   weekendMissionIds: number[];
   dayModeOverride: DayModeOverride;
 
+  // Parent zone overrides (source of truth after migration)
+  missionOverrides: MissionOverrideMap;
+  rewardOverrides:  RewardOverrideMap;
+
   // Notifications (V1.5 — stored but UI placeholder only)
   morningReminderEnabled: boolean;
   morningReminderTime: string;   // HH:MM
@@ -132,6 +146,8 @@ function buildDefaultSettings(): AppSettings {
   weekdayMissionIds: DEFAULT_WEEKDAY_IDS,
   weekendMissionIds: DEFAULT_WEEKEND_IDS,
   dayModeOverride: 'auto' as DayModeOverride,
+  missionOverrides: {},
+  rewardOverrides:  {},
   morningReminderEnabled: false,
   morningReminderTime: '08:00',
   };
@@ -194,6 +210,32 @@ export async function loadSettings(): Promise<AppSettings> {
       if (missingWeekend.length > 0) {
         merged.weekendMissionIds = [...(merged.weekendMissionIds ?? []), ...missingWeekend];
       }
+
+      // Migrate legacy weekday/weekend toggle storage into missionOverrides (one-time).
+      // After migration, missionOverrides is the source of truth; legacy fields stay
+      // for rollback safety but are no longer read by the app.
+      if (!merged.missionOverrides || Object.keys(merged.missionOverrides).length === 0) {
+        const weekdaySet = new Set<number>(merged.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS);
+        const weekendSet = new Set<number>(merged.weekendMissionIds ?? DEFAULT_WEEKEND_IDS);
+        const overrides: MissionOverrideMap = {};
+        for (const m of MISSION_POOL) {
+          overrides[m.id] = {
+            enabledWeekday: weekdaySet.has(m.id),
+            enabledWeekend: weekendSet.has(m.id),
+            stars: m.stars,
+          };
+        }
+        merged.missionOverrides = overrides;
+      }
+      // Migrate legacy rewards[].active/cost into rewardOverrides (one-time).
+      if (!merged.rewardOverrides || Object.keys(merged.rewardOverrides).length === 0) {
+        const overrides: RewardOverrideMap = {};
+        for (const r of (merged.rewards ?? DEFAULT_REWARD_CONFIGS) as RewardConfig[]) {
+          overrides[r.id] = { enabled: !!r.active, cost: r.cost };
+        }
+        merged.rewardOverrides = overrides;
+      }
+
       return merged;
     }
 
@@ -939,9 +981,6 @@ function DailyRoutineSection({
   const [stepTitle, setStepTitle]   = useState('');
   const [stepEmoji, setStepEmoji]   = useState('');
 
-  const weekdayIds = settings.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS;
-  const weekendIds = settings.weekendMissionIds ?? DEFAULT_WEEKEND_IDS;
-
   // Move a morning step up or down by index offset (-1 or +1)
   function moveStep(id: number, dir: -1 | 1) {
     const steps = [...settings.morningSteps];
@@ -968,13 +1007,6 @@ function DailyRoutineSection({
 
   function deleteStep(id: number) {
     onChange({ morningSteps: settings.morningSteps.filter(s => s.id !== id) });
-  }
-
-  function toggleMission(id: number, mode: 'weekday' | 'weekend') {
-    const key = mode === 'weekday' ? 'weekdayMissionIds' : 'weekendMissionIds';
-    const cur = mode === 'weekday' ? weekdayIds : weekendIds;
-    const next = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
-    onChange({ [key]: next });
   }
 
   return (
@@ -1089,52 +1121,6 @@ function DailyRoutineSection({
           onChange={v => onChange({ dayModeOverride: v as DayModeOverride })}
         />
       </Card>
-
-      {/* Weekday mission selection */}
-      <Card>
-        <Text style={u.subheading}>Миссии в будни</Text>
-        {MISSION_POOL.map((m, idx) => (
-          <View key={m.id}>
-            {idx > 0 && <Divider />}
-            <View style={u.row}>
-              <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={u.rowLabel}>{m.title}</Text>
-                <Text style={u.rowSublabel}>{m.subtitle}</Text>
-              </View>
-              <Switch
-                value={weekdayIds.includes(m.id)}
-                onValueChange={() => toggleMission(m.id, 'weekday')}
-                trackColor={{ false: C.track, true: C.green }}
-                thumbColor={C.white}
-              />
-            </View>
-          </View>
-        ))}
-      </Card>
-
-      {/* Weekend mission selection */}
-      <Card>
-        <Text style={u.subheading}>Миссии в выходные</Text>
-        {MISSION_POOL.map((m, idx) => (
-          <View key={m.id}>
-            {idx > 0 && <Divider />}
-            <View style={u.row}>
-              <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={u.rowLabel}>{m.title}</Text>
-                <Text style={u.rowSublabel}>{m.subtitle}</Text>
-              </View>
-              <Switch
-                value={weekendIds.includes(m.id)}
-                onValueChange={() => toggleMission(m.id, 'weekend')}
-                trackColor={{ false: C.track, true: C.green }}
-                thumbColor={C.white}
-              />
-            </View>
-          </View>
-        ))}
-      </Card>
     </View>
   );
 }
@@ -1165,6 +1151,174 @@ function NotificationsSection({ settings, onChange }: {
   );
 }
 
+// ── PARENT ZONE ────────────────────────────────────────────────────────────────
+// PIN-gated screen for per-mission and per-reward overrides.
+// Sections: Weekday Missions, Weekend Missions, Rewards.
+
+function ParentZoneView({
+  settings, onChange, onBack,
+}: {
+  settings: AppSettings;
+  onChange: (patch: Partial<AppSettings>) => void;
+  onBack: () => void;
+}) {
+  const missionOverrides = settings.missionOverrides ?? {};
+  const rewardOverrides  = settings.rewardOverrides  ?? {};
+
+  function patchMission(id: number, patch: Partial<MissionOverride>) {
+    const cur: MissionOverride = missionOverrides[id] ?? {
+      enabledWeekday: effectiveMissionEnabled(id, 'weekday', missionOverrides),
+      enabledWeekend: effectiveMissionEnabled(id, 'weekend', missionOverrides),
+      stars:          effectiveMissionStars(id, missionOverrides),
+    };
+    onChange({ missionOverrides: { ...missionOverrides, [id]: { ...cur, ...patch } } });
+  }
+
+  function patchReward(id: number, patch: Partial<RewardOverride>) {
+    const cur: RewardOverride = rewardOverrides[id] ?? {
+      enabled: effectiveRewardEnabled(id, rewardOverrides),
+      cost:    effectiveRewardCost(id, rewardOverrides),
+    };
+    onChange({ rewardOverrides: { ...rewardOverrides, [id]: { ...cur, ...patch } } });
+  }
+
+  function StarPicker({ id }: { id: number }) {
+    const value = effectiveMissionStars(id, missionOverrides);
+    return (
+      <View style={u.pillRow}>
+        {[1, 2, 3].map(n => (
+          <TouchableOpacity
+            key={n}
+            style={[u.pill, value === n && u.pillActive]}
+            onPress={() => patchMission(id, { stars: n })}
+          >
+            <Text style={[u.pillTxt, value === n && u.pillTxtActive]}>{n}⭐</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  }
+
+  function MissionRow({ id, mode }: { id: number; mode: 'weekday' | 'weekend' }) {
+    const m = MISSION_POOL.find(x => x.id === id);
+    if (!m) return null;
+    const enabled = effectiveMissionEnabled(id, mode, missionOverrides);
+    return (
+      <View style={pz.missionBlock}>
+        <View style={u.row}>
+          <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={u.rowLabel}>{m.title}</Text>
+            <Text style={u.rowSublabel}>{m.subtitle}</Text>
+          </View>
+          <Switch
+            value={enabled}
+            onValueChange={v => patchMission(id, mode === 'weekday' ? { enabledWeekday: v } : { enabledWeekend: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </View>
+        <StarPicker id={id} />
+      </View>
+    );
+  }
+
+  function RewardRow({ id }: { id: number }) {
+    const r = REWARDS.find(x => x.id === id);
+    if (!r) return null;
+    const enabled = effectiveRewardEnabled(id, rewardOverrides);
+    const cost    = effectiveRewardCost(id, rewardOverrides);
+    return (
+      <View style={pz.missionBlock}>
+        <View style={u.row}>
+          <Text style={{ fontSize: 22, marginRight: 10 }}>{r.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={u.rowLabel}>{r.title}</Text>
+            <Text style={u.rowSublabel}>{Array(cost).fill('⭐').join('')}</Text>
+          </View>
+          <Switch
+            value={enabled}
+            onValueChange={v => patchReward(id, { enabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </View>
+        <View style={[u.row, { paddingTop: 0 }]}>
+          <Text style={[u.rowSublabel, { flex: 1 }]}>Стоимость</Text>
+          <View style={u.stepperRow}>
+            <TouchableOpacity
+              style={u.stepperBtn}
+              onPress={() => patchReward(id, { cost: Math.max(1, cost - 1) })}
+            >
+              <Text style={u.stepperTxt}>−</Text>
+            </TouchableOpacity>
+            <Text style={u.stepperVal}>{cost}</Text>
+            <TouchableOpacity
+              style={u.stepperBtn}
+              onPress={() => patchReward(id, { cost: Math.min(20, cost + 1) })}
+            >
+              <Text style={u.stepperTxt}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <SafeAreaView style={ss.root}>
+      <View style={ss.header}>
+        <TouchableOpacity onPress={onBack} style={ss.backBtn}>
+          <Text style={ss.backBtnTxt}>← Назад</Text>
+        </TouchableOpacity>
+        <Text style={ss.headerTitle}>Родительская зона</Text>
+        <View style={{ width: 80 }} />
+      </View>
+      <ScrollView style={ss.scroll} contentContainerStyle={ss.content} keyboardShouldPersistTaps="handled">
+        <SectionHeader title="Миссии — будни" icon="📅" />
+        <Card>
+          {MISSION_POOL.map((m, idx) => (
+            <View key={m.id}>
+              {idx > 0 && <Divider />}
+              <MissionRow id={m.id} mode="weekday" />
+            </View>
+          ))}
+        </Card>
+
+        <View style={ss.spacer} />
+
+        <SectionHeader title="Миссии — выходные" icon="🌈" />
+        <Card>
+          {MISSION_POOL.map((m, idx) => (
+            <View key={m.id}>
+              {idx > 0 && <Divider />}
+              <MissionRow id={m.id} mode="weekend" />
+            </View>
+          ))}
+        </Card>
+
+        <View style={ss.spacer} />
+
+        <SectionHeader title="Награды" icon="🎁" />
+        <Card>
+          {REWARDS.map((r, idx) => (
+            <View key={r.id}>
+              {idx > 0 && <Divider />}
+              <RewardRow id={r.id} />
+            </View>
+          ))}
+        </Card>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const pz = StyleSheet.create({
+  missionBlock: { paddingBottom: 8 },
+});
+
 // ── MAIN SETTINGS SCREEN ──────────────────────────────────────────────────────
 
 interface SettingsScreenProps {
@@ -1188,6 +1342,7 @@ export default function SettingsScreen({
   const [pinInput,  setPinInput]  = useState('');
   const [showPin,   setShowPin]   = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [parentZoneOpen, setParentZoneOpen] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load on mount
@@ -1268,6 +1423,16 @@ export default function SettingsScreen({
     );
   }
 
+  if (parentZoneOpen) {
+    return (
+      <ParentZoneView
+        settings={settings}
+        onChange={updateSettings}
+        onBack={() => setParentZoneOpen(false)}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={ss.root}>
       {/* Header */}
@@ -1289,6 +1454,24 @@ export default function SettingsScreen({
 
         <View style={ss.spacer} />
 
+        {/* Parent zone — PIN-gated overrides */}
+        <Card>
+          <TouchableOpacity
+            style={u.row}
+            onPress={() => requirePin(() => setParentZoneOpen(true))}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 22, marginRight: 10 }}>🔒</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={u.rowLabel}>Родительская зона</Text>
+              <Text style={u.rowSublabel}>Миссии будней и выходных, награды</Text>
+            </View>
+            <Text style={u.linkBtnTxt}>Открыть →</Text>
+          </TouchableOpacity>
+        </Card>
+
+        <View style={ss.spacer} />
+
         {/* Child profile */}
         <ChildSection
           settings={settings}
@@ -1305,11 +1488,6 @@ export default function SettingsScreen({
 
         {/* Missions */}
         <MissionsSection settings={settings} onChange={updateSettings} />
-
-        <View style={ss.spacer} />
-
-        {/* Rewards */}
-        <RewardsSection settings={settings} onChange={updateSettings} />
 
         <View style={ss.spacer} />
 

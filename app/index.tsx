@@ -23,7 +23,7 @@ import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from 
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
 import { ProgressBar } from './_SharedUI';
-import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, getAgeProfile, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
+import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, effectiveMissionEnabled, effectiveMissionStars, effectiveRewardCost, effectiveRewardEnabled, getAgeProfile, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, Reward, REWARDS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -486,24 +486,28 @@ export default function App() {
 
   // ── MAIN APP ────────────────────────────────────────────────────────────────
   const p = { speak, stars, totalEver };
-  // Compute which missions to show based on day mode + settings
+  // Compute which missions to show based on day mode + parent overrides
   const isWeekendDay = isWeekend();
   const dayModeActive = (appSettings.dayModeOverride ?? 'auto') === 'auto'
     ? isWeekendDay
     : appSettings.dayModeOverride === 'weekend';
 
-  const selectedIds = dayModeActive
-    ? (appSettings.weekendMissionIds ?? DEFAULT_WEEKEND_IDS)
-    : (appSettings.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS);
+  const dayMode: 'weekday' | 'weekend' = dayModeActive ? 'weekend' : 'weekday';
+  const missionOverrides = appSettings.missionOverrides ?? {};
+  const rewardOverrides  = appSettings.rewardOverrides  ?? {};
 
   const missionTypeById = Object.fromEntries(
     appSettings.missions.map(m => [m.id, m.type])
   );
 
-  // Active pool respects day-mode selection + excludes "inactive"
-  const activePool: PoolMission[] = MISSION_POOL.filter(m =>
-    selectedIds.includes(m.id) && missionTypeById[m.id] !== 'inactive'
-  );
+  // Active pool: enabled for this day mode by parent override, and not inactive (mission-type setting)
+  // Each mission's `stars` is replaced with the parent-override value (falls back to pool default).
+  const activePool: PoolMission[] = MISSION_POOL
+    .filter(m =>
+      effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
+      missionTypeById[m.id] !== 'inactive'
+    )
+    .map(m => ({ ...m, stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2 }));
 
   let dayMissions: PoolMission[] = activePool;
   let bonusMission: PoolMission | null = null;
@@ -519,8 +523,11 @@ export default function App() {
     const remaining = Math.max(0, size - permanent.length);
     const fillers   = selectDailyMissions(others, today, remaining);
     const subsetIds = new Set<number>([...permanent.map(m => m.id), ...fillers.map(m => m.id)]);
-    // Keep MISSION_POOL order within the subset for stable slot-grouping in UI
-    dayMissions = MISSION_POOL.filter(m => subsetIds.has(m.id));
+    // Keep MISSION_POOL order within the subset for stable slot-grouping in UI;
+    // apply override stars so cards display the right value.
+    dayMissions = MISSION_POOL
+      .filter(m => subsetIds.has(m.id))
+      .map(m => ({ ...m, stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2 }));
 
     if (appSettings.bonusAfterCompletion) {
       const leftover = activePool.filter(m => !subsetIds.has(m.id) && !doneIdsToday.includes(m.id));
@@ -536,6 +543,11 @@ export default function App() {
     ));
     dayMissions = [...permanent, ...rotated];
   }
+
+  // Effective rewards list (parent overrides applied; disabled rewards hidden).
+  const effectiveRewards: Reward[] = REWARDS
+    .filter(r => effectiveRewardEnabled(r.id, rewardOverrides))
+    .map(r => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
   if (showMorning) {
     return (
       <SafeAreaView style={s.root}>
@@ -644,6 +656,7 @@ export default function App() {
       {screen === 'rewards' && (
         <RewardsScreen
           {...p}
+          rewards={effectiveRewards}
           onBack={() => setScreen('home')}
           onRedeem={handleRewardRedeem}
           showExactStarCost={appSettings.showExactStarCost}

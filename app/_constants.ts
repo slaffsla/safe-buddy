@@ -312,7 +312,7 @@ export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200] as const;
 // ── COLORS ────────────────────────────────────────────────────────────────────
 
 export const C = {
-  bg:      '#F7F6F2',
+  bg:      '#FDFAF5',
   white:   '#FFFFFF',
   green:   '#1D6B4F',
   greenLt: '#E1F5EE',

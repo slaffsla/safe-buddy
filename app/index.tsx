@@ -625,6 +625,7 @@ export default function App() {
           {...p}
           firstTime={firstMission}
           missions={dayMissions.length > 0 ? dayMissions : null}
+          missionTypeById={missionTypeById}
           doneIds={doneIdsToday}
           bonusMission={appSettings.infinityLoopEnabled && appSettings.bonusAfterCompletion ? bonusMission : null}
           onPick={pickMission}

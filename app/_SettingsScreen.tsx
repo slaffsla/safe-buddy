@@ -588,16 +588,6 @@ function MissionsSection({
     inactive:  C.muted,
   };
 
-  function cycleType(id: number) {
-    const order: MissionType[] = ['permanent', 'rotating', 'inactive'];
-    const updated = settings.missions.map(m => {
-      if (m.id !== id) return m;
-      const next = order[(order.indexOf(m.type) + 1) % order.length];
-      return { ...m, type: next };
-    });
-    onChange({ missions: updated });
-  }
-
   return (
     <View>
       <SectionHeader title="Миссии" icon="🎯" />
@@ -611,20 +601,17 @@ function MissionsSection({
                 <Text style={u.missionTitle}>{m.title}</Text>
                 <Text style={u.missionSub}>{m.subtitle}</Text>
               </View>
-              <TouchableOpacity
-                style={[u.typePill, { borderColor: TYPE_COLORS[m.type] }]}
-                onPress={() => cycleType(m.id)}
-              >
+              <View style={[u.typePill, { borderColor: TYPE_COLORS[m.type] }]}>
                 <Text style={[u.typePillTxt, { color: TYPE_COLORS[m.type] }]}>
                   {TYPE_LABELS[m.type]}
                 </Text>
-              </TouchableOpacity>
+              </View>
             </View>
           </View>
         ))}
         <Divider />
         <Text style={[u.rowSublabel, { padding: 8, textAlign: 'center' }]}>
-          Нажми на тип, чтобы переключить: Всегда → Ротация → Выкл
+          Управление миссиями — в Родительской зоне
         </Text>
       </Card>
 

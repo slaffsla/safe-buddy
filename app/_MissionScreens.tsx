@@ -45,10 +45,11 @@ interface MissionPickProps {
   missions?: PoolMission[] | null;
   doneIds?: number[];
   bonusMission?: PoolMission | null;
+  missionTypeById?: Record<number, 'permanent' | 'rotating' | 'inactive'>;
 }
 
 export function MissionPickScreen({
-  onPick, onBack, speak, firstTime, missions, doneIds, bonusMission,
+  onPick, onBack, speak, firstTime, missions, doneIds, bonusMission, missionTypeById,
 }: MissionPickProps) {
   const pool = (!missions || missions.length === 0)
     ? MISSION_POOL
@@ -130,10 +131,14 @@ export function MissionPickScreen({
 
             {isOpen && items.map(m => {
               const isDone = done.has(m.id);
+              const mType  = missionTypeById?.[m.id];
+              const tintStyle =
+                mType === 'permanent' ? s.mCardPermanent :
+                mType === 'rotating'  ? s.mCardRotating  : null;
               return (
                 <TouchableOpacity
                   key={m.id}
-                  style={[s.mCard, m.stars >= 2 && s.mCardBig, isDone && s.mCardDone]}
+                  style={[s.mCard, tintStyle, m.stars >= 2 && s.mCardBig, isDone && s.mCardDone]}
                   onPress={() => { if (!isDone) onPick(m); else speak(`${m.title}. Уже сделано сегодня`); }}
                   onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
                   activeOpacity={isDone ? 1 : 0.7}
@@ -142,6 +147,16 @@ export function MissionPickScreen({
                   <View style={s.mInfo}>
                     <Text style={[s.mTitle, isDone && s.mTxtDone]}>{m.title}</Text>
                     <Text style={[s.mSub, isDone && s.mTxtDone]}>{m.subtitle}</Text>
+                    {!isDone && mType === 'permanent' && (
+                      <View style={[s.typePill, s.typePillPermanent]}>
+                        <Text style={s.typePillTxtPermanent}>Всегда</Text>
+                      </View>
+                    )}
+                    {!isDone && mType === 'rotating' && (
+                      <View style={[s.typePill, s.typePillRotating]}>
+                        <Text style={s.typePillTxtRotating}>Ротация</Text>
+                      </View>
+                    )}
                   </View>
                   {isDone
                     ? <Text style={s.mDoneBadge}>✓</Text>
@@ -328,6 +343,8 @@ const s = StyleSheet.create({
   mCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 13, marginBottom: 7, width: '100%' },
   mCardBig: { backgroundColor: C.gold, borderColor: C.goldBdr },
   mCardDone:{ backgroundColor: C.greenLt, borderColor: C.green, opacity: 0.75 },
+  mCardPermanent: { backgroundColor: '#F1FAF6', borderColor: '#CDE7DA' },
+  mCardRotating:  { backgroundColor: '#FFF8E7', borderColor: '#F1D58E' },
   mEmoji:   { fontSize: 30, marginRight: 11 },
   mEmojiDone:{ opacity: 0.55 },
   mInfo:    { flex: 1 },
@@ -336,6 +353,13 @@ const s = StyleSheet.create({
   mStar:    { fontSize: 17 },
   mTxtDone: { textDecorationLine: 'line-through', color: C.muted },
   mDoneBadge:{ fontSize: 20, color: C.green, fontWeight: '800', marginLeft: 4 },
+
+  // Type pills (mission cards)
+  typePill:               { alignSelf: 'flex-start', marginTop: 6, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 10 },
+  typePillPermanent:      { backgroundColor: C.green },
+  typePillRotating:       { backgroundColor: C.goldBdr },
+  typePillTxtPermanent:   { fontSize: 10, fontWeight: '700', color: C.white, letterSpacing: 0.3 },
+  typePillTxtRotating:    { fontSize: 10, fontWeight: '700', color: C.white, letterSpacing: 0.3 },
 
   // Encore / bonus
   encoreCard:   { width: '100%', backgroundColor: C.greenLt, borderRadius: 18, borderWidth: 1, borderColor: C.green, padding: 18, alignItems: 'center', marginBottom: 14 },

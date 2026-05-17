@@ -41,7 +41,6 @@ import {
   MissionConfig,
   MissionOverride,
   MissionOverrideMap,
-  MissionType,
   MorningStep,
   RewardOverride,
   RewardOverrideMap,
@@ -576,24 +575,11 @@ function MissionsSection({
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
-  const TYPE_LABELS: Record<MissionType, string> = {
-    permanent: 'Всегда',
-    rotating:  'Ротация',
-    inactive:  'Выкл',
-  };
-  const TYPE_COLORS: Record<MissionType, string> = {
-    permanent: C.green,
-    rotating:  '#854F0B',
-    inactive:  C.muted,
-  };
-
   return (
     <View>
       <SectionHeader title="Миссии" icon="🎯" />
       <Card>
-        
-        <Divider />
-        <Text style={[u.rowSublabel, { padding: 8, textAlign: 'center' }]}>
+        <Text style={[u.rowSublabel, { padding: 12, textAlign: 'center' }]}>
           Управление миссиями — в Родительской зоне
         </Text>
       </Card>
@@ -1155,16 +1141,22 @@ function ParentZoneView({
   function StarPicker({ id }: { id: number }) {
     const value = effectiveMissionStars(id, missionOverrides);
     return (
-      <View style={u.pillRow}>
-        {[1, 2, 3].map(n => (
-          <TouchableOpacity
-            key={n}
-            style={[u.pill, value === n && u.pillActive]}
-            onPress={() => patchMission(id, { stars: n })}
-          >
-            <Text style={[u.pillTxt, value === n && u.pillTxtActive]}>{n}⭐</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={pz.starPickerRow}>
+        {[1, 2, 3].map(n => {
+          const filled = n <= value;
+          return (
+            <TouchableOpacity
+              key={n}
+              style={pz.starTap}
+              onPress={() => patchMission(id, { stars: n })}
+              activeOpacity={0.7}
+            >
+              <Text style={[pz.starIcon, filled ? pz.starFilled : pz.starOutline]}>
+                {filled ? '★' : '☆'}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     );
   }
@@ -1198,13 +1190,14 @@ function ParentZoneView({
     if (!r) return null;
     const enabled = effectiveRewardEnabled(id, rewardOverrides);
     const cost    = effectiveRewardCost(id, rewardOverrides);
+    const clampedCost = Math.max(1, Math.min(7, cost));
     return (
       <View style={pz.missionBlock}>
         <View style={u.row}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{r.emoji}</Text>
           <View style={{ flex: 1 }}>
             <Text style={u.rowLabel}>{r.title}</Text>
-            <Text style={u.rowSublabel}>{Array(cost).fill('⭐').join('')}</Text>
+            <Text style={u.rowSublabel}>{Array(clampedCost).fill('⭐').join('')}</Text>
           </View>
           <Switch
             value={enabled}
@@ -1215,17 +1208,22 @@ function ParentZoneView({
         </View>
         <View style={[u.row, { paddingTop: 0 }]}>
           <Text style={[u.rowSublabel, { flex: 1 }]}>Стоимость</Text>
-          <View style={u.stepperRow}>
+          <View style={pz.starStepperRow}>
             <TouchableOpacity
               style={u.stepperBtn}
-              onPress={() => patchReward(id, { cost: Math.max(1, cost - 1) })}
+              onPress={() => patchReward(id, { cost: Math.max(1, clampedCost - 1) })}
             >
               <Text style={u.stepperTxt}>−</Text>
             </TouchableOpacity>
-            <Text style={u.stepperVal}>{cost}</Text>
+            <View style={pz.starStepperStars}>
+              {Array.from({ length: clampedCost }).map((_, i) => (
+                <Text key={i} style={pz.starStepperStar}>★</Text>
+              ))}
+            </View>
+            <Text style={pz.starStepperNum}>{clampedCost}</Text>
             <TouchableOpacity
               style={u.stepperBtn}
-              onPress={() => patchReward(id, { cost: Math.min(20, cost + 1) })}
+              onPress={() => patchReward(id, { cost: Math.min(7, clampedCost + 1) })}
             >
               <Text style={u.stepperTxt}>+</Text>
             </TouchableOpacity>
@@ -1287,6 +1285,19 @@ function ParentZoneView({
 
 const pz = StyleSheet.create({
   missionBlock: { paddingBottom: 8 },
+
+  // Star picker (missions): 3 tappable stars
+  starPickerRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 14, paddingBottom: 12 },
+  starTap:       { padding: 4 },
+  starIcon:      { fontSize: 28, lineHeight: 32 },
+  starFilled:    { color: C.goldBdr },
+  starOutline:   { color: C.muted },
+
+  // Reward stepper with rendered stars + numeric label
+  starStepperRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  starStepperStars: { flexDirection: 'row', minWidth: 96, justifyContent: 'flex-end' },
+  starStepperStar:  { fontSize: 14, color: C.goldBdr, marginHorizontal: 0.5 },
+  starStepperNum:   { fontSize: 12, color: C.muted, minWidth: 16, textAlign: 'center' },
 });
 
 // ── MAIN SETTINGS SCREEN ──────────────────────────────────────────────────────

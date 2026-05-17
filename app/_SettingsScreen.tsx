@@ -1542,6 +1542,12 @@ const ss = StyleSheet.create({
   pinBtnPrimaryTxt: { fontSize: 15, color: C.white, fontWeight: '600' },
   pinBtnCancel:     { backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingVertical: 14, alignItems: 'center', width: '100%' },
   pinBtnCancelTxt:  { fontSize: 15, color: C.text, fontWeight: '500' },
+  parentZoneCard:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.green, borderRadius: 16, padding: 18, marginBottom: 8 },
+  parentZoneLeft:   { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+  parentZoneIcon:   { fontSize: 28 },
+  parentZoneTitle:  { fontSize: 16, fontWeight: '700', color: C.white },
+  parentZoneSub:    { fontSize: 12, color: C.greenLt, marginTop: 3, lineHeight: 17 },
+  parentZoneArrow:  { fontSize: 18, color: C.white, opacity: 0.8 },
 });
 
 const u = StyleSheet.create({

@@ -37,14 +37,12 @@ import {
   effectiveMissionStars,
   effectiveRewardCost,
   effectiveRewardEnabled,
-  K,
   MISSION_POOL,
   MissionConfig,
   MissionOverride,
   MissionOverrideMap,
   MissionType,
   MorningStep,
-  REWARDS,
   RewardOverride,
   RewardOverrideMap,
   REWARDS
@@ -593,23 +591,7 @@ function MissionsSection({
     <View>
       <SectionHeader title="Миссии" icon="🎯" />
       <Card>
-        {settings.missions.map((m, idx) => (
-          <View key={m.id}>
-            {idx > 0 && <Divider />}
-            <View style={u.missionRow}>
-              <Text style={u.missionEmoji}>{m.emoji}</Text>
-              <View style={u.missionInfo}>
-                <Text style={u.missionTitle}>{m.title}</Text>
-                <Text style={u.missionSub}>{m.subtitle}</Text>
-              </View>
-              <View style={[u.typePill, { borderColor: TYPE_COLORS[m.type] }]}>
-                <Text style={[u.typePillTxt, { color: TYPE_COLORS[m.type] }]}>
-                  {TYPE_LABELS[m.type]}
-                </Text>
-              </View>
-            </View>
-          </View>
-        ))}
+        
         <Divider />
         <Text style={[u.rowSublabel, { padding: 8, textAlign: 'center' }]}>
           Управление миссиями — в Родительской зоне

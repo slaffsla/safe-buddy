@@ -1464,14 +1464,14 @@ export default function SettingsScreen({
         {/* Parent zone — PIN-gated overrides */}
         <Card>
           <TouchableOpacity
-            style={u.row}
+            style={ss.parentZoneCard}
             onPress={() => requirePin(() => setParentZoneOpen(true))}
             activeOpacity={0.7}
           >
             <Text style={{ fontSize: 22, marginRight: 10 }}>🔒</Text>
             <View style={{ flex: 1 }}>
               <Text style={u.rowLabel}>Родительская зона</Text>
-              <Text style={u.rowSublabel}>Миссии, награды, расписание, поведение Бадди</Text>
+              <Text style={ss.parentZoneSub}>Миссии, награды, расписание, поведение Бадди</Text>
             </View>
             <Text style={u.linkBtnTxt}>Открыть →</Text>
           </TouchableOpacity>

@@ -37,16 +37,15 @@ import {
   effectiveMissionStars,
   effectiveRewardCost,
   effectiveRewardEnabled,
-  K,
   MISSION_POOL,
   MissionConfig,
   MissionOverride,
   MissionOverrideMap,
   MissionType,
   MorningStep,
-  REWARDS,
   RewardOverride,
   RewardOverrideMap,
+  REWARDS
 } from './_constants';
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
@@ -1472,7 +1471,7 @@ export default function SettingsScreen({
             <Text style={{ fontSize: 22, marginRight: 10 }}>🔒</Text>
             <View style={{ flex: 1 }}>
               <Text style={u.rowLabel}>Родительская зона</Text>
-              <Text style={u.rowSublabel}>Миссии будней и выходных, награды</Text>
+              <Text style={u.rowSublabel}>Миссии, награды, расписание, поведение Бадди</Text>
             </View>
             <Text style={u.linkBtnTxt}>Открыть →</Text>
           </TouchableOpacity>

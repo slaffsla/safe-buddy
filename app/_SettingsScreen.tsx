@@ -1122,6 +1122,9 @@ function ParentZoneView({
 }) {
   const missionOverrides = settings.missionOverrides ?? {};
   const rewardOverrides  = settings.rewardOverrides  ?? {};
+  const missionTypeById: Record<number, MissionType> = Object.fromEntries(
+    settings.missions.map(m => [m.id, m.type])
+  );
 
   function patchMission(id: number, patch: Partial<MissionOverride>) {
     const cur: MissionOverride = missionOverrides[id] ?? {
@@ -1167,13 +1170,27 @@ function ParentZoneView({
     const m = MISSION_POOL.find(x => x.id === id);
     if (!m) return null;
     const enabled = effectiveMissionEnabled(id, mode, missionOverrides);
+    const mType   = missionTypeById[id];
+    const tintStyle =
+      mType === 'permanent' ? pz.blockPermanent :
+      mType === 'rotating'  ? pz.blockRotating  : null;
     return (
-      <View style={pz.missionBlock}>
+      <View style={[pz.missionBlock, tintStyle]}>
         <View style={u.row}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
           <View style={{ flex: 1 }}>
             <Text style={u.rowLabel}>{m.title}</Text>
             <Text style={u.rowSublabel}>{m.subtitle}</Text>
+            {mType === 'permanent' && (
+              <View style={[pz.typePill, pz.typePillPermanent]}>
+                <Text style={pz.typePillTxt}>Всегда</Text>
+              </View>
+            )}
+            {mType === 'rotating' && (
+              <View style={[pz.typePill, pz.typePillRotating]}>
+                <Text style={pz.typePillTxt}>Ротация</Text>
+              </View>
+            )}
           </View>
           <Switch
             value={enabled}
@@ -1287,6 +1304,14 @@ function ParentZoneView({
 
 const pz = StyleSheet.create({
   missionBlock: { paddingBottom: 8 },
+  blockPermanent: { backgroundColor: '#F1FAF6' },
+  blockRotating:  { backgroundColor: '#FFF8E7' },
+
+  // Type pills (mission rows in ParentZone)
+  typePill:             { alignSelf: 'flex-start', marginTop: 6, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 10 },
+  typePillPermanent:    { backgroundColor: C.green },
+  typePillRotating:     { backgroundColor: C.goldBdr },
+  typePillTxt:          { fontSize: 10, fontWeight: '700', color: C.white, letterSpacing: 0.3 },
 
   // Star picker (missions): 3 tappable stars
   starPickerRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 14, paddingBottom: 12 },

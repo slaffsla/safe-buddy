@@ -463,8 +463,8 @@ function PinSection({
       <SectionHeader title="Безопасность" icon="🔒" />
       <Card>
         <SettingRow
-          label="PIN для наград"
-          sublabel="Ребёнок не сможет получить награду без родителя"
+          label="PIN родителя"
+          sublabel="Защищает настройки и выдачу наград"
         >
           <Switch
             value={settings.pinEnabled}

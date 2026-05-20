@@ -135,7 +135,7 @@ function buildDefaultSettings(): AppSettings {
   controlLevel: 'balanced',
   nudgingEnabled: true,
   tinyFactsEnabled: false,
-  breathingEnabled: false,
+  breathingEnabled: true,
   ttsEnabled: true,
   skipSensitivity: 2,
   showExactStarCost: false,
@@ -867,12 +867,12 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
-          label="Дыхательные упражнения 🔜"
-          sublabel="Кнопка «Расслабься с Бадди» (скоро)"
+          label="Дыхательные упражнения"
+          sublabel="Расслабься с Бадди"
         >
           <Switch
-            value={false}
-            disabled
+            value={settings.breathingEnabled}
+            onValueChange={v => onChange({ breathingEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />

@@ -631,7 +631,7 @@ export default function App() {
           nextBlock={nextBlock}
           scheduleEnabled={appSettings.scheduleEnabled}
           onOpenDay={() => setScreen('day')}
-          onBreathing={() => setScreen('breathing')}
+          onBreathing={appSettings.breathingEnabled ? (() => setScreen('breathing')) : undefined}
         />
       )}
 

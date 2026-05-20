@@ -1,8 +1,8 @@
 // _HomeScreen.tsx — SafeBuddy home screen
 
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { BUDDY_FIXED_SPACER, C, MSG, getDailySuggestion, getProgressionMessage } from './_constants';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BUDDY_FIXED_SPACER, C, MSG, ScheduleItem, getDailySuggestion, getProgressionMessage } from './_constants';
 import { DailySuggestion, ReflectiveBoost, T } from './_SharedUI';
 
 interface HomeScreenProps {
@@ -21,13 +21,14 @@ interface HomeScreenProps {
   onSuggestionAccept: (suggestion: any) => void;
   onSuggestionSkip: () => void;
   speak: (t: string) => void;
+  currentScheduleItem?: ScheduleItem | null;
 }
 
 export default function HomeScreen({
   totalEver, completedToday, totalMissions,
   childName, lastMission, showSuggestion, skipSensitivity,
   onStart, onRewards, onSettings, onSuggestionAccept, onSuggestionSkip,
-  skipCount, speak,
+  skipCount, speak, currentScheduleItem,
 }: HomeScreenProps) {
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [idleMsg] = useState(() =>
@@ -56,6 +57,20 @@ export default function HomeScreen({
           speak={speak}
         />
       )}
+      {currentScheduleItem && (
+        <TouchableOpacity
+          style={s.scheduleCard}
+          onPress={() => speak(`Сейчас ${currentScheduleItem.title}`)}
+          activeOpacity={0.8}
+        >
+          <Text style={s.scheduleEmoji}>{currentScheduleItem.emoji}</Text>
+          <View style={s.scheduleText}>
+            <Text style={s.scheduleLabel}>Сейчас</Text>
+            <Text style={s.scheduleTitle}>{currentScheduleItem.title}</Text>
+          </View>
+          <Text style={s.scheduleTime}>до {currentScheduleItem.endTime}</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
         <Text style={s.btnPrimaryTxt}>🚀 Выбрать миссию</Text>
       </TouchableOpacity>
@@ -80,4 +95,10 @@ const s = StyleSheet.create({
   btnSecondaryTxt: { fontSize: 17, color: '#92400E', fontWeight: '600' },
   btnSettings:    { marginTop: 8, padding: 12, alignItems: 'center' },
   btnSettingsTxt: { fontSize: 14, color: C.muted },
+  scheduleCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: C.greenLt, borderRadius: 14, borderWidth: 1, borderColor: C.green, padding: 14, width: '100%', marginBottom: 10, gap: 12 },
+  scheduleEmoji: { fontSize: 28 },
+  scheduleText:  { flex: 1 },
+  scheduleLabel: { fontSize: 11, color: C.green, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  scheduleTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginTop: 2 },
+  scheduleTime:  { fontSize: 12, color: C.muted },
 });

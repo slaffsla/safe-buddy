@@ -47,6 +47,8 @@ import {
   REWARDS,
   RewardOverride,
   RewardOverrideMap,
+  ScheduleItem,
+  DEFAULT_SCHEDULE,
 } from './_constants';
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
@@ -111,6 +113,10 @@ export interface AppSettings {
   missionOverrides: MissionOverrideMap;
   rewardOverrides:  RewardOverrideMap;
 
+  // Day schedule (Option A — "what's now" card on HomeScreen; Option B reserved)
+  scheduleEnabled: boolean;
+  scheduleItems:   ScheduleItem[];
+
   // Notifications (V1.5 — stored but UI placeholder only)
   morningReminderEnabled: boolean;
   morningReminderTime: string;   // HH:MM
@@ -148,6 +154,8 @@ function buildDefaultSettings(): AppSettings {
   dayModeOverride: 'auto' as DayModeOverride,
   missionOverrides: {},
   rewardOverrides:  {},
+  scheduleEnabled: false,
+  scheduleItems:   DEFAULT_SCHEDULE,
   morningReminderEnabled: false,
   morningReminderTime: '08:00',
   };
@@ -1083,6 +1091,182 @@ function DailyRoutineSection({
   );
 }
 
+// ── DAY SCHEDULE SECTION ──────────────────────────────────────────────────────
+// Option A — parents manage the "what's now" item pool.
+// Each item: emoji, title, start/end time (HH:MM), weekday/weekend flags.
+
+function ScheduleSection({
+  settings, onChange,
+}: {
+  settings: AppSettings;
+  onChange: (patch: Partial<AppSettings>) => void;
+}) {
+  const items = settings.scheduleItems ?? DEFAULT_SCHEDULE;
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftEmoji, setDraftEmoji] = useState('');
+  const [draftStart, setDraftStart] = useState('');
+  const [draftEnd,   setDraftEnd]   = useState('');
+
+  function startEdit(it: ScheduleItem) {
+    setEditingId(it.id);
+    setDraftTitle(it.title);
+    setDraftEmoji(it.emoji);
+    setDraftStart(it.startTime);
+    setDraftEnd(it.endTime);
+  }
+
+  function startAdd() {
+    setEditingId(-1);
+    setDraftTitle(''); setDraftEmoji(''); setDraftStart(''); setDraftEnd('');
+  }
+
+  function isValidTime(t: string): boolean {
+    return /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+  }
+
+  function saveDraft() {
+    const title = draftTitle.trim();
+    if (!title || !isValidTime(draftStart) || !isValidTime(draftEnd)) {
+      Alert.alert('Проверь название и время', 'Формат времени ЧЧ:ММ (например 08:00)');
+      return;
+    }
+    if (editingId === -1) {
+      const newId = Math.max(0, ...items.map(i => i.id)) + 1;
+      onChange({
+        scheduleItems: [
+          ...items,
+          { id: newId, title, emoji: draftEmoji || '⏰', startTime: draftStart, endTime: draftEnd, weekdays: true, weekends: true },
+        ],
+      });
+    } else {
+      onChange({
+        scheduleItems: items.map(i =>
+          i.id === editingId
+            ? { ...i, title, emoji: draftEmoji || i.emoji, startTime: draftStart, endTime: draftEnd }
+            : i
+        ),
+      });
+    }
+    setEditingId(null);
+  }
+
+  function deleteItem(id: number) {
+    onChange({ scheduleItems: items.filter(i => i.id !== id) });
+  }
+
+  function toggleFlag(id: number, key: 'weekdays' | 'weekends') {
+    onChange({
+      scheduleItems: items.map(i => (i.id === id ? { ...i, [key]: !i[key] } : i)),
+    });
+  }
+
+  return (
+    <View>
+      <SectionHeader title="Распорядок дня" icon="📅" />
+      <Card>
+        <SettingRow
+          label='Карточка "Сейчас"'
+          sublabel="Показывать на главном экране, что происходит сейчас"
+        >
+          <Switch
+            value={settings.scheduleEnabled}
+            onValueChange={v => onChange({ scheduleEnabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </SettingRow>
+      </Card>
+
+      {settings.scheduleEnabled && (
+        <Card>
+          {items.map((it, idx) => (
+            <View key={it.id}>
+              {idx > 0 && <Divider />}
+              {editingId === it.id ? (
+                <View style={u.editBlock}>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TextInput style={[u.editInput, { width: 52 }]} value={draftEmoji} onChangeText={setDraftEmoji} placeholder="⏰" placeholderTextColor={C.muted} />
+                    <TextInput style={[u.editInput, { flex: 1 }]} value={draftTitle} onChangeText={setDraftTitle} placeholder="Название" placeholderTextColor={C.muted} autoFocus />
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TextInput style={[u.editInput, { flex: 1 }]} value={draftStart} onChangeText={setDraftStart} placeholder="ЧЧ:ММ начало" placeholderTextColor={C.muted} maxLength={5} />
+                    <TextInput style={[u.editInput, { flex: 1 }]} value={draftEnd}   onChangeText={setDraftEnd}   placeholder="ЧЧ:ММ конец"  placeholderTextColor={C.muted} maxLength={5} />
+                  </View>
+                  <View style={u.rowBtns}>
+                    <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}><Text style={u.btnPrimaryTxt}>Сохранить</Text></TouchableOpacity>
+                    <TouchableOpacity style={u.btnCancel} onPress={() => setEditingId(null)}><Text style={u.btnCancelTxt}>Отмена</Text></TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={{ padding: 4 }}>
+                  <View style={u.row}>
+                    <Text style={{ fontSize: 22, marginRight: 10 }}>{it.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={u.rowLabel}>{it.title}</Text>
+                      <Text style={u.rowSublabel}>{it.startTime} — {it.endTime}</Text>
+                    </View>
+                    <TouchableOpacity style={u.linkBtn} onPress={() => startEdit(it)}>
+                      <Text style={u.linkBtnTxt}>Изм.</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={u.dangerBtn} onPress={() => deleteItem(it.id)}>
+                      <Text style={u.dangerBtnTxt}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={[u.row, { paddingTop: 0 }]}>
+                    <Text style={[u.rowSublabel, { flex: 1 }]}>Будни</Text>
+                    <Switch
+                      value={it.weekdays}
+                      onValueChange={() => toggleFlag(it.id, 'weekdays')}
+                      trackColor={{ false: C.track, true: C.green }}
+                      thumbColor={C.white}
+                    />
+                  </View>
+                  <View style={[u.row, { paddingTop: 0 }]}>
+                    <Text style={[u.rowSublabel, { flex: 1 }]}>Выходные</Text>
+                    <Switch
+                      value={it.weekends}
+                      onValueChange={() => toggleFlag(it.id, 'weekends')}
+                      trackColor={{ false: C.track, true: C.green }}
+                      thumbColor={C.white}
+                    />
+                  </View>
+                </View>
+              )}
+            </View>
+          ))}
+
+          {editingId === -1 && (
+            <View style={u.editBlock}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput style={[u.editInput, { width: 52 }]} value={draftEmoji} onChangeText={setDraftEmoji} placeholder="⏰" placeholderTextColor={C.muted} />
+                <TextInput style={[u.editInput, { flex: 1 }]} value={draftTitle} onChangeText={setDraftTitle} placeholder="Название" placeholderTextColor={C.muted} autoFocus />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput style={[u.editInput, { flex: 1 }]} value={draftStart} onChangeText={setDraftStart} placeholder="ЧЧ:ММ начало" placeholderTextColor={C.muted} maxLength={5} />
+                <TextInput style={[u.editInput, { flex: 1 }]} value={draftEnd}   onChangeText={setDraftEnd}   placeholder="ЧЧ:ММ конец"  placeholderTextColor={C.muted} maxLength={5} />
+              </View>
+              <View style={u.rowBtns}>
+                <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}><Text style={u.btnPrimaryTxt}>Добавить</Text></TouchableOpacity>
+                <TouchableOpacity style={u.btnCancel} onPress={() => setEditingId(null)}><Text style={u.btnCancelTxt}>Отмена</Text></TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {editingId !== -1 && (
+            <>
+              <Divider />
+              <TouchableOpacity style={u.inlineAction} onPress={startAdd}>
+                <Text style={u.inlineActionTxt}>+ Добавить пункт</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </Card>
+      )}
+    </View>
+  );
+}
+
 // ── NOTIFICATIONS SECTION (placeholder) ───────────────────────────────────────
 
 function NotificationsSection({ settings, onChange }: {
@@ -1501,6 +1685,11 @@ export default function SettingsScreen({
 
         {/* Daily routine */}
         <DailyRoutineSection settings={settings} onChange={updateSettings} />
+
+        <View style={ss.spacer} />
+
+        {/* Day schedule — "what's now" card */}
+        <ScheduleSection settings={settings} onChange={updateSettings} />
 
         <View style={ss.spacer} />
 

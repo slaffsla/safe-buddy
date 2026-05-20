@@ -41,6 +41,7 @@ export const K = {
   CHILD_AGE: 'sb_child_age',
   MISSION_OVERRIDES: 'sb_mission_overrides', // JSON map { [id]: MissionOverride }
   REWARD_OVERRIDES:  'sb_reward_overrides',  // JSON map { [id]: RewardOverride }
+  SCHEDULE_ENABLED:  'sb_schedule_enabled',
 };
 
 // ── AGE PROFILE ───────────────────────────────────────────────────────
@@ -238,6 +239,46 @@ export const DEFAULT_MORNING_STEPS: MorningStep[] = [
 ];
 
 export const MORNING_CUTOFF_HOUR = 12;
+
+// ── DAY SCHEDULE ──────────────────────────────────────────────────────────────
+// Option A: a small set of named time windows. The HomeScreen shows the item
+// whose [startTime, endTime) currently contains "now". Never negative — purely
+// informational. Color/missionId reserved for Option B (full timeline) — not
+// rendered in Option A.
+
+export interface ScheduleItem {
+  id: number;
+  title: string;
+  emoji: string;
+  startTime: string;   // 'HH:MM' 24h
+  endTime: string;     // 'HH:MM'
+  missionId?: number;  // optional link to a mission in MISSION_POOL
+  color?: string;      // unused in Option A, reserved for Option B timeline
+  weekdays: boolean;
+  weekends: boolean;
+}
+
+export const DEFAULT_SCHEDULE: ScheduleItem[] = [
+  { id: 1, title: 'Завтрак',      emoji: '🥣', startTime: '08:00', endTime: '08:30', weekdays: true,  weekends: true  },
+  { id: 2, title: 'Тихое время',  emoji: '🧘', startTime: '15:00', endTime: '15:20', weekdays: true,  weekends: false },
+  { id: 3, title: 'Прогулка',     emoji: '🌳', startTime: '17:00', endTime: '17:30', weekdays: true,  weekends: true  },
+  { id: 4, title: 'Ужин',         emoji: '🍽️', startTime: '19:00', endTime: '19:30', weekdays: true,  weekends: true  },
+];
+
+// Returns the schedule item active right now, or null
+export function getCurrentScheduleItem(
+  items: ScheduleItem[],
+  isWeekendDay: boolean
+): ScheduleItem | null {
+  const now  = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  return items.find(item => {
+    if (isWeekendDay ? !item.weekends : !item.weekdays) return false;
+    const [sh, sm] = item.startTime.split(':').map(Number);
+    const [eh, em] = item.endTime.split(':').map(Number);
+    return mins >= sh * 60 + sm && mins < eh * 60 + em;
+  }) ?? null;
+}
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────
 

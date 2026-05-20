@@ -25,6 +25,7 @@ interface HomeScreenProps {
   nextBlock?: ScheduleBlock | null;
   scheduleEnabled?: boolean;
   onOpenDay?: () => void;
+  onBreathing?: () => void;
 }
 
 export default function HomeScreen({
@@ -32,7 +33,7 @@ export default function HomeScreen({
   childName, lastMission, showSuggestion, skipSensitivity,
   onStart, onRewards, onSettings, onSuggestionAccept, onSuggestionSkip,
   skipCount, speak,
-  currentBlock, nextBlock, scheduleEnabled, onOpenDay,
+  currentBlock, nextBlock, scheduleEnabled, onOpenDay, onBreathing,
 }: HomeScreenProps) {
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [idleMsg] = useState(() =>
@@ -106,6 +107,11 @@ export default function HomeScreen({
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
         <Text style={s.btnSecondaryTxt}>🎁 Мои награды</Text>
       </TouchableOpacity>
+      {onBreathing && (
+        <TouchableOpacity style={s.btnBreathing} onPress={onBreathing}>
+          <Text style={s.btnBreathingTxt}>🌬️ Подышать с Бадди</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity style={s.btnSettings} onPress={onSettings}>
         <Text style={s.btnSettingsTxt}>⚙️ Настройки для родителей</Text>
       </TouchableOpacity>
@@ -124,6 +130,8 @@ const s = StyleSheet.create({
   btnSecondaryTxt: { fontSize: 17, color: '#92400E', fontWeight: '600' },
   btnDay:        { backgroundColor: C.white, borderRadius: 16, borderWidth: 1, borderColor: C.green, paddingVertical: 13, paddingHorizontal: 32, marginTop: 8, width: '100%', alignItems: 'center' },
   btnDayTxt:     { fontSize: 16, color: C.green, fontWeight: '600' },
+  btnBreathing:    { backgroundColor: '#EEF6FF', borderRadius: 16, borderWidth: 1, borderColor: '#9BC1E5', paddingVertical: 13, paddingHorizontal: 32, marginTop: 8, width: '100%', alignItems: 'center' },
+  btnBreathingTxt: { fontSize: 16, color: '#1E4E8C', fontWeight: '600' },
   btnSettings:    { marginTop: 8, padding: 12, alignItems: 'center' },
   btnSettingsTxt: { fontSize: 14, color: C.muted },
 

@@ -20,6 +20,7 @@ import Buddy from './_Buddy';
 import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
 import HomeScreen from './_HomeScreen';
 import DayScreen  from './_DayScreen';
+import BreathingScreen from './_BreathingScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
@@ -191,6 +192,7 @@ export default function App() {
       return isVeryExcited ? 'very-excited' : 'proud';
     }
     if (screen === 'rewards') return 'serene';
+    if (screen === 'breathing') return 'serene';
     if (screen === 'demo_intro') return 'calm';
     if (screen === 'demo_step') return 'excited';
     if (screen === 'demo_complete') return 'proud';
@@ -629,6 +631,7 @@ export default function App() {
           nextBlock={nextBlock}
           scheduleEnabled={appSettings.scheduleEnabled}
           onOpenDay={() => setScreen('day')}
+          onBreathing={() => setScreen('breathing')}
         />
       )}
 
@@ -700,6 +703,14 @@ export default function App() {
             const m = MISSION_POOL.find(x => x.id === missionId);
             if (m) pickMission(m);
           }}
+        />
+      )}
+
+      {screen === 'breathing' && (
+        <BreathingScreen
+          speak={speak}
+          onComplete={() => setScreen('home')}
+          onSkip={() => setScreen('home')}
         />
       )}
 
@@ -939,4 +950,4 @@ const s = StyleSheet.create({
   rCost:   { fontSize: 12, color: C.muted, marginTop: 2 },
   rReady:  { fontSize: 13, color: C.green, fontWeight: '700' },
   rNeed:   { fontSize: 11, color: C.muted, textAlign: 'right' },
-});
+});;

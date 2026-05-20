@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BUDDY_FIXED_SPACER, C, MSG, ScheduleItem, getDailySuggestion, getProgressionMessage } from './_constants';
+import { BUDDY_FIXED_SPACER, C, MSG, ScheduleBlock, getDailySuggestion, getProgressionMessage } from './_constants';
 import { DailySuggestion, ReflectiveBoost, T } from './_SharedUI';
 
 interface HomeScreenProps {
@@ -21,14 +21,18 @@ interface HomeScreenProps {
   onSuggestionAccept: (suggestion: any) => void;
   onSuggestionSkip: () => void;
   speak: (t: string) => void;
-  currentScheduleItem?: ScheduleItem | null;
+  currentBlock?: ScheduleBlock | null;
+  nextBlock?: ScheduleBlock | null;
+  scheduleEnabled?: boolean;
+  onOpenDay?: () => void;
 }
 
 export default function HomeScreen({
   totalEver, completedToday, totalMissions,
   childName, lastMission, showSuggestion, skipSensitivity,
   onStart, onRewards, onSettings, onSuggestionAccept, onSuggestionSkip,
-  skipCount, speak, currentScheduleItem,
+  skipCount, speak,
+  currentBlock, nextBlock, scheduleEnabled, onOpenDay,
 }: HomeScreenProps) {
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [idleMsg] = useState(() =>
@@ -57,23 +61,48 @@ export default function HomeScreen({
           speak={speak}
         />
       )}
-      {currentScheduleItem && (
-        <TouchableOpacity
-          style={s.scheduleCard}
-          onPress={() => speak(`Сейчас ${currentScheduleItem.title}`)}
-          activeOpacity={0.8}
-        >
-          <Text style={s.scheduleEmoji}>{currentScheduleItem.emoji}</Text>
-          <View style={s.scheduleText}>
-            <Text style={s.scheduleLabel}>Сейчас</Text>
-            <Text style={s.scheduleTitle}>{currentScheduleItem.title}</Text>
-          </View>
-          <Text style={s.scheduleTime}>до {currentScheduleItem.endTime}</Text>
-        </TouchableOpacity>
+
+      {(currentBlock || nextBlock) && (
+        <View style={s.scheduleCard}>
+          {currentBlock && (
+            <TouchableOpacity
+              style={s.scheduleNow}
+              onPress={() => speak(`Сейчас ${currentBlock.title}`)}
+              activeOpacity={0.8}
+            >
+              <Text style={s.scheduleEmoji}>{currentBlock.emoji}</Text>
+              <View style={s.scheduleInfo}>
+                <Text style={s.scheduleNowLabel}>Сейчас</Text>
+                <Text style={s.scheduleTitle}>{currentBlock.title}</Text>
+              </View>
+              <Text style={s.scheduleTime}>до {currentBlock.endTime}</Text>
+            </TouchableOpacity>
+          )}
+          {nextBlock && (
+            <TouchableOpacity
+              style={s.scheduleNext}
+              onPress={() => speak(`Потом ${nextBlock.title}`)}
+              activeOpacity={0.8}
+            >
+              <Text style={s.scheduleNextEmoji}>{nextBlock.emoji}</Text>
+              <View style={s.scheduleInfo}>
+                <Text style={s.scheduleNextLabel}>Потом</Text>
+                <Text style={s.scheduleNextTitle}>{nextBlock.title}</Text>
+              </View>
+              <Text style={s.scheduleTime}>{nextBlock.startTime}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
+
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
         <Text style={s.btnPrimaryTxt}>🚀 Выбрать миссию</Text>
       </TouchableOpacity>
+      {scheduleEnabled && onOpenDay && (
+        <TouchableOpacity style={s.btnDay} onPress={onOpenDay}>
+          <Text style={s.btnDayTxt}>📅 Мой день</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
         <Text style={s.btnSecondaryTxt}>🎁 Мои награды</Text>
       </TouchableOpacity>
@@ -93,12 +122,20 @@ const s = StyleSheet.create({
   btnPrimaryTxt: { fontSize: 19, color: '#fff', fontWeight: '700' },
   btnSecondary:    { backgroundColor: C.gold, borderRadius: 16, borderWidth: 1, borderColor: C.goldBdr, paddingVertical: 15, paddingHorizontal: 32, marginTop: 8, width: '100%', alignItems: 'center' },
   btnSecondaryTxt: { fontSize: 17, color: '#92400E', fontWeight: '600' },
+  btnDay:        { backgroundColor: C.white, borderRadius: 16, borderWidth: 1, borderColor: C.green, paddingVertical: 13, paddingHorizontal: 32, marginTop: 8, width: '100%', alignItems: 'center' },
+  btnDayTxt:     { fontSize: 16, color: C.green, fontWeight: '600' },
   btnSettings:    { marginTop: 8, padding: 12, alignItems: 'center' },
   btnSettingsTxt: { fontSize: 14, color: C.muted },
-  scheduleCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: C.greenLt, borderRadius: 14, borderWidth: 1, borderColor: C.green, padding: 14, width: '100%', marginBottom: 10, gap: 12 },
-  scheduleEmoji: { fontSize: 28 },
-  scheduleText:  { flex: 1 },
-  scheduleLabel: { fontSize: 11, color: C.green, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  scheduleTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginTop: 2 },
-  scheduleTime:  { fontSize: 12, color: C.muted },
+
+  scheduleCard:      { width: '100%', marginBottom: 12, gap: 6 },
+  scheduleNow:       { flexDirection: 'row', alignItems: 'center', backgroundColor: C.greenLt, borderRadius: 14, borderWidth: 1, borderColor: C.green, padding: 14, gap: 12 },
+  scheduleNext:      { flexDirection: 'row', alignItems: 'center', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 12, gap: 12, opacity: 0.85 },
+  scheduleEmoji:     { fontSize: 28 },
+  scheduleNextEmoji: { fontSize: 22 },
+  scheduleInfo:      { flex: 1 },
+  scheduleNowLabel:  { fontSize: 10, color: C.green, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  scheduleNextLabel: { fontSize: 10, color: C.muted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  scheduleTitle:     { fontSize: 16, fontWeight: '600', color: C.text, marginTop: 1 },
+  scheduleNextTitle: { fontSize: 14, fontWeight: '500', color: C.muted, marginTop: 1 },
+  scheduleTime:      { fontSize: 12, color: C.muted, marginTop: 2 },
 });

@@ -47,8 +47,9 @@ import {
   REWARDS,
   RewardOverride,
   RewardOverrideMap,
-  ScheduleItem,
+  ScheduleBlock,
   DEFAULT_SCHEDULE,
+  SCHEDULE_MAX_BLOCKS,
 } from './_constants';
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
@@ -115,7 +116,7 @@ export interface AppSettings {
 
   // Day schedule (Option A — "what's now" card on HomeScreen; Option B reserved)
   scheduleEnabled: boolean;
-  scheduleItems:   ScheduleItem[];
+  scheduleBlocks:  ScheduleBlock[];
 
   // Notifications (V1.5 — stored but UI placeholder only)
   morningReminderEnabled: boolean;
@@ -155,7 +156,7 @@ function buildDefaultSettings(): AppSettings {
   missionOverrides: {},
   rewardOverrides:  {},
   scheduleEnabled: false,
-  scheduleItems:   DEFAULT_SCHEDULE,
+  scheduleBlocks:  DEFAULT_SCHEDULE,
   morningReminderEnabled: false,
   morningReminderTime: '08:00',
   };
@@ -242,6 +243,16 @@ export async function loadSettings(): Promise<AppSettings> {
           overrides[r.id] = { enabled: !!r.active, cost: r.cost };
         }
         merged.rewardOverrides = overrides;
+      }
+
+      // Migrate legacy `scheduleItems` (pre-ticket rename) → `scheduleBlocks`.
+      const legacyParsed = parsed as Partial<AppSettings> & { scheduleItems?: ScheduleBlock[] };
+      if (
+        (!merged.scheduleBlocks || merged.scheduleBlocks.length === 0)
+        && Array.isArray(legacyParsed.scheduleItems)
+        && legacyParsed.scheduleItems.length > 0
+      ) {
+        merged.scheduleBlocks = legacyParsed.scheduleItems;
       }
 
       return merged;
@@ -1101,14 +1112,14 @@ function ScheduleSection({
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
-  const items = settings.scheduleItems ?? DEFAULT_SCHEDULE;
+  const blocks = settings.scheduleBlocks ?? DEFAULT_SCHEDULE;
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
   const [draftEmoji, setDraftEmoji] = useState('');
   const [draftStart, setDraftStart] = useState('');
   const [draftEnd,   setDraftEnd]   = useState('');
 
-  function startEdit(it: ScheduleItem) {
+  function startEdit(it: ScheduleBlock) {
     setEditingId(it.id);
     setDraftTitle(it.title);
     setDraftEmoji(it.emoji);
@@ -1117,6 +1128,10 @@ function ScheduleSection({
   }
 
   function startAdd() {
+    if (blocks.length >= SCHEDULE_MAX_BLOCKS) {
+      Alert.alert('Лимит', `Максимум ${SCHEDULE_MAX_BLOCKS} пунктов в дне`);
+      return;
+    }
     setEditingId(-1);
     setDraftTitle(''); setDraftEmoji(''); setDraftStart(''); setDraftEnd('');
   }
@@ -1132,16 +1147,16 @@ function ScheduleSection({
       return;
     }
     if (editingId === -1) {
-      const newId = Math.max(0, ...items.map(i => i.id)) + 1;
+      const newId = Math.max(0, ...blocks.map(i => i.id)) + 1;
       onChange({
-        scheduleItems: [
-          ...items,
+        scheduleBlocks: [
+          ...blocks,
           { id: newId, title, emoji: draftEmoji || '⏰', startTime: draftStart, endTime: draftEnd, weekdays: true, weekends: true },
         ],
       });
     } else {
       onChange({
-        scheduleItems: items.map(i =>
+        scheduleBlocks: blocks.map(i =>
           i.id === editingId
             ? { ...i, title, emoji: draftEmoji || i.emoji, startTime: draftStart, endTime: draftEnd }
             : i
@@ -1151,14 +1166,24 @@ function ScheduleSection({
     setEditingId(null);
   }
 
-  function deleteItem(id: number) {
-    onChange({ scheduleItems: items.filter(i => i.id !== id) });
+  function deleteBlock(id: number) {
+    onChange({ scheduleBlocks: blocks.filter(i => i.id !== id) });
   }
 
   function toggleFlag(id: number, key: 'weekdays' | 'weekends') {
     onChange({
-      scheduleItems: items.map(i => (i.id === id ? { ...i, [key]: !i[key] } : i)),
+      scheduleBlocks: blocks.map(i => (i.id === id ? { ...i, [key]: !i[key] } : i)),
     });
+  }
+
+  function moveBlock(id: number, dir: -1 | 1) {
+    const idx = blocks.findIndex(b => b.id === id);
+    if (idx < 0) return;
+    const j = idx + dir;
+    if (j < 0 || j >= blocks.length) return;
+    const next = blocks.slice();
+    [next[idx], next[j]] = [next[j], next[idx]];
+    onChange({ scheduleBlocks: next });
   }
 
   return (
@@ -1167,7 +1192,7 @@ function ScheduleSection({
       <Card>
         <SettingRow
           label='Карточка "Сейчас"'
-          sublabel="Показывать на главном экране, что происходит сейчас"
+          sublabel="Показывать на главном экране, что происходит сейчас и далее"
         >
           <Switch
             value={settings.scheduleEnabled}
@@ -1180,7 +1205,7 @@ function ScheduleSection({
 
       {settings.scheduleEnabled && (
         <Card>
-          {items.map((it, idx) => (
+          {blocks.map((it, idx) => (
             <View key={it.id}>
               {idx > 0 && <Divider />}
               {editingId === it.id ? (
@@ -1206,10 +1231,24 @@ function ScheduleSection({
                       <Text style={u.rowLabel}>{it.title}</Text>
                       <Text style={u.rowSublabel}>{it.startTime} — {it.endTime}</Text>
                     </View>
+                    <TouchableOpacity
+                      style={u.stepperBtn}
+                      onPress={() => moveBlock(it.id, -1)}
+                      disabled={idx === 0}
+                    >
+                      <Text style={u.stepperTxt}>↑</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[u.stepperBtn, { marginLeft: 4 }]}
+                      onPress={() => moveBlock(it.id, 1)}
+                      disabled={idx === blocks.length - 1}
+                    >
+                      <Text style={u.stepperTxt}>↓</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity style={u.linkBtn} onPress={() => startEdit(it)}>
                       <Text style={u.linkBtnTxt}>Изм.</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={u.dangerBtn} onPress={() => deleteItem(it.id)}>
+                    <TouchableOpacity style={u.dangerBtn} onPress={() => deleteBlock(it.id)}>
                       <Text style={u.dangerBtnTxt}>✕</Text>
                     </TouchableOpacity>
                   </View>
@@ -1253,7 +1292,7 @@ function ScheduleSection({
             </View>
           )}
 
-          {editingId !== -1 && (
+          {editingId !== -1 && blocks.length < SCHEDULE_MAX_BLOCKS && (
             <>
               <Divider />
               <TouchableOpacity style={u.inlineAction} onPress={startAdd}>

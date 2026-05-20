@@ -241,43 +241,74 @@ export const DEFAULT_MORNING_STEPS: MorningStep[] = [
 export const MORNING_CUTOFF_HOUR = 12;
 
 // ── DAY SCHEDULE ──────────────────────────────────────────────────────────────
-// Option A: a small set of named time windows. The HomeScreen shows the item
-// whose [startTime, endTime) currently contains "now". Never negative — purely
-// informational. Color/missionId reserved for Option B (full timeline) — not
-// rendered in Option A.
+// "What's now" + "Next" support on HomeScreen (Option A) and full timeline
+// (Option B). No stars, no economy. Past simply fades — never "missed".
 
-export interface ScheduleItem {
+export interface ScheduleBlock {
   id: number;
   title: string;
   emoji: string;
   startTime: string;   // 'HH:MM' 24h
   endTime: string;     // 'HH:MM'
-  missionId?: number;  // optional link to a mission in MISSION_POOL
-  color?: string;      // unused in Option A, reserved for Option B timeline
+  missionId?: number;  // optional — tapping current block can launch this mission
+  color?: string;      // Option B timeline tint
   weekdays: boolean;
   weekends: boolean;
 }
 
-export const DEFAULT_SCHEDULE: ScheduleItem[] = [
-  { id: 1, title: 'Завтрак',      emoji: '🥣', startTime: '08:00', endTime: '08:30', weekdays: true,  weekends: true  },
-  { id: 2, title: 'Тихое время',  emoji: '🧘', startTime: '15:00', endTime: '15:20', weekdays: true,  weekends: false },
-  { id: 3, title: 'Прогулка',     emoji: '🌳', startTime: '17:00', endTime: '17:30', weekdays: true,  weekends: true  },
-  { id: 4, title: 'Ужин',         emoji: '🍽️', startTime: '19:00', endTime: '19:30', weekdays: true,  weekends: true  },
+export const DEFAULT_SCHEDULE: ScheduleBlock[] = [
+  { id: 1, title: 'Завтрак',          emoji: '🥣',  startTime: '08:00', endTime: '08:30', weekdays: true,  weekends: true,  color: '#FFF8E7' },
+  { id: 2, title: 'Школа',            emoji: '🎒',  startTime: '09:00', endTime: '13:00', weekdays: true,  weekends: false, color: '#E1F5EE' },
+  { id: 3, title: 'Обед',             emoji: '🍜',  startTime: '13:00', endTime: '13:30', weekdays: true,  weekends: true,  color: '#FFF8E7' },
+  { id: 4, title: 'Тихое время',      emoji: '🧘',  startTime: '15:00', endTime: '15:20', weekdays: true,  weekends: true,  color: '#EEF2FF' },
+  { id: 5, title: 'Прогулка',         emoji: '🌳',  startTime: '17:00', endTime: '17:45', weekdays: true,  weekends: true,  color: '#E1F5EE' },
+  { id: 6, title: 'Ужин',             emoji: '🍽️', startTime: '19:00', endTime: '19:30', weekdays: true,  weekends: true,  color: '#FFF8E7' },
+  { id: 7, title: 'Время перед сном', emoji: '🌙',  startTime: '20:30', endTime: '21:00', weekdays: true,  weekends: true,  color: '#EEF2FF' },
 ];
 
-// Returns the schedule item active right now, or null
-export function getCurrentScheduleItem(
-  items: ScheduleItem[],
-  isWeekendDay: boolean
-): ScheduleItem | null {
+export const SCHEDULE_MAX_BLOCKS = 12;
+
+function parseHM(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// The block currently active, or null between blocks
+export function getCurrentBlock(
+  blocks: ScheduleBlock[],
+  isWeekendDay: boolean,
+): ScheduleBlock | null {
   const now  = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
-  return items.find(item => {
-    if (isWeekendDay ? !item.weekends : !item.weekdays) return false;
-    const [sh, sm] = item.startTime.split(':').map(Number);
-    const [eh, em] = item.endTime.split(':').map(Number);
-    return mins >= sh * 60 + sm && mins < eh * 60 + em;
+  return blocks.find(b => {
+    if (isWeekendDay ? !b.weekends : !b.weekdays) return false;
+    return mins >= parseHM(b.startTime) && mins < parseHM(b.endTime);
   }) ?? null;
+}
+
+// The next upcoming block today, or null if none left
+export function getNextBlock(
+  blocks: ScheduleBlock[],
+  isWeekendDay: boolean,
+): ScheduleBlock | null {
+  const now  = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const eligible = blocks
+    .filter(b => (isWeekendDay ? b.weekends : b.weekdays) && parseHM(b.startTime) > mins)
+    .sort((a, b) => parseHM(a.startTime) - parseHM(b.startTime));
+  return eligible[0] ?? null;
+}
+
+// Classify a block relative to "now" (Option B timeline)
+export type BlockStatus = 'past' | 'current' | 'upcoming';
+export function getBlockStatus(block: ScheduleBlock): BlockStatus {
+  const now   = new Date();
+  const mins  = now.getHours() * 60 + now.getMinutes();
+  const start = parseHM(block.startTime);
+  const end   = parseHM(block.endTime);
+  if (mins < start) return 'upcoming';
+  if (mins >= end)  return 'past';
+  return 'current';
 }
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────

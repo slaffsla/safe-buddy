@@ -19,11 +19,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Buddy from './_Buddy';
 import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
 import HomeScreen from './_HomeScreen';
+import DayScreen  from './_DayScreen';
 import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
 import MorningRoutineScreen from './_MorningRoutineScreen';
 import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
 import { ProgressBar } from './_SharedUI';
-import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, effectiveMissionEnabled, effectiveMissionStars, effectiveRewardCost, effectiveRewardEnabled, getAgeProfile, getCurrentScheduleItem, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, Reward, REWARDS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
+import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, effectiveMissionEnabled, effectiveMissionStars, effectiveRewardCost, effectiveRewardEnabled, getAgeProfile, getCurrentBlock, getNextBlock, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, Reward, REWARDS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
 
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -549,8 +550,11 @@ export default function App() {
     .filter(r => effectiveRewardEnabled(r.id, rewardOverrides))
     .map(r => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
 
-  const currentScheduleItem = appSettings.scheduleEnabled
-    ? getCurrentScheduleItem(appSettings.scheduleItems, isWeekendDay)
+  const currentBlock = appSettings.scheduleEnabled
+    ? getCurrentBlock(appSettings.scheduleBlocks, isWeekendDay)
+    : null;
+  const nextBlock = appSettings.scheduleEnabled
+    ? getNextBlock(appSettings.scheduleBlocks, isWeekendDay)
     : null;
   if (showMorning) {
     return (
@@ -621,6 +625,10 @@ export default function App() {
           onRewards={() => setScreen('rewards')}
           onSuggestionAccept={handleSuggestionAccept}
           onSuggestionSkip={() => setShowSuggestion(false)}
+          currentBlock={currentBlock}
+          nextBlock={nextBlock}
+          scheduleEnabled={appSettings.scheduleEnabled}
+          onOpenDay={() => setScreen('day')}
         />
       )}
 
@@ -679,6 +687,19 @@ export default function App() {
           }}
           currentPin={parentPin}
           pinEnabled={pinEnabled}
+        />
+      )}
+
+      {screen === 'day' && (
+        <DayScreen
+          blocks={appSettings.scheduleBlocks}
+          isWeekendDay={isWeekendDay}
+          speak={speak}
+          onClose={() => setScreen('home')}
+          onStartMission={(missionId: number) => {
+            const m = MISSION_POOL.find(x => x.id === missionId);
+            if (m) pickMission(m);
+          }}
         />
       )}
 

@@ -12,19 +12,26 @@
 // "complete" state, BUDDY_FIXED_SPACER at the top so the global Buddy
 // overlay is visible, same speak prop usage.
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BUDDY_FIXED_SPACER, C } from './_constants';
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { BUDDY_FIXED_SPACER, C } from "./_constants";
 
 // Hard-coded session length. Do not lift to settings.
 const BREATHING_DURATION_MS = 180_000;
 
 // Box breathing: 4s each phase, 16s per cycle.
 const PHASES: { label: string; duration: number; target: number }[] = [
-  { label: 'Вдох',  duration: 4000, target: 1.0  },
-  { label: 'Держи', duration: 4000, target: 1.0  },
-  { label: 'Выдох', duration: 4000, target: 0.55 },
-  { label: 'Держи', duration: 4000, target: 0.55 },
+  { label: "Вдох", duration: 4000, target: 1.0 },
+  { label: "Держи", duration: 2000, target: 1.0 },
+  { label: "Выдох", duration: 4000, target: 0.55 },
+  { label: "Держи", duration: 1000, target: 0.55 },
 ];
 
 // Try to load expo-av at runtime. If the package isn't installed (or fails
@@ -32,7 +39,7 @@ const PHASES: { label: string; duration: number; target: number }[] = [
 // app per the ticket's safety rule.
 let ExpoAudio: any = null;
 try {
-  ExpoAudio = require('expo-av').Audio;
+  ExpoAudio = require("expo-av").Audio;
 } catch {
   ExpoAudio = null;
 }
@@ -43,23 +50,29 @@ interface Props {
   onSkip: () => void;
 }
 
-type State = 'idle' | 'active' | 'complete';
+type State = "idle" | "active" | "complete";
 
 export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
-  const [state, setState]       = useState<State>('idle');
+  const [state, setState] = useState<State>("idle");
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
 
-  const scale         = useRef(new Animated.Value(0.55)).current;
+  const scale = useRef(new Animated.Value(0.55)).current;
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const tickRef       = useRef<ReturnType<typeof setInterval> | null>(null);
-  const sessionStart  = useRef<number>(0);
-  const soundRef      = useRef<any>(null);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sessionStart = useRef<number>(0);
+  const soundRef = useRef<any>(null);
 
   // ── Lifecycle helpers ───────────────────────────────────────────────────────
   function clearTimers() {
-    if (phaseTimerRef.current) { clearTimeout(phaseTimerRef.current); phaseTimerRef.current = null; }
-    if (tickRef.current)       { clearInterval(tickRef.current);     tickRef.current       = null; }
+    if (phaseTimerRef.current) {
+      clearTimeout(phaseTimerRef.current);
+      phaseTimerRef.current = null;
+    }
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
   }
 
   async function loadAndPlayAudio() {
@@ -67,12 +80,18 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
     try {
       // Attempt to set silent-mode playback so iOS still plays.
       try {
-        await ExpoAudio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false });
+        await ExpoAudio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+        });
       } catch {}
       // Bundled file; if missing, this require throws → silently skip.
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const source = require('../assets/audio/breathing.mp3');
-      const { sound } = await ExpoAudio.Sound.createAsync(source, { isLooping: true, volume: 0.6 });
+
+      const source = require("../assets/audio/breathing.mp3");
+      const { sound } = await ExpoAudio.Sound.createAsync(source, {
+        isLooping: true,
+        volume: 0.6,
+      });
       soundRef.current = sound;
       await sound.playAsync();
     } catch {
@@ -83,8 +102,12 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
 
   async function stopAudio() {
     if (!soundRef.current) return;
-    try { await soundRef.current.stopAsync(); } catch {}
-    try { await soundRef.current.unloadAsync(); } catch {}
+    try {
+      await soundRef.current.stopAsync();
+    } catch {}
+    try {
+      await soundRef.current.unloadAsync();
+    } catch {}
     soundRef.current = null;
   }
 
@@ -103,11 +126,11 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
   }
 
   function startSession() {
-    setState('active');
+    setState("active");
     setElapsedMs(0);
     setPhaseIdx(0);
     sessionStart.current = Date.now();
-    speak('Дышим вместе');
+    speak("Дышим вместе");
     // tick the progress bar
     tickRef.current = setInterval(() => {
       const dt = Date.now() - sessionStart.current;
@@ -127,8 +150,8 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
   function finishSession() {
     clearTimers();
     stopAudio();
-    setState('complete');
-    speak('Молодец. Ты отдохнул.');
+    setState("complete");
+    speak("Молодец. Ты отдохнул.");
     // Reset visual circle to a calm middle size.
     Animated.timing(scale, {
       toValue: 0.8,
@@ -153,7 +176,7 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
   }, []);
 
   // ── IDLE ────────────────────────────────────────────────────────────────────
-  if (state === 'idle') {
+  if (state === "idle") {
     return (
       <View style={s.screen}>
         <View style={{ height: BUDDY_FIXED_SPACER }} />
@@ -164,7 +187,11 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
           <Text style={s.circleEmoji}>🌬️</Text>
         </View>
 
-        <TouchableOpacity style={s.btnPrimary} onPress={startSession} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={s.btnPrimary}
+          onPress={startSession}
+          activeOpacity={0.85}
+        >
           <Text style={s.btnPrimaryTxt}>Начать</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
@@ -175,7 +202,7 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
   }
 
   // ── COMPLETE ───────────────────────────────────────────────────────────────
-  if (state === 'complete') {
+  if (state === "complete") {
     return (
       <View style={s.screen}>
         <View style={{ height: BUDDY_FIXED_SPACER }} />
@@ -186,7 +213,11 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
           <Text style={s.circleEmoji}>🌱</Text>
         </Animated.View>
 
-        <TouchableOpacity style={s.btnPrimary} onPress={onComplete} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={s.btnPrimary}
+          onPress={onComplete}
+          activeOpacity={0.85}
+        >
           <Text style={s.btnPrimaryTxt}>Готово</Text>
         </TouchableOpacity>
       </View>
@@ -198,14 +229,16 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
   const remainingMs = Math.max(0, BREATHING_DURATION_MS - elapsedMs);
   const remainingSec = Math.ceil(remainingMs / 1000);
   const mm = Math.floor(remainingSec / 60);
-  const ss = (remainingSec % 60).toString().padStart(2, '0');
+  const ss = (remainingSec % 60).toString().padStart(2, "0");
   const progress = Math.min(1, elapsedMs / BREATHING_DURATION_MS);
 
   return (
     <View style={s.screen}>
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <Text style={s.phaseLabel}>{phaseLabel}</Text>
-      <Text style={s.timeLeft}>{mm}:{ss}</Text>
+      <Text style={s.timeLeft}>
+        {mm}:{ss}
+      </Text>
 
       <Animated.View style={[s.circleActive, { transform: [{ scale }] }]}>
         <Text style={s.circleEmoji}>🌬️</Text>
@@ -215,7 +248,11 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
         <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
       </View>
 
-      <TouchableOpacity style={s.btnSkip} onPress={handleExit} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={s.btnSkip}
+        onPress={handleExit}
+        activeOpacity={0.7}
+      >
         <Text style={s.btnSkipTxt}>Завершить</Text>
       </TouchableOpacity>
     </View>
@@ -225,42 +262,100 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
 const CIRCLE_BASE = 200;
 
 const s = StyleSheet.create({
-  screen: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', padding: 20 },
+  screen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    padding: 20,
+  },
 
-  title:    { fontSize: 26, fontWeight: '700', color: C.text, marginTop: 8, textAlign: 'center' },
-  subtitle: { fontSize: 14, color: C.muted, marginTop: 6, marginBottom: 24, textAlign: 'center' },
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: C.text,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: C.muted,
+    marginTop: 6,
+    marginBottom: 24,
+    textAlign: "center",
+  },
 
-  phaseLabel: { fontSize: 28, fontWeight: '700', color: C.green, marginTop: 8, textAlign: 'center' },
-  timeLeft:   { fontSize: 14, color: C.muted, marginTop: 6, marginBottom: 18, textAlign: 'center' },
+  phaseLabel: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: C.green,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  timeLeft: {
+    fontSize: 14,
+    color: C.muted,
+    marginTop: 6,
+    marginBottom: 18,
+    textAlign: "center",
+  },
 
   circleStatic: {
-    width: CIRCLE_BASE, height: CIRCLE_BASE, borderRadius: CIRCLE_BASE / 2,
-    backgroundColor: C.greenLt, borderWidth: 2, borderColor: C.green,
-    alignItems: 'center', justifyContent: 'center',
+    width: CIRCLE_BASE,
+    height: CIRCLE_BASE,
+    borderRadius: CIRCLE_BASE / 2,
+    backgroundColor: C.greenLt,
+    borderWidth: 2,
+    borderColor: C.green,
+    alignItems: "center",
+    justifyContent: "center",
     marginVertical: 24,
   },
   circleActive: {
-    width: CIRCLE_BASE, height: CIRCLE_BASE, borderRadius: CIRCLE_BASE / 2,
-    backgroundColor: C.greenLt, borderWidth: 2, borderColor: C.green,
-    alignItems: 'center', justifyContent: 'center',
+    width: CIRCLE_BASE,
+    height: CIRCLE_BASE,
+    borderRadius: CIRCLE_BASE / 2,
+    backgroundColor: C.greenLt,
+    borderWidth: 2,
+    borderColor: C.green,
+    alignItems: "center",
+    justifyContent: "center",
     marginVertical: 16,
   },
   circleEmoji: { fontSize: 56 },
 
   progressTrack: {
-    width: '90%', height: 6, borderRadius: 3,
-    backgroundColor: C.border, marginTop: 20, overflow: 'hidden',
+    width: "90%",
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: C.border,
+    marginTop: 20,
+    overflow: "hidden",
   },
   progressFill: {
-    height: '100%', backgroundColor: C.green,
+    height: "100%",
+    backgroundColor: C.green,
   },
 
-  btnPrimary:    { backgroundColor: C.green, borderRadius: 16, paddingVertical: 17, paddingHorizontal: 48, marginTop: 22, minWidth: 220, alignItems: 'center' },
-  btnPrimaryTxt: { fontSize: 18, color: C.white, fontWeight: '700' },
+  btnPrimary: {
+    backgroundColor: C.green,
+    borderRadius: 16,
+    paddingVertical: 17,
+    paddingHorizontal: 48,
+    marginTop: 22,
+    minWidth: 220,
+    alignItems: "center",
+  },
+  btnPrimaryTxt: { fontSize: 18, color: C.white, fontWeight: "700" },
 
-  btnSkip:    { marginTop: 16, padding: 12 },
+  btnSkip: { marginTop: 16, padding: 12 },
   btnSkipTxt: { fontSize: 14, color: C.muted },
 
-  celebTitle: { fontSize: 30, fontWeight: '800', color: C.green, marginTop: 12, textAlign: 'center' },
-  celebSub:   { fontSize: 17, color: C.text, marginTop: 6, textAlign: 'center' },
+  celebTitle: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: C.green,
+    marginTop: 12,
+    textAlign: "center",
+  },
+  celebSub: { fontSize: 17, color: C.text, marginTop: 6, textAlign: "center" },
 });

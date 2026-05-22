@@ -1,9 +1,15 @@
 // npx expo install expo-speech @react-native-async-storage/async-storage react-native-confetti-cannon
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Speech from 'expo-speech';
-import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Speech from "expo-speech";
+import { StatusBar } from "expo-status-bar";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,32 +20,69 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Buddy from './_Buddy';
-import { DemoCompleteScreen, DemoIntroScreen, DemoStepScreen } from './_DemoScreens';
-import HomeScreen from './_HomeScreen';
-import DayScreen  from './_DayScreen';
-import BreathingScreen from './_BreathingScreen';
-import { ActiveScreen, CelebrateScreen, MissionPickScreen, RewardsScreen } from './_MissionScreens';
-import MorningRoutineScreen from './_MorningRoutineScreen';
-import SettingsScreen, { AppSettings, DEFAULT_SETTINGS, loadSettings, RotationFrequency } from './_SettingsScreen';
-import { ProgressBar } from './_SharedUI';
-import { AgeProfile, BuddyMood, DEFAULT_MORNING_STEPS, DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS, DEMO_STEPS, effectiveMissionEnabled, effectiveMissionStars, effectiveRewardCost, effectiveRewardEnabled, getAgeProfile, getCurrentBlock, getNextBlock, isWeekend, MISSION_POOL, MISSIONS_EASY, PoolMission, PROFILE_CONFIGS, Reward, REWARDS, selectBonusMission, selectDailyMissions, shouldBeVeryExcited, shouldShowMorning, todayStr } from './_constants';
-
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import BreathingScreen from "./_BreathingScreen";
+import Buddy from "./_Buddy";
+import DayScreen from "./_DayScreen";
+import {
+  DemoCompleteScreen,
+  DemoIntroScreen,
+  DemoStepScreen,
+} from "./_DemoScreens";
+import HomeScreen from "./_HomeScreen";
+import {
+  ActiveScreen,
+  CelebrateScreen,
+  MissionPickScreen,
+  RewardsScreen,
+} from "./_MissionScreens";
+import MorningRoutineScreen from "./_MorningRoutineScreen";
+import SettingsScreen, {
+  AppSettings,
+  DEFAULT_SETTINGS,
+  loadSettings,
+  RotationFrequency,
+} from "./_SettingsScreen";
+import { ProgressBar } from "./_SharedUI";
+import {
+  AgeProfile,
+  BuddyMood,
+  DEFAULT_MORNING_STEPS,
+  DEMO_STEPS,
+  effectiveMissionEnabled,
+  effectiveMissionStars,
+  effectiveRewardCost,
+  effectiveRewardEnabled,
+  getAgeProfile,
+  getCurrentBlock,
+  getNextBlock,
+  isWeekend,
+  MISSION_POOL,
+  MISSIONS_EASY,
+  PoolMission,
+  PROFILE_CONFIGS,
+  Reward,
+  REWARDS,
+  selectBonusMission,
+  selectDailyMissions,
+  shouldBeVeryExcited,
+  shouldShowMorning,
+  todayStr
+} from "./_constants";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
 const BUDDY = {
-  calm:              require('../assets/Character/buddy-calm.png'),
-  'gentle-reminder': require('../assets/Character/buddy-gentle-reminder.png'),
-  serene:            require('../assets/Character/buddy-serene.png'),
-  encouraging:       require('../assets/Character/buddy-encouraging.png'),
-  thinking:          require('../assets/Character/buddy-thinking.png'),
-  excited:           require('../assets/Character/buddy-excited.png'),
-  happy:             require('../assets/Character/buddy-happy.png'),
-  proud:             require('../assets/Character/buddy-proud.png'),
-  'very-excited':    require('../assets/Character/buddy-very-excited.png'),
+  calm: require("../assets/Character/buddy-calm.png"),
+  "gentle-reminder": require("../assets/Character/buddy-gentle-reminder.png"),
+  serene: require("../assets/Character/buddy-serene.png"),
+  encouraging: require("../assets/Character/buddy-encouraging.png"),
+  thinking: require("../assets/Character/buddy-thinking.png"),
+  excited: require("../assets/Character/buddy-excited.png"),
+  happy: require("../assets/Character/buddy-happy.png"),
+  proud: require("../assets/Character/buddy-proud.png"),
+  "very-excited": require("../assets/Character/buddy-very-excited.png"),
 };
 
 // ── MOOD TRIGGER LOGIC ────────────────────────────────────────────────────────
@@ -56,30 +99,30 @@ const BUDDY = {
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 
 const K = {
-  STARS:           'sb_stars_v2',
-  TOTAL_EVER:      'sb_total_v2',
-  COMPLETED_TODAY: 'sb_today_v2',
-  LAST_DATE:       'sb_date_v2',
-  DEMO_DONE:       'sb_demo_done',
-  TOTAL_MISSIONS:  'sb_total_missions',
-  CHILD_NAME:      'sb_child_name',
-  LAST_MISSION:    'sb_last_mission',
-  SKIP_COUNT:      'sb_skip_count',
-  FIRST_REWARD:    'sb_first_reward',
-  PARENT_PIN:      'sb_parent_pin',
-  PIN_ENABLED:     'sb_pin_enabled',
-  ONBOARDING_DONE: 'sb_onboarding_done',
-  MORNING_DONE:    'sb_morning_done',
-  DONE_IDS_TODAY:  'sb_done_ids_today',
-  CHILD_AGE: 'sb_child_age'
+  STARS: "sb_stars_v2",
+  TOTAL_EVER: "sb_total_v2",
+  COMPLETED_TODAY: "sb_today_v2",
+  LAST_DATE: "sb_date_v2",
+  DEMO_DONE: "sb_demo_done",
+  TOTAL_MISSIONS: "sb_total_missions",
+  CHILD_NAME: "sb_child_name",
+  LAST_MISSION: "sb_last_mission",
+  SKIP_COUNT: "sb_skip_count",
+  FIRST_REWARD: "sb_first_reward",
+  PARENT_PIN: "sb_parent_pin",
+  PIN_ENABLED: "sb_pin_enabled",
+  ONBOARDING_DONE: "sb_onboarding_done",
+  MORNING_DONE: "sb_morning_done",
+  DONE_IDS_TODAY: "sb_done_ids_today",
+  CHILD_AGE: "sb_child_age",
 };
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
 function getRotationSeed(freq: RotationFrequency) {
   const dayIndex = Math.floor(Date.now() / 86400000);
-  if (freq === 'weekly') return Math.floor(dayIndex / 7);
-  if (freq === 'every3') return Math.floor(dayIndex / 3);
+  if (freq === "weekly") return Math.floor(dayIndex / 7);
+  if (freq === "every3") return Math.floor(dayIndex / 3);
   return dayIndex;
 }
 
@@ -87,45 +130,82 @@ function getRotationSeed(freq: RotationFrequency) {
 
 async function resolveRussianVoice() {
   try {
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 800));
     const voices = await Speech.getAvailableVoicesAsync();
     if (!voices?.length) return null;
     return (
-      voices.find(v => v.language === 'ru-RU' && v.quality === (Speech as any).VoiceQuality?.Enhanced) ||
-      voices.find(v => v.language?.startsWith('ru')) ||
+      voices.find(
+        (v) =>
+          v.language === "ru-RU" &&
+          v.quality === (Speech as any).VoiceQuality?.Enhanced,
+      ) ||
+      voices.find((v) => v.language?.startsWith("ru")) ||
       null
     );
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function useSpeech(enabled: boolean) {
   const voiceRef = useRef<any>(null);
   useEffect(() => {
-    resolveRussianVoice().then(v => { voiceRef.current = v; });
-    return () => { try { Speech.stop(); } catch {} };
+    resolveRussianVoice().then((v) => {
+      voiceRef.current = v;
+    });
+    return () => {
+      try {
+        Speech.stop();
+      } catch {}
+    };
   }, []);
 
-  return useCallback((text: string) => {
-    if (!enabled || !text) return;
-    try { Speech.stop(); } catch {}
-    const cleanedText = text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
-    const opts: any = {
-      language: 'ru-RU',
-      pitch: 1.05,
-      rate: Platform.OS === 'ios' ? 0.52 : 0.65,
-    };
-    if (voiceRef.current?.identifier) opts.voice = voiceRef.current.identifier;
-    setTimeout(() => {
-      try { Speech.speak(cleanedText, opts); } catch {};
-    }, Platform.OS === 'ios' ? 120 : 0);
-  }, [enabled]);
+  return useCallback(
+    (text: string) => {
+      if (!enabled || !text) return;
+      try {
+        Speech.stop();
+      } catch {}
+      const cleanedText = text.replace(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+        "",
+      );
+      const opts: any = {
+        language: "ru-RU",
+        pitch: 1.05,
+        rate: Platform.OS === "ios" ? 0.52 : 0.65,
+      };
+      if (voiceRef.current?.identifier)
+        opts.voice = voiceRef.current.identifier;
+      setTimeout(
+        () => {
+          try {
+            Speech.speak(cleanedText, opts);
+          } catch {}
+        },
+        Platform.OS === "ios" ? 120 : 0,
+      );
+    },
+    [enabled],
+  );
 }
 
 // Speakable text
-function T({ children, style, speak }: { children: any; style: any; speak: (t: string) => void }) {
+function T({
+  children,
+  style,
+  speak,
+}: {
+  children: any;
+  style: any;
+  speak: (t: string) => void;
+}) {
   if (!children) return null;
   return (
-    <TouchableOpacity onPress={() => speak(String(children))} activeOpacity={0.65}>
+    <TouchableOpacity
+      onPress={() => speak(String(children))}
+      activeOpacity={0.65}
+    >
       <Text style={style}>{children}</Text>
     </TouchableOpacity>
   );
@@ -135,41 +215,41 @@ function T({ children, style, speak }: { children: any; style: any; speak: (t: s
 
 export default function App() {
   // Core state
-  const [ready,           setReady]          = useState(false);
-  const [screen,          setScreen]         = useState<string>('home');
-  const [demoStep,        setDemoStep]        = useState(0);
-  const [stars,           setStars]           = useState(0);
-  const [totalEver,       setTotalEver]       = useState(0);
-  const [prevTotalEver,   setPrevTotalEver]   = useState(0);
-  const [completedToday,  setCompletedToday]  = useState(0);
-  const [totalMissions,   setTotalMissions]   = useState(0);
-  const [mission,         setMission]         = useState<any>(null);
-  const [firstMission,    setFirstMission]    = useState(true);
-  const [lastMission,     setLastMission]     = useState<string | null>(null);
-  const [skipCount,       setSkipCount]       = useState(0);
-  const [isVeryExcited,   setIsVeryExcited]   = useState(false);
-  const [showSuggestion,  setShowSuggestion]  = useState(true);
-  const [firstReward,     setFirstReward]     = useState(false);
-  const [morningDoneDate, setMorningDoneDate] = useState('');
+  const [ready, setReady] = useState(false);
+  const [screen, setScreen] = useState<string>("home");
+  const [demoStep, setDemoStep] = useState(0);
+  const [stars, setStars] = useState(0);
+  const [totalEver, setTotalEver] = useState(0);
+  const [prevTotalEver, setPrevTotalEver] = useState(0);
+  const [completedToday, setCompletedToday] = useState(0);
+  const [totalMissions, setTotalMissions] = useState(0);
+  const [mission, setMission] = useState<any>(null);
+  const [firstMission, setFirstMission] = useState(true);
+  const [lastMission, setLastMission] = useState<string | null>(null);
+  const [skipCount, setSkipCount] = useState(0);
+  const [isVeryExcited, setIsVeryExcited] = useState(false);
+  const [showSuggestion, setShowSuggestion] = useState(true);
+  const [firstReward, setFirstReward] = useState(false);
+  const [morningDoneDate, setMorningDoneDate] = useState("");
   const [showMorning, setShowMorning] = useState(false);
   const [doneIdsToday, setDoneIdsToday] = useState<number[]>([]);
 
   // Onboarding
-  const [childName,       setChildName]       = useState('');
-  const [onboardingDone,  setOnboardingDone]  = useState(false);
-  const [childAge,    setChildAge]    = useState(7);
-  const [ageProfile,  setAgeProfile]  = useState<AgeProfile>('little');
+  const [childName, setChildName] = useState("");
+  const [onboardingDone, setOnboardingDone] = useState(false);
+  const [childAge, setChildAge] = useState(7);
+  const [ageProfile, setAgeProfile] = useState<AgeProfile>("little");
 
   // PIN
-  const [parentPin,       setParentPin]       = useState('');
-  const [pinEnabled,      setPinEnabled]      = useState(false);
-  const [showPinScreen,   setShowPinScreen]   = useState(false);
-  const [enteredPin,      setEnteredPin]      = useState('');
-  const [pendingReward,   setPendingReward]   = useState<any>(null);
+  const [parentPin, setParentPin] = useState("");
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [showPinScreen, setShowPinScreen] = useState(false);
+  const [enteredPin, setEnteredPin] = useState("");
+  const [pendingReward, setPendingReward] = useState<any>(null);
 
   // Settings
-  const [appSettings,   setAppSettings]   = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [ttsEnabled,    setTtsEnabled]    = useState(DEFAULT_SETTINGS.ttsEnabled);
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [ttsEnabled, setTtsEnabled] = useState(DEFAULT_SETTINGS.ttsEnabled);
 
   const [transientMood, setTransientMood] = useState<BuddyMood | null>(null);
   const transientMoodTimer = useRef<any>(null);
@@ -178,65 +258,93 @@ export default function App() {
 
   const fixedOverlayMood = useMemo(() => {
     if (transientMood) return transientMood;
-    if (screen === 'home') {
+    if (screen === "home") {
       const threshold = Math.max(1, appSettings.skipSensitivity ?? 2);
-      return skipCount >= threshold ? 'gentle-reminder'
-        : Math.random() > 0.7 ? 'gentle-reminder'
-        : 'calm';
+      return skipCount >= threshold
+        ? "gentle-reminder"
+        : Math.random() > 0.7
+          ? "gentle-reminder"
+          : "calm";
     }
-    if (screen === 'pick') return 'encouraging';
-    if (screen === 'active') {
-      return 'encouraging';
+    if (screen === "pick") return "encouraging";
+    if (screen === "active") {
+      return "encouraging";
     }
-    if (screen === 'celebrate') {
-      return isVeryExcited ? 'very-excited' : 'proud';
+    if (screen === "celebrate") {
+      return isVeryExcited ? "very-excited" : "proud";
     }
-    if (screen === 'rewards') return 'serene';
-    if (screen === 'breathing') return 'serene';
-    if (screen === 'demo_intro') return 'calm';
-    if (screen === 'demo_step') return 'excited';
-    if (screen === 'demo_complete') return 'proud';
-    return 'calm';
-  }, [screen, skipCount, appSettings.skipSensitivity, isVeryExcited, mission, transientMood]);
+    if (screen === "rewards") return "serene";
+    if (screen === "breathing") return "serene";
+    if (screen === "demo_intro") return "calm";
+    if (screen === "demo_step") return "excited";
+    if (screen === "demo_complete") return "proud";
+    return "calm";
+  }, [
+    screen,
+    skipCount,
+    appSettings.skipSensitivity,
+    isVeryExcited,
+    mission,
+    transientMood,
+  ]);
 
-  const fixedOverlayCelebrate = screen === 'celebrate';
+  const fixedOverlayCelebrate = screen === "celebrate";
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
         const vals = await AsyncStorage.multiGet([
-          K.STARS, K.TOTAL_EVER, K.COMPLETED_TODAY,
-          K.LAST_DATE, K.DEMO_DONE, K.TOTAL_MISSIONS,
-          K.CHILD_NAME, K.LAST_MISSION, K.SKIP_COUNT, K.FIRST_REWARD,
-          K.PARENT_PIN, K.PIN_ENABLED, K.ONBOARDING_DONE, K.MORNING_DONE,
-          K.DONE_IDS_TODAY, K.CHILD_AGE
+          K.STARS,
+          K.TOTAL_EVER,
+          K.COMPLETED_TODAY,
+          K.LAST_DATE,
+          K.DEMO_DONE,
+          K.TOTAL_MISSIONS,
+          K.CHILD_NAME,
+          K.LAST_MISSION,
+          K.SKIP_COUNT,
+          K.FIRST_REWARD,
+          K.PARENT_PIN,
+          K.PIN_ENABLED,
+          K.ONBOARDING_DONE,
+          K.MORNING_DONE,
+          K.DONE_IDS_TODAY,
+          K.CHILD_AGE,
         ]);
         // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
         const v: Record<string, string> = Object.fromEntries(
-          vals.map(([k, val]) => [k, val ?? ''])
+          vals.map(([k, val]) => [k, val ?? ""]),
         );
-        const today  = todayStr();
+        const today = todayStr();
         const newDay = v[K.LAST_DATE] !== today;
 
-        const st   = v[K.STARS]          ? parseInt(v[K.STARS],          10) : 0;
-        const tot  = v[K.TOTAL_EVER]     ? parseInt(v[K.TOTAL_EVER],     10) : st;
-        const tm   = v[K.TOTAL_MISSIONS] ? parseInt(v[K.TOTAL_MISSIONS], 10) : 0;
-        const comp = newDay ? 0 : (v[K.COMPLETED_TODAY] ? parseInt(v[K.COMPLETED_TODAY], 10) : 0);
-        const sk   = newDay ? 0 : (v[K.SKIP_COUNT]      ? parseInt(v[K.SKIP_COUNT],      10) : 0);
+        const st = v[K.STARS] ? parseInt(v[K.STARS], 10) : 0;
+        const tot = v[K.TOTAL_EVER] ? parseInt(v[K.TOTAL_EVER], 10) : st;
+        const tm = v[K.TOTAL_MISSIONS] ? parseInt(v[K.TOTAL_MISSIONS], 10) : 0;
+        const comp = newDay
+          ? 0
+          : v[K.COMPLETED_TODAY]
+            ? parseInt(v[K.COMPLETED_TODAY], 10)
+            : 0;
+        const sk = newDay
+          ? 0
+          : v[K.SKIP_COUNT]
+            ? parseInt(v[K.SKIP_COUNT], 10)
+            : 0;
 
         setStars(st);
         setTotalEver(tot);
         setPrevTotalEver(tot);
         setCompletedToday(comp);
         setTotalMissions(tm);
-        setChildName(v[K.CHILD_NAME] || '');
-        setLastMission(newDay ? (v[K.LAST_MISSION] || null) : null);
+        setChildName(v[K.CHILD_NAME] || "");
+        setLastMission(newDay ? v[K.LAST_MISSION] || null : null);
         setSkipCount(sk);
-        setFirstReward(v[K.FIRST_REWARD] === 'true');
+        setFirstReward(v[K.FIRST_REWARD] === "true");
         setFirstMission(tm === 0);
-        setOnboardingDone(v[K.ONBOARDING_DONE] === 'true');
-        setParentPin(v[K.PARENT_PIN] || '');
+        setOnboardingDone(v[K.ONBOARDING_DONE] === "true");
+        setParentPin(v[K.PARENT_PIN] || "");
         const age = v[K.CHILD_AGE] ? parseInt(v[K.CHILD_AGE], 10) : 7;
         setChildAge(age);
         setAgeProfile(getAgeProfile(age));
@@ -246,38 +354,46 @@ export default function App() {
           setDoneIdsToday([]);
         } else {
           try {
-            const parsed = v[K.DONE_IDS_TODAY] ? JSON.parse(v[K.DONE_IDS_TODAY]) : [];
-            setDoneIdsToday(Array.isArray(parsed) ? parsed.filter((n: any) => typeof n === 'number') : []);
-          } catch { setDoneIdsToday([]); }
+            const parsed = v[K.DONE_IDS_TODAY]
+              ? JSON.parse(v[K.DONE_IDS_TODAY])
+              : [];
+            setDoneIdsToday(
+              Array.isArray(parsed)
+                ? parsed.filter((n: any) => typeof n === "number")
+                : [],
+            );
+          } catch {
+            setDoneIdsToday([]);
+          }
         }
 
         // Load full settings
         const s = await loadSettings();
-         const morningDone = v[K.MORNING_DONE] ?? '';
+        const morningDone = v[K.MORNING_DONE] ?? "";
         setMorningDoneDate(morningDone);
         if (s.morningEnabled && shouldShowMorning(morningDone)) {
           setShowMorning(true);
         }
-        
+
         setAppSettings(s);
         setTtsEnabled(s.ttsEnabled);
         setShowSuggestion(s.nudgingEnabled);
-        setPinEnabled(v[K.PIN_ENABLED] === 'true');
+        setPinEnabled(v[K.PIN_ENABLED] === "true");
 
         // Only go to demo if onboarding is already done
-        if (v[K.ONBOARDING_DONE] === 'true' && !v[K.DEMO_DONE]) {
-          setScreen('demo_intro');
+        if (v[K.ONBOARDING_DONE] === "true" && !v[K.DEMO_DONE]) {
+          setScreen("demo_intro");
         }
 
         if (newDay) {
           await AsyncStorage.multiSet([
-            [K.LAST_DATE,        today],
-            [K.COMPLETED_TODAY,  '0'],
-            [K.SKIP_COUNT,       '0'],
+            [K.LAST_DATE, today],
+            [K.COMPLETED_TODAY, "0"],
+            [K.SKIP_COUNT, "0"],
           ]);
         }
       } catch (e) {
-        console.log('Load error', e);
+        console.log("Load error", e);
       } finally {
         setReady(true);
       }
@@ -288,74 +404,81 @@ export default function App() {
   useEffect(() => {
     if (!ready) return;
     AsyncStorage.multiSet([
-      [K.STARS,          String(stars)],
-      [K.TOTAL_EVER,     String(totalEver)],
+      [K.STARS, String(stars)],
+      [K.TOTAL_EVER, String(totalEver)],
       [K.TOTAL_MISSIONS, String(totalMissions)],
-      [K.SKIP_COUNT,     String(skipCount)],
+      [K.SKIP_COUNT, String(skipCount)],
     ]).catch(console.log);
   }, [stars, totalEver, totalMissions, skipCount, ready]);
 
   useEffect(() => {
     if (!ready) return;
-    AsyncStorage.setItem(K.COMPLETED_TODAY, String(completedToday)).catch(console.log);
+    AsyncStorage.setItem(K.COMPLETED_TODAY, String(completedToday)).catch(
+      console.log,
+    );
   }, [completedToday, ready]);
 
   useEffect(() => {
     if (!ready) return;
-    AsyncStorage.setItem(K.DONE_IDS_TODAY, JSON.stringify(doneIdsToday)).catch(console.log);
+    AsyncStorage.setItem(K.DONE_IDS_TODAY, JSON.stringify(doneIdsToday)).catch(
+      console.log,
+    );
   }, [doneIdsToday, ready]);
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
   async function saveChildName() {
     const name = childName.trim();
     if (!name) {
-      Alert.alert('Пожалуйста, введи имя ребёнка');
+      Alert.alert("Пожалуйста, введи имя ребёнка");
       return;
     }
     try {
       await AsyncStorage.multiSet([
-          [K.CHILD_NAME, name],
-          [K.CHILD_AGE,  String(childAge)],
-          [K.ONBOARDING_DONE, 'true'],
+        [K.CHILD_NAME, name],
+        [K.CHILD_AGE, String(childAge)],
+        [K.ONBOARDING_DONE, "true"],
       ]);
       setAgeProfile(getAgeProfile(childAge));
       setChildName(name);
       setOnboardingDone(true);
       speak(`Привет, ${name}! Рад тебя видеть!`);
       // After onboarding go to demo if not done, else home
-      setScreen('demo_intro');
+      setScreen("demo_intro");
     } catch (e) {
-      Alert.alert('Ошибка сохранения');
+      Alert.alert("Ошибка сохранения");
     }
   }
 
   // ── Demo ────────────────────────────────────────────────────────────────────
   async function finishDemo() {
-    await AsyncStorage.setItem(K.DEMO_DONE, 'true');
+    await AsyncStorage.setItem(K.DEMO_DONE, "true");
   }
 
   function handleDemoStepDone() {
     const nextStep = demoStep + 1;
     if (nextStep < DEMO_STEPS.length) {
       setDemoStep(nextStep);
-      setScreen('demo_step');
+      setScreen("demo_step");
     } else {
-      setScreen('demo_complete');
+      setScreen("demo_complete");
     }
   }
 
   // ── Missions ────────────────────────────────────────────────────────────────
-  const pickMission = useCallback((m: any) => {
-    setMission(m);
-    setSkipCount(0);
-    speak(`${m.title}. ${m.subtitle}`);
-    setScreen('active');
-  }, [speak]);
+  const pickMission = useCallback(
+    (m: any) => {
+      setMission(m);
+      setSkipCount(0);
+      speak(`${m.title}. ${m.subtitle}`);
+      setScreen("active");
+    },
+    [speak],
+  );
 
   const handleSkip = useCallback(() => {
-    setSkipCount(n => n + 1);
+    setSkipCount((n) => n + 1);
     setMission(null);
-    setScreen('home');
+    setScreen("home");
   }, []);
 
   function flashBuddyMood(mood: BuddyMood, duration = 2200) {
@@ -363,7 +486,10 @@ export default function App() {
     if (transientMoodTimer.current) {
       clearTimeout(transientMoodTimer.current);
     }
-    transientMoodTimer.current = setTimeout(() => setTransientMood(null), duration);
+    transientMoodTimer.current = setTimeout(
+      () => setTransientMood(null),
+      duration,
+    );
   }
 
   useEffect(() => {
@@ -374,68 +500,79 @@ export default function App() {
 
   function completeMission() {
     if (!mission) return;
-    const newEver     = totalEver + mission.stars;
-    const newTotal    = totalMissions + 1;
+    const newEver = totalEver + mission.stars;
+    const newTotal = totalMissions + 1;
     const veryExcited = shouldBeVeryExcited(newEver, prevTotalEver, false);
-    const completionMood = veryExcited ? 'very-excited' : (mission.stars >= 2 ? 'excited' : 'happy');
+    const completionMood = veryExcited
+      ? "very-excited"
+      : mission.stars >= 2
+        ? "excited"
+        : "happy";
 
-    setStars(n => n + mission.stars);
+    setStars((n) => n + mission.stars);
     setPrevTotalEver(totalEver);
     setTotalEver(newEver);
-    setCompletedToday(n => n + 1);
+    setCompletedToday((n) => n + 1);
     setTotalMissions(newTotal);
     setSkipCount(0);
     setFirstMission(false);
     setIsVeryExcited(veryExcited);
-    if (typeof mission.id === 'number') {
-      setDoneIdsToday(ids => (ids.includes(mission.id) ? ids : [...ids, mission.id]));
+    if (typeof mission.id === "number") {
+      setDoneIdsToday((ids) =>
+        ids.includes(mission.id) ? ids : [...ids, mission.id],
+      );
     }
     AsyncStorage.setItem(K.LAST_MISSION, mission.title).catch(console.log);
     flashBuddyMood(completionMood);
-    setScreen('celebrate');
+    setScreen("celebrate");
   }
 
   function handleSuggestionAccept(suggestion: any) {
-    const m = MISSIONS_EASY.find(ms => ms.id === suggestion.missionId) || MISSIONS_EASY[0];
+    const m =
+      MISSIONS_EASY.find((ms) => ms.id === suggestion.missionId) ||
+      MISSIONS_EASY[0];
     setShowSuggestion(false);
     pickMission(m);
   }
 
   // ── PIN / Reward redemption ─────────────────────────────────────────────────
-  const handleRewardRedeem = useCallback((reward: any) => {
-    if (stars < reward.cost) return;
-    if (pinEnabled && parentPin) {
-      setPendingReward(reward);
-      setEnteredPin('');
-      setShowPinScreen(true);
-    } else {
-      redeemReward(reward);
-    }
-    }, [stars, pinEnabled, parentPin]);
+  const handleRewardRedeem = useCallback(
+    (reward: any) => {
+      if (stars < reward.cost) return;
+      if (pinEnabled && parentPin) {
+        setPendingReward(reward);
+        setEnteredPin("");
+        setShowPinScreen(true);
+      } else {
+        redeemReward(reward);
+      }
+    },
+    [stars, pinEnabled, parentPin],
+  );
 
   function redeemReward(reward: any) {
     const isFirst = !firstReward;
-    setStars(n => Math.max(0, n - reward.cost));
+    setStars((n) => Math.max(0, n - reward.cost));
     if (isFirst) {
       setFirstReward(true);
       setIsVeryExcited(true);
-      AsyncStorage.setItem(K.FIRST_REWARD, 'true').catch(console.log);
+      AsyncStorage.setItem(K.FIRST_REWARD, "true").catch(console.log);
     }
-    speak('Молодец! Ты заслужил награду');
-    Alert.alert('🎉 Награда получена!', reward.title);
+    speak("Молодец! Ты заслужил награду");
+    Alert.alert("🎉 Награда получена!", reward.title);
   }
 
   function verifyPin() {
     if (enteredPin === parentPin) {
       setShowPinScreen(false);
-      setEnteredPin('');
+      setEnteredPin("");
       if (pendingReward) {
         redeemReward(pendingReward);
         setPendingReward(null);
       }
     } else {
-      Alert.alert('Неверный PIN', 'Попробуй ещё раз');
-      setEnteredPin('');
+      Alert.alert("Неверный PIN", "Попробуй ещё раз");
+      setEnteredPin("");
     }
   }
 
@@ -457,7 +594,7 @@ export default function App() {
         <StatusBar style="dark" />
         <Image
           source={BUDDY.calm}
-          style={{ width: 180, height: 180, backgroundColor: 'transparent' }}
+          style={{ width: 180, height: 180, backgroundColor: "transparent" }}
           resizeMode="contain"
         />
         <Text style={s.onboardingTitle}>Привет! Как зовут твоего ребёнка?</Text>
@@ -475,8 +612,8 @@ export default function App() {
           style={s.onboardingInput}
           placeholder="Возраст"
           placeholderTextColor={C.muted}
-          value={childAge > 0 ? String(childAge) : ''}
-          onChangeText={t => setChildAge(parseInt(t) || 7)}
+          value={childAge > 0 ? String(childAge) : ""}
+          onChangeText={(t) => setChildAge(parseInt(t) || 7)}
           keyboardType="numeric"
           maxLength={2}
         />
@@ -491,26 +628,29 @@ export default function App() {
   const p = { speak, stars, totalEver };
   // Compute which missions to show based on day mode + parent overrides
   const isWeekendDay = isWeekend();
-  const dayModeActive = (appSettings.dayModeOverride ?? 'auto') === 'auto'
-    ? isWeekendDay
-    : appSettings.dayModeOverride === 'weekend';
+  const dayModeActive =
+    (appSettings.dayModeOverride ?? "auto") === "auto"
+      ? isWeekendDay
+      : appSettings.dayModeOverride === "weekend";
 
-  const dayMode: 'weekday' | 'weekend' = dayModeActive ? 'weekend' : 'weekday';
+  const dayMode: "weekday" | "weekend" = dayModeActive ? "weekend" : "weekday";
   const missionOverrides = appSettings.missionOverrides ?? {};
-  const rewardOverrides  = appSettings.rewardOverrides  ?? {};
+  const rewardOverrides = appSettings.rewardOverrides ?? {};
 
   const missionTypeById = Object.fromEntries(
-    appSettings.missions.map(m => [m.id, m.type])
+    appSettings.missions.map((m) => [m.id, m.type]),
   );
 
   // Active pool: enabled for this day mode by parent override, and not inactive (mission-type setting)
   // Each mission's `stars` is replaced with the parent-override value (falls back to pool default).
-  const activePool: PoolMission[] = MISSION_POOL
-    .filter(m =>
+  const activePool: PoolMission[] = MISSION_POOL.filter(
+    (m) =>
       effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
-      missionTypeById[m.id] !== 'inactive'
-    )
-    .map(m => ({ ...m, stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2 }));
+      missionTypeById[m.id] !== "inactive",
+  ).map((m) => ({
+    ...m,
+    stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
+  }));
 
   let dayMissions: PoolMission[] = activePool;
   let bonusMission: PoolMission | null = null;
@@ -521,36 +661,53 @@ export default function App() {
     // rest of the active pool via the deterministic daily picker.
     const size = Math.max(4, Math.min(10, appSettings.dailyPickerSize ?? 5));
     const today = todayStr();
-    const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');
-    const others    = activePool.filter(m => missionTypeById[m.id] !== 'permanent');
+    const permanent = activePool.filter(
+      (m) => missionTypeById[m.id] === "permanent",
+    );
+    const others = activePool.filter(
+      (m) => missionTypeById[m.id] !== "permanent",
+    );
     const remaining = Math.max(0, size - permanent.length);
-    const fillers   = selectDailyMissions(others, today, remaining);
-    const subsetIds = new Set<number>([...permanent.map(m => m.id), ...fillers.map(m => m.id)]);
+    const fillers = selectDailyMissions(others, today, remaining);
+    const subsetIds = new Set<number>([
+      ...permanent.map((m) => m.id),
+      ...fillers.map((m) => m.id),
+    ]);
     // Keep MISSION_POOL order within the subset for stable slot-grouping in UI;
     // apply override stars so cards display the right value.
-    dayMissions = MISSION_POOL
-      .filter(m => subsetIds.has(m.id))
-      .map(m => ({ ...m, stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2 }));
+    dayMissions = MISSION_POOL.filter((m) => subsetIds.has(m.id)).map((m) => ({
+      ...m,
+      stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
+    }));
 
     if (appSettings.bonusAfterCompletion) {
-      const leftover = activePool.filter(m => !subsetIds.has(m.id) && !doneIdsToday.includes(m.id));
+      const leftover = activePool.filter(
+        (m) => !subsetIds.has(m.id) && !doneIdsToday.includes(m.id),
+      );
       bonusMission = selectBonusMission(leftover, today);
     }
   } else if (appSettings.rotationEnabled) {
-    const permanent = activePool.filter(m => missionTypeById[m.id] === 'permanent');
-    const rotating = activePool.filter(m => missionTypeById[m.id] === 'rotating');
+    const permanent = activePool.filter(
+      (m) => missionTypeById[m.id] === "permanent",
+    );
+    const rotating = activePool.filter(
+      (m) => missionTypeById[m.id] === "rotating",
+    );
     const rotateCount = Math.min(appSettings.rotatingPoolSize, rotating.length);
-    const seed = rotating.length ? getRotationSeed(appSettings.rotationFrequency) % rotating.length : 0;
-    const rotated = Array.from({ length: rotateCount }, (_, index) => (
-      rotating[(seed + index) % rotating.length]
-    ));
+    const seed = rotating.length
+      ? getRotationSeed(appSettings.rotationFrequency) % rotating.length
+      : 0;
+    const rotated = Array.from(
+      { length: rotateCount },
+      (_, index) => rotating[(seed + index) % rotating.length],
+    );
     dayMissions = [...permanent, ...rotated];
   }
 
   // Effective rewards list (parent overrides applied; disabled rewards hidden).
-  const effectiveRewards: Reward[] = REWARDS
-    .filter(r => effectiveRewardEnabled(r.id, rewardOverrides))
-    .map(r => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
+  const effectiveRewards: Reward[] = REWARDS.filter((r) =>
+    effectiveRewardEnabled(r.id, rewardOverrides),
+  ).map((r) => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
 
   const currentBlock = appSettings.scheduleEnabled
     ? getCurrentBlock(appSettings.scheduleBlocks, isWeekendDay)
@@ -564,19 +721,26 @@ export default function App() {
         <StatusBar style="dark" />
         <MorningRoutineScreen
           childName={childName}
-          steps={appSettings.morningSteps?.length > 0 ? appSettings.morningSteps : DEFAULT_MORNING_STEPS}
+          steps={
+            appSettings.morningSteps?.length > 0
+              ? appSettings.morningSteps
+              : DEFAULT_MORNING_STEPS
+          }
           stars={appSettings.morningStars ?? 1}
           speak={speak}
           onComplete={async (earned) => {
             const today = todayStr();
-            setStars(n => n + earned);
-            setTotalEver(n => n + earned);
+            setStars((n) => n + earned);
+            setTotalEver((n) => n + earned);
             setMorningDoneDate(today);
             setShowMorning(false);
-            setScreen('home');
+            setScreen("home");
             await AsyncStorage.setItem(K.MORNING_DONE, today);
           }}
-          onSkip={() => { setShowMorning(false); setScreen('home'); }}
+          onSkip={() => {
+            setShowMorning(false);
+            setScreen("home");
+          }}
         />
       </SafeAreaView>
     );
@@ -585,15 +749,21 @@ export default function App() {
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
 
-      {screen === 'demo_intro' && (
+      {screen === "demo_intro" && (
         <DemoIntroScreen
           speak={speak}
-          onStart={() => { setDemoStep(0); setScreen('demo_step'); }}
-          onSkip={async () => { await finishDemo(); setScreen('home'); }}
+          onStart={() => {
+            setDemoStep(0);
+            setScreen("demo_step");
+          }}
+          onSkip={async () => {
+            await finishDemo();
+            setScreen("home");
+          }}
         />
       )}
 
-      {screen === 'demo_step' && (
+      {screen === "demo_step" && (
         <DemoStepScreen
           key={demoStep}
           speak={speak}
@@ -604,15 +774,21 @@ export default function App() {
         />
       )}
 
-      {screen === 'demo_complete' && (
+      {screen === "demo_complete" && (
         <DemoCompleteScreen
           speak={speak}
-          onGoToMissions={async () => { await finishDemo(); setScreen('pick'); }}
-          onGoHome={async () => { await finishDemo(); setScreen('home'); }}
+          onGoToMissions={async () => {
+            await finishDemo();
+            setScreen("pick");
+          }}
+          onGoHome={async () => {
+            await finishDemo();
+            setScreen("home");
+          }}
         />
       )}
 
-      {screen === 'home' && (
+      {screen === "home" && (
         <HomeScreen
           {...p}
           completedToday={completedToday}
@@ -621,34 +797,42 @@ export default function App() {
           lastMission={lastMission}
           showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
           skipSensitivity={appSettings.skipSensitivity}
-          onSettings={() => setScreen('settings')}
+          onSettings={() => setScreen("settings")}
           skipCount={skipCount}
-          onStart={() => setScreen('pick')}
-          onRewards={() => setScreen('rewards')}
+          onStart={() => setScreen("pick")}
+          onRewards={() => setScreen("rewards")}
           onSuggestionAccept={handleSuggestionAccept}
           onSuggestionSkip={() => setShowSuggestion(false)}
           currentBlock={currentBlock}
           nextBlock={nextBlock}
           scheduleEnabled={appSettings.scheduleEnabled}
-          onOpenDay={() => setScreen('day')}
-          onBreathing={appSettings.breathingEnabled ? (() => setScreen('breathing')) : undefined}
+          onOpenDay={() => setScreen("day")}
+          onBreathing={
+            appSettings.breathingEnabled
+              ? () => setScreen("breathing")
+              : undefined
+          }
         />
       )}
 
-      {screen === 'pick' && (
+      {screen === "pick" && (
         <MissionPickScreen
           {...p}
           firstTime={firstMission}
           missions={dayMissions.length > 0 ? dayMissions : null}
           missionTypeById={missionTypeById}
           doneIds={doneIdsToday}
-          bonusMission={appSettings.infinityLoopEnabled && appSettings.bonusAfterCompletion ? bonusMission : null}
+          bonusMission={
+            appSettings.infinityLoopEnabled && appSettings.bonusAfterCompletion
+              ? bonusMission
+              : null
+          }
           onPick={pickMission}
-          onBack={() => setScreen('home')}
+          onBack={() => setScreen("home")}
         />
       )}
 
-      {screen === 'active' && (
+      {screen === "active" && (
         <ActiveScreen
           {...p}
           mission={mission}
@@ -657,31 +841,31 @@ export default function App() {
         />
       )}
 
-      {screen === 'celebrate' && (
+      {screen === "celebrate" && (
         <CelebrateScreen
           {...p}
           mission={mission}
           totalMissions={totalMissions}
           completedToday={completedToday}
           isVeryExcited={isVeryExcited}
-          onContinue={() => setScreen('pick')}
-          onRewards={() => setScreen('rewards')}
+          onContinue={() => setScreen("pick")}
+          onRewards={() => setScreen("rewards")}
         />
       )}
 
-      {screen === 'rewards' && (
+      {screen === "rewards" && (
         <RewardsScreen
           {...p}
           rewards={effectiveRewards}
-          onBack={() => setScreen('home')}
+          onBack={() => setScreen("home")}
           onRedeem={handleRewardRedeem}
           showExactStarCost={appSettings.showExactStarCost}
         />
       )}
 
-      {screen === 'settings' && (
+      {screen === "settings" && (
         <SettingsScreen
-          onClose={() => setScreen('home')}
+          onClose={() => setScreen("home")}
           onSettingsChange={(s: AppSettings) => {
             setAppSettings(s);
             setChildName(s.childName);
@@ -693,29 +877,29 @@ export default function App() {
         />
       )}
 
-      {screen === 'day' && (
+      {screen === "day" && (
         <DayScreen
           blocks={appSettings.scheduleBlocks}
           isWeekendDay={isWeekendDay}
           speak={speak}
-          onClose={() => setScreen('home')}
+          onClose={() => setScreen("home")}
           onStartMission={(missionId: number) => {
-            const m = MISSION_POOL.find(x => x.id === missionId);
+            const m = MISSION_POOL.find((x) => x.id === missionId);
             if (m) pickMission(m);
           }}
         />
       )}
 
-      {screen === 'breathing' && (
+      {screen === "breathing" && (
         <BreathingScreen
           speak={speak}
-          onComplete={() => setScreen('home')}
-          onSkip={() => setScreen('home')}
+          onComplete={() => setScreen("home")}
+          onSkip={() => setScreen("home")}
         />
       )}
 
       {/* ── FIXED BUDDY + PROGRESS BAR OVERLAY (all screens except Settings) ───────── */}
-      {onboardingDone && !showPinScreen && screen !== 'settings' && (
+      {onboardingDone && !showPinScreen && screen !== "settings" && (
         <View style={s.topOverlay} pointerEvents="box-none">
           <View style={s.topOverlayContent}>
             <Buddy
@@ -735,12 +919,19 @@ export default function App() {
           <View style={s.pinCard}>
             <Image
               source={BUDDY.calm}
-              style={{ width: 80, height: 80, backgroundColor: 'transparent', marginBottom: 16 }}
+              style={{
+                width: 80,
+                height: 80,
+                backgroundColor: "transparent",
+                marginBottom: 16,
+              }}
               resizeMode="contain"
             />
             <Text style={s.pinTitle}>ПИН родителя</Text>
             {pendingReward && (
-              <Text style={s.pinSub}>Разблокировать: {pendingReward.title}</Text>
+              <Text style={s.pinSub}>
+                Разблокировать: {pendingReward.title}
+              </Text>
             )}
             <TextInput
               style={s.pinInput}
@@ -759,7 +950,7 @@ export default function App() {
               style={s.pinCancel}
               onPress={() => {
                 setShowPinScreen(false);
-                setEnteredPin('');
+                setEnteredPin("");
                 setPendingReward(null);
               }}
             >
@@ -775,179 +966,437 @@ export default function App() {
 // ── STYLES ────────────────────────────────────────────────────────────────────
 
 const C = {
-  bg:      '#F7F6F2',
-  white:   '#FFFFFF',
-  green:   '#1D6B4F',
-  greenLt: '#E1F5EE',
-  text:    '#1A1A18',
-  muted:   '#6B6B68',
-  border:  '#E5E5E2',
-  track:   '#D8D8D4',
-  gold:    '#FFF8E7',
-  goldBdr: '#F59E0B',
-  reflect: '#F0F8F4',
+  bg: "#F7F6F2",
+  white: "#FFFFFF",
+  green: "#1D6B4F",
+  greenLt: "#E1F5EE",
+  text: "#1A1A18",
+  muted: "#6B6B68",
+  border: "#E5E5E2",
+  track: "#D8D8D4",
+  gold: "#FFF8E7",
+  goldBdr: "#F59E0B",
+  reflect: "#F0F8F4",
 };
 
 const s = StyleSheet.create({
-  root:    { flex: 1, backgroundColor: C.bg },
-  center:  { justifyContent: 'center', alignItems: 'center' },
-  screen:  { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  scroll:  { alignItems: 'center', padding: 20, paddingBottom: 52 },
-  homeScroll: { alignItems: 'center', padding: 20, paddingBottom: 52 },
-  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000, alignItems: 'center', paddingTop: 18, paddingHorizontal: 20, pointerEvents: 'box-none' },
-  topOverlayContent: { width: '100%', alignItems: 'center', pointerEvents: 'auto' },
+  root: { flex: 1, backgroundColor: C.bg },
+  center: { justifyContent: "center", alignItems: "center" },
+  screen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  scroll: { alignItems: "center", padding: 20, paddingBottom: 52 },
+  homeScroll: { alignItems: "center", padding: 20, paddingBottom: 52 },
+  topOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    alignItems: "center",
+    paddingTop: 18,
+    paddingHorizontal: 20,
+    pointerEvents: "box-none",
+  },
+  topOverlayContent: {
+    width: "100%",
+    alignItems: "center",
+    pointerEvents: "auto",
+  },
 
   // Onboarding
-  onboardingTitle: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginVertical: 24, color: C.text, paddingHorizontal: 20 },
-  onboardingInput: { width: '80%', borderWidth: 2, borderColor: '#a1d4b8', borderRadius: 16, padding: 16, fontSize: 24, textAlign: 'center', backgroundColor: C.white, color: C.text },
-  onboardingBtn:   { marginTop: 32, backgroundColor: C.green, paddingVertical: 16, paddingHorizontal: 48, borderRadius: 999 },
-  onboardingBtnTxt:{ color: C.white, fontSize: 20, fontWeight: '600' },
+  onboardingTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+    marginVertical: 24,
+    color: C.text,
+    paddingHorizontal: 20,
+  },
+  onboardingInput: {
+    width: "80%",
+    borderWidth: 2,
+    borderColor: "#a1d4b8",
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 24,
+    textAlign: "center",
+    backgroundColor: C.white,
+    color: C.text,
+  },
+  onboardingBtn: {
+    marginTop: 32,
+    backgroundColor: C.green,
+    paddingVertical: 16,
+    paddingHorizontal: 48,
+    borderRadius: 999,
+  },
+  onboardingBtnTxt: { color: C.white, fontSize: 20, fontWeight: "600" },
 
-    pinOverlay: { 
-    position: 'absolute', 
-    top: 0, left: 0, right: 0, bottom: 0, 
-    backgroundColor: 'rgba(0,0,0,0.75)', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  pinOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
     zIndex: 2000,
   },
-  pinCard: { 
-    backgroundColor: C.white, 
-    borderRadius: 20, 
-    padding: 28, 
-    alignItems: 'center', 
-    width: '100%' 
+  pinCard: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: "center",
+    width: "100%",
   },
-  pinTitle:   { fontSize: 20, fontWeight: '700', color: C.text, marginBottom: 4 },
-  pinSub:     { fontSize: 13, color: C.muted, marginBottom: 16, textAlign: 'center' },
-  pinInput: { 
-    fontSize: 36, 
-    textAlign: 'center', 
-    letterSpacing: 12, 
-    marginBottom: 24, 
-    width: '100%', 
-    height: 52, 
-    borderBottomWidth: 2, 
-    borderColor: C.border, 
-    paddingBottom: 8, 
-    color: C.text 
+  pinTitle: { fontSize: 20, fontWeight: "700", color: C.text, marginBottom: 4 },
+  pinSub: {
+    fontSize: 13,
+    color: C.muted,
+    marginBottom: 16,
+    textAlign: "center",
   },
-  pinConfirm: { 
-    backgroundColor: C.green, 
-    padding: 14, 
-    borderRadius: 12, 
-    width: '100%', 
-    alignItems: 'center', 
-    marginBottom: 12 
+  pinInput: {
+    fontSize: 36,
+    textAlign: "center",
+    letterSpacing: 12,
+    marginBottom: 24,
+    width: "100%",
+    height: 52,
+    borderBottomWidth: 2,
+    borderColor: C.border,
+    paddingBottom: 8,
+    color: C.text,
   },
-  pinConfirmTxt: { color: C.white, textAlign: 'center', fontSize: 18, fontWeight: '600' },
-  pinCancel: { 
-    backgroundColor: C.bg, 
-    borderRadius: 12, 
-    borderWidth: 1, 
-    borderColor: C.border, 
-    padding: 14, 
-    width: '100%', 
-    alignItems: 'center' 
+  pinConfirm: {
+    backgroundColor: C.green,
+    padding: 14,
+    borderRadius: 12,
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 12,
   },
-  pinCancelTxt: { fontSize: 15, color: C.text, fontWeight: '500' },
+  pinConfirmTxt: {
+    color: C.white,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  pinCancel: {
+    backgroundColor: C.bg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 14,
+    width: "100%",
+    alignItems: "center",
+  },
+  pinCancelTxt: { fontSize: 15, color: C.text, fontWeight: "500" },
 
   // Progress bar
-  pbWrap:    { width: '100%', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 14 },
-  pbRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  pbEmotion: { fontSize: 12, color: C.green, fontWeight: '500', flex: 1, marginRight: 8 },
-  pbStars:   { fontSize: 13, fontWeight: '700', color: C.green },
-  pbTrack:   { height: 8, backgroundColor: C.track, borderRadius: 4, overflow: 'hidden' },
-  pbFill:    { height: 8, backgroundColor: C.green, borderRadius: 4, minWidth: 8 },
+  pbWrap: {
+    width: "100%",
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 12,
+    marginBottom: 14,
+  },
+  pbRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  pbEmotion: {
+    fontSize: 12,
+    color: C.green,
+    fontWeight: "500",
+    flex: 1,
+    marginRight: 8,
+  },
+  pbStars: { fontSize: 13, fontWeight: "700", color: C.green },
+  pbTrack: {
+    height: 8,
+    backgroundColor: C.track,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  pbFill: { height: 8, backgroundColor: C.green, borderRadius: 4, minWidth: 8 },
 
   // Buddy
-  buddy:     { alignItems: 'center', marginBottom: 4, padding: 4 },
-  buddyName: { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: '500' },
+  buddy: { alignItems: "center", marginBottom: 4, padding: 4 },
+  buddyName: { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: "500" },
 
   // Home
-  greetingRow:    { width: '100%', marginBottom: 4 },
-  greeting:       { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  progressionMsg: { fontSize: 15, color: C.green, textAlign: 'center', marginVertical: 6, fontWeight: '500', lineHeight: 22 },
+  greetingRow: { width: "100%", marginBottom: 4 },
+  greeting: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: C.text,
+    textAlign: "center",
+  },
+  progressionMsg: {
+    fontSize: 15,
+    color: C.green,
+    textAlign: "center",
+    marginVertical: 6,
+    fontWeight: "500",
+    lineHeight: 22,
+  },
 
   // Reflective boost
-  reflectCard: { backgroundColor: C.reflect, borderRadius: 12, padding: 12, width: '100%', marginBottom: 10, borderWidth: 1, borderColor: C.greenLt },
-  reflectText: { fontSize: 13, color: C.green, textAlign: 'center', fontStyle: 'italic', lineHeight: 19 },
+  reflectCard: {
+    backgroundColor: C.reflect,
+    borderRadius: 12,
+    padding: 12,
+    width: "100%",
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: C.greenLt,
+  },
+  reflectText: {
+    fontSize: 13,
+    color: C.green,
+    textAlign: "center",
+    fontStyle: "italic",
+    lineHeight: 19,
+  },
 
   // Daily suggestion
-  suggestionCard:  { backgroundColor: C.gold, borderRadius: 14, borderWidth: 1, borderColor: C.goldBdr, padding: 14, width: '100%', alignItems: 'center', marginBottom: 10 },
-  suggestionIcon:  { fontSize: 28, marginBottom: 4 },
-  suggestionText:  { fontSize: 14, color: '#92400E', textAlign: 'center', marginVertical: 8, lineHeight: 20 },
-  suggestionRow:   { flexDirection: 'row', gap: 10 },
-  suggestionYes:   { backgroundColor: C.green, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 18 },
-  suggestionYesTxt:{ fontSize: 14, color: '#fff', fontWeight: '600' },
-  suggestionNo:    { backgroundColor: 'transparent', borderRadius: 12, paddingVertical: 9, paddingHorizontal: 14 },
+  suggestionCard: {
+    backgroundColor: C.gold,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.goldBdr,
+    padding: 14,
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  suggestionIcon: { fontSize: 28, marginBottom: 4 },
+  suggestionText: {
+    fontSize: 14,
+    color: "#92400E",
+    textAlign: "center",
+    marginVertical: 8,
+    lineHeight: 20,
+  },
+  suggestionRow: { flexDirection: "row", gap: 10 },
+  suggestionYes: {
+    backgroundColor: C.green,
+    borderRadius: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+  },
+  suggestionYesTxt: { fontSize: 14, color: "#fff", fontWeight: "600" },
+  suggestionNo: {
+    backgroundColor: "transparent",
+    borderRadius: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+  },
   suggestionNoTxt: { fontSize: 14, color: C.muted },
 
   // Text
-  msg:           { fontSize: 17, color: C.text, textAlign: 'center', marginVertical: 8, lineHeight: 25, paddingHorizontal: 8 },
-  sub:           { fontSize: 13, color: C.muted, marginBottom: 6, textAlign: 'center' },
-  pageTitle:     { fontSize: 21, fontWeight: '700', color: C.text, marginBottom: 14, alignSelf: 'flex-start' },
-  tier:          { fontSize: 12, fontWeight: '600', color: C.muted, alignSelf: 'flex-start', marginTop: 10, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 },
-  hint:          { fontSize: 11, color: C.muted, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
-  tapHint:       { fontSize: 11, color: C.muted, marginTop: 10, fontStyle: 'italic' },
-  celebTitle:    { fontSize: 24, fontWeight: '800', color: C.green, marginBottom: 4, textAlign: 'center' },
-  milestoneTitle:{ fontSize: 26, fontWeight: '900', color: C.green, marginBottom: 4, textAlign: 'center' },
+  msg: {
+    fontSize: 17,
+    color: C.text,
+    textAlign: "center",
+    marginVertical: 8,
+    lineHeight: 25,
+    paddingHorizontal: 8,
+  },
+  sub: { fontSize: 13, color: C.muted, marginBottom: 6, textAlign: "center" },
+  pageTitle: {
+    fontSize: 21,
+    fontWeight: "700",
+    color: C.text,
+    marginBottom: 14,
+    alignSelf: "flex-start",
+  },
+  tier: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: C.muted,
+    alignSelf: "flex-start",
+    marginTop: 10,
+    marginBottom: 5,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  hint: {
+    fontSize: 11,
+    color: C.muted,
+    marginTop: 8,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  tapHint: { fontSize: 11, color: C.muted, marginTop: 10, fontStyle: "italic" },
+  celebTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: C.green,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  milestoneTitle: {
+    fontSize: 26,
+    fontWeight: "900",
+    color: C.green,
+    marginBottom: 4,
+    textAlign: "center",
+  },
 
   // Buttons
-  btnPrimary:    { backgroundColor: C.green, borderRadius: 16, paddingVertical: 17, paddingHorizontal: 32, marginTop: 10, width: '100%', alignItems: 'center' },
-  btnPrimaryTxt: { fontSize: 19, color: '#fff', fontWeight: '700' },
-  btnSecondary:    { backgroundColor: C.gold, borderRadius: 16, borderWidth: 1, borderColor: C.goldBdr, paddingVertical: 15, paddingHorizontal: 32, marginTop: 8, width: '100%', alignItems: 'center' },
-  btnSecondaryTxt: { fontSize: 17, color: '#92400E', fontWeight: '600' },
-  btnSkip:    { marginTop: 10, padding: 12 },
+  btnPrimary: {
+    backgroundColor: C.green,
+    borderRadius: 16,
+    paddingVertical: 17,
+    paddingHorizontal: 32,
+    marginTop: 10,
+    width: "100%",
+    alignItems: "center",
+  },
+  btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
+  btnSecondary: {
+    backgroundColor: C.gold,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.goldBdr,
+    paddingVertical: 15,
+    paddingHorizontal: 32,
+    marginTop: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  btnSecondaryTxt: { fontSize: 17, color: "#92400E", fontWeight: "600" },
+  btnSkip: { marginTop: 10, padding: 12 },
   btnSkipTxt: { fontSize: 15, color: C.muted },
-  btnBack:    { marginTop: 18, padding: 12 },
-  btnBackTxt: { fontSize: 15, color: C.green, fontWeight: '500' },
-  demoCompleteButtons: { width: '100%', marginTop: 8 },
-  btnSettings:    { marginTop: 8, padding: 12, alignItems: 'center' },
+  btnBack: { marginTop: 18, padding: 12 },
+  btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
+  demoCompleteButtons: { width: "100%", marginTop: 8 },
+  btnSettings: { marginTop: 8, padding: 12, alignItems: "center" },
   btnSettingsTxt: { fontSize: 14, color: C.muted },
 
   // Demo
-  stepCounter:   { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  stepDot:       { width: 10, height: 10, borderRadius: 5, backgroundColor: C.border },
+  stepCounter: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: C.border,
+  },
   stepDotActive: { backgroundColor: C.green },
-  demoCard:      { backgroundColor: C.white, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 32, alignItems: 'center', width: '100%', marginVertical: 12 },
-  demoEmoji:     { fontSize: 64, marginBottom: 12 },
-  demoTitle:     { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  praiseRow:     { marginTop: 16, alignItems: 'center' },
-  praiseText:    { fontSize: 26, fontWeight: '800', color: C.green },
+  demoCard: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 32,
+    alignItems: "center",
+    width: "100%",
+    marginVertical: 12,
+  },
+  demoEmoji: { fontSize: 64, marginBottom: 12 },
+  demoTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: C.text,
+    textAlign: "center",
+  },
+  praiseRow: { marginTop: 16, alignItems: "center" },
+  praiseText: { fontSize: 26, fontWeight: "800", color: C.green },
 
   // Missions
-  mCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 13, marginBottom: 7, width: '100%' },
+  mCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 13,
+    marginBottom: 7,
+    width: "100%",
+  },
   mCardBig: { backgroundColor: C.gold, borderColor: C.goldBdr },
-  mEmoji:   { fontSize: 30, marginRight: 11 },
-  mInfo:    { flex: 1 },
-  mTitle:   { fontSize: 15, fontWeight: '600', color: C.text },
-  mSub:     { fontSize: 12, color: C.muted, marginTop: 2 },
-  mStar:    { fontSize: 17 },
+  mEmoji: { fontSize: 30, marginRight: 11 },
+  mInfo: { flex: 1 },
+  mTitle: { fontSize: 15, fontWeight: "600", color: C.text },
+  mSub: { fontSize: 12, color: C.muted, marginTop: 2 },
+  mStar: { fontSize: 17 },
 
   // Active
-  activeCard:  { backgroundColor: C.white, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 26, alignItems: 'center', width: '100%', marginVertical: 12 },
+  activeCard: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 26,
+    alignItems: "center",
+    width: "100%",
+    marginVertical: 12,
+  },
   activeEmoji: { fontSize: 58, marginBottom: 10 },
-  activeTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  activeSub:   { fontSize: 14, color: C.muted, marginTop: 5, textAlign: 'center' },
-  starsRow:    { flexDirection: 'row', marginTop: 12, gap: 4 },
-  starBig:     { fontSize: 24 },
+  activeTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: C.text,
+    textAlign: "center",
+  },
+  activeSub: {
+    fontSize: 14,
+    color: C.muted,
+    marginTop: 5,
+    textAlign: "center",
+  },
+  starsRow: { flexDirection: "row", marginTop: 12, gap: 4 },
+  starBig: { fontSize: 24 },
 
   // Celebrate
-  earnedCard:  { backgroundColor: C.greenLt, borderRadius: 20, padding: 22, alignItems: 'center', width: '100%', marginVertical: 12 },
+  earnedCard: {
+    backgroundColor: C.greenLt,
+    borderRadius: 20,
+    padding: 22,
+    alignItems: "center",
+    width: "100%",
+    marginVertical: 12,
+  },
   earnedEmoji: { fontSize: 44, marginBottom: 6 },
-  earnedName:  { fontSize: 16, fontWeight: '600', color: C.green },
+  earnedName: { fontSize: 16, fontWeight: "600", color: C.green },
   earnedStars: { fontSize: 26, marginTop: 6 },
-  earnedTotal: { fontSize: 14, color: C.green, marginTop: 4, fontWeight: '500' },
+  earnedTotal: {
+    fontSize: 14,
+    color: C.green,
+    marginTop: 4,
+    fontWeight: "500",
+  },
 
   // Rewards
-  rCard:   { flexDirection: 'row', alignItems: 'center', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 13, marginBottom: 7, width: '100%' },
+  rCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 13,
+    marginBottom: 7,
+    width: "100%",
+  },
   rLocked: { opacity: 0.42 },
-  rEmoji:  { fontSize: 29, marginRight: 11 },
-  rInfo:   { flex: 1 },
-  rTitle:  { fontSize: 15, fontWeight: '600', color: C.text },
-  rCost:   { fontSize: 12, color: C.muted, marginTop: 2 },
-  rReady:  { fontSize: 13, color: C.green, fontWeight: '700' },
-  rNeed:   { fontSize: 11, color: C.muted, textAlign: 'right' },
-});;
+  rEmoji: { fontSize: 29, marginRight: 11 },
+  rInfo: { flex: 1 },
+  rTitle: { fontSize: 15, fontWeight: "600", color: C.text },
+  rCost: { fontSize: 12, color: C.muted, marginTop: 2 },
+  rReady: { fontSize: 13, color: C.green, fontWeight: "700" },
+  rNeed: { fontSize: 11, color: C.muted, textAlign: "right" },
+});

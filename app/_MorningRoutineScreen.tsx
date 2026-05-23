@@ -13,6 +13,9 @@ import {
 import { BUDDY_FIXED_SPACER, C, MorningStep } from "./_constants";
 import { Confetti } from "./_SharedUI";
 
+const [doneIds, setDoneIds] = useState<number[]>([]);
+const [finished, setFinished] = useState(false);
+
 interface Props {
   childName: string;
   steps: MorningStep[];
@@ -37,9 +40,6 @@ export default function MorningRoutineScreen({
     setTimeout(() => onSkip(), 100);
     return null;
   }
-
-  const [doneIds, setDoneIds] = useState<number[]>([]);
-  const [finished, setFinished] = useState(false);
 
   const allDone = doneIds.length === validSteps.length && validSteps.length > 0;
   const greeting = childName ? `Доброе утро, ${childName}!` : "Доброе утро!";

@@ -49,7 +49,7 @@ import {
   RewardOverrideMap,
   REWARDS,
   SCHEDULE_MAX_BLOCKS,
-  ScheduleBlock
+  ScheduleBlock,
 } from "./_constants";
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
@@ -697,7 +697,7 @@ function MissionsSection({
             <Divider />
             <SettingRow
               label="Миссий в день"
-              sublabel="Сколько показывать на экране выбора"
+              sublabel="Сколько миссий видно на экране выбора"
             >
               <PillSelector
                 options={[

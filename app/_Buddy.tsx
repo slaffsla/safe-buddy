@@ -121,12 +121,18 @@ export default function Buddy({
       <Animated.View
         style={[
           s.buddyAnimated,
-          { transform: [{ scale: Animated.multiply(tapScale, breathScale) }] },
+          {
+            transform: [{ scale: Animated.multiply(tapScale, breathScale) }],
+          },
         ]}
       >
         <Image
           source={image}
-          style={{ width: size, height: size, backgroundColor: "transparent" }}
+          style={{
+            width: size,
+            height: size,
+            backgroundColor: "transparent",
+          }}
           resizeMode="contain"
         />
       </Animated.View>

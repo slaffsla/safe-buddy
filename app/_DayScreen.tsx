@@ -144,6 +144,13 @@ export default function DayScreen({
             );
           })
         )}
+        <TouchableOpacity
+          style={s.btnBack}
+          onPress={onClose}
+          accessibilityLabel="Назад"
+        >
+          <Text style={s.btnBackTxt}>← Назад</Text>
+        </TouchableOpacity>
         <View style={{ height: 60 }} />
       </ScrollView>
     </View>
@@ -244,4 +251,6 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   startBtnTxt: { fontSize: 18, color: C.white, fontWeight: "700" },
+  btnBack: { marginTop: 18, padding: 12, alignSelf: "center" },
+  btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
 });

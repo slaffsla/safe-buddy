@@ -1004,12 +1004,17 @@ const s = StyleSheet.create({
     zIndex: 1000,
     alignItems: "center",
     paddingTop: 18,
+    backgroundColor: C.bg, // solid backing — content scrolls behind, not through
+
     paddingHorizontal: 20,
     pointerEvents: "box-none",
   },
   topOverlayContent: {
     width: "100%",
     alignItems: "center",
+    backgroundColor: C.bg, // solid backing — content scrolls behind, not through
+    paddingTop: 12,
+    paddingBottom: 8,
     pointerEvents: "auto",
   },
 

@@ -57,21 +57,21 @@ export interface ProfileConfig {
 
 export const PROFILE_CONFIGS: Record<AgeProfile, ProfileConfig> = {
   little: {
-    buddySize: 130,
+    buddySize: 140,
     ttsEnabledByDefault: true,
     showBuddyName: true,
     celebrationIntensity: "full",
     colorTheme: "warm",
   },
   middle: {
-    buddySize: 110,
+    buddySize: 120,
     ttsEnabledByDefault: true,
     showBuddyName: false,
     celebrationIntensity: "full",
     colorTheme: "warm",
   },
   teen: {
-    buddySize: 90,
+    buddySize: 100,
     ttsEnabledByDefault: false,
     showBuddyName: false,
     celebrationIntensity: "subtle",

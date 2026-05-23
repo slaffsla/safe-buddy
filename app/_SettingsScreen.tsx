@@ -15,8 +15,8 @@
 //     />
 //   )}
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useRef, useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -25,40 +25,50 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   DEFAULT_MISSION_CONFIGS,
   DEFAULT_MORNING_STEPS,
   DEFAULT_REWARD_CONFIGS,
-  DEFAULT_WEEKDAY_IDS, DEFAULT_WEEKEND_IDS,
+  DEFAULT_SCHEDULE,
+  DEFAULT_WEEKDAY_IDS,
+  DEFAULT_WEEKEND_IDS,
   effectiveMissionEnabled,
   effectiveMissionStars,
   effectiveRewardCost,
   effectiveRewardEnabled,
-  K,
   MISSION_POOL,
   MissionConfig,
   MissionOverride,
   MissionOverrideMap,
   MissionType,
   MorningStep,
-  REWARDS,
+  PoolMission,
+  Reward,
   RewardOverride,
   RewardOverrideMap,
-  ScheduleBlock,
-  DEFAULT_SCHEDULE,
+  REWARDS,
   SCHEDULE_MAX_BLOCKS,
-} from './_constants';
+  ScheduleBlock,
+} from "./_constants";
+
+// Custom items added by parent in the Parent Zone are stored in settings.
+// Limits keep storage and UI manageable.
+const CUSTOM_MISSIONS_MAX = 20;
+const CUSTOM_REWARDS_MAX = 20;
+// IDs for user-added items start above this offset to avoid clashing with
+// MISSION_POOL / REWARDS ids (and any future built-in additions).
+const CUSTOM_ID_OFFSET = 10000;
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
 
 // Central settings type. All future settings go here.
 // Adding a field: update type + DEFAULT_SETTINGS + SK + load/save + UI.
-export type ControlLevel = 'hands-on' | 'balanced' | 'independent';
-export type RotationFrequency = 'daily' | 'every3' | 'weekly' | 'manual';
-export type DayModeOverride = 'auto' | 'weekday' | 'weekend';
+export type ControlLevel = "hands-on" | "balanced" | "independent";
+export type RotationFrequency = "daily" | "every3" | "weekly" | "manual";
+export type DayModeOverride = "auto" | "weekday" | "weekend";
 
 export interface RewardConfig {
   id: number;
@@ -71,7 +81,7 @@ export interface RewardConfig {
 export interface AppSettings {
   // Child
   childName: string;
-  ageProfileOverride: 'auto' | 'little' | 'middle' | 'teen';
+  ageProfileOverride: "auto" | "little" | "middle" | "teen";
 
   // Security
   parentPin: string;
@@ -79,22 +89,22 @@ export interface AppSettings {
   controlLevel: ControlLevel;
 
   // Buddy behavior
-  nudgingEnabled: boolean;       // daily suggestion card
-  tinyFactsEnabled: boolean;     // tiny facts during missions (V1.5)
-  breathingEnabled: boolean;     // relax with buddy button (V1.5)
-  ttsEnabled: boolean;           // text-to-speech
-  skipSensitivity: number;       // skips before gentle-reminder (default 2)
-  showExactStarCost: boolean;    // show exact cost vs "ещё немного"
+  nudgingEnabled: boolean; // daily suggestion card
+  tinyFactsEnabled: boolean; // tiny facts during missions (V1.5)
+  breathingEnabled: boolean; // relax with buddy button (V1.5)
+  ttsEnabled: boolean; // text-to-speech
+  skipSensitivity: number; // skips before gentle-reminder (default 2)
+  showExactStarCost: boolean; // show exact cost vs "ещё немного"
 
   // Mission rotation
   rotationEnabled: boolean;
   rotationFrequency: RotationFrequency;
-  rotatingPoolSize: number;      // how many rotating slots shown (1-3)
-  missions: MissionConfig[];     // per-mission config
+  rotatingPoolSize: number; // how many rotating slots shown (1-3)
+  missions: MissionConfig[]; // per-mission config
 
   // Infinity loop — daily picker (shows a small stable subset per day)
   infinityLoopEnabled: boolean;
-  dailyPickerSize: number;       // 3–20; default 8
+  dailyPickerSize: number; // 3–20; default 8
   bonusAfterCompletion: boolean; // offer one extra mission once subset is done
 
   // Rewards
@@ -102,8 +112,8 @@ export interface AppSettings {
 
   // Morning routine
   morningEnabled: boolean;
-  morningStars: number;          // stars awarded on completion (1-5)
-  morningSteps: MorningStep[];   // ordered checklist steps
+  morningStars: number; // stars awarded on completion (1-5)
+  morningSteps: MorningStep[]; // ordered checklist steps
 
   // Daily routine — day mode
   weekdayMissionIds: number[];
@@ -112,15 +122,21 @@ export interface AppSettings {
 
   // Parent zone overrides (source of truth after migration)
   missionOverrides: MissionOverrideMap;
-  rewardOverrides:  RewardOverrideMap;
+  rewardOverrides: RewardOverrideMap;
+
+  // Parent-added custom missions and rewards (managed from Parent Zone).
+  // These extend the built-in MISSION_POOL / REWARDS lists and flow through
+  // the same override / picker pipeline.
+  customMissions: PoolMission[];
+  customRewards: Reward[];
 
   // Day schedule (Option A — "what's now" card on HomeScreen; Option B reserved)
   scheduleEnabled: boolean;
-  scheduleBlocks:  ScheduleBlock[];
+  scheduleBlocks: ScheduleBlock[];
 
   // Notifications (V1.5 — stored but UI placeholder only)
   morningReminderEnabled: boolean;
-  morningReminderTime: string;   // HH:MM
+  morningReminderTime: string; // HH:MM
 
   // Progress / reporting — computed at read time, not stored here
   // (see ProgressSection which reads directly from AsyncStorage)
@@ -128,37 +144,39 @@ export interface AppSettings {
 
 function buildDefaultSettings(): AppSettings {
   return {
-  childName: '',
-  ageProfileOverride: 'auto',
-  parentPin: '',
-  pinEnabled: false,
-  controlLevel: 'balanced',
-  nudgingEnabled: true,
-  tinyFactsEnabled: false,
-  breathingEnabled: true,
-  ttsEnabled: true,
-  skipSensitivity: 2,
-  showExactStarCost: false,
-  rotationEnabled: false,
-  rotationFrequency: 'weekly',
-  rotatingPoolSize: 2,
-  infinityLoopEnabled: true,
-  dailyPickerSize: 8,
-  bonusAfterCompletion: true,
-  missions: DEFAULT_MISSION_CONFIGS,
-  rewards: DEFAULT_REWARD_CONFIGS,
-  morningEnabled: true,
-  morningStars: 1,
-  morningSteps: DEFAULT_MORNING_STEPS,
-  weekdayMissionIds: DEFAULT_WEEKDAY_IDS,
-  weekendMissionIds: DEFAULT_WEEKEND_IDS,
-  dayModeOverride: 'auto' as DayModeOverride,
-  missionOverrides: {},
-  rewardOverrides:  {},
-  scheduleEnabled: false,
-  scheduleBlocks:  DEFAULT_SCHEDULE,
-  morningReminderEnabled: false,
-  morningReminderTime: '08:00',
+    childName: "",
+    ageProfileOverride: "auto",
+    parentPin: "",
+    pinEnabled: false,
+    controlLevel: "balanced",
+    nudgingEnabled: true,
+    tinyFactsEnabled: false,
+    breathingEnabled: true,
+    ttsEnabled: true,
+    skipSensitivity: 2,
+    showExactStarCost: false,
+    rotationEnabled: false,
+    rotationFrequency: "weekly",
+    rotatingPoolSize: 2,
+    infinityLoopEnabled: true,
+    dailyPickerSize: 8,
+    bonusAfterCompletion: true,
+    missions: DEFAULT_MISSION_CONFIGS,
+    rewards: DEFAULT_REWARD_CONFIGS,
+    morningEnabled: true,
+    morningStars: 1,
+    morningSteps: DEFAULT_MORNING_STEPS,
+    weekdayMissionIds: DEFAULT_WEEKDAY_IDS,
+    weekendMissionIds: DEFAULT_WEEKEND_IDS,
+    dayModeOverride: "auto" as DayModeOverride,
+    missionOverrides: {},
+    rewardOverrides: {},
+    customMissions: [],
+    customRewards: [],
+    scheduleEnabled: false,
+    scheduleBlocks: DEFAULT_SCHEDULE,
+    morningReminderEnabled: false,
+    morningReminderTime: "08:00",
   };
 }
 
@@ -169,19 +187,19 @@ export const DEFAULT_SETTINGS = buildDefaultSettings();
 // Child progress keys (sb_stars_v2 etc.) are read-only here — never written.
 
 const SK = {
-  SETTINGS:        'sb_settings_v1',    // full AppSettings JSON
+  SETTINGS: "sb_settings_v1", // full AppSettings JSON
   // Read-only progress keys (for report section)
-  STARS:           'sb_stars_v2',
-  TOTAL_EVER:      'sb_total_v2',
-  TOTAL_MISSIONS:  'sb_total_missions',
-  COMPLETED_TODAY: 'sb_today_v2',
-  LAST_MISSION:    'sb_last_mission',
-  FIRST_REWARD:    'sb_first_reward',
-  DEMO_DONE:       'sb_demo_done',
-  ONBOARDING_DONE: 'sb_onboarding_done',
-  CHILD_NAME:      'sb_child_name',
-  PARENT_PIN:      'sb_parent_pin',
-  PIN_ENABLED:     'sb_pin_enabled',
+  STARS: "sb_stars_v2",
+  TOTAL_EVER: "sb_total_v2",
+  TOTAL_MISSIONS: "sb_total_missions",
+  COMPLETED_TODAY: "sb_today_v2",
+  LAST_MISSION: "sb_last_mission",
+  FIRST_REWARD: "sb_first_reward",
+  DEMO_DONE: "sb_demo_done",
+  ONBOARDING_DONE: "sb_onboarding_done",
+  CHILD_NAME: "sb_child_name",
+  PARENT_PIN: "sb_parent_pin",
+  PIN_ENABLED: "sb_pin_enabled",
 };
 
 // ── LOAD / SAVE ───────────────────────────────────────────────────────────────
@@ -189,7 +207,7 @@ const SK = {
 export async function loadSettings(): Promise<AppSettings> {
   try {
     const raw = await AsyncStorage.getItem(SK.SETTINGS);
-    
+
     if (raw) {
       const parsed = JSON.parse(raw);
       // Merge with defaults so new fields added later always have values
@@ -197,35 +215,60 @@ export async function loadSettings(): Promise<AppSettings> {
 
       // Upgrade: if stored missions array is smaller than the full pool,
       // merge in any missing IDs from DEFAULT_MISSION_CONFIGS
-      const storedIds = new Set(merged.missions.map((m: MissionConfig) => m.id));
-      const missingMissions = DEFAULT_MISSION_CONFIGS.filter(m => !storedIds.has(m.id));
+      const storedIds = new Set(
+        merged.missions.map((m: MissionConfig) => m.id),
+      );
+      const missingMissions = DEFAULT_MISSION_CONFIGS.filter(
+        (m) => !storedIds.has(m.id),
+      );
       if (missingMissions.length > 0) {
         merged.missions = [...merged.missions, ...missingMissions];
       }
-      const storedRewardIds = new Set(merged.rewards.map((r: RewardConfig) => r.id));
-      const missingRewards = DEFAULT_REWARD_CONFIGS.filter(r => !storedRewardIds.has(r.id));
+      const storedRewardIds = new Set(
+        merged.rewards.map((r: RewardConfig) => r.id),
+      );
+      const missingRewards = DEFAULT_REWARD_CONFIGS.filter(
+        (r) => !storedRewardIds.has(r.id),
+      );
       if (missingRewards.length > 0) {
         merged.rewards = [...merged.rewards, ...missingRewards];
       }
       const storedWeekdayIds = new Set(merged.weekdayMissionIds ?? []);
       const storedWeekendIds = new Set(merged.weekendMissionIds ?? []);
 
-      const missingWeekday = DEFAULT_WEEKDAY_IDS.filter(id => !storedWeekdayIds.has(id));
-      const missingWeekend = DEFAULT_WEEKEND_IDS.filter(id => !storedWeekendIds.has(id));
+      const missingWeekday = DEFAULT_WEEKDAY_IDS.filter(
+        (id) => !storedWeekdayIds.has(id),
+      );
+      const missingWeekend = DEFAULT_WEEKEND_IDS.filter(
+        (id) => !storedWeekendIds.has(id),
+      );
 
       if (missingWeekday.length > 0) {
-        merged.weekdayMissionIds = [...(merged.weekdayMissionIds ?? []), ...missingWeekday];
+        merged.weekdayMissionIds = [
+          ...(merged.weekdayMissionIds ?? []),
+          ...missingWeekday,
+        ];
       }
       if (missingWeekend.length > 0) {
-        merged.weekendMissionIds = [...(merged.weekendMissionIds ?? []), ...missingWeekend];
+        merged.weekendMissionIds = [
+          ...(merged.weekendMissionIds ?? []),
+          ...missingWeekend,
+        ];
       }
 
       // Migrate legacy weekday/weekend toggle storage into missionOverrides (one-time).
       // After migration, missionOverrides is the source of truth; legacy fields stay
       // for rollback safety but are no longer read by the app.
-      if (!merged.missionOverrides || Object.keys(merged.missionOverrides).length === 0) {
-        const weekdaySet = new Set<number>(merged.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS);
-        const weekendSet = new Set<number>(merged.weekendMissionIds ?? DEFAULT_WEEKEND_IDS);
+      if (
+        !merged.missionOverrides ||
+        Object.keys(merged.missionOverrides).length === 0
+      ) {
+        const weekdaySet = new Set<number>(
+          merged.weekdayMissionIds ?? DEFAULT_WEEKDAY_IDS,
+        );
+        const weekendSet = new Set<number>(
+          merged.weekendMissionIds ?? DEFAULT_WEEKEND_IDS,
+        );
         const overrides: MissionOverrideMap = {};
         for (const m of MISSION_POOL) {
           overrides[m.id] = {
@@ -237,20 +280,26 @@ export async function loadSettings(): Promise<AppSettings> {
         merged.missionOverrides = overrides;
       }
       // Migrate legacy rewards[].active/cost into rewardOverrides (one-time).
-      if (!merged.rewardOverrides || Object.keys(merged.rewardOverrides).length === 0) {
+      if (
+        !merged.rewardOverrides ||
+        Object.keys(merged.rewardOverrides).length === 0
+      ) {
         const overrides: RewardOverrideMap = {};
-        for (const r of (merged.rewards ?? DEFAULT_REWARD_CONFIGS) as RewardConfig[]) {
+        for (const r of (merged.rewards ??
+          DEFAULT_REWARD_CONFIGS) as RewardConfig[]) {
           overrides[r.id] = { enabled: !!r.active, cost: r.cost };
         }
         merged.rewardOverrides = overrides;
       }
 
       // Migrate legacy `scheduleItems` (pre-ticket rename) → `scheduleBlocks`.
-      const legacyParsed = parsed as Partial<AppSettings> & { scheduleItems?: ScheduleBlock[] };
+      const legacyParsed = parsed as Partial<AppSettings> & {
+        scheduleItems?: ScheduleBlock[];
+      };
       if (
-        (!merged.scheduleBlocks || merged.scheduleBlocks.length === 0)
-        && Array.isArray(legacyParsed.scheduleItems)
-        && legacyParsed.scheduleItems.length > 0
+        (!merged.scheduleBlocks || merged.scheduleBlocks.length === 0) &&
+        Array.isArray(legacyParsed.scheduleItems) &&
+        legacyParsed.scheduleItems.length > 0
       ) {
         merged.scheduleBlocks = legacyParsed.scheduleItems;
       }
@@ -260,13 +309,15 @@ export async function loadSettings(): Promise<AppSettings> {
 
     // First load — pull legacy individual keys if they exist
     const legacy = await AsyncStorage.multiGet([
-      SK.CHILD_NAME, SK.PARENT_PIN, SK.PIN_ENABLED,
+      SK.CHILD_NAME,
+      SK.PARENT_PIN,
+      SK.PIN_ENABLED,
     ]);
     return {
       ...DEFAULT_SETTINGS,
-      childName:  legacy[0][1] ?? '',
-      parentPin:  legacy[1][1] ?? '',
-      pinEnabled: legacy[2][1] === 'true',
+      childName: legacy[0][1] ?? "",
+      parentPin: legacy[1][1] ?? "",
+      pinEnabled: legacy[2][1] === "true",
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -278,8 +329,8 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     await AsyncStorage.setItem(SK.SETTINGS, JSON.stringify(settings));
     // Keep legacy keys in sync for backward compatibility with index.tsx
     await AsyncStorage.multiSet([
-      [SK.CHILD_NAME,  settings.childName || ''],
-      [SK.PARENT_PIN,  settings.parentPin || ''],
+      [SK.CHILD_NAME, settings.childName || ""],
+      [SK.PARENT_PIN, settings.parentPin || ""],
       [SK.PIN_ENABLED, String(settings.pinEnabled)],
     ]);
   } catch (e) {
@@ -302,40 +353,55 @@ interface ProgressData {
 async function loadProgress(): Promise<ProgressData> {
   try {
     const vals = await AsyncStorage.multiGet([
-      SK.STARS, SK.TOTAL_EVER, SK.TOTAL_MISSIONS,
-      SK.COMPLETED_TODAY, SK.LAST_MISSION, SK.FIRST_REWARD,
+      SK.STARS,
+      SK.TOTAL_EVER,
+      SK.TOTAL_MISSIONS,
+      SK.COMPLETED_TODAY,
+      SK.LAST_MISSION,
+      SK.FIRST_REWARD,
     ]);
     const v: Record<string, string> = Object.fromEntries(
-      vals.map(([k, val]) => [k, val ?? ''])
+      vals.map(([k, val]) => [k, val ?? ""]),
     );
     return {
-      stars:               v[SK.STARS]          ? parseInt(v[SK.STARS],           10) : 0,
-      totalEver:           v[SK.TOTAL_EVER]      ? parseInt(v[SK.TOTAL_EVER],      10) : 0,
-      totalMissions:       v[SK.TOTAL_MISSIONS]  ? parseInt(v[SK.TOTAL_MISSIONS],  10) : 0,
-      completedToday:      v[SK.COMPLETED_TODAY] ? parseInt(v[SK.COMPLETED_TODAY], 10) : 0,
-      lastMission:         v[SK.LAST_MISSION] || null,
-      firstRewardRedeemed: v[SK.FIRST_REWARD] === 'true',
+      stars: v[SK.STARS] ? parseInt(v[SK.STARS], 10) : 0,
+      totalEver: v[SK.TOTAL_EVER] ? parseInt(v[SK.TOTAL_EVER], 10) : 0,
+      totalMissions: v[SK.TOTAL_MISSIONS]
+        ? parseInt(v[SK.TOTAL_MISSIONS], 10)
+        : 0,
+      completedToday: v[SK.COMPLETED_TODAY]
+        ? parseInt(v[SK.COMPLETED_TODAY], 10)
+        : 0,
+      lastMission: v[SK.LAST_MISSION] || null,
+      firstRewardRedeemed: v[SK.FIRST_REWARD] === "true",
     };
   } catch {
-    return { stars: 0, totalEver: 0, totalMissions: 0, completedToday: 0, lastMission: null, firstRewardRedeemed: false };
+    return {
+      stars: 0,
+      totalEver: 0,
+      totalMissions: 0,
+      completedToday: 0,
+      lastMission: null,
+      firstRewardRedeemed: false,
+    };
   }
 }
 
 // ── COLORS ────────────────────────────────────────────────────────────────────
 
 const C = {
-  bg:      '#F7F6F2',
-  white:   '#FFFFFF',
-  green:   '#1D6B4F',
-  greenLt: '#E1F5EE',
-  text:    '#1A1A18',
-  muted:   '#6B6B68',
-  border:  '#E5E5E2',
-  gold:    '#FFF8E7',
-  goldBdr: '#F59E0B',
-  red:     '#E24B4A',
-  redLt:   '#FCEBEB',
-  track:   '#D8D8D4',
+  bg: "#F7F6F2",
+  white: "#FFFFFF",
+  green: "#1D6B4F",
+  greenLt: "#E1F5EE",
+  text: "#1A1A18",
+  muted: "#6B6B68",
+  border: "#E5E5E2",
+  gold: "#FFF8E7",
+  goldBdr: "#F59E0B",
+  red: "#E24B4A",
+  redLt: "#FCEBEB",
+  track: "#D8D8D4",
 };
 
 // ── UI PRIMITIVES ─────────────────────────────────────────────────────────────
@@ -350,7 +416,10 @@ function SectionHeader({ title, icon }: { title: string; icon: string }) {
 }
 
 function SettingRow({
-  label, sublabel, children, danger,
+  label,
+  sublabel,
+  children,
+  danger,
 }: {
   label: string;
   sublabel?: string;
@@ -377,7 +446,9 @@ function Card({ children }: { children: React.ReactNode }) {
 }
 
 function PillSelector<T extends string>({
-  options, value, onChange,
+  options,
+  value,
+  onChange,
 }: {
   options: { label: string; value: T }[];
   value: T;
@@ -385,7 +456,7 @@ function PillSelector<T extends string>({
 }) {
   return (
     <View style={u.pillRow}>
-      {options.map(o => (
+      {options.map((o) => (
         <TouchableOpacity
           key={o.value}
           style={[u.pill, o.value === value && u.pillActive]}
@@ -403,20 +474,21 @@ function PillSelector<T extends string>({
 // ── PROGRESS SECTION ──────────────────────────────────────────────────────────
 
 function ProgressSection({ progress }: { progress: ProgressData }) {
-  const { totalEver, totalMissions, completedToday, stars, lastMission } = progress;
+  const { totalEver, totalMissions, completedToday, stars, lastMission } =
+    progress;
 
   const statCards = [
-    { label: 'Звёзд всего',    value: String(totalEver),    emoji: '⭐' },
-    { label: 'Миссий всего',   value: String(totalMissions), emoji: '🎯' },
-    { label: 'Сегодня',        value: String(completedToday), emoji: '📅' },
-    { label: 'Осталось звёзд', value: String(stars),         emoji: '💰' },
+    { label: "Звёзд всего", value: String(totalEver), emoji: "⭐" },
+    { label: "Миссий всего", value: String(totalMissions), emoji: "🎯" },
+    { label: "Сегодня", value: String(completedToday), emoji: "📅" },
+    { label: "Осталось звёзд", value: String(stars), emoji: "💰" },
   ];
 
   return (
     <View>
       <SectionHeader title="Отчёт о прогрессе" icon="📊" />
       <View style={u.statsGrid}>
-        {statCards.map(sc => (
+        {statCards.map((sc) => (
           <View key={sc.label} style={u.statCard}>
             <Text style={u.statEmoji}>{sc.emoji}</Text>
             <Text style={u.statValue}>{sc.value}</Text>
@@ -432,7 +504,7 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
       )}
       {totalMissions === 0 && (
         <Card>
-          <Text style={[u.rowSublabel, { textAlign: 'center', padding: 8 }]}>
+          <Text style={[u.rowSublabel, { textAlign: "center", padding: 8 }]}>
             Миссии ещё не выполнялись. Статистика появится здесь.
           </Text>
         </Card>
@@ -444,37 +516,39 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
 // ── PIN SECTION ───────────────────────────────────────────────────────────────
 
 function PinSection({
-  settings, onChange,
+  settings,
+  onChange,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
   const [showSetPin, setShowSetPin] = useState(false);
-  const [newPin,     setNewPin]     = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
 
   function handleSetPin() {
     if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
-      Alert.alert('PIN должен быть 4 цифры');
+      Alert.alert("PIN должен быть 4 цифры");
       return;
     }
     if (newPin !== confirmPin) {
-      Alert.alert('PIN не совпадает');
+      Alert.alert("PIN не совпадает");
       return;
     }
     onChange({ parentPin: newPin, pinEnabled: true });
     setShowSetPin(false);
-    setNewPin('');
-    setConfirmPin('');
-    Alert.alert('PIN установлен');
+    setNewPin("");
+    setConfirmPin("");
+    Alert.alert("PIN установлен");
   }
 
   function handleRemovePin() {
-    Alert.alert('Удалить PIN?', 'Защита наград будет отключена', [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert("Удалить PIN?", "Защита наград будет отключена", [
+      { text: "Отмена", style: "cancel" },
       {
-        text: 'Удалить', style: 'destructive',
-        onPress: () => onChange({ parentPin: '', pinEnabled: false }),
+        text: "Удалить",
+        style: "destructive",
+        onPress: () => onChange({ parentPin: "", pinEnabled: false }),
       },
     ]);
   }
@@ -489,7 +563,7 @@ function PinSection({
         >
           <Switch
             value={settings.pinEnabled}
-            onValueChange={v => {
+            onValueChange={(v) => {
               if (v && !settings.parentPin) {
                 setShowSetPin(true);
               } else {
@@ -505,7 +579,10 @@ function PinSection({
           <>
             <Divider />
             <SettingRow label="Изменить PIN" sublabel="PIN установлен">
-              <TouchableOpacity onPress={() => setShowSetPin(true)} style={u.linkBtn}>
+              <TouchableOpacity
+                onPress={() => setShowSetPin(true)}
+                style={u.linkBtn}
+              >
                 <Text style={u.linkBtnTxt}>Изменить</Text>
               </TouchableOpacity>
             </SettingRow>
@@ -521,7 +598,10 @@ function PinSection({
         {!settings.pinEnabled || !settings.parentPin ? (
           <>
             <Divider />
-            <TouchableOpacity style={u.inlineAction} onPress={() => setShowSetPin(true)}>
+            <TouchableOpacity
+              style={u.inlineAction}
+              onPress={() => setShowSetPin(true)}
+            >
               <Text style={u.inlineActionTxt}>Установить PIN →</Text>
             </TouchableOpacity>
           </>
@@ -556,9 +636,14 @@ function PinSection({
             <TouchableOpacity style={u.btnPrimary} onPress={handleSetPin}>
               <Text style={u.btnPrimaryTxt}>Сохранить</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={u.btnCancel} onPress={() => {
-              setShowSetPin(false); setNewPin(''); setConfirmPin('');
-            }}>
+            <TouchableOpacity
+              style={u.btnCancel}
+              onPress={() => {
+                setShowSetPin(false);
+                setNewPin("");
+                setConfirmPin("");
+              }}
+            >
               <Text style={u.btnCancelTxt}>Отмена</Text>
             </TouchableOpacity>
           </View>
@@ -566,22 +651,29 @@ function PinSection({
       )}
 
       <Card>
-        <Text style={[u.rowLabel, {marginBottom: 1, marginLeft: 12, marginTop:10}]}>Уровень контроля</Text>
-        <Text style={[u.rowSublabel, {marginLeft: 10}]}>
-          {settings.controlLevel === 'hands-on'
-            ? 'Родитель подтверждает каждую награду'
-            : settings.controlLevel === 'balanced'
-            ? 'Стандартный режим — минимальное участие родителя'
-            : 'Ребёнок действует самостоятельно'}
+        <Text
+          style={[
+            u.rowLabel,
+            { marginBottom: 1, marginLeft: 12, marginTop: 10 },
+          ]}
+        >
+          Уровень контроля
+        </Text>
+        <Text style={[u.rowSublabel, { marginLeft: 10 }]}>
+          {settings.controlLevel === "hands-on"
+            ? "Родитель подтверждает каждую награду"
+            : settings.controlLevel === "balanced"
+              ? "Стандартный режим — минимальное участие родителя"
+              : "Ребёнок действует самостоятельно"}
         </Text>
         <PillSelector
           options={[
-            { label: 'Вместе',      value: 'hands-on' },
-            { label: 'Стандарт',   value: 'balanced' },
-            { label: 'Сам',        value: 'independent' },
+            { label: "Вместе", value: "hands-on" },
+            { label: "Стандарт", value: "balanced" },
+            { label: "Сам", value: "independent" },
           ]}
           value={settings.controlLevel}
-          onChange={v => onChange({ controlLevel: v })}
+          onChange={(v) => onChange({ controlLevel: v })}
         />
       </Card>
     </View>
@@ -591,7 +683,8 @@ function PinSection({
 // ── MISSIONS SECTION ──────────────────────────────────────────────────────────
 
 function MissionsSection({
-  settings, onChange,
+  settings,
+  onChange,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
@@ -600,7 +693,7 @@ function MissionsSection({
     <View>
       <SectionHeader title="Миссии" icon="🎯" />
       <Card>
-        <Text style={[u.rowSublabel, { padding: 12, textAlign: 'center' }]}>
+        <Text style={[u.rowSublabel, { padding: 12, textAlign: "center" }]}>
           Управление миссиями — в Родительской зоне
         </Text>
       </Card>
@@ -612,7 +705,7 @@ function MissionsSection({
         >
           <Switch
             value={settings.infinityLoopEnabled}
-            onValueChange={v => onChange({ infinityLoopEnabled: v })}
+            onValueChange={(v) => onChange({ infinityLoopEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
@@ -622,20 +715,24 @@ function MissionsSection({
             <Divider />
             <SettingRow
               label="Миссий в день"
-              sublabel="Сколько показывать на экране выбора"
+              sublabel="Сколько миссий видно на экране выбора"
             >
               <PillSelector
                 options={[
-                  { label: '4',  value: '4'  },
-                  { label: '5',  value: '5'  },
-                  { label: '6',  value: '6'  },
-                  { label: '8',  value: '8'  },
-                  { label: '10', value: '10' },
+                  { label: "4", value: "4" },
+                  { label: "5", value: "5" },
+                  { label: "6", value: "6" },
+                  { label: "8", value: "8" },
+                  { label: "10", value: "10" },
                 ]}
-                value={(['4','5','6','8','10'].includes(String(settings.dailyPickerSize))
-                  ? String(settings.dailyPickerSize)
-                  : '5') as '4' | '5' | '6' | '8' | '10'}
-                onChange={v => onChange({ dailyPickerSize: parseInt(v, 10) })}
+                value={
+                  (["4", "5", "6", "8", "10"].includes(
+                    String(settings.dailyPickerSize),
+                  )
+                    ? String(settings.dailyPickerSize)
+                    : "5") as "4" | "5" | "6" | "8" | "10"
+                }
+                onChange={(v) => onChange({ dailyPickerSize: parseInt(v, 10) })}
               />
             </SettingRow>
             <Divider />
@@ -645,7 +742,7 @@ function MissionsSection({
             >
               <Switch
                 value={settings.bonusAfterCompletion}
-                onValueChange={v => onChange({ bonusAfterCompletion: v })}
+                onValueChange={(v) => onChange({ bonusAfterCompletion: v })}
                 trackColor={{ false: C.track, true: C.green }}
                 thumbColor={C.white}
               />
@@ -674,14 +771,15 @@ function MissionsSection({
 // ── REWARDS SECTION ───────────────────────────────────────────────────────────
 
 function RewardsSection({
-  settings, onChange,
+  settings,
+  onChange,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editCost,  setEditCost]  = useState('');
+  const [editTitle, setEditTitle] = useState("");
+  const [editCost, setEditCost] = useState("");
 
   function startEdit(r: RewardConfig) {
     setEditingId(r.id);
@@ -692,19 +790,19 @@ function RewardsSection({
   function saveEdit() {
     const cost = parseInt(editCost, 10);
     if (!editTitle.trim() || isNaN(cost) || cost < 1 || cost > 20) {
-      Alert.alert('Проверь название и стоимость (1-20 звёзд)');
+      Alert.alert("Проверь название и стоимость (1-20 звёзд)");
       return;
     }
-    const updated = settings.rewards.map(r =>
-      r.id === editingId ? { ...r, title: editTitle.trim(), cost } : r
+    const updated = settings.rewards.map((r) =>
+      r.id === editingId ? { ...r, title: editTitle.trim(), cost } : r,
     );
     onChange({ rewards: updated });
     setEditingId(null);
   }
 
   function toggleReward(id: number) {
-    const updated = settings.rewards.map(r =>
-      r.id === id ? { ...r, active: !r.active } : r
+    const updated = settings.rewards.map((r) =>
+      r.id === id ? { ...r, active: !r.active } : r,
     );
     onChange({ rewards: updated });
   }
@@ -728,7 +826,10 @@ function RewardsSection({
                 <View style={u.editCostRow}>
                   <Text style={u.rowSublabel}>Стоимость (⭐):</Text>
                   <TextInput
-                    style={[u.editInput, { width: 60, textAlign: 'center', marginLeft: 8 }]}
+                    style={[
+                      u.editInput,
+                      { width: 60, textAlign: "center", marginLeft: 8 },
+                    ]}
                     value={editCost}
                     onChangeText={setEditCost}
                     keyboardType="numeric"
@@ -739,7 +840,10 @@ function RewardsSection({
                   <TouchableOpacity style={u.btnPrimary} onPress={saveEdit}>
                     <Text style={u.btnPrimaryTxt}>Сохранить</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={u.btnCancel} onPress={() => setEditingId(null)}>
+                  <TouchableOpacity
+                    style={u.btnCancel}
+                    onPress={() => setEditingId(null)}
+                  >
                     <Text style={u.btnCancelTxt}>Отмена</Text>
                   </TouchableOpacity>
                 </View>
@@ -749,9 +853,14 @@ function RewardsSection({
                 <Text style={u.missionEmoji}>{r.emoji}</Text>
                 <View style={u.missionInfo}>
                   <Text style={u.missionTitle}>{r.title}</Text>
-                  <Text style={u.missionSub}>{Array(r.cost).fill('⭐').join('')}</Text>
+                  <Text style={u.missionSub}>
+                    {Array(r.cost).fill("⭐").join("")}
+                  </Text>
                 </View>
-                <TouchableOpacity style={u.linkBtn} onPress={() => startEdit(r)}>
+                <TouchableOpacity
+                  style={u.linkBtn}
+                  onPress={() => startEdit(r)}
+                >
                   <Text style={u.linkBtnTxt}>Изменить</Text>
                 </TouchableOpacity>
                 <Switch
@@ -773,7 +882,8 @@ function RewardsSection({
 // ── BUDDY BEHAVIOR SECTION ────────────────────────────────────────────────────
 
 function BuddySection({
-  settings, onChange,
+  settings,
+  onChange,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
@@ -785,16 +895,19 @@ function BuddySection({
         <SettingRow label="Голос (TTS)" sublabel="Бадди читает текст вслух">
           <Switch
             value={settings.ttsEnabled}
-            onValueChange={v => onChange({ ttsEnabled: v })}
+            onValueChange={(v) => onChange({ ttsEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
         </SettingRow>
         <Divider />
-        <SettingRow label="Ежедневная подсказка" sublabel="Карточка с предложением задания на главном экране">
+        <SettingRow
+          label="Ежедневная подсказка"
+          sublabel="Карточка с предложением задания на главном экране"
+        >
           <Switch
             value={settings.nudgingEnabled}
-            onValueChange={v => onChange({ nudgingEnabled: v })}
+            onValueChange={(v) => onChange({ nudgingEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
@@ -807,14 +920,22 @@ function BuddySection({
           <View style={u.stepperRow}>
             <TouchableOpacity
               style={u.stepperBtn}
-              onPress={() => onChange({ skipSensitivity: Math.max(1, settings.skipSensitivity - 1) })}
+              onPress={() =>
+                onChange({
+                  skipSensitivity: Math.max(1, settings.skipSensitivity - 1),
+                })
+              }
             >
               <Text style={u.stepperTxt}>−</Text>
             </TouchableOpacity>
             <Text style={u.stepperVal}>{settings.skipSensitivity}</Text>
             <TouchableOpacity
               style={u.stepperBtn}
-              onPress={() => onChange({ skipSensitivity: Math.min(5, settings.skipSensitivity + 1) })}
+              onPress={() =>
+                onChange({
+                  skipSensitivity: Math.min(5, settings.skipSensitivity + 1),
+                })
+              }
             >
               <Text style={u.stepperTxt}>+</Text>
             </TouchableOpacity>
@@ -823,34 +944,40 @@ function BuddySection({
         <Divider />
         <SettingRow
           label="Показывать точную стоимость"
-          sublabel={settings.showExactStarCost
-            ? 'Ребёнок видит «нужно ещё 2 ⭐»'
-            : 'Ребёнок видит «ещё немного»'}
+          sublabel={
+            settings.showExactStarCost
+              ? "Ребёнок видит «нужно ещё 2 ⭐»"
+              : "Ребёнок видит «ещё немного»"
+          }
         >
           <Switch
             value={settings.showExactStarCost}
-            onValueChange={v => onChange({ showExactStarCost: v })}
+            onValueChange={(v) => onChange({ showExactStarCost: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
-        <Divider />
-        <SettingRow
-          label="Профиль ребёнка"
-          sublabel="Авто определяет по возрасту"
-        >
-          <View style={{ minWidth: 120 }}>
-            <PillSelector
-              options={[
-                { label: 'Авто',    value: 'auto'   },
-                { label: 'Малыш',   value: 'little' },
-                { label: 'Средний', value: 'middle' },
-                { label: 'Подросток', value: 'teen' },
-              ]}
-              value={settings.ageProfileOverride ?? 'auto'}
-              onChange={v => onChange({ ageProfileOverride: v as AppSettings['ageProfileOverride'] })}
-            />
-          </View>
-        </SettingRow>
+          <Divider />
+          <SettingRow
+            label="Профиль ребёнка"
+            sublabel="Авто определяет по возрасту"
+          >
+            <View style={{ minWidth: 120 }}>
+              <PillSelector
+                options={[
+                  { label: "Авто", value: "auto" },
+                  { label: "Малыш", value: "little" },
+                  { label: "Средний", value: "middle" },
+                  { label: "Подросток", value: "teen" },
+                ]}
+                value={settings.ageProfileOverride ?? "auto"}
+                onChange={(v) =>
+                  onChange({
+                    ageProfileOverride: v as AppSettings["ageProfileOverride"],
+                  })
+                }
+              />
+            </View>
+          </SettingRow>
         </SettingRow>
         <Divider />
         {/* V1.5 placeholders — shown but disabled with coming-soon badge */}
@@ -872,7 +999,7 @@ function BuddySection({
         >
           <Switch
             value={settings.breathingEnabled}
-            onValueChange={v => onChange({ breathingEnabled: v })}
+            onValueChange={(v) => onChange({ breathingEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
@@ -885,17 +1012,22 @@ function BuddySection({
 // ── CHILD SECTION ─────────────────────────────────────────────────────────────
 
 function ChildSection({
-  settings, onChange, onResetProgress,
+  settings,
+  onChange,
+  onResetProgress,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
   onResetProgress: () => void;
 }) {
   const [editingName, setEditingName] = useState(false);
-  const [nameInput,   setNameInput]   = useState(settings.childName);
+  const [nameInput, setNameInput] = useState(settings.childName);
 
   function saveName() {
-    if (!nameInput.trim()) { Alert.alert('Введи имя'); return; }
+    if (!nameInput.trim()) {
+      Alert.alert("Введи имя");
+      return;
+    }
     onChange({ childName: nameInput.trim() });
     setEditingName(false);
   }
@@ -918,14 +1050,23 @@ function ChildSection({
               <TouchableOpacity style={u.btnPrimary} onPress={saveName}>
                 <Text style={u.btnPrimaryTxt}>Сохранить</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={u.btnCancel} onPress={() => setEditingName(false)}>
+              <TouchableOpacity
+                style={u.btnCancel}
+                onPress={() => setEditingName(false)}
+              >
                 <Text style={u.btnCancelTxt}>Отмена</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
-          <SettingRow label="Имя" sublabel={settings.childName || '—'}>
-            <TouchableOpacity onPress={() => { setNameInput(settings.childName); setEditingName(true); }} style={u.linkBtn}>
+          <SettingRow label="Имя" sublabel={settings.childName || "—"}>
+            <TouchableOpacity
+              onPress={() => {
+                setNameInput(settings.childName);
+                setEditingName(true);
+              }}
+              style={u.linkBtn}
+            >
               <Text style={u.linkBtnTxt}>Изменить</Text>
             </TouchableOpacity>
           </SettingRow>
@@ -945,24 +1086,24 @@ function ChildSection({
   );
 }
 
-
 // ── DAILY ROUTINE SECTION ─────────────────────────────────────────────────────
 
 function DailyRoutineSection({
-  settings, onChange,
+  settings,
+  onChange,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
-  const [editingId, setEditingId]   = useState<number | null>(null);
-  const [stepTitle, setStepTitle]   = useState('');
-  const [stepEmoji, setStepEmoji]   = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [stepTitle, setStepTitle] = useState("");
+  const [stepEmoji, setStepEmoji] = useState("");
 
   // Move a morning step up or down by index offset (-1 or +1)
   function moveStep(id: number, dir: -1 | 1) {
     const steps = [...settings.morningSteps];
-    const idx   = steps.findIndex(s => s.id === id);
-    const swap  = idx + dir;
+    const idx = steps.findIndex((s) => s.id === id);
+    const swap = idx + dir;
     if (swap < 0 || swap >= steps.length) return;
     [steps[idx], steps[swap]] = [steps[swap], steps[idx]];
     onChange({ morningSteps: steps });
@@ -971,19 +1112,31 @@ function DailyRoutineSection({
   function saveStep() {
     if (!stepTitle.trim()) return;
     if (editingId === -1) {
-      const newId = Math.max(0, ...settings.morningSteps.map(s => s.id)) + 1;
-      onChange({ morningSteps: [...settings.morningSteps,
-        { id: newId, title: stepTitle.trim(), emoji: stepEmoji || '✅' }] });
+      const newId = Math.max(0, ...settings.morningSteps.map((s) => s.id)) + 1;
+      onChange({
+        morningSteps: [
+          ...settings.morningSteps,
+          { id: newId, title: stepTitle.trim(), emoji: stepEmoji || "✅" },
+        ],
+      });
     } else {
-      onChange({ morningSteps: settings.morningSteps.map(s =>
-        s.id === editingId ? { ...s, title: stepTitle.trim(), emoji: stepEmoji || s.emoji } : s
-      )});
+      onChange({
+        morningSteps: settings.morningSteps.map((s) =>
+          s.id === editingId
+            ? { ...s, title: stepTitle.trim(), emoji: stepEmoji || s.emoji }
+            : s,
+        ),
+      });
     }
-    setEditingId(null); setStepTitle(''); setStepEmoji('');
+    setEditingId(null);
+    setStepTitle("");
+    setStepEmoji("");
   }
 
   function deleteStep(id: number) {
-    onChange({ morningSteps: settings.morningSteps.filter(s => s.id !== id) });
+    onChange({
+      morningSteps: settings.morningSteps.filter((s) => s.id !== id),
+    });
   }
 
   return (
@@ -992,10 +1145,13 @@ function DailyRoutineSection({
 
       {/* Morning routine toggle + star count + steps editor */}
       <Card>
-        <SettingRow label="Утренняя рутина" sublabel="При первом открытии до 12:00">
+        <SettingRow
+          label="Утренняя рутина"
+          sublabel="При первом открытии до 12:00"
+        >
           <Switch
             value={settings.morningEnabled}
-            onValueChange={v => onChange({ morningEnabled: v })}
+            onValueChange={(v) => onChange({ morningEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
@@ -1004,13 +1160,30 @@ function DailyRoutineSection({
         {settings.morningEnabled && (
           <>
             <Divider />
-            <SettingRow label="Звёзд за рутину" sublabel="За весь комплект шагов">
+            <SettingRow
+              label="Звёзд за рутину"
+              sublabel="За весь комплект шагов"
+            >
               <View style={u.stepperRow}>
-                <TouchableOpacity style={u.stepperBtn} onPress={() => onChange({ morningStars: Math.max(1, settings.morningStars - 1) })}>
+                <TouchableOpacity
+                  style={u.stepperBtn}
+                  onPress={() =>
+                    onChange({
+                      morningStars: Math.max(1, settings.morningStars - 1),
+                    })
+                  }
+                >
                   <Text style={u.stepperTxt}>−</Text>
                 </TouchableOpacity>
                 <Text style={u.stepperVal}>{settings.morningStars}</Text>
-                <TouchableOpacity style={u.stepperBtn} onPress={() => onChange({ morningStars: Math.min(5, settings.morningStars + 1) })}>
+                <TouchableOpacity
+                  style={u.stepperBtn}
+                  onPress={() =>
+                    onChange({
+                      morningStars: Math.min(5, settings.morningStars + 1),
+                    })
+                  }
+                >
                   <Text style={u.stepperTxt}>+</Text>
                 </TouchableOpacity>
               </View>
@@ -1024,29 +1197,86 @@ function DailyRoutineSection({
                 {idx > 0 && <Divider />}
                 {editingId === step.id ? (
                   <View style={u.editBlock}>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <TextInput style={[u.editInput, { width: 52 }]} value={stepEmoji} onChangeText={setStepEmoji} placeholder="🌟" placeholderTextColor={C.muted} />
-                      <TextInput style={[u.editInput, { flex: 1 }]} value={stepTitle} onChangeText={setStepTitle} placeholder="Название шага" placeholderTextColor={C.muted} autoFocus />
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                      <TextInput
+                        style={[u.editInput, { width: 52 }]}
+                        value={stepEmoji}
+                        onChangeText={setStepEmoji}
+                        placeholder="🌟"
+                        placeholderTextColor={C.muted}
+                      />
+                      <TextInput
+                        style={[u.editInput, { flex: 1 }]}
+                        value={stepTitle}
+                        onChangeText={setStepTitle}
+                        placeholder="Название шага"
+                        placeholderTextColor={C.muted}
+                        autoFocus
+                      />
                     </View>
                     <View style={u.rowBtns}>
-                      <TouchableOpacity style={u.btnPrimary} onPress={saveStep}><Text style={u.btnPrimaryTxt}>Сохранить</Text></TouchableOpacity>
-                      <TouchableOpacity style={u.btnCancel} onPress={() => { setEditingId(null); setStepTitle(''); setStepEmoji(''); }}><Text style={u.btnCancelTxt}>Отмена</Text></TouchableOpacity>
+                      <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
+                        <Text style={u.btnPrimaryTxt}>Сохранить</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={u.btnCancel}
+                        onPress={() => {
+                          setEditingId(null);
+                          setStepTitle("");
+                          setStepEmoji("");
+                        }}
+                      >
+                        <Text style={u.btnCancelTxt}>Отмена</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 ) : (
                   <View style={u.row}>
-                    <Text style={{ fontSize: 22, marginRight: 10 }}>{step.emoji}</Text>
+                    <Text style={{ fontSize: 22, marginRight: 10 }}>
+                      {step.emoji}
+                    </Text>
                     <Text style={[u.rowLabel, { flex: 1 }]}>{step.title}</Text>
-                    <TouchableOpacity style={u.stepperBtn} onPress={() => moveStep(step.id, -1)} disabled={idx === 0}>
-                      <Text style={[u.stepperTxt, idx === 0 && { opacity: 0.25 }]}>↑</Text>
+                    <TouchableOpacity
+                      style={u.stepperBtn}
+                      onPress={() => moveStep(step.id, -1)}
+                      disabled={idx === 0}
+                    >
+                      <Text
+                        style={[u.stepperTxt, idx === 0 && { opacity: 0.25 }]}
+                      >
+                        ↑
+                      </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[u.stepperBtn, { marginLeft: 4 }]} onPress={() => moveStep(step.id, 1)} disabled={idx === settings.morningSteps.length - 1}>
-                      <Text style={[u.stepperTxt, idx === settings.morningSteps.length - 1 && { opacity: 0.25 }]}>↓</Text>
+                    <TouchableOpacity
+                      style={[u.stepperBtn, { marginLeft: 4 }]}
+                      onPress={() => moveStep(step.id, 1)}
+                      disabled={idx === settings.morningSteps.length - 1}
+                    >
+                      <Text
+                        style={[
+                          u.stepperTxt,
+                          idx === settings.morningSteps.length - 1 && {
+                            opacity: 0.25,
+                          },
+                        ]}
+                      >
+                        ↓
+                      </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[u.linkBtn, { marginLeft: 4 }]} onPress={() => { setEditingId(step.id); setStepTitle(step.title); setStepEmoji(step.emoji); }}>
+                    <TouchableOpacity
+                      style={[u.linkBtn, { marginLeft: 4 }]}
+                      onPress={() => {
+                        setEditingId(step.id);
+                        setStepTitle(step.title);
+                        setStepEmoji(step.emoji);
+                      }}
+                    >
                       <Text style={u.linkBtnTxt}>Изм.</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={u.dangerBtn} onPress={() => deleteStep(step.id)}>
+                    <TouchableOpacity
+                      style={u.dangerBtn}
+                      onPress={() => deleteStep(step.id)}
+                    >
                       <Text style={u.dangerBtnTxt}>✕</Text>
                     </TouchableOpacity>
                   </View>
@@ -1057,20 +1287,51 @@ function DailyRoutineSection({
             {settings.morningSteps.length < 6 && editingId !== -1 && (
               <>
                 <Divider />
-                <TouchableOpacity style={u.inlineAction} onPress={() => { setEditingId(-1); setStepTitle(''); setStepEmoji(''); }}>
+                <TouchableOpacity
+                  style={u.inlineAction}
+                  onPress={() => {
+                    setEditingId(-1);
+                    setStepTitle("");
+                    setStepEmoji("");
+                  }}
+                >
                   <Text style={u.inlineActionTxt}>+ Добавить шаг</Text>
                 </TouchableOpacity>
               </>
             )}
             {editingId === -1 && (
               <View style={u.editBlock}>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TextInput style={[u.editInput, { width: 52 }]} value={stepEmoji} onChangeText={setStepEmoji} placeholder="🌟" placeholderTextColor={C.muted} />
-                  <TextInput style={[u.editInput, { flex: 1 }]} value={stepTitle} onChangeText={setStepTitle} placeholder="Название шага" placeholderTextColor={C.muted} autoFocus />
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <TextInput
+                    style={[u.editInput, { width: 52 }]}
+                    value={stepEmoji}
+                    onChangeText={setStepEmoji}
+                    placeholder="🌟"
+                    placeholderTextColor={C.muted}
+                  />
+                  <TextInput
+                    style={[u.editInput, { flex: 1 }]}
+                    value={stepTitle}
+                    onChangeText={setStepTitle}
+                    placeholder="Название шага"
+                    placeholderTextColor={C.muted}
+                    autoFocus
+                  />
                 </View>
                 <View style={u.rowBtns}>
-                  <TouchableOpacity style={u.btnPrimary} onPress={saveStep}><Text style={u.btnPrimaryTxt}>Добавить</Text></TouchableOpacity>
-                  <TouchableOpacity style={u.btnCancel} onPress={() => { setEditingId(null); setStepTitle(''); setStepEmoji(''); }}><Text style={u.btnCancelTxt}>Отмена</Text></TouchableOpacity>
+                  <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
+                    <Text style={u.btnPrimaryTxt}>Добавить</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={u.btnCancel}
+                    onPress={() => {
+                      setEditingId(null);
+                      setStepTitle("");
+                      setStepEmoji("");
+                    }}
+                  >
+                    <Text style={u.btnCancelTxt}>Отмена</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             )}
@@ -1080,22 +1341,26 @@ function DailyRoutineSection({
 
       {/* Day mode override */}
       <Card>
-        <Text style={[u.rowLabel, { padding: 14, paddingBottom: 4 }]}>Режим дня</Text>
-        <Text style={[u.rowSublabel, { paddingHorizontal: 14, paddingBottom: 8 }]}>
-          {(settings.dayModeOverride ?? 'auto') === 'auto'
-            ? 'Авто — будни / выходные по дате'
-            : settings.dayModeOverride === 'weekday'
-            ? 'Всегда режим буднего дня'
-            : 'Всегда режим выходного дня'}
+        <Text style={[u.rowLabel, { padding: 14, paddingBottom: 4 }]}>
+          Режим дня
+        </Text>
+        <Text
+          style={[u.rowSublabel, { paddingHorizontal: 14, paddingBottom: 8 }]}
+        >
+          {(settings.dayModeOverride ?? "auto") === "auto"
+            ? "Авто — будни / выходные по дате"
+            : settings.dayModeOverride === "weekday"
+              ? "Всегда режим буднего дня"
+              : "Всегда режим выходного дня"}
         </Text>
         <PillSelector
           options={[
-            { label: 'Авто',     value: 'auto'    },
-            { label: 'Будни',    value: 'weekday' },
-            { label: 'Выходной', value: 'weekend' },
+            { label: "Авто", value: "auto" },
+            { label: "Будни", value: "weekday" },
+            { label: "Выходной", value: "weekend" },
           ]}
-          value={settings.dayModeOverride ?? 'auto'}
-          onChange={v => onChange({ dayModeOverride: v as DayModeOverride })}
+          value={settings.dayModeOverride ?? "auto"}
+          onChange={(v) => onChange({ dayModeOverride: v as DayModeOverride })}
         />
       </Card>
     </View>
@@ -1107,17 +1372,18 @@ function DailyRoutineSection({
 // Each item: emoji, title, start/end time (HH:MM), weekday/weekend flags.
 
 function ScheduleSection({
-  settings, onChange,
+  settings,
+  onChange,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
   const blocks = settings.scheduleBlocks ?? DEFAULT_SCHEDULE;
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [draftTitle, setDraftTitle] = useState('');
-  const [draftEmoji, setDraftEmoji] = useState('');
-  const [draftStart, setDraftStart] = useState('');
-  const [draftEnd,   setDraftEnd]   = useState('');
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftEmoji, setDraftEmoji] = useState("");
+  const [draftStart, setDraftStart] = useState("");
+  const [draftEnd, setDraftEnd] = useState("");
 
   function startEdit(it: ScheduleBlock) {
     setEditingId(it.id);
@@ -1129,11 +1395,14 @@ function ScheduleSection({
 
   function startAdd() {
     if (blocks.length >= SCHEDULE_MAX_BLOCKS) {
-      Alert.alert('Лимит', `Максимум ${SCHEDULE_MAX_BLOCKS} пунктов в дне`);
+      Alert.alert("Лимит", `Максимум ${SCHEDULE_MAX_BLOCKS} пунктов в дне`);
       return;
     }
     setEditingId(-1);
-    setDraftTitle(''); setDraftEmoji(''); setDraftStart(''); setDraftEnd('');
+    setDraftTitle("");
+    setDraftEmoji("");
+    setDraftStart("");
+    setDraftEnd("");
   }
 
   function isValidTime(t: string): boolean {
@@ -1143,23 +1412,40 @@ function ScheduleSection({
   function saveDraft() {
     const title = draftTitle.trim();
     if (!title || !isValidTime(draftStart) || !isValidTime(draftEnd)) {
-      Alert.alert('Проверь название и время', 'Формат времени ЧЧ:ММ (например 08:00)');
+      Alert.alert(
+        "Проверь название и время",
+        "Формат времени ЧЧ:ММ (например 08:00)",
+      );
       return;
     }
     if (editingId === -1) {
-      const newId = Math.max(0, ...blocks.map(i => i.id)) + 1;
+      const newId = Math.max(0, ...blocks.map((i) => i.id)) + 1;
       onChange({
         scheduleBlocks: [
           ...blocks,
-          { id: newId, title, emoji: draftEmoji || '⏰', startTime: draftStart, endTime: draftEnd, weekdays: true, weekends: true },
+          {
+            id: newId,
+            title,
+            emoji: draftEmoji || "⏰",
+            startTime: draftStart,
+            endTime: draftEnd,
+            weekdays: true,
+            weekends: true,
+          },
         ],
       });
     } else {
       onChange({
-        scheduleBlocks: blocks.map(i =>
+        scheduleBlocks: blocks.map((i) =>
           i.id === editingId
-            ? { ...i, title, emoji: draftEmoji || i.emoji, startTime: draftStart, endTime: draftEnd }
-            : i
+            ? {
+                ...i,
+                title,
+                emoji: draftEmoji || i.emoji,
+                startTime: draftStart,
+                endTime: draftEnd,
+              }
+            : i,
         ),
       });
     }
@@ -1167,17 +1453,19 @@ function ScheduleSection({
   }
 
   function deleteBlock(id: number) {
-    onChange({ scheduleBlocks: blocks.filter(i => i.id !== id) });
+    onChange({ scheduleBlocks: blocks.filter((i) => i.id !== id) });
   }
 
-  function toggleFlag(id: number, key: 'weekdays' | 'weekends') {
+  function toggleFlag(id: number, key: "weekdays" | "weekends") {
     onChange({
-      scheduleBlocks: blocks.map(i => (i.id === id ? { ...i, [key]: !i[key] } : i)),
+      scheduleBlocks: blocks.map((i) =>
+        i.id === id ? { ...i, [key]: !i[key] } : i,
+      ),
     });
   }
 
   function moveBlock(id: number, dir: -1 | 1) {
-    const idx = blocks.findIndex(b => b.id === id);
+    const idx = blocks.findIndex((b) => b.id === id);
     if (idx < 0) return;
     const j = idx + dir;
     if (j < 0 || j >= blocks.length) return;
@@ -1196,7 +1484,7 @@ function ScheduleSection({
         >
           <Switch
             value={settings.scheduleEnabled}
-            onValueChange={v => onChange({ scheduleEnabled: v })}
+            onValueChange={(v) => onChange({ scheduleEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
@@ -1210,26 +1498,64 @@ function ScheduleSection({
               {idx > 0 && <Divider />}
               {editingId === it.id ? (
                 <View style={u.editBlock}>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TextInput style={[u.editInput, { width: 52 }]} value={draftEmoji} onChangeText={setDraftEmoji} placeholder="⏰" placeholderTextColor={C.muted} />
-                    <TextInput style={[u.editInput, { flex: 1 }]} value={draftTitle} onChangeText={setDraftTitle} placeholder="Название" placeholderTextColor={C.muted} autoFocus />
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TextInput
+                      style={[u.editInput, { width: 52 }]}
+                      value={draftEmoji}
+                      onChangeText={setDraftEmoji}
+                      placeholder="⏰"
+                      placeholderTextColor={C.muted}
+                    />
+                    <TextInput
+                      style={[u.editInput, { flex: 1 }]}
+                      value={draftTitle}
+                      onChangeText={setDraftTitle}
+                      placeholder="Название"
+                      placeholderTextColor={C.muted}
+                      autoFocus
+                    />
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TextInput style={[u.editInput, { flex: 1 }]} value={draftStart} onChangeText={setDraftStart} placeholder="ЧЧ:ММ начало" placeholderTextColor={C.muted} maxLength={5} />
-                    <TextInput style={[u.editInput, { flex: 1 }]} value={draftEnd}   onChangeText={setDraftEnd}   placeholder="ЧЧ:ММ конец"  placeholderTextColor={C.muted} maxLength={5} />
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TextInput
+                      style={[u.editInput, { flex: 1 }]}
+                      value={draftStart}
+                      onChangeText={setDraftStart}
+                      placeholder="ЧЧ:ММ начало"
+                      placeholderTextColor={C.muted}
+                      maxLength={5}
+                    />
+                    <TextInput
+                      style={[u.editInput, { flex: 1 }]}
+                      value={draftEnd}
+                      onChangeText={setDraftEnd}
+                      placeholder="ЧЧ:ММ конец"
+                      placeholderTextColor={C.muted}
+                      maxLength={5}
+                    />
                   </View>
                   <View style={u.rowBtns}>
-                    <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}><Text style={u.btnPrimaryTxt}>Сохранить</Text></TouchableOpacity>
-                    <TouchableOpacity style={u.btnCancel} onPress={() => setEditingId(null)}><Text style={u.btnCancelTxt}>Отмена</Text></TouchableOpacity>
+                    <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}>
+                      <Text style={u.btnPrimaryTxt}>Сохранить</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={u.btnCancel}
+                      onPress={() => setEditingId(null)}
+                    >
+                      <Text style={u.btnCancelTxt}>Отмена</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               ) : (
                 <View style={{ padding: 4 }}>
                   <View style={u.row}>
-                    <Text style={{ fontSize: 22, marginRight: 10 }}>{it.emoji}</Text>
+                    <Text style={{ fontSize: 22, marginRight: 10 }}>
+                      {it.emoji}
+                    </Text>
                     <View style={{ flex: 1 }}>
                       <Text style={u.rowLabel}>{it.title}</Text>
-                      <Text style={u.rowSublabel}>{it.startTime} — {it.endTime}</Text>
+                      <Text style={u.rowSublabel}>
+                        {it.startTime} — {it.endTime}
+                      </Text>
                     </View>
                     <TouchableOpacity
                       style={u.stepperBtn}
@@ -1245,10 +1571,16 @@ function ScheduleSection({
                     >
                       <Text style={u.stepperTxt}>↓</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={u.linkBtn} onPress={() => startEdit(it)}>
+                    <TouchableOpacity
+                      style={u.linkBtn}
+                      onPress={() => startEdit(it)}
+                    >
                       <Text style={u.linkBtnTxt}>Изм.</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={u.dangerBtn} onPress={() => deleteBlock(it.id)}>
+                    <TouchableOpacity
+                      style={u.dangerBtn}
+                      onPress={() => deleteBlock(it.id)}
+                    >
                       <Text style={u.dangerBtnTxt}>✕</Text>
                     </TouchableOpacity>
                   </View>
@@ -1256,7 +1588,7 @@ function ScheduleSection({
                     <Text style={[u.rowSublabel, { flex: 1 }]}>Будни</Text>
                     <Switch
                       value={it.weekdays}
-                      onValueChange={() => toggleFlag(it.id, 'weekdays')}
+                      onValueChange={() => toggleFlag(it.id, "weekdays")}
                       trackColor={{ false: C.track, true: C.green }}
                       thumbColor={C.white}
                     />
@@ -1265,7 +1597,7 @@ function ScheduleSection({
                     <Text style={[u.rowSublabel, { flex: 1 }]}>Выходные</Text>
                     <Switch
                       value={it.weekends}
-                      onValueChange={() => toggleFlag(it.id, 'weekends')}
+                      onValueChange={() => toggleFlag(it.id, "weekends")}
                       trackColor={{ false: C.track, true: C.green }}
                       thumbColor={C.white}
                     />
@@ -1277,17 +1609,51 @@ function ScheduleSection({
 
           {editingId === -1 && (
             <View style={u.editBlock}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TextInput style={[u.editInput, { width: 52 }]} value={draftEmoji} onChangeText={setDraftEmoji} placeholder="⏰" placeholderTextColor={C.muted} />
-                <TextInput style={[u.editInput, { flex: 1 }]} value={draftTitle} onChangeText={setDraftTitle} placeholder="Название" placeholderTextColor={C.muted} autoFocus />
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TextInput
+                  style={[u.editInput, { width: 52 }]}
+                  value={draftEmoji}
+                  onChangeText={setDraftEmoji}
+                  placeholder="⏰"
+                  placeholderTextColor={C.muted}
+                />
+                <TextInput
+                  style={[u.editInput, { flex: 1 }]}
+                  value={draftTitle}
+                  onChangeText={setDraftTitle}
+                  placeholder="Название"
+                  placeholderTextColor={C.muted}
+                  autoFocus
+                />
               </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TextInput style={[u.editInput, { flex: 1 }]} value={draftStart} onChangeText={setDraftStart} placeholder="ЧЧ:ММ начало" placeholderTextColor={C.muted} maxLength={5} />
-                <TextInput style={[u.editInput, { flex: 1 }]} value={draftEnd}   onChangeText={setDraftEnd}   placeholder="ЧЧ:ММ конец"  placeholderTextColor={C.muted} maxLength={5} />
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TextInput
+                  style={[u.editInput, { flex: 1 }]}
+                  value={draftStart}
+                  onChangeText={setDraftStart}
+                  placeholder="ЧЧ:ММ начало"
+                  placeholderTextColor={C.muted}
+                  maxLength={5}
+                />
+                <TextInput
+                  style={[u.editInput, { flex: 1 }]}
+                  value={draftEnd}
+                  onChangeText={setDraftEnd}
+                  placeholder="ЧЧ:ММ конец"
+                  placeholderTextColor={C.muted}
+                  maxLength={5}
+                />
               </View>
               <View style={u.rowBtns}>
-                <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}><Text style={u.btnPrimaryTxt}>Добавить</Text></TouchableOpacity>
-                <TouchableOpacity style={u.btnCancel} onPress={() => setEditingId(null)}><Text style={u.btnCancelTxt}>Отмена</Text></TouchableOpacity>
+                <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}>
+                  <Text style={u.btnPrimaryTxt}>Добавить</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={u.btnCancel}
+                  onPress={() => setEditingId(null)}
+                >
+                  <Text style={u.btnCancelTxt}>Отмена</Text>
+                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -1308,7 +1674,10 @@ function ScheduleSection({
 
 // ── NOTIFICATIONS SECTION (placeholder) ───────────────────────────────────────
 
-function NotificationsSection({ settings, onChange }: {
+function NotificationsSection({
+  settings,
+  onChange,
+}: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
@@ -1337,40 +1706,185 @@ function NotificationsSection({ settings, onChange }: {
 // Sections: Weekday Missions, Weekend Missions, Rewards.
 
 function ParentZoneView({
-  settings, onChange, onBack,
+  settings,
+  onChange,
+  onBack,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
   onBack: () => void;
 }) {
   const missionOverrides = settings.missionOverrides ?? {};
-  const rewardOverrides  = settings.rewardOverrides  ?? {};
+  const rewardOverrides = settings.rewardOverrides ?? {};
+  const customMissions = settings.customMissions ?? [];
+  const customRewards = settings.customRewards ?? [];
+  // Effective pools — built-ins plus parent-added custom items.
+  const missionPool: PoolMission[] = [...MISSION_POOL, ...customMissions];
+  const rewardPool: Reward[] = [...REWARDS, ...customRewards];
+  const customMissionIds = new Set(customMissions.map((m) => m.id));
+  const customRewardIds = new Set(customRewards.map((r) => r.id));
   const missionTypeById: Record<number, MissionType> = Object.fromEntries(
-    settings.missions.map(m => [m.id, m.type])
+    settings.missions.map((m) => [m.id, m.type]),
   );
+
+  // Add-form state for custom missions (shared between weekday/weekend cards).
+  const [showAddMission, setShowAddMission] = useState(false);
+  const [draftMissionEmoji, setDraftMissionEmoji] = useState("");
+  const [draftMissionTitle, setDraftMissionTitle] = useState("");
+  const [draftMissionSubtitle, setDraftMissionSubtitle] = useState("");
+
+  // Add-form state for custom rewards.
+  const [showAddReward, setShowAddReward] = useState(false);
+  const [draftRewardEmoji, setDraftRewardEmoji] = useState("");
+  const [draftRewardTitle, setDraftRewardTitle] = useState("");
 
   function patchMission(id: number, patch: Partial<MissionOverride>) {
     const cur: MissionOverride = missionOverrides[id] ?? {
-      enabledWeekday: effectiveMissionEnabled(id, 'weekday', missionOverrides),
-      enabledWeekend: effectiveMissionEnabled(id, 'weekend', missionOverrides),
-      stars:          effectiveMissionStars(id, missionOverrides),
+      enabledWeekday: effectiveMissionEnabled(id, "weekday", missionOverrides),
+      enabledWeekend: effectiveMissionEnabled(id, "weekend", missionOverrides),
+      stars: effectiveMissionStars(id, missionOverrides),
     };
-    onChange({ missionOverrides: { ...missionOverrides, [id]: { ...cur, ...patch } } });
+    onChange({
+      missionOverrides: { ...missionOverrides, [id]: { ...cur, ...patch } },
+    });
   }
 
   function patchReward(id: number, patch: Partial<RewardOverride>) {
     const cur: RewardOverride = rewardOverrides[id] ?? {
       enabled: effectiveRewardEnabled(id, rewardOverrides),
-      cost:    effectiveRewardCost(id, rewardOverrides),
+      cost: effectiveRewardCost(id, rewardOverrides),
     };
-    onChange({ rewardOverrides: { ...rewardOverrides, [id]: { ...cur, ...patch } } });
+    onChange({
+      rewardOverrides: { ...rewardOverrides, [id]: { ...cur, ...patch } },
+    });
+  }
+
+  function nextCustomMissionId(): number {
+    const existing = customMissions.map((m) => m.id);
+    return Math.max(CUSTOM_ID_OFFSET, ...existing) + 1;
+  }
+
+  function nextCustomRewardId(): number {
+    const existing = customRewards.map((r) => r.id);
+    return Math.max(CUSTOM_ID_OFFSET, ...existing) + 1;
+  }
+
+  function addCustomMission() {
+    const title = draftMissionTitle.trim();
+    if (!title) {
+      Alert.alert("Проверь название", "Название миссии не может быть пустым");
+      return;
+    }
+    if (customMissions.length >= CUSTOM_MISSIONS_MAX) {
+      Alert.alert("Лимит", `Максимум ${CUSTOM_MISSIONS_MAX} своих миссий`);
+      return;
+    }
+    const newMission: PoolMission = {
+      id: nextCustomMissionId(),
+      title,
+      subtitle: draftMissionSubtitle.trim() || "Своя миссия",
+      stars: 1,
+      emoji: draftMissionEmoji || "✨",
+      category: "movement",
+      slot: "any",
+      weekdayDefault: true,
+      weekendDefault: true,
+    };
+    // Also register a MissionConfig so the daily picker treats it like
+    // any rotating mission (visible in the daily pool, with an editable type).
+    const newConfig: MissionConfig = {
+      id: newMission.id,
+      title: newMission.title,
+      subtitle: newMission.subtitle,
+      stars: newMission.stars,
+      emoji: newMission.emoji,
+      type: "rotating",
+    };
+    onChange({
+      customMissions: [...customMissions, newMission],
+      missions: [...settings.missions, newConfig],
+    });
+    setShowAddMission(false);
+    setDraftMissionEmoji("");
+    setDraftMissionTitle("");
+    setDraftMissionSubtitle("");
+  }
+
+  function deleteCustomMission(id: number) {
+    Alert.alert("Удалить миссию?", "Эта миссия будет удалена навсегда", [
+      { text: "Отмена", style: "cancel" },
+      {
+        text: "Удалить",
+        style: "destructive",
+        onPress: () => {
+          const nextOverrides = { ...missionOverrides };
+          delete nextOverrides[id];
+          onChange({
+            customMissions: customMissions.filter((m) => m.id !== id),
+            missions: settings.missions.filter((m) => m.id !== id),
+            missionOverrides: nextOverrides,
+          });
+        },
+      },
+    ]);
+  }
+
+  function addCustomReward() {
+    const title = draftRewardTitle.trim();
+    if (!title) {
+      Alert.alert("Проверь название", "Название награды не может быть пустым");
+      return;
+    }
+    if (customRewards.length >= CUSTOM_REWARDS_MAX) {
+      Alert.alert("Лимит", `Максимум ${CUSTOM_REWARDS_MAX} своих наград`);
+      return;
+    }
+    const newReward: Reward = {
+      id: nextCustomRewardId(),
+      title,
+      cost: 3,
+      emoji: draftRewardEmoji || "🎁",
+    };
+    const newConfig: RewardConfig = {
+      id: newReward.id,
+      title: newReward.title,
+      cost: newReward.cost,
+      emoji: newReward.emoji,
+      active: true,
+    };
+    onChange({
+      customRewards: [...customRewards, newReward],
+      rewards: [...settings.rewards, newConfig],
+    });
+    setShowAddReward(false);
+    setDraftRewardEmoji("");
+    setDraftRewardTitle("");
+  }
+
+  function deleteCustomReward(id: number) {
+    Alert.alert("Удалить награду?", "Эта награда будет удалена навсегда", [
+      { text: "Отмена", style: "cancel" },
+      {
+        text: "Удалить",
+        style: "destructive",
+        onPress: () => {
+          const nextOverrides = { ...rewardOverrides };
+          delete nextOverrides[id];
+          onChange({
+            customRewards: customRewards.filter((r) => r.id !== id),
+            rewards: settings.rewards.filter((r) => r.id !== id),
+            rewardOverrides: nextOverrides,
+          });
+        },
+      },
+    ]);
   }
 
   function StarPicker({ id }: { id: number }) {
     const value = effectiveMissionStars(id, missionOverrides);
     return (
       <View style={pz.starPickerRow}>
-        {[1, 2, 3].map(n => {
+        {[1, 2, 3].map((n) => {
           const filled = n <= value;
           return (
             <TouchableOpacity
@@ -1379,8 +1893,10 @@ function ParentZoneView({
               onPress={() => patchMission(id, { stars: n })}
               activeOpacity={0.7}
             >
-              <Text style={[pz.starIcon, filled ? pz.starFilled : pz.starOutline]}>
-                {filled ? '★' : '☆'}
+              <Text
+                style={[pz.starIcon, filled ? pz.starFilled : pz.starOutline]}
+              >
+                {filled ? "★" : "☆"}
               </Text>
             </TouchableOpacity>
           );
@@ -1389,14 +1905,24 @@ function ParentZoneView({
     );
   }
 
-  function MissionRow({ id, mode }: { id: number; mode: 'weekday' | 'weekend' }) {
-    const m = MISSION_POOL.find(x => x.id === id);
+  function MissionRow({
+    id,
+    mode,
+  }: {
+    id: number;
+    mode: "weekday" | "weekend";
+  }) {
+    const m = missionPool.find((x) => x.id === id);
     if (!m) return null;
     const enabled = effectiveMissionEnabled(id, mode, missionOverrides);
-    const mType   = missionTypeById[id];
+    const isCustom = customMissionIds.has(id);
+    const mType = missionTypeById[id];
     const tintStyle =
-      mType === 'permanent' ? pz.blockPermanent :
-      mType === 'rotating'  ? pz.blockRotating  : null;
+      mType === "permanent"
+        ? pz.blockPermanent
+        : mType === "rotating"
+          ? pz.blockRotating
+          : null;
     return (
       <View style={[pz.missionBlock, tintStyle]}>
         <View style={u.row}>
@@ -1404,12 +1930,17 @@ function ParentZoneView({
           <View style={{ flex: 1 }}>
             <Text style={u.rowLabel}>{m.title}</Text>
             <Text style={u.rowSublabel}>{m.subtitle}</Text>
-            {mType === 'permanent' && (
+            {isCustom && (
+              <View style={[pz.typePill, pz.typePillCustom]}>
+                <Text style={pz.typePillTxt}>Своя</Text>
+              </View>
+            )}
+            {!isCustom && mType === "permanent" && (
               <View style={[pz.typePill, pz.typePillPermanent]}>
                 <Text style={pz.typePillTxt}>Всегда</Text>
               </View>
             )}
-            {mType === 'rotating' && (
+            {!isCustom && mType === "rotating" && (
               <View style={[pz.typePill, pz.typePillRotating]}>
                 <Text style={pz.typePillTxt}>Ротация</Text>
               </View>
@@ -1417,10 +1948,25 @@ function ParentZoneView({
           </View>
           <Switch
             value={enabled}
-            onValueChange={v => patchMission(id, mode === 'weekday' ? { enabledWeekday: v } : { enabledWeekend: v })}
+            onValueChange={(v) =>
+              patchMission(
+                id,
+                mode === "weekday"
+                  ? { enabledWeekday: v }
+                  : { enabledWeekend: v },
+              )
+            }
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
+          {isCustom && (
+            <TouchableOpacity
+              style={[u.dangerBtn, { marginLeft: 8 }]}
+              onPress={() => deleteCustomMission(id)}
+            >
+              <Text style={u.dangerBtnTxt}>✕</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <StarPicker id={id} />
       </View>
@@ -1428,48 +1974,158 @@ function ParentZoneView({
   }
 
   function RewardRow({ id }: { id: number }) {
-    const r = REWARDS.find(x => x.id === id);
+    const r = rewardPool.find((x) => x.id === id);
     if (!r) return null;
     const enabled = effectiveRewardEnabled(id, rewardOverrides);
-    const cost    = effectiveRewardCost(id, rewardOverrides);
+    const cost = effectiveRewardCost(id, rewardOverrides);
     const clampedCost = Math.max(1, Math.min(7, cost));
+    const isCustom = customRewardIds.has(id);
     return (
       <View style={pz.missionBlock}>
         <View style={u.row}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{r.emoji}</Text>
           <View style={{ flex: 1 }}>
             <Text style={u.rowLabel}>{r.title}</Text>
-            <Text style={u.rowSublabel}>{Array(clampedCost).fill('⭐').join('')}</Text>
+            <Text style={u.rowSublabel}>
+              {Array(clampedCost).fill("⭐").join("")}
+            </Text>
+            {isCustom && (
+              <View style={[pz.typePill, pz.typePillCustom]}>
+                <Text style={pz.typePillTxt}>Своя</Text>
+              </View>
+            )}
           </View>
           <Switch
             value={enabled}
-            onValueChange={v => patchReward(id, { enabled: v })}
+            onValueChange={(v) => patchReward(id, { enabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
+          {isCustom && (
+            <TouchableOpacity
+              style={[u.dangerBtn, { marginLeft: 8 }]}
+              onPress={() => deleteCustomReward(id)}
+            >
+              <Text style={u.dangerBtnTxt}>✕</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={[u.row, { paddingTop: 0 }]}>
           <Text style={[u.rowSublabel, { flex: 1 }]}>Стоимость</Text>
           <View style={pz.starStepperRow}>
             <TouchableOpacity
               style={u.stepperBtn}
-              onPress={() => patchReward(id, { cost: Math.max(1, clampedCost - 1) })}
+              onPress={() =>
+                patchReward(id, { cost: Math.max(1, clampedCost - 1) })
+              }
             >
               <Text style={u.stepperTxt}>−</Text>
             </TouchableOpacity>
             <View style={pz.starStepperStars}>
               {Array.from({ length: clampedCost }).map((_, i) => (
-                <Text key={i} style={pz.starStepperStar}>★</Text>
+                <Text key={i} style={pz.starStepperStar}>
+                  ★
+                </Text>
               ))}
             </View>
             <Text style={pz.starStepperNum}>{clampedCost}</Text>
             <TouchableOpacity
               style={u.stepperBtn}
-              onPress={() => patchReward(id, { cost: Math.min(7, clampedCost + 1) })}
+              onPress={() =>
+                patchReward(id, { cost: Math.min(7, clampedCost + 1) })
+              }
             >
               <Text style={u.stepperTxt}>+</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Inline editor for new mission — mirrors the day-schedule add UI.
+  function AddMissionBlock() {
+    return (
+      <View style={u.editBlock}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TextInput
+            style={[u.editInput, { width: 52 }]}
+            value={draftMissionEmoji}
+            onChangeText={setDraftMissionEmoji}
+            placeholder="✨"
+            placeholderTextColor={C.muted}
+          />
+          <TextInput
+            style={[u.editInput, { flex: 1 }]}
+            value={draftMissionTitle}
+            onChangeText={setDraftMissionTitle}
+            placeholder="Название миссии"
+            placeholderTextColor={C.muted}
+            autoFocus
+          />
+        </View>
+        <TextInput
+          style={u.editInput}
+          value={draftMissionSubtitle}
+          onChangeText={setDraftMissionSubtitle}
+          placeholder="Подсказка (необязательно)"
+          placeholderTextColor={C.muted}
+        />
+        <View style={u.rowBtns}>
+          <TouchableOpacity style={u.btnPrimary} onPress={addCustomMission}>
+            <Text style={u.btnPrimaryTxt}>Добавить</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={u.btnCancel}
+            onPress={() => {
+              setShowAddMission(false);
+              setDraftMissionEmoji("");
+              setDraftMissionTitle("");
+              setDraftMissionSubtitle("");
+            }}
+          >
+            <Text style={u.btnCancelTxt}>Отмена</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Inline editor for new reward — mirrors the day-schedule add UI.
+  function AddRewardBlock() {
+    return (
+      <View style={u.editBlock}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TextInput
+            style={[u.editInput, { width: 52 }]}
+            value={draftRewardEmoji}
+            onChangeText={setDraftRewardEmoji}
+            placeholder="🎁"
+            placeholderTextColor={C.muted}
+          />
+          <TextInput
+            style={[u.editInput, { flex: 1 }]}
+            value={draftRewardTitle}
+            onChangeText={setDraftRewardTitle}
+            placeholder="Название награды"
+            placeholderTextColor={C.muted}
+            autoFocus
+          />
+        </View>
+        <View style={u.rowBtns}>
+          <TouchableOpacity style={u.btnPrimary} onPress={addCustomReward}>
+            <Text style={u.btnPrimaryTxt}>Добавить</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={u.btnCancel}
+            onPress={() => {
+              setShowAddReward(false);
+              setDraftRewardEmoji("");
+              setDraftRewardTitle("");
+            }}
+          >
+            <Text style={u.btnCancelTxt}>Отмена</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -1484,10 +2140,14 @@ function ParentZoneView({
         <Text style={ss.headerTitle}>Родительская зона</Text>
         <View style={{ width: 80 }} />
       </View>
-      <ScrollView style={ss.scroll} contentContainerStyle={ss.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={ss.scroll}
+        contentContainerStyle={ss.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <SectionHeader title="Миссии — будни" icon="📅" />
         <Card>
-          {MISSION_POOL.map((m, idx) => (
+          {missionPool.map((m, idx) => (
             <View key={m.id}>
               {idx > 0 && <Divider />}
               <MissionRow id={m.id} mode="weekday" />
@@ -1499,24 +2159,62 @@ function ParentZoneView({
 
         <SectionHeader title="Миссии — выходные" icon="🌈" />
         <Card>
-          {MISSION_POOL.map((m, idx) => (
+          {missionPool.map((m, idx) => (
             <View key={m.id}>
               {idx > 0 && <Divider />}
               <MissionRow id={m.id} mode="weekend" />
             </View>
           ))}
+
+          {showAddMission ? (
+            <>
+              <Divider />
+              <AddMissionBlock />
+            </>
+          ) : (
+            customMissions.length < CUSTOM_MISSIONS_MAX && (
+              <>
+                <Divider />
+                <TouchableOpacity
+                  style={u.inlineAction}
+                  onPress={() => setShowAddMission(true)}
+                >
+                  <Text style={u.inlineActionTxt}>+ Добавить миссию</Text>
+                </TouchableOpacity>
+              </>
+            )
+          )}
         </Card>
 
         <View style={ss.spacer} />
 
         <SectionHeader title="Награды" icon="🎁" />
         <Card>
-          {REWARDS.map((r, idx) => (
+          {rewardPool.map((r, idx) => (
             <View key={r.id}>
               {idx > 0 && <Divider />}
               <RewardRow id={r.id} />
             </View>
           ))}
+
+          {showAddReward ? (
+            <>
+              <Divider />
+              <AddRewardBlock />
+            </>
+          ) : (
+            customRewards.length < CUSTOM_REWARDS_MAX && (
+              <>
+                <Divider />
+                <TouchableOpacity
+                  style={u.inlineAction}
+                  onPress={() => setShowAddReward(true)}
+                >
+                  <Text style={u.inlineActionTxt}>+ Добавить награду</Text>
+                </TouchableOpacity>
+              </>
+            )
+          )}
         </Card>
 
         <View style={{ height: 40 }} />
@@ -1527,27 +2225,53 @@ function ParentZoneView({
 
 const pz = StyleSheet.create({
   missionBlock: { paddingBottom: 8 },
-  blockPermanent: { backgroundColor: '#F1FAF6' },
-  blockRotating:  { backgroundColor: '#FFF8E7' },
+  blockPermanent: { backgroundColor: "#F1FAF6" },
+  blockRotating: { backgroundColor: "#FFF8E7" },
 
   // Type pills (mission rows in ParentZone)
-  typePill:             { alignSelf: 'flex-start', marginTop: 6, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 10 },
-  typePillPermanent:    { backgroundColor: C.green },
-  typePillRotating:     { backgroundColor: C.goldBdr },
-  typePillTxt:          { fontSize: 10, fontWeight: '700', color: C.white, letterSpacing: 0.3 },
+  typePill: {
+    alignSelf: "flex-start",
+    marginTop: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+  },
+  typePillPermanent: { backgroundColor: C.green },
+  typePillRotating: { backgroundColor: C.goldBdr },
+  typePillCustom: { backgroundColor: "#7C5CFF" },
+  typePillTxt: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: C.white,
+    letterSpacing: 0.3,
+  },
 
   // Star picker (missions): 3 tappable stars
-  starPickerRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 14, paddingBottom: 12 },
-  starTap:       { padding: 4 },
-  starIcon:      { fontSize: 28, lineHeight: 32 },
-  starFilled:    { color: C.goldBdr },
-  starOutline:   { color: C.muted },
+  starPickerRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+  },
+  starTap: { padding: 4 },
+  starIcon: { fontSize: 28, lineHeight: 32 },
+  starFilled: { color: C.goldBdr },
+  starOutline: { color: C.muted },
 
   // Reward stepper with rendered stars + numeric label
-  starStepperRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  starStepperStars: { flexDirection: 'row', minWidth: 96, justifyContent: 'flex-end' },
-  starStepperStar:  { fontSize: 14, color: C.goldBdr, marginHorizontal: 0.5 },
-  starStepperNum:   { fontSize: 12, color: C.muted, minWidth: 16, textAlign: 'center' },
+  starStepperRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  starStepperStars: {
+    flexDirection: "row",
+    minWidth: 96,
+    justifyContent: "flex-end",
+  },
+  starStepperStar: { fontSize: 14, color: C.goldBdr, marginHorizontal: 0.5 },
+  starStepperNum: {
+    fontSize: 12,
+    color: C.muted,
+    minWidth: 16,
+    textAlign: "center",
+  },
 });
 
 // ── MAIN SETTINGS SCREEN ──────────────────────────────────────────────────────
@@ -1564,14 +2288,14 @@ interface SettingsScreenProps {
 export default function SettingsScreen({
   onClose,
   onSettingsChange,
-  currentPin = '',
+  currentPin = "",
   pinEnabled = false,
 }: SettingsScreenProps) {
-  const [settings,  setSettings]  = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [progress,  setProgress]  = useState<ProgressData | null>(null);
-  const [loading,   setLoading]   = useState(true);
-  const [pinInput,  setPinInput]  = useState('');
-  const [showPin,   setShowPin]   = useState(false);
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [progress, setProgress] = useState<ProgressData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [pinInput, setPinInput] = useState("");
+  const [showPin, setShowPin] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [parentZoneOpen, setParentZoneOpen] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1598,7 +2322,7 @@ export default function SettingsScreen({
   function requirePin(action: () => void) {
     if (pinEnabled && currentPin) {
       setPendingAction(() => action);
-      setPinInput('');
+      setPinInput("");
       setShowPin(true);
     } else {
       action();
@@ -1611,35 +2335,43 @@ export default function SettingsScreen({
       pendingAction?.();
       setPendingAction(null);
     } else {
-      Alert.alert('Неверный PIN');
-      setPinInput('');
+      Alert.alert("Неверный PIN");
+      setPinInput("");
     }
   }
 
   function handleResetProgress() {
     requirePin(() => {
       Alert.alert(
-        'Сбросить весь прогресс?',
-        'Звёзды, миссии и история будут удалены. Настройки сохранятся.',
+        "Сбросить весь прогресс?",
+        "Звёзды, миссии и история будут удалены. Настройки сохранятся.",
         [
-          { text: 'Отмена', style: 'cancel' },
+          { text: "Отмена", style: "cancel" },
           {
-            text: 'Сбросить', style: 'destructive',
+            text: "Сбросить",
+            style: "destructive",
             onPress: async () => {
               await AsyncStorage.multiSet([
-                [SK.STARS,           '0'],
-                ['sb_total_v2',      '0'],
-                ['sb_total_missions','0'],
-                ['sb_today_v2',      '0'],
-                ['sb_last_mission',  ''],
-                ['sb_first_reward',  'false'],
-                ['sb_skip_count',    '0'],
+                [SK.STARS, "0"],
+                ["sb_total_v2", "0"],
+                ["sb_total_missions", "0"],
+                ["sb_today_v2", "0"],
+                ["sb_last_mission", ""],
+                ["sb_first_reward", "false"],
+                ["sb_skip_count", "0"],
               ]);
-              setProgress({ stars: 0, totalEver: 0, totalMissions: 0, completedToday: 0, lastMission: null, firstRewardRedeemed: false });
-              Alert.alert('Прогресс сброшен');
+              setProgress({
+                stars: 0,
+                totalEver: 0,
+                totalMissions: 0,
+                completedToday: 0,
+                lastMission: null,
+                firstRewardRedeemed: false,
+              });
+              Alert.alert("Прогресс сброшен");
             },
           },
-        ]
+        ],
       );
     });
   }
@@ -1695,7 +2427,9 @@ export default function SettingsScreen({
             <Text style={ss.parentZoneIcon}>🔐</Text>
             <View style={{ flex: 1 }}>
               <Text style={ss.parentZoneTitle}>Родительская зона</Text>
-              <Text style={ss.parentZoneSub}>Миссии, награды, расписание, поведение Бадди</Text>
+              <Text style={ss.parentZoneSub}>
+                Миссии, награды, расписание, поведение Бадди
+              </Text>
             </View>
           </View>
           <Text style={ss.parentZoneArrow}>→</Text>
@@ -1763,7 +2497,11 @@ export default function SettingsScreen({
             </TouchableOpacity>
             <TouchableOpacity
               style={ss.pinBtnCancel}
-              onPress={() => { setShowPin(false); setPinInput(''); setPendingAction(null); }}
+              onPress={() => {
+                setShowPin(false);
+                setPinInput("");
+                setPendingAction(null);
+              }}
             >
               <Text style={ss.pinBtnCancelTxt}>Отмена</Text>
             </TouchableOpacity>
@@ -1777,100 +2515,317 @@ export default function SettingsScreen({
 // ── STYLES ────────────────────────────────────────────────────────────────────
 
 const ss = StyleSheet.create({
-  root:         { flex: 1, backgroundColor: C.bg },
-  loadingCenter:{ flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText:  { fontSize: 16, color: C.muted },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 0.5, borderColor: C.border, backgroundColor: C.white },
-  headerTitle:  { fontSize: 17, fontWeight: '600', color: C.text },
-  backBtn:      { paddingVertical: 4, paddingHorizontal: 8 },
-  backBtnTxt:   { fontSize: 15, color: C.green, fontWeight: '500' },
-  scroll:       { flex: 1 },
-  content:      { padding: 16 },
-  spacer:       { height: 24 },
-  pinOverlay:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  pinCard:          { backgroundColor: C.white, borderRadius: 20, padding: 28, alignItems: 'center', width: '100%' },
-  pinTitle:         { fontSize: 18, fontWeight: '600', color: C.text, marginBottom: 16 },
-  pinInput:         { fontSize: 28, textAlign: 'center', letterSpacing: 8, marginBottom: 24, width: '100%', height: 52, borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
-  pinBtnPrimary:    { backgroundColor: C.green, borderRadius: 12, paddingVertical: 14, alignItems: 'center', width: '100%', marginBottom: 10 },
-  pinBtnPrimaryTxt: { fontSize: 15, color: C.white, fontWeight: '600' },
-  pinBtnCancel:     { backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingVertical: 14, alignItems: 'center', width: '100%' },
-  pinBtnCancelTxt:  { fontSize: 15, color: C.text, fontWeight: '500' },
-  parentZoneCard:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.green, borderRadius: 16, padding: 18, marginBottom: 8 },
-  parentZoneLeft:   { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
-  parentZoneIcon:   { fontSize: 28 },
-  parentZoneTitle:  { fontSize: 16, fontWeight: '700', color: C.white },
-  parentZoneSub:    { fontSize: 12, color: C.greenLt, marginTop: 3, lineHeight: 17 },
-  parentZoneArrow:  { fontSize: 18, color: C.white, opacity: 0.8 },
+  root: { flex: 1, backgroundColor: C.bg },
+  loadingCenter: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: { fontSize: 16, color: C.muted },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderColor: C.border,
+    backgroundColor: C.white,
+  },
+  headerTitle: { fontSize: 17, fontWeight: "600", color: C.text },
+  backBtn: { paddingVertical: 4, paddingHorizontal: 8 },
+  backBtnTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
+  scroll: { flex: 1 },
+  content: { padding: 16 },
+  spacer: { height: 24 },
+  pinOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  pinCard: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: "center",
+    width: "100%",
+  },
+  pinTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: C.text,
+    marginBottom: 16,
+  },
+  pinInput: {
+    fontSize: 28,
+    textAlign: "center",
+    letterSpacing: 8,
+    marginBottom: 24,
+    width: "100%",
+    height: 52,
+    borderBottomWidth: 2,
+    borderColor: C.border,
+    paddingBottom: 8,
+    color: C.text,
+  },
+  pinBtnPrimary: {
+    backgroundColor: C.green,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 10,
+  },
+  pinBtnPrimaryTxt: { fontSize: 15, color: C.white, fontWeight: "600" },
+  pinBtnCancel: {
+    backgroundColor: C.bg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingVertical: 14,
+    alignItems: "center",
+    width: "100%",
+  },
+  pinBtnCancelTxt: { fontSize: 15, color: C.text, fontWeight: "500" },
+  parentZoneCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: C.green,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 8,
+  },
+  parentZoneLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    flex: 1,
+  },
+  parentZoneIcon: { fontSize: 28 },
+  parentZoneTitle: { fontSize: 16, fontWeight: "700", color: C.white },
+  parentZoneSub: {
+    fontSize: 12,
+    color: C.greenLt,
+    marginTop: 3,
+    lineHeight: 17,
+  },
+  parentZoneArrow: { fontSize: 18, color: C.white, opacity: 0.8 },
 });
 
 const u = StyleSheet.create({
   // Section header
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  sectionIcon:   { fontSize: 18 },
-  sectionTitle:  { fontSize: 14, fontWeight: '600', color: C.text, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  sectionIcon: { fontSize: 18 },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: C.text,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
 
   // Card
-  card:          { backgroundColor: C.white, borderRadius: 14, borderWidth: 0.5, borderColor: C.border, overflow: 'hidden', marginBottom: 8 },
+  card: {
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: C.border,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
 
   // Row
-  row:           { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
-  rowLabels:     { flex: 1 },
-  rowLabel:      { fontSize: 14, fontWeight: '500', color: C.text },
-  rowSublabel:   { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 17 },
-  rowControl:    { alignItems: 'flex-end', justifyContent: 'center', flexShrink: 0 },
-  subheading:    { fontSize: 13, fontWeight: '500', color: C.muted, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 6 },
+  row: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12 },
+  rowLabels: { flex: 1 },
+  rowLabel: { fontSize: 14, fontWeight: "500", color: C.text },
+  rowSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 17 },
+  rowControl: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  subheading: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: C.muted,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
 
-  divider:       { height: 0.5, backgroundColor: C.border, marginHorizontal: 14 },
+  divider: { height: 0.5, backgroundColor: C.border, marginHorizontal: 14 },
 
   // Pill selector
-  pillRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 6, padding: 14, paddingTop: 8 },
-  pill:          { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.bg },
-  pillActive:    { backgroundColor: C.green, borderColor: C.green },
-  pillTxt:       { fontSize: 13, color: C.muted, fontWeight: '500' },
+  pillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    padding: 14,
+    paddingTop: 8,
+  },
+  pill: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.bg,
+  },
+  pillActive: { backgroundColor: C.green, borderColor: C.green },
+  pillTxt: { fontSize: 13, color: C.muted, fontWeight: "500" },
   pillTxtActive: { color: C.white },
 
   // Stepper
-  stepperRow:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  stepperBtn:    { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
-  stepperTxt:    { fontSize: 18, color: C.green, fontWeight: '600', lineHeight: 22 },
-  stepperVal:    { fontSize: 16, fontWeight: '600', color: C.text, minWidth: 24, textAlign: 'center' },
+  stepperRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  stepperBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.bg,
+  },
+  stepperTxt: {
+    fontSize: 18,
+    color: C.green,
+    fontWeight: "600",
+    lineHeight: 22,
+  },
+  stepperVal: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: C.text,
+    minWidth: 24,
+    textAlign: "center",
+  },
 
   // Mission rows
-  missionRow:    { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
-  missionEmoji:  { fontSize: 26 },
-  missionInfo:   { flex: 1 },
-  missionTitle:  { fontSize: 13, fontWeight: '600', color: C.text },
-  missionSub:    { fontSize: 11, color: C.muted, marginTop: 1 },
-  typePill:      { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1 },
-  typePillTxt:   { fontSize: 11, fontWeight: '600' },
+  missionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    gap: 10,
+  },
+  missionEmoji: { fontSize: 26 },
+  missionInfo: { flex: 1 },
+  missionTitle: { fontSize: 13, fontWeight: "600", color: C.text },
+  missionSub: { fontSize: 11, color: C.muted, marginTop: 1 },
+  typePill: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  typePillTxt: { fontSize: 11, fontWeight: "600" },
 
   // Buttons
-  btnPrimary:    { backgroundColor: C.green, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', flex: 1 },
-  btnPrimaryTxt: { fontSize: 14, color: C.white, fontWeight: '600' },
-  btnCancel:     { backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', flex: 1 },
-  btnCancelTxt:  { fontSize: 14, color: C.muted, fontWeight: '500' },
-  dangerBtn:     { backgroundColor: C.redLt, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 14 },
-  dangerBtnTxt:  { fontSize: 13, color: C.red, fontWeight: '600' },
-  linkBtn:       { paddingVertical: 4, paddingHorizontal: 10 },
-  linkBtnTxt:    { fontSize: 13, color: C.green, fontWeight: '500' },
-  inlineAction:  { padding: 14, alignItems: 'center' },
-  inlineActionTxt: { fontSize: 14, color: C.green, fontWeight: '500' },
-  rowBtns:       { flexDirection: 'row', gap: 10, marginTop: 12 },
+  btnPrimary: {
+    backgroundColor: C.green,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    flex: 1,
+  },
+  btnPrimaryTxt: { fontSize: 14, color: C.white, fontWeight: "600" },
+  btnCancel: {
+    backgroundColor: C.bg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    flex: 1,
+  },
+  btnCancelTxt: { fontSize: 14, color: C.muted, fontWeight: "500" },
+  dangerBtn: {
+    backgroundColor: C.redLt,
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+  },
+  dangerBtnTxt: { fontSize: 13, color: C.red, fontWeight: "600" },
+  linkBtn: { paddingVertical: 4, paddingHorizontal: 10 },
+  linkBtnTxt: { fontSize: 13, color: C.green, fontWeight: "500" },
+  inlineAction: { padding: 14, alignItems: "center" },
+  inlineActionTxt: { fontSize: 14, color: C.green, fontWeight: "500" },
+  rowBtns: { flexDirection: "row", gap: 10, marginTop: 12 },
 
   // Edit block
-  editBlock:     { padding: 14 },
-  editInput:     { borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 10, fontSize: 14, color: C.text, backgroundColor: C.bg, marginBottom: 8 },
-  editCostRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  editBlock: { padding: 14 },
+  editInput: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 14,
+    color: C.text,
+    backgroundColor: C.bg,
+    marginBottom: 8,
+  },
+  editCostRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
 
   // Progress stats
-  statsGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  statCard:      { flex: 1, minWidth: '45%', backgroundColor: C.white, borderRadius: 12, borderWidth: 0.5, borderColor: C.border, padding: 14, alignItems: 'center' },
-  statEmoji:     { fontSize: 22, marginBottom: 4 },
-  statValue:     { fontSize: 26, fontWeight: '700', color: C.green },
-  statLabel:     { fontSize: 11, color: C.muted, marginTop: 2, textAlign: 'center' },
-  lastMissionLabel: { fontSize: 12, color: C.muted, marginBottom: 4, padding: 14, paddingBottom: 0 },
-  lastMissionValue: { fontSize: 14, fontWeight: '500', color: C.text, padding: 14, paddingTop: 4 },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 8,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: "45%",
+    backgroundColor: C.white,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: C.border,
+    padding: 14,
+    alignItems: "center",
+  },
+  statEmoji: { fontSize: 22, marginBottom: 4 },
+  statValue: { fontSize: 26, fontWeight: "700", color: C.green },
+  statLabel: {
+    fontSize: 11,
+    color: C.muted,
+    marginTop: 2,
+    textAlign: "center",
+  },
+  lastMissionLabel: {
+    fontSize: 12,
+    color: C.muted,
+    marginBottom: 4,
+    padding: 14,
+    paddingBottom: 0,
+  },
+  lastMissionValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: C.text,
+    padding: 14,
+    paddingTop: 4,
+  },
 
   // PIN
-  pinInput:      { fontSize: 32, textAlign: 'center', letterSpacing: 12, marginBottom: 20, width: '100%', borderBottomWidth: 2, borderColor: C.border, paddingBottom: 8, color: C.text },
+  pinInput: {
+    fontSize: 32,
+    textAlign: "center",
+    letterSpacing: 12,
+    marginBottom: 20,
+    width: "100%",
+    borderBottomWidth: 2,
+    borderColor: C.border,
+    paddingBottom: 8,
+    color: C.text,
+  },
 });

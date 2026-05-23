@@ -4,15 +4,15 @@
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
 export const BUDDY = {
-  calm:              require('../assets/Character/buddy-calm.png'),
-  'gentle-reminder': require('../assets/Character/buddy-gentle-reminder.png'),
-  serene:            require('../assets/Character/buddy-serene.png'),
-  encouraging:       require('../assets/Character/buddy-encouraging.png'),
-  thinking:          require('../assets/Character/buddy-thinking.png'),
-  excited:           require('../assets/Character/buddy-excited.png'),
-  happy:             require('../assets/Character/buddy-happy.png'),
-  proud:             require('../assets/Character/buddy-proud.png'),
-  'very-excited':    require('../assets/Character/buddy-very-excited.png'),
+  calm: require("../assets/Character/buddy-calm.png"),
+  "gentle-reminder": require("../assets/Character/buddy-gentle-reminder.png"),
+  serene: require("../assets/Character/buddy-serene.png"),
+  encouraging: require("../assets/Character/buddy-encouraging.png"),
+  thinking: require("../assets/Character/buddy-thinking.png"),
+  excited: require("../assets/Character/buddy-excited.png"),
+  happy: require("../assets/Character/buddy-happy.png"),
+  proud: require("../assets/Character/buddy-proud.png"),
+  "very-excited": require("../assets/Character/buddy-very-excited.png"),
 } as const;
 
 export const BUDDY_FIXED_SPACER = 280;
@@ -22,55 +22,78 @@ export type BuddyMood = keyof typeof BUDDY;
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 
 export const K = {
-  STARS:             'sb_stars_v2',
-  TOTAL_EVER:        'sb_total_v2',
-  COMPLETED_TODAY:   'sb_today_v2',
-  LAST_DATE:         'sb_date_v2',
-  DEMO_DONE:         'sb_demo_done',
-  TOTAL_MISSIONS:    'sb_total_missions',
-  CHILD_NAME:        'sb_child_name',
-  LAST_MISSION:      'sb_last_mission',
-  SKIP_COUNT:        'sb_skip_count',
-  FIRST_REWARD:      'sb_first_reward',
-  PARENT_PIN:        'sb_parent_pin',
-  PIN_ENABLED:       'sb_pin_enabled',
-  ONBOARDING_DONE:   'sb_onboarding_done',
-  MORNING_DONE:      'sb_morning_done',    // ISO date of last completed morning routine
-  DAY_MODE_OVERRIDE: 'sb_day_mode',        // 'weekday' | 'weekend' | '' (auto)
-  DONE_IDS_TODAY:    'sb_done_ids_today',  // JSON array of mission IDs completed today
-  CHILD_AGE: 'sb_child_age',
-  MISSION_OVERRIDES: 'sb_mission_overrides', // JSON map { [id]: MissionOverride }
-  REWARD_OVERRIDES:  'sb_reward_overrides',  // JSON map { [id]: RewardOverride }
-  SCHEDULE_ENABLED:  'sb_schedule_enabled',
+  STARS: "sb_stars_v2",
+  TOTAL_EVER: "sb_total_v2",
+  COMPLETED_TODAY: "sb_today_v2",
+  LAST_DATE: "sb_date_v2",
+  DEMO_DONE: "sb_demo_done",
+  TOTAL_MISSIONS: "sb_total_missions",
+  CHILD_NAME: "sb_child_name",
+  LAST_MISSION: "sb_last_mission",
+  SKIP_COUNT: "sb_skip_count",
+  FIRST_REWARD: "sb_first_reward",
+  PARENT_PIN: "sb_parent_pin",
+  PIN_ENABLED: "sb_pin_enabled",
+  ONBOARDING_DONE: "sb_onboarding_done",
+  MORNING_DONE: "sb_morning_done", // ISO date of last completed morning routine
+  DAY_MODE_OVERRIDE: "sb_day_mode", // 'weekday' | 'weekend' | '' (auto)
+  DONE_IDS_TODAY: "sb_done_ids_today", // JSON array of mission IDs completed today
+  CHILD_AGE: "sb_child_age",
+  MISSION_OVERRIDES: "sb_mission_overrides", // JSON map { [id]: MissionOverride }
+  REWARD_OVERRIDES: "sb_reward_overrides", // JSON map { [id]: RewardOverride }
+  SCHEDULE_ENABLED: "sb_schedule_enabled",
 };
 
 // ── AGE PROFILE ───────────────────────────────────────────────────────
-export type AgeProfile = 'little' | 'middle' | 'teen';
+export type AgeProfile = "little" | "middle" | "teen";
 
 export interface ProfileConfig {
   buddySize: number;
   ttsEnabledByDefault: boolean;
   showBuddyName: boolean;
-  celebrationIntensity: 'full' | 'subtle';
-  colorTheme: 'warm' | 'cool';
+  celebrationIntensity: "full" | "subtle";
+  colorTheme: "warm" | "cool";
 }
 
 export const PROFILE_CONFIGS: Record<AgeProfile, ProfileConfig> = {
-  little: { buddySize: 130, ttsEnabledByDefault: true,  showBuddyName: true,  celebrationIntensity: 'full',   colorTheme: 'warm' },
-  middle: { buddySize: 110, ttsEnabledByDefault: true,  showBuddyName: false, celebrationIntensity: 'full',   colorTheme: 'warm' },
-  teen:   { buddySize: 90,  ttsEnabledByDefault: false, showBuddyName: false, celebrationIntensity: 'subtle', colorTheme: 'cool' },
+  little: {
+    buddySize: 140,
+    ttsEnabledByDefault: true,
+    showBuddyName: true,
+    celebrationIntensity: "full",
+    colorTheme: "warm",
+  },
+  middle: {
+    buddySize: 120,
+    ttsEnabledByDefault: true,
+    showBuddyName: false,
+    celebrationIntensity: "full",
+    colorTheme: "warm",
+  },
+  teen: {
+    buddySize: 100,
+    ttsEnabledByDefault: false,
+    showBuddyName: false,
+    celebrationIntensity: "subtle",
+    colorTheme: "cool",
+  },
 };
 
 export function getAgeProfile(age: number): AgeProfile {
-  if (age <= 7)  return 'little';
-  if (age <= 11) return 'middle';
-  return 'teen';
+  if (age <= 7) return "little";
+  if (age <= 11) return "middle";
+  return "teen";
 }
 
 // ── MISSION TYPES ─────────────────────────────────────────────────────────────
 
-export type MissionSlot     = 'morning' | 'afternoon' | 'evening' | 'any';
-export type MissionCategory = 'movement' | 'selfcare' | 'tidy' | 'social' | 'calm';
+export type MissionSlot = "morning" | "afternoon" | "evening" | "any";
+export type MissionCategory =
+  | "movement"
+  | "selfcare"
+  | "tidy"
+  | "social"
+  | "calm";
 
 export interface PoolMission {
   id: number;
@@ -101,48 +124,308 @@ export interface DailySuggestion {
 // IDs match son's lists: 1-5 easy, 7-12 bigger.
 
 export const MISSION_POOL: PoolMission[] = [
-  { id: 1,  title: 'Постой на одной ноге',              subtitle: 'Пять секунд',      stars: 1, emoji: '🦩', category: 'movement', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
-  { id: 2,  title: 'Потянись к пальцам ног',            subtitle: 'Медленно',          stars: 1, emoji: '🙆', category: 'movement', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
-  { id: 3,  title: 'Прыгни три раза',                   subtitle: 'Спокойно',          stars: 1, emoji: '🦘', category: 'movement', slot: 'afternoon', weekdayDefault: true,  weekendDefault: true  },
-  { id: 4,  title: 'Выпей воду',                        subtitle: 'Медленно',          stars: 1, emoji: '💧', category: 'selfcare', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
-  { id: 5,  title: 'Побудь без телефона',               subtitle: 'Одна минута',       stars: 1, emoji: '📱', category: 'selfcare', slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
-  { id: 7,  title: 'Сожми кулачки',                     subtitle: 'Три секунды',       stars: 2, emoji: '✊', category: 'movement', slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
-  { id: 8,  title: 'Побудь без телефона',               subtitle: 'Две минуты',        stars: 2, emoji: '📱', category: 'selfcare', slot: 'any',       weekdayDefault: false, weekendDefault: true  },
-  { id: 9,  title: 'Убери игрушки',                     subtitle: 'Один уголок',       stars: 2, emoji: '🧸', category: 'tidy',     slot: 'evening',   weekdayDefault: true,  weekendDefault: true  },
-  { id: 10, title: 'Обними кого-нибудь',                subtitle: 'Тихо и спокойно',   stars: 2, emoji: '💛', category: 'social',   slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
-  { id: 11, title: 'Спроси папу или маму, чем помочь', subtitle: 'Небольшое дело',    stars: 2, emoji: '👨', category: 'social',   slot: 'afternoon', weekdayDefault: true,  weekendDefault: true  },
-  { id: 12, title: 'Убери немного дома',                subtitle: 'Совсем чуть-чуть',  stars: 2, emoji: '🏠', category: 'tidy',     slot: 'evening',   weekdayDefault: false, weekendDefault: true  },
+  {
+    id: 1,
+    title: "Постой на одной ноге",
+    subtitle: "Пять секунд",
+    stars: 1,
+    emoji: "🦩",
+    category: "movement",
+    slot: "morning",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 2,
+    title: "Потянись к пальцам ног",
+    subtitle: "Медленно",
+    stars: 1,
+    emoji: "🙆",
+    category: "movement",
+    slot: "morning",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 3,
+    title: "Прыгни три раза",
+    subtitle: "Спокойно",
+    stars: 1,
+    emoji: "🦘",
+    category: "movement",
+    slot: "afternoon",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 4,
+    title: "Выпей воду",
+    subtitle: "Медленно",
+    stars: 1,
+    emoji: "💧",
+    category: "selfcare",
+    slot: "morning",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 5,
+    title: "Побудь без телефона",
+    subtitle: "Одна минута",
+    stars: 1,
+    emoji: "📱",
+    category: "selfcare",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 7,
+    title: "Сожми кулак и разожми",
+    subtitle: "Три секунды",
+    stars: 2,
+    emoji: "✊",
+    category: "movement",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 8,
+    title: "Побудь без телефона",
+    subtitle: "Две минуты",
+    stars: 2,
+    emoji: "📱",
+    category: "selfcare",
+    slot: "any",
+    weekdayDefault: false,
+    weekendDefault: true,
+  },
+  {
+    id: 9,
+    title: "Убери игрушки",
+    subtitle: "Один уголок",
+    stars: 2,
+    emoji: "🧸",
+    category: "tidy",
+    slot: "evening",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 10,
+    title: "Обними кого-нибудь",
+    subtitle: "Тихо и спокойно",
+    stars: 2,
+    emoji: "💛",
+    category: "social",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 11,
+    title: "Спроси папу или маму, чем помочь",
+    subtitle: "Небольшое дело",
+    stars: 2,
+    emoji: "👨",
+    category: "social",
+    slot: "afternoon",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 12,
+    title: "Убери немного дома",
+    subtitle: "Самую малость",
+    stars: 2,
+    emoji: "🏠",
+    category: "tidy",
+    slot: "evening",
+    weekdayDefault: false,
+    weekendDefault: true,
+  },
   // ── Movement (new) ──────────────────────────────────────────────────
-  { id: 13, title: 'Потряси руками',        subtitle: 'Десять секунд',         stars: 1, emoji: '🙌', category: 'movement', slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
-  { id: 14, title: 'Пройди по комнате',     subtitle: 'Туда и обратно',        stars: 1, emoji: '🚶', category: 'movement', slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
-  { id: 15, title: 'Потянись вверх',        subtitle: 'Руки как можно выше',   stars: 1, emoji: '🙋', category: 'movement', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
+  {
+    id: 13,
+    title: "Потряси руками",
+    subtitle: "Десять секунд",
+    stars: 1,
+    emoji: "🙌",
+    category: "movement",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 14,
+    title: "Пройди по комнате",
+    subtitle: "Туда и обратно",
+    stars: 1,
+    emoji: "🚶",
+    category: "movement",
+    slot: "afternoon",
+    weekdayDefault: false,
+    weekendDefault: true,
+  },
+  {
+    id: 15,
+    title: "Потянись вверх",
+    subtitle: "Руки как можно выше",
+    stars: 1,
+    emoji: "🙋",
+    category: "movement",
+    slot: "morning",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
 
   // ── Self-care (new) ──────────────────────────────────────────────────
-  { id: 16, title: 'Умойся',                subtitle: 'Холодной водой',        stars: 1, emoji: '🚿', category: 'selfcare', slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
-  { id: 17, title: 'Три глубоких вдоха',    subtitle: 'Медленно и спокойно',   stars: 1, emoji: '🌬️', category: 'selfcare', slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
-  { id: 18, title: 'Выпей воду ещё раз',    subtitle: 'Второй стакан',         stars: 1, emoji: '💦', category: 'selfcare', slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
+  {
+    id: 16,
+    title: "Умойся",
+    subtitle: "Холодной водой",
+    stars: 1,
+    emoji: "🚿",
+    category: "selfcare",
+    slot: "morning",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 17,
+    title: "Три глубоких вдоха",
+    subtitle: "Медленно и спокойно",
+    stars: 1,
+    emoji: "🌬️",
+    category: "selfcare",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 18,
+    title: "Выпей воду ещё раз",
+    subtitle: "Второй стакан",
+    stars: 1,
+    emoji: "💦",
+    category: "selfcare",
+    slot: "afternoon",
+    weekdayDefault: false,
+    weekendDefault: true,
+  },
 
   // ── Tidy (new) ───────────────────────────────────────────────────────
-  { id: 19, title: 'Застели кровать',       subtitle: 'Разгладь одеяло',       stars: 2, emoji: '🛏️', category: 'tidy',     slot: 'morning',   weekdayDefault: true,  weekendDefault: true  },
-  { id: 20, title: 'Убери тарелку',         subtitle: 'В раковину',            stars: 1, emoji: '🍽️', category: 'tidy',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
-  { id: 21, title: 'Сложи одежду',          subtitle: 'Аккуратной стопкой',    stars: 2, emoji: '👕', category: 'tidy',     slot: 'evening',   weekdayDefault: false, weekendDefault: true  },
+  {
+    id: 19,
+    title: "Застели кровать",
+    subtitle: "Разгладь одеяло",
+    stars: 2,
+    emoji: "🛏️",
+    category: "tidy",
+    slot: "morning",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 20,
+    title: "Убери тарелку",
+    subtitle: "В раковину",
+    stars: 1,
+    emoji: "🍽️",
+    category: "tidy",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 21,
+    title: "Наведи порядок в одежде",
+    subtitle: "Полоюи аккуратной стопкой",
+    stars: 2,
+    emoji: "👕",
+    category: "tidy",
+    slot: "evening",
+    weekdayDefault: false,
+    weekendDefault: true,
+  },
 
   // ── Social (new) ─────────────────────────────────────────────────────
-  { id: 22, title: 'Скажи спасибо',         subtitle: 'Кому-нибудь сегодня',   stars: 1, emoji: '🙏', category: 'social',   slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
-  { id: 23, title: 'Улыбнись кому-нибудь',  subtitle: 'Просто так',            stars: 1, emoji: '😊', category: 'social',   slot: 'any',       weekdayDefault: false, weekendDefault: true  },
-  { id: 24, title: 'Расскажи что-то хорошее', subtitle: 'Маме или папе',       stars: 2, emoji: '💬', category: 'social',   slot: 'evening',   weekdayDefault: true,  weekendDefault: true  },
+  {
+    id: 22,
+    title: "Скажи спасибо",
+    subtitle: "Кому-нибудь сегодня",
+    stars: 1,
+    emoji: "🙏",
+    category: "social",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 23,
+    title: "Улыбнись кому-нибудь",
+    subtitle: "Просто так",
+    stars: 1,
+    emoji: "😊",
+    category: "social",
+    slot: "any",
+    weekdayDefault: false,
+    weekendDefault: true,
+  },
+  {
+    id: 24,
+    title: "Расскажи что-то хорошее",
+    subtitle: "Маме или папе",
+    stars: 2,
+    emoji: "💬",
+    category: "social",
+    slot: "evening",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
 
   // ── Calm (new category) ──────────────────────────────────────────────
-  { id: 25, title: 'Посиди тихо',           subtitle: 'Одну минуту',           stars: 1, emoji: '🧘', category: 'calm',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
-  { id: 26, title: 'Нарисуй что-нибудь',    subtitle: 'Что угодно',            stars: 2, emoji: '🎨', category: 'calm',     slot: 'afternoon', weekdayDefault: false, weekendDefault: true  },
-  { id: 27, title: 'Посмотри в окно',       subtitle: 'Одну минуту',           stars: 1, emoji: '🪟', category: 'calm',     slot: 'any',       weekdayDefault: true,  weekendDefault: true  },
+  {
+    id: 25,
+    title: "Посиди тихо",
+    subtitle: "Одну минуту",
+    stars: 1,
+    emoji: "🧘",
+    category: "calm",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
+  {
+    id: 26,
+    title: "Нарисуй что-нибудь",
+    subtitle: "Что угодно",
+    stars: 2,
+    emoji: "🎨",
+    category: "calm",
+    slot: "afternoon",
+    weekdayDefault: false,
+    weekendDefault: true,
+  },
+  {
+    id: 27,
+    title: "Посмотри в окно",
+    subtitle: "Одну минуту",
+    stars: 1,
+    emoji: "🪟",
+    category: "calm",
+    slot: "any",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
 ];
 
 // Derives the AppSettings missions array from MISSION_POOL.
 // The first 6 original missions keep their proven types.
 // All new missions default to 'rotating' so they appear in the daily picker.
 
-export type MissionType = 'permanent' | 'rotating' | 'inactive';
+export type MissionType = "permanent" | "rotating" | "inactive";
 
 export interface MissionConfig {
   id: number;
@@ -154,28 +437,42 @@ export interface MissionConfig {
 }
 
 const LEGACY_TYPES: Record<number, MissionType> = {
-  1: 'permanent', 2: 'permanent', 3: 'rotating',
-  4: 'permanent', 5: 'rotating',  6: 'rotating',
-  7: 'rotating',  8: 'rotating',  9: 'rotating',
-  10: 'rotating', 11: 'rotating', 12: 'rotating',
+  1: "permanent",
+  2: "permanent",
+  3: "rotating",
+  4: "permanent",
+  5: "rotating",
+  6: "rotating",
+  7: "rotating",
+  8: "rotating",
+  9: "rotating",
+  10: "rotating",
+  11: "rotating",
+  12: "rotating",
 };
 
-export const DEFAULT_MISSION_CONFIGS: MissionConfig[] = MISSION_POOL.map(m => ({
-  id:       m.id,
-  title:    m.title,
-  subtitle: m.subtitle,
-  stars:    m.stars,
-  emoji:    m.emoji,
-  type:     LEGACY_TYPES[m.id] ?? 'rotating',
-}));
+export const DEFAULT_MISSION_CONFIGS: MissionConfig[] = MISSION_POOL.map(
+  (m) => ({
+    id: m.id,
+    title: m.title,
+    subtitle: m.subtitle,
+    stars: m.stars,
+    emoji: m.emoji,
+    type: LEGACY_TYPES[m.id] ?? "rotating",
+  }),
+);
 
 // Flat lists — backward-compatible with index.tsx inline arrays
-export const MISSIONS_EASY   = MISSION_POOL.filter(m => m.stars === 1);
-export const MISSIONS_BIGGER = MISSION_POOL.filter(m => m.stars === 2);
+export const MISSIONS_EASY = MISSION_POOL.filter((m) => m.stars === 1);
+export const MISSIONS_BIGGER = MISSION_POOL.filter((m) => m.stars === 2);
 
 // Default ID selections by day type
-export const DEFAULT_WEEKDAY_IDS = MISSION_POOL.filter(m => m.weekdayDefault).map(m => m.id);
-export const DEFAULT_WEEKEND_IDS = MISSION_POOL.filter(m => m.weekendDefault).map(m => m.id);
+export const DEFAULT_WEEKDAY_IDS = MISSION_POOL.filter(
+  (m) => m.weekdayDefault,
+).map((m) => m.id);
+export const DEFAULT_WEEKEND_IDS = MISSION_POOL.filter(
+  (m) => m.weekendDefault,
+).map((m) => m.id);
 
 // ── PARENT ZONE OVERRIDES ─────────────────────────────────────────────────────
 // Per-id parent overrides for mission enabled-state + stars and reward enabled + cost.
@@ -193,32 +490,41 @@ export interface RewardOverride {
 }
 
 export type MissionOverrideMap = Record<number, MissionOverride>;
-export type RewardOverrideMap  = Record<number, RewardOverride>;
+export type RewardOverrideMap = Record<number, RewardOverride>;
 
-export function effectiveMissionStars(id: number, overrides: MissionOverrideMap): number {
+export function effectiveMissionStars(
+  id: number,
+  overrides: MissionOverrideMap,
+): number {
   const o = overrides?.[id];
-  if (o && typeof o.stars === 'number') return o.stars;
-  return MISSION_POOL.find(m => m.id === id)?.stars ?? 1;
+  if (o && typeof o.stars === "number") return o.stars;
+  return MISSION_POOL.find((m) => m.id === id)?.stars ?? 1;
 }
 
 export function effectiveMissionEnabled(
   id: number,
-  mode: 'weekday' | 'weekend',
+  mode: "weekday" | "weekend",
   overrides: MissionOverrideMap,
 ): boolean {
   const o = overrides?.[id];
-  if (o) return mode === 'weekday' ? o.enabledWeekday : o.enabledWeekend;
-  const m = MISSION_POOL.find(x => x.id === id);
-  return mode === 'weekday' ? !!m?.weekdayDefault : !!m?.weekendDefault;
+  if (o) return mode === "weekday" ? o.enabledWeekday : o.enabledWeekend;
+  const m = MISSION_POOL.find((x) => x.id === id);
+  return mode === "weekday" ? !!m?.weekdayDefault : !!m?.weekendDefault;
 }
 
-export function effectiveRewardCost(id: number, overrides: RewardOverrideMap): number {
+export function effectiveRewardCost(
+  id: number,
+  overrides: RewardOverrideMap,
+): number {
   const o = overrides?.[id];
-  if (o && typeof o.cost === 'number') return o.cost;
-  return REWARDS.find(r => r.id === id)?.cost ?? 1;
+  if (o && typeof o.cost === "number") return o.cost;
+  return REWARDS.find((r) => r.id === id)?.cost ?? 1;
 }
 
-export function effectiveRewardEnabled(id: number, overrides: RewardOverrideMap): boolean {
+export function effectiveRewardEnabled(
+  id: number,
+  overrides: RewardOverrideMap,
+): boolean {
   const o = overrides?.[id];
   if (o) return o.enabled;
   return true;
@@ -233,9 +539,9 @@ export interface MorningStep {
 }
 
 export const DEFAULT_MORNING_STEPS: MorningStep[] = [
-  { id: 1, title: 'Выпей стакан воды', emoji: '💧' },
-  { id: 2, title: 'Оденься',           emoji: '👕' },
-  { id: 3, title: 'Почисти зубы',      emoji: '🪥' },
+  { id: 1, title: "Выпей стакан воды", emoji: "💧" },
+  { id: 2, title: "Оденься", emoji: "👕" },
+  { id: 3, title: "Почисти зубы", emoji: "🪥" },
 ];
 
 export const MORNING_CUTOFF_HOUR = 12;
@@ -248,28 +554,91 @@ export interface ScheduleBlock {
   id: number;
   title: string;
   emoji: string;
-  startTime: string;   // 'HH:MM' 24h
-  endTime: string;     // 'HH:MM'
-  missionId?: number;  // optional — tapping current block can launch this mission
-  color?: string;      // Option B timeline tint
+  startTime: string; // 'HH:MM' 24h
+  endTime: string; // 'HH:MM'
+  missionId?: number; // optional — tapping current block can launch this mission
+  color?: string; // Option B timeline tint
   weekdays: boolean;
   weekends: boolean;
 }
 
 export const DEFAULT_SCHEDULE: ScheduleBlock[] = [
-  { id: 1, title: 'Завтрак',          emoji: '🥣',  startTime: '08:00', endTime: '08:30', weekdays: true,  weekends: true,  color: '#FFF8E7' },
-  { id: 2, title: 'Школа',            emoji: '🎒',  startTime: '09:00', endTime: '13:00', weekdays: true,  weekends: false, color: '#E1F5EE' },
-  { id: 3, title: 'Обед',             emoji: '🍜',  startTime: '13:00', endTime: '13:30', weekdays: true,  weekends: true,  color: '#FFF8E7' },
-  { id: 4, title: 'Тихое время',      emoji: '🧘',  startTime: '15:00', endTime: '15:20', weekdays: true,  weekends: true,  color: '#EEF2FF' },
-  { id: 5, title: 'Прогулка',         emoji: '🌳',  startTime: '17:00', endTime: '17:45', weekdays: true,  weekends: true,  color: '#E1F5EE' },
-  { id: 6, title: 'Ужин',             emoji: '🍽️', startTime: '19:00', endTime: '19:30', weekdays: true,  weekends: true,  color: '#FFF8E7' },
-  { id: 7, title: 'Время перед сном', emoji: '🌙',  startTime: '20:30', endTime: '21:00', weekdays: true,  weekends: true,  color: '#EEF2FF' },
+  {
+    id: 1,
+    title: "Завтрак",
+    emoji: "🥣",
+    startTime: "08:00",
+    endTime: "08:30",
+    weekdays: true,
+    weekends: true,
+    color: "#FFF8E7",
+  },
+  {
+    id: 2,
+    title: "Школа",
+    emoji: "🎒",
+    startTime: "09:00",
+    endTime: "13:00",
+    weekdays: true,
+    weekends: false,
+    color: "#E1F5EE",
+  },
+  {
+    id: 3,
+    title: "Обед",
+    emoji: "🍜",
+    startTime: "13:00",
+    endTime: "13:30",
+    weekdays: true,
+    weekends: true,
+    color: "#FFF8E7",
+  },
+  {
+    id: 4,
+    title: "Тихое время",
+    emoji: "🧘",
+    startTime: "15:00",
+    endTime: "15:20",
+    weekdays: true,
+    weekends: true,
+    color: "#EEF2FF",
+  },
+  {
+    id: 5,
+    title: "Прогулка",
+    emoji: "🌳",
+    startTime: "17:00",
+    endTime: "17:45",
+    weekdays: true,
+    weekends: true,
+    color: "#E1F5EE",
+  },
+  {
+    id: 6,
+    title: "Ужин",
+    emoji: "🍽️",
+    startTime: "19:00",
+    endTime: "19:30",
+    weekdays: true,
+    weekends: true,
+    color: "#FFF8E7",
+  },
+  {
+    id: 7,
+    title: "Время перед сном",
+    emoji: "🌙",
+    startTime: "20:30",
+    endTime: "21:00",
+    weekdays: true,
+    weekends: true,
+    color: "#EEF2FF",
+  },
 ];
 
 export const SCHEDULE_MAX_BLOCKS = 12;
 
 function parseHM(t: string): number {
-  const [h, m] = t.split(':').map(Number);
+  const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
 }
 
@@ -278,12 +647,14 @@ export function getCurrentBlock(
   blocks: ScheduleBlock[],
   isWeekendDay: boolean,
 ): ScheduleBlock | null {
-  const now  = new Date();
+  const now = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
-  return blocks.find(b => {
-    if (isWeekendDay ? !b.weekends : !b.weekdays) return false;
-    return mins >= parseHM(b.startTime) && mins < parseHM(b.endTime);
-  }) ?? null;
+  return (
+    blocks.find((b) => {
+      if (isWeekendDay ? !b.weekends : !b.weekdays) return false;
+      return mins >= parseHM(b.startTime) && mins < parseHM(b.endTime);
+    }) ?? null
+  );
 }
 
 // The next upcoming block today, or null if none left
@@ -291,48 +662,55 @@ export function getNextBlock(
   blocks: ScheduleBlock[],
   isWeekendDay: boolean,
 ): ScheduleBlock | null {
-  const now  = new Date();
+  const now = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
   const eligible = blocks
-    .filter(b => (isWeekendDay ? b.weekends : b.weekdays) && parseHM(b.startTime) > mins)
+    .filter(
+      (b) =>
+        (isWeekendDay ? b.weekends : b.weekdays) && parseHM(b.startTime) > mins,
+    )
     .sort((a, b) => parseHM(a.startTime) - parseHM(b.startTime));
   return eligible[0] ?? null;
 }
 
 // Classify a block relative to "now" (Option B timeline)
-export type BlockStatus = 'past' | 'current' | 'upcoming';
+export type BlockStatus = "past" | "current" | "upcoming";
 export function getBlockStatus(block: ScheduleBlock): BlockStatus {
-  const now   = new Date();
-  const mins  = now.getHours() * 60 + now.getMinutes();
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
   const start = parseHM(block.startTime);
-  const end   = parseHM(block.endTime);
-  if (mins < start) return 'upcoming';
-  if (mins >= end)  return 'past';
-  return 'current';
+  const end = parseHM(block.endTime);
+  if (mins < start) return "upcoming";
+  if (mins >= end) return "past";
+  return "current";
 }
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────
 
 export const CONFETTI_AT: number[] = [1, 5, 10, 25, 50, 100];
 
-
 export const DEMO_STEPS = [
-  { id: 'd1', title: 'Хлопни в ладоши', emoji: '👏', praise: 'Получилось' },
-  { id: 'd2', title: 'Прыгни один раз',  emoji: '🦘', praise: 'Хорошо' },
-  { id: 'd3', title: 'Коснись носа',     emoji: '👃', praise: 'Отлично получилось' },
+  { id: "d1", title: "Хлопни в ладоши", emoji: "👏", praise: "Получилось" },
+  { id: "d2", title: "Прыгни один раз", emoji: "🦘", praise: "Хорошо" },
+  {
+    id: "d3",
+    title: "Коснись носа",
+    emoji: "👃",
+    praise: "Отлично получилось",
+  },
 ];
 
 export const REWARDS: Reward[] = [
-  { id: 1, title: 'Дополнительный мультик или видео', cost: 3, emoji: '📺' },
-  { id: 2, title: 'Выбрать ужин',                    cost: 4, emoji: '🍕' },
-  { id: 3, title: 'Лечь спать позже',                cost: 5, emoji: '🌙' },
-  { id: 4, title: 'Любимый перекус',                 cost: 3, emoji: '🍭' },
-  { id: 5, title: 'Игра с папой',                    cost: 2, emoji: '🎮' },
-  { id: 6,  title: 'Выбрать мультфильм вечером', cost: 3, emoji: '🎬' },
-  { id: 7,  title: 'Игра с мамой',                cost: 2, emoji: '🎲' },
-  { id: 8,  title: 'Лечь спать позже на пять минут', cost: 1, emoji: '⏰' },
-  { id: 9,  title: 'Любимая музыка в машине',      cost: 2, emoji: '🎵' },
-  { id: 10, title: 'Выбрать место для прогулки',   cost: 4, emoji: '🌳' },
+  { id: 1, title: "Дополнительный мультик или видео", cost: 3, emoji: "📺" },
+  { id: 2, title: "Выбрать ужин", cost: 4, emoji: "🍕" },
+  { id: 3, title: "Лечь спать позже", cost: 5, emoji: "🌙" },
+  { id: 4, title: "Любимый перекус", cost: 3, emoji: "🍭" },
+  { id: 5, title: "Игра с папой", cost: 2, emoji: "🎮" },
+  { id: 6, title: "Выбрать мультфильм вечером", cost: 3, emoji: "🎬" },
+  { id: 7, title: "Игра с мамой", cost: 2, emoji: "🎲" },
+  { id: 8, title: "Лечь спать позже на пять минут", cost: 1, emoji: "⏰" },
+  { id: 9, title: "Любимая музыка в машине", cost: 2, emoji: "🎵" },
+  { id: 10, title: "Выбрать место для прогулки", cost: 4, emoji: "🌳" },
 ];
 
 export interface RewardConfig {
@@ -343,38 +721,38 @@ export interface RewardConfig {
   active: boolean;
 }
 
-export const DEFAULT_REWARD_CONFIGS: RewardConfig[] = REWARDS.map(r => ({
-  id:     r.id,
-  title:  r.title,
-  cost:   r.cost,
-  emoji:  r.emoji,
+export const DEFAULT_REWARD_CONFIGS: RewardConfig[] = REWARDS.map((r) => ({
+  id: r.id,
+  title: r.title,
+  cost: r.cost,
+  emoji: r.emoji,
   active: true,
 }));
 
 export const DAILY_SUGGESTIONS: DailySuggestion[] = [
-  { text: 'Попробуй выпить воду',          missionId: 4  },
-  { text: 'Скажи что-то хорошее кому-то', missionId: 10 },
-  { text: 'Потянись немного',              missionId: 2  },
-  { text: 'Прыгни немного',               missionId: 3  },
-  { text: 'Убери один уголок',            missionId: 9  },
-  { text: 'Попробуй посидеть тихо минуту',  missionId: 25 },
-  { text: 'Застели кровать — сразу лучше',  missionId: 19 },
-  { text: 'Скажи кому-то спасибо сегодня',  missionId: 22 },
-  { text: 'Сделай глубокий вдох',           missionId: 17 },
-  { text: 'Потянись вверх как можно выше',  missionId: 15 },
+  { text: "Попробуй выпить воду", missionId: 4 },
+  { text: "Скажи что-то хорошее кому-то", missionId: 10 },
+  { text: "Потянись немного", missionId: 2 },
+  { text: "Прыгни немного", missionId: 3 },
+  { text: "Убери один уголок", missionId: 9 },
+  { text: "Попробуй посидеть тихо минуту", missionId: 25 },
+  { text: "Застели кровать — сразу лучше", missionId: 19 },
+  { text: "Скажи кому-то спасибо сегодня", missionId: 22 },
+  { text: "Сделай глубокий вдох", missionId: 17 },
+  { text: "Потянись вверх как можно выше", missionId: 15 },
 ];
 
 export const MSG = {
-  idle:           'Я рядом',
-  idle_alt:       'Нажми на меня',
-  start:          'Давай вместе',
-  done:           'Отлично получилось',
-  reward:         'Смотри',
-  encouraging:    'Попробуй ещё',
-  thinking:       'Интересно...',
-  serene:         'Всё хорошо',
-  'very-excited': 'Это важно',
-  morning:        'Доброе утро! Начнём день вместе?',
+  idle: "Я рядом",
+  idle_alt: "Нажми на меня",
+  start: "Давай вместе",
+  done: "Отлично получилось",
+  reward: "Смотри",
+  encouraging: "Попробуй ещё",
+  thinking: "Интересно...",
+  serene: "Всё хорошо",
+  "very-excited": "Это важно",
+  morning: "Доброе утро! Начнём день вместе?",
 } as const;
 
 export type MsgKey = keyof typeof MSG;
@@ -384,34 +762,38 @@ export const MILESTONES = [5, 10, 20, 35, 50, 75, 100, 150, 200] as const;
 // ── COLORS ────────────────────────────────────────────────────────────────────
 
 export const C = {
-  bg:      '#FDFAF5',
-  white:   '#FFFFFF',
-  green:   '#1D6B4F',
-  greenLt: '#E1F5EE',
-  text:    '#1A1A18',
-  muted:   '#6B6B68',
-  border:  '#E5E5E2',
-  track:   '#D8D8D4',
-  gold:    '#FFF8E7',
-  goldBdr: '#F59E0B',
-  reflect: '#F0F8F4',
+  bg: "#FDFAF5",
+  white: "#FFFFFF",
+  green: "#1D6B4F",
+  greenLt: "#E1F5EE",
+  text: "#1A1A18",
+  muted: "#6B6B68",
+  border: "#E5E5E2",
+  track: "#D8D8D4",
+  gold: "#FFF8E7",
+  goldBdr: "#F59E0B",
+  reflect: "#F0F8F4",
   // Slot header colors for MissionPickScreen
-  slotMorning:      '#FFF8E7',
-  slotMorningBdr:   '#F59E0B',
-  slotAfternoon:    '#E1F5EE',
-  slotAfternoonBdr: '#1D9E75',
-  slotEvening:      '#EEF2FF',
-  slotEveningBdr:   '#818CF8',
+  slotMorning: "#FFF8E7",
+  slotMorningBdr: "#F59E0B",
+  slotAfternoon: "#E1F5EE",
+  slotAfternoonBdr: "#1D9E75",
+  slotEvening: "#EEF2FF",
+  slotEveningBdr: "#818CF8",
 };
 
 // ── PURE HELPERS ──────────────────────────────────────────────────────────────
 
-export const todayStr = () => new Date().toISOString().split('T')[0];
+export const todayStr = () => new Date().toISOString().split("T")[0];
 
 export function getProgress(total: number) {
-  const next = MILESTONES.find(m => m > total) ?? MILESTONES[MILESTONES.length - 1] * 2;
+  const next =
+    MILESTONES.find((m) => m > total) ?? MILESTONES[MILESTONES.length - 1] * 2;
   let prev = 0;
-  for (const m of [0, ...MILESTONES]) { if (m <= total) prev = m; else break; }
+  for (const m of [0, ...MILESTONES]) {
+    if (m <= total) prev = m;
+    else break;
+  }
   const pct = next === prev ? 1 : Math.min((total - prev) / (next - prev), 1);
   return { next, pct };
 }
@@ -429,21 +811,30 @@ export function getBuddyImage(mood: BuddyMood) {
 
 export function getBuddyLine(mood: BuddyMood): string {
   switch (mood) {
-    case 'calm':              return MSG.idle;
-    case 'gentle-reminder':   return MSG.idle_alt;
-    case 'serene':            return MSG.serene;
-    case 'encouraging':       return MSG.encouraging;
-    case 'thinking':          return MSG.thinking;
-    case 'excited':           return MSG.start;
-    case 'happy':
-    case 'proud':             return MSG.done;
-    case 'very-excited':      return MSG['very-excited'];
-    default:                  return MSG.idle;
+    case "calm":
+      return MSG.idle;
+    case "gentle-reminder":
+      return MSG.idle_alt;
+    case "serene":
+      return MSG.serene;
+    case "encouraging":
+      return MSG.encouraging;
+    case "thinking":
+      return MSG.thinking;
+    case "excited":
+      return MSG.start;
+    case "happy":
+    case "proud":
+      return MSG.done;
+    case "very-excited":
+      return MSG["very-excited"];
+    default:
+      return MSG.idle;
   }
 }
 
 export function isAmbientMood(mood: BuddyMood): boolean {
-  return mood === 'calm' || mood === 'gentle-reminder' || mood === 'serene';
+  return mood === "calm" || mood === "gentle-reminder" || mood === "serene";
 }
 
 // ── DAILY MISSION SELECTION ────────────────────────────────────────────────────
@@ -476,7 +867,7 @@ function createSeededRandom(seed: number): () => number {
   let state = seed >>> 0;
 
   return function random(): number {
-    state = (state + 0x6D2B79F5) >>> 0;
+    state = (state + 0x6d2b79f5) >>> 0;
     let t = state;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -519,12 +910,15 @@ export function selectDailyMissions(
   const usedSlots = new Set<MissionSlot>();
 
   // First pass: ensure diversity by picking one from each time-bound slot
-  const TIME_BOUND_SLOTS: MissionSlot[] = ['morning', 'afternoon', 'evening'];
+  const TIME_BOUND_SLOTS: MissionSlot[] = ["morning", "afternoon", "evening"];
 
   for (const mission of shuffled) {
     if (selected.length >= size) break;
 
-    if (TIME_BOUND_SLOTS.includes(mission.slot) && !usedSlots.has(mission.slot)) {
+    if (
+      TIME_BOUND_SLOTS.includes(mission.slot) &&
+      !usedSlots.has(mission.slot)
+    ) {
       selected.push(mission);
       usedSlots.add(mission.slot);
     }
@@ -557,7 +951,7 @@ export function selectBonusMission(
   if (leftover.length === 0) return null;
 
   // XOR with golden ratio constant to shift the seed
-  const BONUS_SEED_SHIFT = 0x9E3779B9;
+  const BONUS_SEED_SHIFT = 0x9e3779b9;
   const random = createSeededRandom(hashDateToSeed(dateStr) ^ BONUS_SEED_SHIFT);
 
   const index = Math.floor(random() * leftover.length);
@@ -571,11 +965,11 @@ export function isWeekend(): boolean {
 }
 
 // Which time slot are we in right now
-export function currentSlot(): 'morning' | 'afternoon' | 'evening' {
+export function currentSlot(): "morning" | "afternoon" | "evening" {
   const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
 }
 
 // True if morning routine should fire: before noon AND not done today
@@ -587,7 +981,7 @@ export function shouldShowMorning(morningDoneDate: string): boolean {
 export function shouldBeVeryExcited(
   totalEver: number,
   prevTotalEver: number,
-  isFirstReward: boolean
+  isFirstReward: boolean,
 ): boolean {
   if (isFirstReward) return true;
   if (prevTotalEver < 10 && totalEver >= 10) return true;
@@ -597,22 +991,28 @@ export function shouldBeVeryExcited(
   return false;
 }
 
-export function getProgressionMessage(totalMissions: number, completedToday: number): string {
-  if (totalMissions === 1) return 'Первая миссия';
-  if (completedToday === 1) return 'Ты начал сегодня';
-  if (completedToday === 2) return 'Две миссии сегодня';
-  if (completedToday === 3) return 'Три миссии сегодня';
-  if (completedToday >= 4) return 'Ты продолжаешь';
-  if (totalMissions === 5) return 'Пять миссий всего';
-  if (totalMissions === 10) return 'Десять миссий';
-  return 'Я вижу твой прогресс';
+export function getProgressionMessage(
+  totalMissions: number,
+  completedToday: number,
+): string {
+  if (totalMissions === 1) return "Первая миссия";
+  if (completedToday === 1) return "Ты начал сегодня";
+  if (completedToday === 2) return "Две миссии сегодня";
+  if (completedToday === 3) return "Три миссии сегодня";
+  if (completedToday >= 4) return "Ты продолжаешь";
+  if (totalMissions === 5) return "Пять миссий всего";
+  if (totalMissions === 10) return "Десять миссий";
+  return "Я вижу твой прогресс";
 }
 
 export function getMilestoneMessage(totalEver: number): string {
-  if (totalEver >= 10  && totalEver < 11)  return 'Десять звёзд! Ты сияешь!';
-  if (totalEver >= 20  && totalEver < 22)  return 'Двадцать звёзд — ты растёшь каждый день';
-  if (totalEver >= 50  && totalEver < 52)  return 'Пятьдесят звёзд! Бадди так тобой гордится!';
-  if (totalEver >= 100 && totalEver < 102) return 'Сто звёзд. Ты настоящая звезда!';
+  if (totalEver >= 10 && totalEver < 11) return "Десять звёзд! Ты сияешь!";
+  if (totalEver >= 20 && totalEver < 22)
+    return "Двадцать звёзд — ты растёшь каждый день";
+  if (totalEver >= 50 && totalEver < 52)
+    return "Пятьдесят звёзд! Бадди так тобой гордится!";
+  if (totalEver >= 100 && totalEver < 102)
+    return "Сто звёзд. Ты настоящая звезда!";
   return `${totalEver} звёзд — и ты продолжаешь!`;
 }
 

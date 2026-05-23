@@ -17,6 +17,32 @@ Bear character "Buddy" provides emotional continuity. Validated by a real child.
 
 ## What's implemented (with dates)
 
+### 2026-01 — Custom missions & rewards in Parent Zone
+- `AppSettings` additions: `customMissions: PoolMission[]` and
+  `customRewards: Reward[]` (defaults `[]`). Old saves inherit empty arrays via
+  the existing `{ ...DEFAULT_SETTINGS, ...parsed }` merge in `loadSettings`.
+- `ParentZoneView` in `_SettingsScreen.tsx` now renders a merged
+  `missionPool = [...MISSION_POOL, ...customMissions]` and
+  `rewardPool = [...REWARDS, ...customRewards]` so user-added items appear in
+  both weekday/weekend mission cards and in the rewards card, with the same
+  switches, star picker and cost stepper as built-ins.
+- New inline "+ Добавить миссию" / "+ Добавить награду" actions, visually
+  modelled on the day-schedule add UI (emoji + title + optional subtitle for
+  missions; emoji + title for rewards). Limits: 20 custom missions, 20 custom
+  rewards. Custom items get a small purple "Своя" pill + a ✕ delete button.
+- New IDs start at `CUSTOM_ID_OFFSET = 10000` to avoid clashing with
+  `MISSION_POOL` / `REWARDS`. Adding a mission also pushes a `rotating`
+  `MissionConfig` into `settings.missions` so the daily picker treats it
+  like any other rotating mission; adding a reward pushes a `RewardConfig`
+  into `settings.rewards`.
+- `index.tsx`: built `allMissionPool` and `allRewardPool` once at the top
+  of the render pass; `activePool`, the Infinity-Loop `dayMissions`
+  reconstruction, `effectiveRewards` and the DayScreen `onStartMission`
+  lookup all now resolve against the merged pools so custom items flow
+  through to the child experience automatically.
+- No other behaviour changed; existing on/off switches, stars, cost stepper
+  and migrations are untouched.
+
 ### 2026-04 — Infinity Loop for daily tasks
 - **Daily picker** (`pickDailySubset`, `pickBonusMission` in `_constants.ts`):
   deterministic per YYYY-MM-DD, slot-diverse (1 morning + 1 afternoon + 1 evening

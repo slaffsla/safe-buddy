@@ -15,23 +15,27 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Dimensions,
   Easing,
+  Image as RNImage,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { BUDDY_FIXED_SPACER, C } from "./_constants";
+import { BUDDY_FIXED_SPACER, C, getBuddyImage } from "./_constants";
+
+const { width: SCREEN_W } = Dimensions.get("window");
+export const BUDDY_BASE = Math.round(SCREEN_W * 0.38); // ~145px phone, ~290px tablet
 
 // Hard-coded session length. Do not lift to settings.
-const BREATHING_DURATION_MS = 180_000;
+const BREATHING_DURATION_MS = 120_000;
 
 // Box breathing: 4s each phase, 16s per cycle.
 const PHASES: { label: string; duration: number; target: number }[] = [
-  { label: "Вдох", duration: 4000, target: 1.0 },
-  { label: "Держи", duration: 2000, target: 1.0 },
+  { label: "Вдох", duration: 3000, target: 1.0 },
+  { label: "Держи", duration: 1000, target: 1.0 },
   { label: "Выдох", duration: 4000, target: 0.55 },
-  { label: "Держи", duration: 1000, target: 0.55 },
 ];
 
 // Try to load expo-av at runtime. If the package isn't installed (or fails
@@ -48,16 +52,24 @@ interface Props {
   speak: (t: string) => void;
   onComplete: () => void;
   onSkip: () => void;
+  onHideOverlay: () => void; // ← new
+  onShowOverlay: () => void; // ← new
 }
 
 type State = "idle" | "active" | "complete";
 
-export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
+export default function BreathingScreen({
+  speak,
+  onComplete,
+  onSkip,
+  onHideOverlay,
+  onShowOverlay,
+}: Props) {
   const [state, setState] = useState<State>("idle");
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
 
-  const scale = useRef(new Animated.Value(0.55)).current;
+  const buddyScale = useRef(new Animated.Value(0.2)).current;
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionStart = useRef<number>(0);
@@ -78,24 +90,23 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
   async function loadAndPlayAudio() {
     if (!ExpoAudio) return;
     try {
-      // Attempt to set silent-mode playback so iOS still plays.
-      try {
-        await ExpoAudio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: false,
-        });
-      } catch {}
-      // Bundled file; if missing, this require throws → silently skip.
-
+      await ExpoAudio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+      });
+    } catch (e) {
+      console.warn("setAudioModeAsync failed:", e);
+    }
+    try {
       const source = require("../assets/audio/breathing.mp3");
       const { sound } = await ExpoAudio.Sound.createAsync(source, {
         isLooping: true,
-        volume: 0.6,
+        volume: 0.65,
       });
       soundRef.current = sound;
       await sound.playAsync();
-    } catch {
-      // Audio asset missing or load failed — graceful silence.
+    } catch (e) {
+      console.warn("Audio load/play failed:", e);
       soundRef.current = null;
     }
   }
@@ -113,7 +124,7 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
 
   function runPhase(idx: number) {
     const phase = PHASES[idx];
-    Animated.timing(scale, {
+    Animated.timing(buddyScale, {
       toValue: phase.target,
       duration: phase.duration,
       easing: Easing.inOut(Easing.ease),
@@ -130,7 +141,28 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
     setElapsedMs(0);
     setPhaseIdx(0);
     sessionStart.current = Date.now();
+    // 1. Hide the global overlay Buddy
+    onHideOverlay();
     speak("Дышим вместе");
+    // 2. Entrance spring: Buddy jumps from tiny → full size
+    //    When spring settles, breathing loop begins
+    buddyScale.setValue(0.2);
+    Animated.spring(buddyScale, {
+      toValue: 1.0,
+      friction: 4, // lower = more bounce, raise to 7 for subtler jump
+      tension: 20,
+      useNativeDriver: true,
+    }).start(() => {
+      // Drop to exhale size first so first inhale is immediately dramatic
+      Animated.timing(buddyScale, {
+        toValue: 0.65,
+        duration: 650,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => {
+        runPhase(0); // now starts with a big visible inhale expansion
+      });
+    });
     // tick the progress bar
     tickRef.current = setInterval(() => {
       const dt = Date.now() - sessionStart.current;
@@ -142,7 +174,7 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
       setElapsedMs(dt);
     }, 200);
     // start the breath loop
-    runPhase(0);
+    //    DEL.runPhase(0);
     // best-effort audio
     loadAndPlayAudio();
   }
@@ -152,9 +184,10 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
     stopAudio();
     setState("complete");
     speak("Молодец. Ты отдохнул.");
+    onShowOverlay(); // ← restore global Buddy
     // Reset visual circle to a calm middle size.
-    Animated.timing(scale, {
-      toValue: 0.8,
+    Animated.timing(buddyScale, {
+      toValue: 0.83,
       duration: 600,
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
@@ -164,6 +197,7 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
   function handleExit() {
     clearTimers();
     stopAudio();
+    onShowOverlay(); // ← restore global Buddy
     onSkip();
   }
 
@@ -181,7 +215,7 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
       <View style={s.screen}>
         <View style={{ height: BUDDY_FIXED_SPACER }} />
         <Text style={s.title}>Дышим вместе</Text>
-        <Text style={s.subtitle}>3 минуты спокойного дыхания с Бадди</Text>
+        <Text style={s.subtitle}>2 минуты спокойного дыхания с Бадди</Text>
 
         <View style={s.circleStatic}>
           <Text style={s.circleEmoji}>🌬️</Text>
@@ -209,7 +243,9 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
         <Text style={s.celebTitle}>Молодец</Text>
         <Text style={s.celebSub}>Ты отдохнул.</Text>
 
-        <Animated.View style={[s.circleActive, { transform: [{ scale }] }]}>
+        <Animated.View
+          style={[s.circleActive, { transform: [{ scale: buddyScale }] }]}
+        >
           <Text style={s.circleEmoji}>🌱</Text>
         </Animated.View>
 
@@ -234,16 +270,25 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
 
   return (
     <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+      {/* Phase label + timer sit above Buddy */}
       <Text style={s.phaseLabel}>{phaseLabel}</Text>
       <Text style={s.timeLeft}>
         {mm}:{ss}
       </Text>
 
-      <Animated.View style={[s.circleActive, { transform: [{ scale }] }]}>
-        <Text style={s.circleEmoji}>🌬️</Text>
-      </Animated.View>
-
+      {/* Buddy IS the breathing element — no separate circle */}
+      <View style={s.buddyContainer}>
+        <Animated.View
+          style={{ transform: [{ scale: buddyScale }], alignItems: "center" }}
+        >
+          <RNImage
+            source={getBuddyImage("serene")}
+            style={s.buddyBreathing}
+            resizeMode="contain"
+          />
+          <Text style={s.buddyName}>Бадди</Text>
+        </Animated.View>
+      </View>
       <View style={s.progressTrack}>
         <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
       </View>
@@ -258,8 +303,7 @@ export default function BreathingScreen({ speak, onComplete, onSkip }: Props) {
     </View>
   );
 }
-
-const CIRCLE_BASE = 200;
+const CIRCLE_BASE = 100;
 
 const s = StyleSheet.create({
   screen: {
@@ -347,8 +391,20 @@ const s = StyleSheet.create({
   },
   btnPrimaryTxt: { fontSize: 18, color: C.white, fontWeight: "700" },
 
-  btnSkip: { marginTop: 16, padding: 12 },
-  btnSkipTxt: { fontSize: 14, color: C.muted },
+  btnSkip: {
+    marginTop: 32,
+    padding: 12,
+    backgroundColor: C.greenLt,
+    borderRadius: 16,
+    paddingVertical: 17,
+    paddingHorizontal: 48,
+    minWidth: 220,
+    alignItems: "center",
+  },
+  btnSkipTxt: {
+    fontSize: 14,
+    color: C.muted,
+  },
 
   celebTitle: {
     fontSize: 30,
@@ -358,4 +414,23 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   celebSub: { fontSize: 17, color: C.text, marginTop: 6, textAlign: "center" },
+
+  buddyBreathing: {
+    width: BUDDY_BASE,
+    height: BUDDY_BASE,
+    backgroundColor: "transparent",
+  },
+  buddyName: {
+    fontSize: 12,
+    color: C.muted,
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  buddyContainer: {
+    width: BUDDY_BASE * 1.1, // just enough room for scale: 1.0
+    height: BUDDY_BASE * 1.1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 16,
+  },
 });

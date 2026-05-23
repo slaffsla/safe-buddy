@@ -2,38 +2,46 @@
 // MissionPickScreen: slot-grouped, current slot first.
 // ActiveScreen, CelebrateScreen, RewardsScreen: unchanged logic.
 
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Confetti, T } from './_SharedUI';
+import React from "react";
 import {
-  BUDDY_FIXED_SPACER, C,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Confetti, T } from "./_SharedUI";
+import {
+  BUDDY_FIXED_SPACER,
+  C,
   currentSlot,
-  getMilestoneMessage, getProgressionMessage,
+  getMilestoneMessage,
+  getProgressionMessage,
   MISSION_POOL,
   MissionSlot,
   MSG,
   PoolMission,
   REWARDS,
-  shouldShowConfetti
-} from './_constants';
+  shouldShowConfetti,
+} from "./_constants";
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
 
 const SLOT_LABELS: Record<MissionSlot, string> = {
-  morning:   '🌅 Утро',
-  afternoon: '☀️ День',
-  evening:   '🌙 Вечер',
-  any:       '✨ В любое время',
+  morning: "🌅 Утро",
+  afternoon: "☀️ День",
+  evening: "🌙 Вечер",
+  any: "✨ В любое время",
 };
 
 const SLOT_COLORS: Record<MissionSlot, { bg: string; border: string }> = {
-  morning:   { bg: C.slotMorning,   border: C.slotMorningBdr   },
+  morning: { bg: C.slotMorning, border: C.slotMorningBdr },
   afternoon: { bg: C.slotAfternoon, border: C.slotAfternoonBdr },
-  evening:   { bg: C.slotEvening,   border: C.slotEveningBdr   },
-  any:       { bg: C.bg,            border: C.border            },
+  evening: { bg: C.slotEvening, border: C.slotEveningBdr },
+  any: { bg: C.bg, border: C.border },
 };
 
-const SLOT_ORDER: MissionSlot[] = ['morning', 'afternoon', 'evening', 'any'];
+const SLOT_ORDER: MissionSlot[] = ["morning", "afternoon", "evening", "any"];
 
 // ── MissionPickScreen ─────────────────────────────────────────────────────────
 
@@ -45,37 +53,47 @@ interface MissionPickProps {
   missions?: PoolMission[] | null;
   doneIds?: number[];
   bonusMission?: PoolMission | null;
-  missionTypeById?: Record<number, 'permanent' | 'rotating' | 'inactive'>;
+  missionTypeById?: Record<number, "permanent" | "rotating" | "inactive">;
 }
 
 export function MissionPickScreen({
-  onPick, onBack, speak, firstTime, missions, doneIds, bonusMission, missionTypeById,
+  onPick,
+  onBack,
+  speak,
+  firstTime,
+  missions,
+  doneIds,
+  bonusMission,
+  missionTypeById,
 }: MissionPickProps) {
-  const pool = (!missions || missions.length === 0)
-    ? MISSION_POOL
-    : missions;
+  const pool = !missions || missions.length === 0 ? MISSION_POOL : missions;
 
   const done = new Set<number>(doneIds ?? []);
-  const remaining = pool.filter(m => !done.has(m.id)).length;
+  const remaining = pool.filter((m) => !done.has(m.id)).length;
   const allDone = pool.length > 0 && remaining === 0;
   const showBonus = allDone && !!bonusMission && !done.has(bonusMission.id);
 
   const active = currentSlot();
-  const orderedSlots = [active, ...SLOT_ORDER.filter(s => s !== active)] as MissionSlot[];
+  const orderedSlots = [
+    active,
+    ...SLOT_ORDER.filter((s) => s !== active),
+  ] as MissionSlot[];
 
   const grouped: Record<MissionSlot, PoolMission[]> = {
-    morning:   pool.filter(m => m.slot === 'morning'),
-    afternoon: pool.filter(m => m.slot === 'afternoon'),
-    evening:   pool.filter(m => m.slot === 'evening'),
-    any:       pool.filter(m => m.slot === 'any'),
+    morning: pool.filter((m) => m.slot === "morning"),
+    afternoon: pool.filter((m) => m.slot === "afternoon"),
+    evening: pool.filter((m) => m.slot === "evening"),
+    any: pool.filter((m) => m.slot === "any"),
   };
 
   const [expanded, setExpanded] = React.useState<MissionSlot>(active);
 
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{height: BUDDY_FIXED_SPACER}} />
-      <T style={s.pageTitle} speak={speak}>Выбери миссию</T>
+      <View style={{ height: BUDDY_FIXED_SPACER }} />
+      <T style={s.pageTitle} speak={speak}>
+        Выбери миссию
+      </T>
 
       {allDone && (
         <View style={s.encoreCard}>
@@ -94,93 +112,129 @@ export function MissionPickScreen({
               <TouchableOpacity
                 style={[s.mCard, s.bonusCard]}
                 onPress={() => onPick(bonusMission)}
-                onLongPress={() => speak(`${bonusMission.title}. ${bonusMission.subtitle}`)}
+                onLongPress={() =>
+                  speak(`${bonusMission.title}. ${bonusMission.subtitle}`)
+                }
               >
                 <Text style={s.mEmoji}>{bonusMission.emoji}</Text>
                 <View style={s.mInfo}>
                   <Text style={s.mTitle}>{bonusMission.title}</Text>
                   <Text style={s.mSub}>{bonusMission.subtitle}</Text>
                 </View>
-                <Text style={s.mStar}>{Array(bonusMission.stars).fill('⭐').join('')}</Text>
+                <Text style={s.mStar}>
+                  {Array(bonusMission.stars).fill("⭐").join("")}
+                </Text>
               </TouchableOpacity>
             </>
           )}
         </View>
       )}
 
-      {orderedSlots.map(slot => {
+      {orderedSlots.map((slot) => {
         const items = grouped[slot];
         if (items.length === 0) return null;
         const isOpen = expanded === slot;
         const colors = SLOT_COLORS[slot];
-        const slotDone = items.filter(m => done.has(m.id)).length;
+        const slotDone = items.filter((m) => done.has(m.id)).length;
 
         return (
           <View key={slot} style={s.slotSection}>
             <TouchableOpacity
-              style={[s.slotHeader, { backgroundColor: colors.bg, borderColor: colors.border }]}
-              onPress={() => setExpanded(isOpen ? 'any' : slot)}
+              style={[
+                s.slotHeader,
+                { backgroundColor: colors.bg, borderColor: colors.border },
+              ]}
+              onPress={() => setExpanded(isOpen ? "any" : slot)}
               activeOpacity={0.7}
             >
               <Text style={s.slotLabel}>{SLOT_LABELS[slot]}</Text>
               <View style={s.slotMeta}>
-                <Text style={s.slotCount}>{slotDone}/{items.length}</Text>
-                <Text style={s.slotChevron}>{isOpen ? '▲' : '▼'}</Text>
+                <Text style={s.slotCount}>
+                  {slotDone}/{items.length}
+                </Text>
+                <Text style={s.slotChevron}>{isOpen ? "▲" : "▼"}</Text>
               </View>
             </TouchableOpacity>
 
-            {isOpen && items.map(m => {
-              const isDone = done.has(m.id);
-              const mType  = missionTypeById?.[m.id];
-              const tintStyle =
-                mType === 'permanent' ? s.mCardPermanent :
-                mType === 'rotating'  ? s.mCardRotating  : null;
-              return (
-                <TouchableOpacity
-                  key={m.id}
-                  style={[s.mCard, tintStyle, m.stars >= 2 && s.mCardBig, isDone && s.mCardDone]}
-                  onPress={() => { if (!isDone) onPick(m); else speak(`${m.title}. Уже сделано сегодня`); }}
-                  onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
-                  activeOpacity={isDone ? 1 : 0.7}
-                >
-                  <Text style={[s.mEmoji, isDone && s.mEmojiDone]}>{m.emoji}</Text>
-                  <View style={s.mInfo}>
-                    <Text style={[s.mTitle, isDone && s.mTxtDone]}>{m.title}</Text>
-                    <Text style={[s.mSub, isDone && s.mTxtDone]}>{m.subtitle}</Text>
-                    {!isDone && mType === 'permanent' && (
-                      <View style={[s.typePill, s.typePillPermanent]}>
-                        <Text style={s.typePillTxtPermanent}>Всегда</Text>
-                      </View>
+            {isOpen &&
+              items.map((m) => {
+                const isDone = done.has(m.id);
+                const mType = missionTypeById?.[m.id];
+                const tintStyle =
+                  mType === "permanent"
+                    ? s.mCardPermanent
+                    : mType === "rotating"
+                      ? s.mCardRotating
+                      : null;
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={[
+                      s.mCard,
+                      tintStyle,
+                      m.stars >= 2 && s.mCardBig,
+                      isDone && s.mCardDone,
+                    ]}
+                    onPress={() => {
+                      if (!isDone) onPick(m);
+                      else speak(`${m.title}. Уже сделано сегодня`);
+                    }}
+                    onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
+                    activeOpacity={isDone ? 1 : 0.7}
+                  >
+                    <Text style={[s.mEmoji, isDone && s.mEmojiDone]}>
+                      {m.emoji}
+                    </Text>
+                    <View style={s.mInfo}>
+                      <Text style={[s.mTitle, isDone && s.mTxtDone]}>
+                        {m.title}
+                      </Text>
+                      <Text style={[s.mSub, isDone && s.mTxtDone]}>
+                        {m.subtitle}
+                      </Text>
+                      {!isDone && mType === "permanent" && (
+                        <View style={[s.typePill, s.typePillPermanent]}>
+                          <Text style={s.typePillTxtPermanent}>Всегда</Text>
+                        </View>
+                      )}
+                      {!isDone && mType === "rotating" && (
+                        <View style={[s.typePill, s.typePillRotating]}>
+                          <Text style={s.typePillTxtRotating}>Ротация</Text>
+                        </View>
+                      )}
+                    </View>
+                    {isDone ? (
+                      <Text style={s.mDoneBadge}>✓</Text>
+                    ) : (
+                      <Text style={s.mStar}>
+                        {Array(m.stars).fill("⭐").join("")}
+                      </Text>
                     )}
-                    {!isDone && mType === 'rotating' && (
-                      <View style={[s.typePill, s.typePillRotating]}>
-                        <Text style={s.typePillTxtRotating}>Ротация</Text>
-                      </View>
-                    )}
-                  </View>
-                  {isDone
-                    ? <Text style={s.mDoneBadge}>✓</Text>
-                    : <Text style={s.mStar}>{Array(m.stars).fill('⭐').join('')}</Text>
-                  }
-                </TouchableOpacity>
-              );
-            })}
+                  </TouchableOpacity>
+                );
+              })}
           </View>
         );
       })}
 
-      <T style={s.hint} speak={speak}>Удержи карточку, чтобы услышать</T>
+      <T style={s.hint} speak={speak}>
+        Удержи карточку, чтобы услышать
+      </T>
       <TouchableOpacity style={s.btnBack} onPress={onBack}>
         <Text style={s.btnBackTxt}>← Назад</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
-  
 
 // ── ActiveScreen ──────────────────────────────────────────────────────────────
 
-export function ActiveScreen({ mission, onDone, onSkip, speak }: {
+export function ActiveScreen({
+  mission,
+  onDone,
+  onSkip,
+  speak,
+}: {
   mission: any;
   onDone: () => void;
   onSkip: () => void;
@@ -189,8 +243,10 @@ export function ActiveScreen({ mission, onDone, onSkip, speak }: {
   if (!mission) return null;
   return (
     <View style={s.screen}>
-      <View style={{height: BUDDY_FIXED_SPACER}} />
-      <T style={s.msg} speak={speak}>{MSG.start}</T>
+      <View style={{ height: BUDDY_FIXED_SPACER }} />
+      <T style={s.msg} speak={speak}>
+        {MSG.start}
+      </T>
       <TouchableOpacity
         style={s.activeCard}
         onPress={() => speak(`${mission.title}. ${mission.subtitle}`)}
@@ -200,9 +256,13 @@ export function ActiveScreen({ mission, onDone, onSkip, speak }: {
         <Text style={s.activeTitle}>{mission.title}</Text>
         <Text style={s.activeSub}>{mission.subtitle}</Text>
         <View style={s.starsRow}>
-          {Array(mission.stars).fill('⭐').map((_: any, i: number) => (
-            <Text key={i} style={s.starBig}>⭐</Text>
-          ))}
+          {Array(mission.stars)
+            .fill("⭐")
+            .map((_: any, i: number) => (
+              <Text key={i} style={s.starBig}>
+                ⭐
+              </Text>
+            ))}
         </View>
         <Text style={s.tapHint}>нажми чтобы услышать ещё раз</Text>
       </TouchableOpacity>
@@ -219,8 +279,15 @@ export function ActiveScreen({ mission, onDone, onSkip, speak }: {
 // ── CelebrateScreen ───────────────────────────────────────────────────────────
 
 export function CelebrateScreen({
-  mission, stars, totalEver, totalMissions, completedToday,
-  isVeryExcited, onContinue, onRewards, speak,
+  mission,
+  stars,
+  totalEver,
+  totalMissions,
+  completedToday,
+  isVeryExcited,
+  onContinue,
+  onRewards,
+  speak,
 }: {
   mission: any;
   stars: number;
@@ -241,15 +308,23 @@ export function CelebrateScreen({
   return (
     <View style={s.screen}>
       {showConfetti && <Confetti trigger={true} />}
-      <View style={{height: BUDDY_FIXED_SPACER}} />
+      <View style={{ height: BUDDY_FIXED_SPACER }} />
       <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
-        {isVeryExcited ? '🏆 Невероятно!' : 'Миссия выполнена! 🎉'}
+        {isVeryExcited ? "🏆 Невероятно!" : "Миссия выполнена! 🎉"}
       </T>
-      <T style={s.progressionMsg} speak={speak}>{emotionalMsg}</T>
-      <TouchableOpacity style={s.earnedCard} onPress={() => speak(MSG.done)} activeOpacity={0.85}>
+      <T style={s.progressionMsg} speak={speak}>
+        {emotionalMsg}
+      </T>
+      <TouchableOpacity
+        style={s.earnedCard}
+        onPress={() => speak(MSG.done)}
+        activeOpacity={0.85}
+      >
         <Text style={s.earnedEmoji}>{mission.emoji}</Text>
         <Text style={s.earnedName}>{mission.title}</Text>
-        <Text style={s.earnedStars}>{Array(mission.stars).fill('⭐').join(' ')}</Text>
+        <Text style={s.earnedStars}>
+          {Array(mission.stars).fill("⭐").join(" ")}
+        </Text>
         <Text style={s.earnedTotal}>Всего: ⭐ {stars}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnPrimary} onPress={onContinue}>
@@ -264,7 +339,15 @@ export function CelebrateScreen({
 
 // ── RewardsScreen ─────────────────────────────────────────────────────────────
 
-export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem, showExactStarCost, rewards }: {
+export function RewardsScreen({
+  stars,
+  totalEver,
+  onBack,
+  speak,
+  onRedeem,
+  showExactStarCost,
+  rewards,
+}: {
   stars: number;
   totalEver: number;
   onBack: () => void;
@@ -276,33 +359,40 @@ export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem, showE
   const list = rewards ?? REWARDS;
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{height: BUDDY_FIXED_SPACER}} />
-      <T style={s.pageTitle} speak={speak}>Твои награды</T>
-      {list.map(r => {
+      <View style={{ height: BUDDY_FIXED_SPACER }} />
+      <T style={s.pageTitle} speak={speak}>
+        Твои награды
+      </T>
+      {list.map((r) => {
         const can = stars >= r.cost;
         const needText = showExactStarCost
           ? `Нужно ещё ${Math.max(0, r.cost - stars)} ⭐`
-          : 'ещё немного';
+          : "ещё немного";
         return (
           <TouchableOpacity
             key={r.id}
             style={[s.rCard, !can && s.rLocked]}
-            onPress={() => can ? onRedeem(r) : speak(`${r.title}. ${needText}`)}
+            onPress={() =>
+              can ? onRedeem(r) : speak(`${r.title}. ${needText}`)
+            }
             activeOpacity={0.7}
           >
             <Text style={s.rEmoji}>{r.emoji}</Text>
             <View style={s.rInfo}>
               <Text style={s.rTitle}>{r.title}</Text>
-              <Text style={s.rCost}>{Array(r.cost).fill('⭐').join('')}</Text>
+              <Text style={s.rCost}>{Array(r.cost).fill("⭐").join("")}</Text>
             </View>
-            {can
-              ? <Text style={s.rReady}>Получить!</Text>
-              : <Text style={s.rNeed}>{needText}</Text>
-            }
+            {can ? (
+              <Text style={s.rReady}>Получить!</Text>
+            ) : (
+              <Text style={s.rNeed}>{needText}</Text>
+            )}
           </TouchableOpacity>
         );
       })}
-      <T style={s.hint} speak={speak}>Нажми на награду, чтобы получить её</T>
+      <T style={s.hint} speak={speak}>
+        Нажми на награду, чтобы получить её
+      </T>
       <TouchableOpacity style={s.btnBack} onPress={onBack}>
         <Text style={s.btnBackTxt}>← Назад</Text>
       </TouchableOpacity>
@@ -313,97 +403,263 @@ export function RewardsScreen({ stars, totalEver, onBack, speak, onRedeem, showE
 // ── STYLES ────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  screen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  scroll: { alignItems: 'center', padding: 20, paddingBottom: 52 },
+  screen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  scroll: { alignItems: "center", padding: 20, paddingBottom: 52 },
 
-  msg:     { fontSize: 17, color: C.text, textAlign: 'center', marginVertical: 8, lineHeight: 25, paddingHorizontal: 8 },
-  tapHint: { fontSize: 11, color: C.muted, marginTop: 10, fontStyle: 'italic' },
+  msg: {
+    fontSize: 17,
+    color: C.text,
+    textAlign: "center",
+    marginVertical: 8,
+    lineHeight: 25,
+    paddingHorizontal: 8,
+  },
+  tapHint: { fontSize: 11, color: C.muted, marginTop: 10, fontStyle: "italic" },
 
-  pageTitle: { fontSize: 21, fontWeight: '700', color: C.text, marginBottom: 14, alignSelf: 'flex-start' },
-  hint:      { fontSize: 11, color: C.muted, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
+  pageTitle: {
+    fontSize: 21,
+    fontWeight: "700",
+    color: C.text,
+    marginBottom: 14,
+    alignSelf: "flex-start",
+  },
+  hint: {
+    fontSize: 11,
+    color: C.muted,
+    marginTop: 8,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
 
   // Slot grouping
-  slotSection: { width: '100%', marginBottom: 8 },
+  slotSection: { width: "100%", marginBottom: 8 },
   slotHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 4,
   },
-  slotLabel:   { fontSize: 14, fontWeight: '600', color: C.text },
-  slotMeta:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  slotCount:   { fontSize: 12, color: C.muted },
+  slotLabel: { fontSize: 14, fontWeight: "600", color: C.text },
+  slotMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
+  slotCount: { fontSize: 12, color: C.muted },
   slotChevron: { fontSize: 10, color: C.muted },
 
   // Mission cards
-  mCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 13, marginBottom: 7, width: '100%' },
+  mCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 13,
+    marginBottom: 7,
+    width: "100%",
+  },
   mCardBig: { backgroundColor: C.gold, borderColor: C.goldBdr },
-  mCardDone:{ backgroundColor: C.greenLt, borderColor: C.green, opacity: 0.75 },
-  mCardPermanent: { backgroundColor: '#F1FAF6', borderColor: '#CDE7DA' },
-  mCardRotating:  { backgroundColor: '#FFF8E7', borderColor: '#F1D58E' },
-  mEmoji:   { fontSize: 30, marginRight: 11 },
-  mEmojiDone:{ opacity: 0.55 },
-  mInfo:    { flex: 1 },
-  mTitle:   { fontSize: 15, fontWeight: '600', color: C.text },
-  mSub:     { fontSize: 12, color: C.muted, marginTop: 2 },
-  mStar:    { fontSize: 17 },
-  mTxtDone: { textDecorationLine: 'line-through', color: C.muted },
-  mDoneBadge:{ fontSize: 20, color: C.green, fontWeight: '800', marginLeft: 4 },
+  mCardDone: {
+    backgroundColor: C.greenLt,
+    borderColor: C.green,
+    opacity: 0.75,
+  },
+  mCardPermanent: { backgroundColor: "#F1FAF6", borderColor: "#CDE7DA" },
+  mCardRotating: { backgroundColor: "#FFF8E7", borderColor: "#F1D58E" },
+  mEmoji: { fontSize: 30, marginRight: 11 },
+  mEmojiDone: { opacity: 0.55 },
+  mInfo: { flex: 1 },
+  mTitle: { fontSize: 15, fontWeight: "600", color: C.text },
+  mSub: { fontSize: 12, color: C.muted, marginTop: 2 },
+  mStar: { fontSize: 17 },
+  mTxtDone: { textDecorationLine: "line-through", color: C.muted },
+  mDoneBadge: {
+    fontSize: 20,
+    color: C.green,
+    fontWeight: "800",
+    marginLeft: 4,
+  },
 
   // Type pills (mission cards)
-  typePill:               { alignSelf: 'flex-start', marginTop: 6, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 10 },
-  typePillPermanent:      { backgroundColor: C.green },
-  typePillRotating:       { backgroundColor: C.goldBdr },
-  typePillTxtPermanent:   { fontSize: 10, fontWeight: '700', color: C.white, letterSpacing: 0.3 },
-  typePillTxtRotating:    { fontSize: 10, fontWeight: '700', color: C.white, letterSpacing: 0.3 },
+  typePill: {
+    alignSelf: "flex-start",
+    marginTop: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+  },
+  typePillPermanent: { backgroundColor: C.green },
+  typePillRotating: { backgroundColor: C.goldBdr },
+  typePillTxtPermanent: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: C.white,
+    letterSpacing: 0.3,
+  },
+  typePillTxtRotating: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: C.white,
+    letterSpacing: 0.3,
+  },
 
   // Encore / bonus
-  encoreCard:   { width: '100%', backgroundColor: C.greenLt, borderRadius: 18, borderWidth: 1, borderColor: C.green, padding: 18, alignItems: 'center', marginBottom: 14 },
-  encoreEmoji:  { fontSize: 40, marginBottom: 6 },
-  encoreTitle:  { fontSize: 18, fontWeight: '700', color: C.green, textAlign: 'center' },
-  encoreSub:    { fontSize: 13, color: C.green, textAlign: 'center', marginTop: 4, marginBottom: 10 },
-  encoreBonusLabel: { fontSize: 13, color: C.green, fontWeight: '600', marginTop: 6, marginBottom: 6, alignSelf: 'flex-start' },
-  bonusCard:    { backgroundColor: C.gold, borderColor: C.goldBdr },
+  encoreCard: {
+    width: "100%",
+    backgroundColor: C.greenLt,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: C.green,
+    padding: 18,
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  encoreEmoji: { fontSize: 40, marginBottom: 6 },
+  encoreTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: C.green,
+    textAlign: "center",
+  },
+  encoreSub: {
+    fontSize: 13,
+    color: C.green,
+    textAlign: "center",
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  encoreBonusLabel: {
+    fontSize: 13,
+    color: C.green,
+    fontWeight: "600",
+    marginTop: 6,
+    marginBottom: 6,
+    alignSelf: "flex-start",
+  },
+  bonusCard: { backgroundColor: C.gold, borderColor: C.goldBdr },
 
-  celebTitle:    { fontSize: 24, fontWeight: '800', color: C.green, marginBottom: 4, textAlign: 'center' },
-  milestoneTitle:{ fontSize: 26, fontWeight: '900', color: C.green, marginBottom: 4, textAlign: 'center' },
-  progressionMsg:{ fontSize: 15, color: C.green, textAlign: 'center', marginVertical: 6, fontWeight: '500', lineHeight: 22 },
+  celebTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: C.green,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  milestoneTitle: {
+    fontSize: 26,
+    fontWeight: "900",
+    color: C.green,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  progressionMsg: {
+    fontSize: 15,
+    color: C.green,
+    textAlign: "center",
+    marginVertical: 6,
+    fontWeight: "500",
+    lineHeight: 22,
+  },
 
-  earnedCard:  { backgroundColor: C.greenLt, borderRadius: 20, padding: 22, alignItems: 'center', width: '100%', marginVertical: 12 },
+  earnedCard: {
+    backgroundColor: C.greenLt,
+    borderRadius: 20,
+    padding: 22,
+    alignItems: "center",
+    width: "100%",
+    marginVertical: 12,
+  },
   earnedEmoji: { fontSize: 44, marginBottom: 6 },
-  earnedName:  { fontSize: 16, fontWeight: '600', color: C.green },
+  earnedName: { fontSize: 16, fontWeight: "600", color: C.green },
   earnedStars: { fontSize: 26, marginTop: 6 },
-  earnedTotal: { fontSize: 14, color: C.green, marginTop: 4, fontWeight: '500' },
+  earnedTotal: {
+    fontSize: 14,
+    color: C.green,
+    marginTop: 4,
+    fontWeight: "500",
+  },
 
-  btnPrimary:    { backgroundColor: C.green, borderRadius: 16, paddingVertical: 17, paddingHorizontal: 32, marginTop: 10, width: '100%', alignItems: 'center' },
-  btnPrimaryTxt: { fontSize: 19, color: '#fff', fontWeight: '700' },
-  btnSecondary:    { backgroundColor: C.gold, borderRadius: 16, borderWidth: 1, borderColor: C.goldBdr, paddingVertical: 15, paddingHorizontal: 32, marginTop: 8, width: '100%', alignItems: 'center' },
-  btnSecondaryTxt: { fontSize: 17, color: '#92400E', fontWeight: '600' },
-  btnSkip:    { marginTop: 10, padding: 12 },
+  btnPrimary: {
+    backgroundColor: C.green,
+    borderRadius: 16,
+    paddingVertical: 17,
+    paddingHorizontal: 32,
+    marginTop: 10,
+    width: "100%",
+    alignItems: "center",
+  },
+  btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
+  btnSecondary: {
+    backgroundColor: C.gold,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.goldBdr,
+    paddingVertical: 15,
+    paddingHorizontal: 32,
+    marginTop: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  btnSecondaryTxt: { fontSize: 17, color: "#92400E", fontWeight: "600" },
+  btnSkip: { marginTop: 10, padding: 12 },
   btnSkipTxt: { fontSize: 15, color: C.muted },
-  btnBack:    { marginTop: 18, padding: 12 },
-  btnBackTxt: { fontSize: 15, color: C.green, fontWeight: '500' },
+  btnBack: { marginTop: 18, padding: 12 },
+  btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
 
-  activeCard:  { backgroundColor: C.white, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 26, alignItems: 'center', width: '100%', marginVertical: 12 },
+  activeCard: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 26,
+    alignItems: "center",
+    width: "100%",
+    marginVertical: 12,
+  },
   activeEmoji: { fontSize: 58, marginBottom: 10 },
-  activeTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  activeSub:   { fontSize: 14, color: C.muted, marginTop: 5, textAlign: 'center' },
-  starsRow:    { flexDirection: 'row', marginTop: 12, gap: 4 },
-  starBig:     { fontSize: 24 },
+  activeTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: C.text,
+    textAlign: "center",
+  },
+  activeSub: {
+    fontSize: 14,
+    color: C.muted,
+    marginTop: 5,
+    textAlign: "center",
+  },
+  starsRow: { flexDirection: "row", marginTop: 12, gap: 4 },
+  starBig: { fontSize: 24 },
 
-  rCard:   { flexDirection: 'row', alignItems: 'center', backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 13, marginBottom: 7, width: '100%' },
+  rCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 13,
+    marginBottom: 7,
+    width: "100%",
+  },
   rLocked: { opacity: 0.42 },
-  rEmoji:  { fontSize: 29, marginRight: 11 },
-  rInfo:   { flex: 1 },
-  rTitle:  { fontSize: 15, fontWeight: '600', color: C.text },
-  rCost:   { fontSize: 12, color: C.muted, marginTop: 2 },
-  rReady:  { fontSize: 13, color: C.green, fontWeight: '700' },
-  rNeed:   { fontSize: 11, color: C.muted, textAlign: 'right' },
+  rEmoji: { fontSize: 29, marginRight: 11 },
+  rInfo: { flex: 1 },
+  rTitle: { fontSize: 15, fontWeight: "600", color: C.text },
+  rCost: { fontSize: 12, color: C.muted, marginTop: 2 },
+  rReady: { fontSize: 13, color: C.green, fontWeight: "700" },
+  rNeed: { fontSize: 11, color: C.muted, textAlign: "right" },
 });
 
 // Expo Router: suppress "missing default export" warning for non-route files
-export default function _MissionScreens() { return null; }
+export default function _MissionScreens() {
+  return null;
+}

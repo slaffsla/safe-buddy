@@ -45,7 +45,6 @@ import SettingsScreen, {
   RotationFrequency,
 } from "./_SettingsScreen";
 import { ProgressBar } from "./_SharedUI";
-
 import {
   AgeProfile,
   BuddyMood,
@@ -67,6 +66,7 @@ import {
   REWARDS,
   selectBonusMission,
   selectDailyMissions,
+  shouldBeVeryExcited,
   shouldShowMorning,
   todayStr,
 } from "./_constants";
@@ -250,6 +250,7 @@ export default function App() {
   const [morningDoneDate, setMorningDoneDate] = useState("");
   const [showMorning, setShowMorning] = useState(false);
   const [doneIdsToday, setDoneIdsToday] = useState<number[]>([]);
+  const [showGlobalBuddy, setShowGlobalBuddy] = useState(true);
 
   // Onboarding
   const [childName, setChildName] = useState("");
@@ -658,16 +659,30 @@ export default function App() {
     appSettings.missions.map((m) => [m.id, m.type]),
   );
 
+  // Effective pools merge built-ins with parent-added custom items from
+  // the Parent Zone. Custom items participate in overrides + daily picker
+  // exactly like built-ins.
+  const allMissionPool: PoolMission[] = [
+    ...MISSION_POOL,
+    ...(appSettings.customMissions ?? []),
+  ];
+  const allRewardPool: Reward[] = [
+    ...REWARDS,
+    ...(appSettings.customRewards ?? []),
+  ];
+
   // Active pool: enabled for this day mode by parent override, and not inactive (mission-type setting)
   // Each mission's `stars` is replaced with the parent-override value (falls back to pool default).
-  const activePool: PoolMission[] = MISSION_POOL.filter(
-    (m) =>
-      effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
-      missionTypeById[m.id] !== "inactive",
-  ).map((m) => ({
-    ...m,
-    stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
-  }));
+  const activePool: PoolMission[] = allMissionPool
+    .filter(
+      (m) =>
+        effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
+        missionTypeById[m.id] !== "inactive",
+    )
+    .map((m) => ({
+      ...m,
+      stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
+    }));
 
   let dayMissions: PoolMission[] = activePool;
   let bonusMission: PoolMission | null = null;
@@ -692,10 +707,12 @@ export default function App() {
     ]);
     // Keep MISSION_POOL order within the subset for stable slot-grouping in UI;
     // apply override stars so cards display the right value.
-    dayMissions = MISSION_POOL.filter((m) => subsetIds.has(m.id)).map((m) => ({
-      ...m,
-      stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
-    }));
+    dayMissions = allMissionPool
+      .filter((m) => subsetIds.has(m.id))
+      .map((m) => ({
+        ...m,
+        stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
+      }));
 
     if (appSettings.bonusAfterCompletion) {
       const leftover = activePool.filter(
@@ -722,9 +739,9 @@ export default function App() {
   }
 
   // Effective rewards list (parent overrides applied; disabled rewards hidden).
-  const effectiveRewards: Reward[] = REWARDS.filter((r) =>
-    effectiveRewardEnabled(r.id, rewardOverrides),
-  ).map((r) => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
+  const effectiveRewards: Reward[] = allRewardPool
+    .filter((r) => effectiveRewardEnabled(r.id, rewardOverrides))
+    .map((r) => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
 
   const currentBlock = appSettings.scheduleEnabled
     ? getCurrentBlock(appSettings.scheduleBlocks, isWeekendDay)
@@ -901,7 +918,7 @@ export default function App() {
           speak={speak}
           onClose={() => setScreen("home")}
           onStartMission={(missionId: number) => {
-            const m = MISSION_POOL.find((x) => x.id === missionId);
+            const m = allMissionPool.find((x) => x.id === missionId);
             if (m) pickMission(m);
           }}
         />
@@ -912,23 +929,28 @@ export default function App() {
           speak={speak}
           onComplete={() => setScreen("home")}
           onSkip={() => setScreen("home")}
+          onHideOverlay={() => setShowGlobalBuddy(false)}
+          onShowOverlay={() => setShowGlobalBuddy(true)}
         />
       )}
 
       {/* ── FIXED BUDDY + PROGRESS BAR OVERLAY (all screens except Settings) ───────── */}
-      {onboardingDone && !showPinScreen && screen !== "settings" && (
-        <View style={s.topOverlay} pointerEvents="box-none">
-          <View style={s.topOverlayContent}>
-            <Buddy
-              mood={fixedOverlayMood}
-              speak={speak}
-              size={PROFILE_CONFIGS[ageProfile].buddySize}
-              celebrate={fixedOverlayCelebrate}
-            />
-            <ProgressBar total={totalEver} speak={speak} />
+      {onboardingDone &&
+        !showPinScreen &&
+        screen !== "settings" &&
+        showGlobalBuddy && (
+          <View style={s.topOverlay} pointerEvents="box-none">
+            <View style={s.topOverlayContent}>
+              <Buddy
+                mood={fixedOverlayMood}
+                speak={speak}
+                size={PROFILE_CONFIGS[ageProfile].buddySize}
+                celebrate={fixedOverlayCelebrate}
+              />
+              <ProgressBar total={totalEver} speak={speak} />
+            </View>
           </View>
-        </View>
-      )}
+        )}
 
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
       {showPinScreen && (
@@ -1015,12 +1037,17 @@ const s = StyleSheet.create({
     zIndex: 1000,
     alignItems: "center",
     paddingTop: 18,
+    backgroundColor: C.bg, // solid backing — content scrolls behind, not through
+
     paddingHorizontal: 20,
     pointerEvents: "box-none",
   },
   topOverlayContent: {
     width: "100%",
     alignItems: "center",
+    backgroundColor: C.bg, // solid backing — content scrolls behind, not through
+    paddingTop: 12,
+    paddingBottom: 8,
     pointerEvents: "auto",
   },
 

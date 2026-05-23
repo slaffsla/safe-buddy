@@ -24,6 +24,7 @@ import {
   View,
 } from "react-native";
 import { BUDDY_FIXED_SPACER, C, getBuddyImage } from "./_constants";
+import { t } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.38); // ~145px phone, ~290px tablet
@@ -32,10 +33,11 @@ export const BUDDY_BASE = Math.round(SCREEN_W * 0.38); // ~145px phone, ~290px t
 const BREATHING_DURATION_MS = 120_000;
 
 // Box breathing: 4s each phase, 16s per cycle.
-const PHASES: { label: string; duration: number; target: number }[] = [
-  { label: "Вдох", duration: 3000, target: 1.0 },
-  { label: "Держи", duration: 1000, target: 1.0 },
-  { label: "Выдох", duration: 4000, target: 0.55 },
+// Labels are resolved via i18n at render time so they follow the device locale.
+const PHASES: { labelKey: string; duration: number; target: number }[] = [
+  { labelKey: "breathing.phase_in", duration: 3000, target: 1.0 },
+  { labelKey: "breathing.phase_hold", duration: 1000, target: 1.0 },
+  { labelKey: "breathing.phase_out", duration: 4000, target: 0.55 },
 ];
 
 // Try to load expo-av at runtime. If the package isn't installed (or fails
@@ -143,7 +145,7 @@ export default function BreathingScreen({
     sessionStart.current = Date.now();
     // 1. Hide the global overlay Buddy
     onHideOverlay();
-    speak("Дышим вместе");
+    speak(t("breathing.start_speak"));
     // 2. Entrance spring: Buddy jumps from tiny → full size
     //    When spring settles, breathing loop begins
     buddyScale.setValue(0.2);
@@ -183,7 +185,7 @@ export default function BreathingScreen({
     clearTimers();
     stopAudio();
     setState("complete");
-    speak("Молодец. Ты отдохнул.");
+    speak(t("breathing.done_speak"));
     onShowOverlay(); // ← restore global Buddy
     // Reset visual circle to a calm middle size.
     Animated.timing(buddyScale, {
@@ -214,8 +216,8 @@ export default function BreathingScreen({
     return (
       <View style={s.screen}>
         <View style={{ height: BUDDY_FIXED_SPACER }} />
-        <Text style={s.title}>Дышим вместе</Text>
-        <Text style={s.subtitle}>2 минуты спокойного дыхания с Бадди</Text>
+        <Text style={s.title}>{t("breathing.title")}</Text>
+        <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
         <View style={s.circleStatic}>
           <Text style={s.circleEmoji}>🌬️</Text>
@@ -226,10 +228,10 @@ export default function BreathingScreen({
           onPress={startSession}
           activeOpacity={0.85}
         >
-          <Text style={s.btnPrimaryTxt}>Начать</Text>
+          <Text style={s.btnPrimaryTxt}>{t("breathing.btn_start")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-          <Text style={s.btnSkipTxt}>Назад</Text>
+          <Text style={s.btnSkipTxt}>{t("breathing.btn_back")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -240,8 +242,8 @@ export default function BreathingScreen({
     return (
       <View style={s.screen}>
         <View style={{ height: BUDDY_FIXED_SPACER }} />
-        <Text style={s.celebTitle}>Молодец</Text>
-        <Text style={s.celebSub}>Ты отдохнул.</Text>
+        <Text style={s.celebTitle}>{t("breathing.celeb_title")}</Text>
+        <Text style={s.celebSub}>{t("breathing.celeb_sub")}</Text>
 
         <Animated.View
           style={[s.circleActive, { transform: [{ scale: buddyScale }] }]}
@@ -254,14 +256,14 @@ export default function BreathingScreen({
           onPress={onComplete}
           activeOpacity={0.85}
         >
-          <Text style={s.btnPrimaryTxt}>Готово</Text>
+          <Text style={s.btnPrimaryTxt}>{t("breathing.btn_done")}</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   // ── ACTIVE ──────────────────────────────────────────────────────────────────
-  const phaseLabel = PHASES[phaseIdx].label;
+  const phaseLabel = t(PHASES[phaseIdx].labelKey);
   const remainingMs = Math.max(0, BREATHING_DURATION_MS - elapsedMs);
   const remainingSec = Math.ceil(remainingMs / 1000);
   const mm = Math.floor(remainingSec / 60);
@@ -286,7 +288,7 @@ export default function BreathingScreen({
             style={s.buddyBreathing}
             resizeMode="contain"
           />
-          <Text style={s.buddyName}>Бадди</Text>
+          <Text style={s.buddyName}>{t("buddy.name")}</Text>
         </Animated.View>
       </View>
       <View style={s.progressTrack}>
@@ -298,7 +300,7 @@ export default function BreathingScreen({
         onPress={handleExit}
         activeOpacity={0.7}
       >
-        <Text style={s.btnSkipTxt}>Завершить</Text>
+        <Text style={s.btnSkipTxt}>{t("breathing.btn_finish")}</Text>
       </TouchableOpacity>
     </View>
   );

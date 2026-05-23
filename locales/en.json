@@ -1,0 +1,225 @@
+{
+  "buddy": {
+    "name": "Buddy",
+    "idle": "I'm here.",
+    "idle_alt": "Tap me.",
+    "start": "Let's go together.",
+    "done": "Nicely done.",
+    "reward": "Look.",
+    "encouraging": "Try again.",
+    "thinking": "Hmm...",
+    "serene": "All is well.",
+    "very_excited": "This matters.",
+    "morning": "Good morning. Shall we start?"
+  },
+  "common": {
+    "back": "← Back",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "skip": "Skip",
+    "done": "Done",
+    "close": "Close"
+  },
+  "home": {
+    "greeting_with_name": "Hi {{name}}!",
+    "greeting": "Hi!",
+    "idle_calm": "It's okay. I'm here with you.",
+    "schedule_now": "Now",
+    "schedule_next": "Next",
+    "schedule_until": "until {{time}}",
+    "schedule_now_speak": "Now: {{title}}",
+    "schedule_next_speak": "Next: {{title}}",
+    "btn_pick_mission": "🚀 Pick a mission",
+    "btn_my_day": "📅 My day",
+    "btn_rewards": "🎁 My rewards",
+    "btn_breathing": "🌬️ Breathe with Buddy",
+    "btn_settings": "⚙️ Parent settings"
+  },
+  "onboarding": {
+    "title": "Hi! What is your child's name?",
+    "name_placeholder": "Name",
+    "age_placeholder": "Age",
+    "start_btn": "Start the adventure",
+    "welcome_greeting": "Hi {{name}}. Glad to see you.",
+    "save_error": "Save failed"
+  },
+  "demo": {
+    "intro_title": "Let's try together!",
+    "intro_sub": "Three simple tasks. A warm-up.",
+    "intro_start": "▶ Start warm-up",
+    "step_done": "✅ Did it!",
+    "step_tap_hint": "tap to hear",
+    "complete_title": "You did it! 🎉",
+    "complete_msg": "Want to try a real mission?",
+    "complete_yes": "🚀 Yes, let's go!",
+    "complete_later": "⏳ Later"
+  },
+  "demoSteps": {
+    "d1": { "title": "Clap your hands", "praise": "Nicely done" },
+    "d2": { "title": "Jump one time", "praise": "Good" },
+    "d3": { "title": "Touch your nose", "praise": "Nicely done" }
+  },
+  "missionPick": {
+    "title": "Pick a mission",
+    "encore_title": "You did it all today!",
+    "encore_sub": "Tomorrow Buddy will bring new missions.",
+    "encore_bonus": "Want one more? A bonus?",
+    "already_done": "{{title}}. Already done today.",
+    "hint": "Hold a card to hear it",
+    "type_permanent": "Always",
+    "type_rotating": "Rotation",
+    "slot_morning": "🌅 Morning",
+    "slot_afternoon": "☀️ Afternoon",
+    "slot_evening": "🌙 Evening",
+    "slot_any": "✨ Anytime"
+  },
+  "active": {
+    "tap_hint": "tap to hear again",
+    "btn_done": "✅ I did it!",
+    "btn_skip": "Skip"
+  },
+  "celebrate": {
+    "title": "Mission done! 🎉",
+    "milestone_title": "🏆 Amazing!",
+    "earned_total": "Total: ⭐ {{stars}}",
+    "btn_next": "🚀 Another mission!",
+    "btn_rewards": "🎁 See rewards"
+  },
+  "rewards": {
+    "title": "Your rewards",
+    "ready": "Get it!",
+    "need_exact": "Need {{count}} more ⭐",
+    "need_vague": "a little more",
+    "hint": "Tap a reward to get it",
+    "redeemed_alert_title": "🎉 Reward unlocked!",
+    "redeemed_speak": "Well done. You earned it."
+  },
+  "morning": {
+    "greeting_with_name": "Good morning, {{name}}!",
+    "greeting": "Good morning!",
+    "subgreeting": "Shall we start together?",
+    "ready_speak": "Great. You are ready for the day.",
+    "celeb_title": "Morning started! 🌟",
+    "earned_one": "You earned ⭐",
+    "earned_many": "You earned {{stars}}",
+    "reward_label": "Finish all steps and get {{stars}}",
+    "btn_done": "🌟 Done!",
+    "btn_remaining": "{{count}} left",
+    "btn_skip": "Skip morning routine"
+  },
+  "breathing": {
+    "title": "Breathe together",
+    "subtitle": "Two minutes of calm breathing with Buddy",
+    "phase_in": "In",
+    "phase_hold": "Hold",
+    "phase_out": "Out",
+    "start_speak": "Breathe together",
+    "done_speak": "Well done. You rested.",
+    "btn_start": "Start",
+    "btn_back": "Back",
+    "btn_done": "Done",
+    "btn_finish": "Finish",
+    "celeb_title": "Well done",
+    "celeb_sub": "You rested."
+  },
+  "day": {
+    "title": "My day",
+    "empty": "Nothing planned today",
+    "start_mission_a11y": "Start mission {{title}}",
+    "close_a11y": "Close",
+    "back_a11y": "Back"
+  },
+  "progress": {
+    "label_first": "First star is waiting!",
+    "label_lt5": "You are starting. That is great.",
+    "label_lt10": "You have done so much.",
+    "label_lt20": "You grow stronger every day.",
+    "label_lt50": "Buddy sees you growing.",
+    "label_max": "You are a real star.",
+    "stars_speak": "{{label}}. Stars: {{count}}"
+  },
+  "reflect": {
+    "boost": "Yesterday you did \"{{title}}\". Buddy remembers."
+  },
+  "suggestion": {
+    "yes": "I'll try!",
+    "no": "Not now"
+  },
+  "progression": {
+    "first_mission": "Your first mission",
+    "started_today": "You started today",
+    "two_today": "Two missions today",
+    "three_today": "Three missions today",
+    "more_today": "You keep going",
+    "five_total": "Five missions total",
+    "ten_total": "Ten missions",
+    "default": "I see your progress"
+  },
+  "milestone": {
+    "ten": "Ten stars! You shine!",
+    "twenty": "Twenty stars. You grow every day.",
+    "fifty": "Fifty stars! Buddy is proud!",
+    "hundred": "One hundred stars. A real star!",
+    "default": "{{count}} stars. Keep going!"
+  },
+  "pinChild": {
+    "title": "Parent PIN",
+    "unlock_label": "Unlock: {{title}}",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "wrong_title": "Wrong PIN",
+    "wrong_msg": "Try again"
+  },
+  "missions": {
+    "1": { "title": "Stand on one foot", "subtitle": "Five seconds" },
+    "2": { "title": "Reach for your toes", "subtitle": "Slowly" },
+    "3": { "title": "Jump three times", "subtitle": "Calmly" },
+    "4": { "title": "Drink some water", "subtitle": "Slowly" },
+    "5": { "title": "Phone-free time", "subtitle": "One minute" },
+    "7": { "title": "Make a fist. Open it.", "subtitle": "Three seconds" },
+    "8": { "title": "Phone-free time", "subtitle": "Two minutes" },
+    "9": { "title": "Tidy your toys", "subtitle": "One corner" },
+    "10": { "title": "Give a hug", "subtitle": "Quietly" },
+    "11": { "title": "Ask mom or dad how to help", "subtitle": "A small task" },
+    "12": { "title": "Tidy a little at home", "subtitle": "Just a bit" },
+    "13": { "title": "Shake your hands", "subtitle": "Ten seconds" },
+    "14": { "title": "Walk across the room", "subtitle": "There and back" },
+    "15": { "title": "Reach up high", "subtitle": "Hands as high as you can" },
+    "16": { "title": "Wash your face", "subtitle": "With cool water" },
+    "17": { "title": "Three deep breaths", "subtitle": "Slow and calm" },
+    "18": { "title": "Drink more water", "subtitle": "Second glass" },
+    "19": { "title": "Make your bed", "subtitle": "Smooth the blanket" },
+    "20": { "title": "Take your plate", "subtitle": "To the sink" },
+    "21": { "title": "Tidy your clothes", "subtitle": "In a neat stack" },
+    "22": { "title": "Say thank you", "subtitle": "To someone today" },
+    "23": { "title": "Smile at someone", "subtitle": "Just because" },
+    "24": { "title": "Share something good", "subtitle": "With mom or dad" },
+    "25": { "title": "Sit quietly", "subtitle": "One minute" },
+    "26": { "title": "Draw something", "subtitle": "Anything" },
+    "27": { "title": "Look out the window", "subtitle": "One minute" }
+  },
+  "rewardItems": {
+    "1": "Extra cartoon or video",
+    "2": "Choose dinner",
+    "3": "Stay up a bit later",
+    "4": "Favorite snack",
+    "5": "Game with dad",
+    "6": "Choose tonight's cartoon",
+    "7": "Game with mom",
+    "8": "Five extra minutes before bed",
+    "9": "Favorite music in the car",
+    "10": "Choose where to walk"
+  },
+  "dailySuggestions": {
+    "1": "Try drinking water",
+    "2": "Say something kind to someone",
+    "3": "Stretch a little",
+    "4": "Jump a bit",
+    "5": "Tidy one corner",
+    "6": "Try sitting quietly. One minute.",
+    "7": "Make your bed. Feels better.",
+    "8": "Say thanks to someone today",
+    "9": "Take a deep breath",
+    "10": "Reach up. As high as you can."
+  }
+}

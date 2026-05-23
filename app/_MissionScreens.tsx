@@ -19,19 +19,19 @@ import {
   getProgressionMessage,
   MISSION_POOL,
   MissionSlot,
-  MSG,
   PoolMission,
   REWARDS,
   shouldShowConfetti,
 } from "./_constants";
+import { t } from "./i18n";
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
 
-const SLOT_LABELS: Record<MissionSlot, string> = {
-  morning: "🌅 Утро",
-  afternoon: "☀️ День",
-  evening: "🌙 Вечер",
-  any: "✨ В любое время",
+const SLOT_LABEL_KEYS: Record<MissionSlot, string> = {
+  morning: "missionPick.slot_morning",
+  afternoon: "missionPick.slot_afternoon",
+  evening: "missionPick.slot_evening",
+  any: "missionPick.slot_any",
 };
 
 const SLOT_COLORS: Record<MissionSlot, { bg: string; border: string }> = {
@@ -92,22 +92,22 @@ export function MissionPickScreen({
     <ScrollView contentContainerStyle={s.scroll}>
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <T style={s.pageTitle} speak={speak}>
-        Выбери миссию
+        {t("missionPick.title")}
       </T>
 
       {allDone && (
         <View style={s.encoreCard}>
           <Text style={s.encoreEmoji}>🌙</Text>
           <T style={s.encoreTitle} speak={speak}>
-            Ты сделал всё на сегодня!
+            {t("missionPick.encore_title")}
           </T>
           <T style={s.encoreSub} speak={speak}>
-            Завтра Бадди принесёт новые миссии
+            {t("missionPick.encore_sub")}
           </T>
           {showBonus && bonusMission && (
             <>
               <T style={s.encoreBonusLabel} speak={speak}>
-                Хочешь ещё одну — бонус?
+                {t("missionPick.encore_bonus")}
               </T>
               <TouchableOpacity
                 style={[s.mCard, s.bonusCard]}
@@ -147,7 +147,7 @@ export function MissionPickScreen({
               onPress={() => setExpanded(isOpen ? "any" : slot)}
               activeOpacity={0.7}
             >
-              <Text style={s.slotLabel}>{SLOT_LABELS[slot]}</Text>
+              <Text style={s.slotLabel}>{t(SLOT_LABEL_KEYS[slot])}</Text>
               <View style={s.slotMeta}>
                 <Text style={s.slotCount}>
                   {slotDone}/{items.length}
@@ -177,7 +177,10 @@ export function MissionPickScreen({
                     ]}
                     onPress={() => {
                       if (!isDone) onPick(m);
-                      else speak(`${m.title}. Уже сделано сегодня`);
+                      else
+                        speak(
+                          t("missionPick.already_done", { title: m.title }),
+                        );
                     }}
                     onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
                     activeOpacity={isDone ? 1 : 0.7}
@@ -194,12 +197,16 @@ export function MissionPickScreen({
                       </Text>
                       {!isDone && mType === "permanent" && (
                         <View style={[s.typePill, s.typePillPermanent]}>
-                          <Text style={s.typePillTxtPermanent}>Всегда</Text>
+                          <Text style={s.typePillTxtPermanent}>
+                            {t("missionPick.type_permanent")}
+                          </Text>
                         </View>
                       )}
                       {!isDone && mType === "rotating" && (
                         <View style={[s.typePill, s.typePillRotating]}>
-                          <Text style={s.typePillTxtRotating}>Ротация</Text>
+                          <Text style={s.typePillTxtRotating}>
+                            {t("missionPick.type_rotating")}
+                          </Text>
                         </View>
                       )}
                     </View>
@@ -218,10 +225,10 @@ export function MissionPickScreen({
       })}
 
       <T style={s.hint} speak={speak}>
-        Удержи карточку, чтобы услышать
+        {t("missionPick.hint")}
       </T>
       <TouchableOpacity style={s.btnBack} onPress={onBack}>
-        <Text style={s.btnBackTxt}>← Назад</Text>
+        <Text style={s.btnBackTxt}>{t("common.back")}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -245,7 +252,7 @@ export function ActiveScreen({
     <View style={s.screen}>
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <T style={s.msg} speak={speak}>
-        {MSG.start}
+        {t("buddy.start")}
       </T>
       <TouchableOpacity
         style={s.activeCard}
@@ -264,13 +271,13 @@ export function ActiveScreen({
               </Text>
             ))}
         </View>
-        <Text style={s.tapHint}>нажми чтобы услышать ещё раз</Text>
+        <Text style={s.tapHint}>{t("active.tap_hint")}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnPrimary} onPress={onDone}>
-        <Text style={s.btnPrimaryTxt}>✅ Я сделал!</Text>
+        <Text style={s.btnPrimaryTxt}>{t("active.btn_done")}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-        <Text style={s.btnSkipTxt}>Пропустить</Text>
+        <Text style={s.btnSkipTxt}>{t("active.btn_skip")}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -310,14 +317,14 @@ export function CelebrateScreen({
       {showConfetti && <Confetti trigger={true} />}
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
-        {isVeryExcited ? "🏆 Невероятно!" : "Миссия выполнена! 🎉"}
+        {isVeryExcited ? t("celebrate.milestone_title") : t("celebrate.title")}
       </T>
       <T style={s.progressionMsg} speak={speak}>
         {emotionalMsg}
       </T>
       <TouchableOpacity
         style={s.earnedCard}
-        onPress={() => speak(MSG.done)}
+        onPress={() => speak(t("buddy.done"))}
         activeOpacity={0.85}
       >
         <Text style={s.earnedEmoji}>{mission.emoji}</Text>
@@ -325,13 +332,15 @@ export function CelebrateScreen({
         <Text style={s.earnedStars}>
           {Array(mission.stars).fill("⭐").join(" ")}
         </Text>
-        <Text style={s.earnedTotal}>Всего: ⭐ {stars}</Text>
+        <Text style={s.earnedTotal}>
+          {t("celebrate.earned_total", { stars: stars })}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnPrimary} onPress={onContinue}>
-        <Text style={s.btnPrimaryTxt}>🚀 Ещё миссию!</Text>
+        <Text style={s.btnPrimaryTxt}>{t("celebrate.btn_next")}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>🎁 Посмотреть награды</Text>
+        <Text style={s.btnSecondaryTxt}>{t("celebrate.btn_rewards")}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -361,13 +370,13 @@ export function RewardsScreen({
     <ScrollView contentContainerStyle={s.scroll}>
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <T style={s.pageTitle} speak={speak}>
-        Твои награды
+        {t("rewards.title")}
       </T>
       {list.map((r) => {
         const can = stars >= r.cost;
         const needText = showExactStarCost
-          ? `Нужно ещё ${Math.max(0, r.cost - stars)} ⭐`
-          : "ещё немного";
+          ? t("rewards.need_exact", { count: Math.max(0, r.cost - stars) })
+          : t("rewards.need_vague");
         return (
           <TouchableOpacity
             key={r.id}
@@ -383,7 +392,7 @@ export function RewardsScreen({
               <Text style={s.rCost}>{Array(r.cost).fill("⭐").join("")}</Text>
             </View>
             {can ? (
-              <Text style={s.rReady}>Получить!</Text>
+              <Text style={s.rReady}>{t("rewards.ready")}</Text>
             ) : (
               <Text style={s.rNeed}>{needText}</Text>
             )}
@@ -391,10 +400,10 @@ export function RewardsScreen({
         );
       })}
       <T style={s.hint} speak={speak}>
-        Нажми на награду, чтобы получить её
+        {t("rewards.hint")}
       </T>
       <TouchableOpacity style={s.btnBack} onPress={onBack}>
-        <Text style={s.btnBackTxt}>← Назад</Text>
+        <Text style={s.btnBackTxt}>{t("common.back")}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

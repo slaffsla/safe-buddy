@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { C, ScheduleBlock, getBlockStatus } from "./_constants";
+import { t } from "./i18n";
 
 interface DayScreenProps {
   blocks: ScheduleBlock[];
@@ -54,11 +55,11 @@ export default function DayScreen({
   return (
     <View style={s.root}>
       <View style={s.header}>
-        <Text style={s.headerTitle}>Мой день</Text>
+        <Text style={s.headerTitle}>{t("day.title")}</Text>
         <TouchableOpacity
           style={s.closeBtn}
           onPress={onClose}
-          accessibilityLabel="Закрыть"
+          accessibilityLabel={t("day.close_a11y")}
         >
           <Text style={s.closeBtnTxt}>✕</Text>
         </TouchableOpacity>
@@ -66,7 +67,7 @@ export default function DayScreen({
 
       <ScrollView ref={scrollRef} contentContainerStyle={s.scroll}>
         {visibleBlocks.length === 0 ? (
-          <Text style={s.empty}>На сегодня пунктов нет</Text>
+          <Text style={s.empty}>{t("day.empty")}</Text>
         ) : (
           visibleBlocks.map((block, idx) => {
             const status = getBlockStatus(block);
@@ -134,7 +135,9 @@ export default function DayScreen({
                     <TouchableOpacity
                       style={s.startBtn}
                       onPress={() => onStartMission(block.missionId!)}
-                      accessibilityLabel={`Начать миссию ${block.title}`}
+                      accessibilityLabel={t("day.start_mission_a11y", {
+                        title: block.title,
+                      })}
                     >
                       <Text style={s.startBtnTxt}>▶</Text>
                     </TouchableOpacity>
@@ -147,9 +150,9 @@ export default function DayScreen({
         <TouchableOpacity
           style={s.btnBack}
           onPress={onClose}
-          accessibilityLabel="Назад"
+          accessibilityLabel={t("day.back_a11y")}
         >
-          <Text style={s.btnBackTxt}>← Назад</Text>
+          <Text style={s.btnBackTxt}>{t("common.back")}</Text>
         </TouchableOpacity>
         <View style={{ height: 60 }} />
       </ScrollView>

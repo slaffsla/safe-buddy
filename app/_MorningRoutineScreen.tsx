@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { BUDDY_FIXED_SPACER, C, MorningStep } from "./_constants";
 import { Confetti } from "./_SharedUI";
+import { t } from "./i18n";
 
 interface Props {
   childName: string;
@@ -41,7 +42,9 @@ export default function MorningRoutineScreen({
   }
 
   const allDone = doneIds.length === validSteps.length && validSteps.length > 0;
-  const greeting = childName ? `Доброе утро, ${childName}!` : "Доброе утро!";
+  const greeting = childName
+    ? t("morning.greeting_with_name", { name: childName })
+    : t("morning.greeting");
   function toggleStep(step: MorningStep) {
     if (!step?.id) return; // Defensive check
     if (finished) return;
@@ -54,7 +57,7 @@ export default function MorningRoutineScreen({
 
   function handleComplete() {
     setFinished(true);
-    speak("Отлично! Ты готов к новому дню!");
+    speak(t("morning.ready_speak"));
     setTimeout(() => onComplete(stars), 1900);
   }
 
@@ -64,11 +67,13 @@ export default function MorningRoutineScreen({
       <View style={s.screen}>
         <Confetti trigger />
         <View style={{ height: BUDDY_FIXED_SPACER }} />
-        <Text style={s.celebTitle}>Утро начато! 🌟</Text>
+        <Text style={s.celebTitle}>{t("morning.celeb_title")}</Text>
         <Text style={s.celebSub}>
           {stars === 1
-            ? "Ты заработал ⭐"
-            : `Ты заработал ${Array(stars).fill("⭐").join("")}`}
+            ? t("morning.earned_one")
+            : t("morning.earned_many", {
+                stars: Array(stars).fill("⭐").join(""),
+              })}
         </Text>
       </View>
     );
@@ -79,10 +84,8 @@ export default function MorningRoutineScreen({
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <View style={s.headerText}>
         <Text style={s.greeting}>{greeting}</Text>
-        <TouchableOpacity
-          onPress={() => speak("Доброе утро! Начнём день вместе?")}
-        >
-          <Text style={s.subGreeting}>Начнём день вместе?</Text>
+        <TouchableOpacity onPress={() => speak(t("buddy.morning"))}>
+          <Text style={s.subGreeting}>{t("morning.subgreeting")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -122,7 +125,9 @@ export default function MorningRoutineScreen({
       </View>
 
       <Text style={s.rewardLabel}>
-        Выполни все шаги и получи {Array(stars).fill("⭐").join("")}
+        {t("morning.reward_label", {
+          stars: Array(stars).fill("⭐").join(""),
+        })}
       </Text>
 
       {/* Complete — disabled until all steps done */}
@@ -133,13 +138,15 @@ export default function MorningRoutineScreen({
       >
         <Text style={s.btnPrimaryTxt}>
           {allDone
-            ? "🌟 Готово!"
-            : `Осталось ${validSteps.length - doneIds.length}`}
+            ? t("morning.btn_done")
+            : t("morning.btn_remaining", {
+                count: validSteps.length - doneIds.length,
+              })}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-        <Text style={s.btnSkipTxt}>Пропустить утреннюю рутину</Text>
+        <Text style={s.btnSkipTxt}>{t("morning.btn_skip")}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

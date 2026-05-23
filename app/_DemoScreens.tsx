@@ -4,6 +4,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { T } from "./_SharedUI";
 import { BUDDY_FIXED_SPACER, C } from "./_constants";
+import { t, tDemoStepPraise, tDemoStepTitle } from "./i18n";
 
 // ── DemoIntroScreen ───────────────────────────────────────────────────────────
 
@@ -20,16 +21,16 @@ export function DemoIntroScreen({
     <View style={s.screen}>
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <T style={s.msg} speak={speak}>
-        Давай попробуем вместе!
+        {t("demo.intro_title")}
       </T>
       <T style={s.sub} speak={speak}>
-        Три простых задания — для разминки
+        {t("demo.intro_sub")}
       </T>
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>▶ Начать разминку</Text>
+        <Text style={s.btnPrimaryTxt}>{t("demo.intro_start")}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-        <Text style={s.btnSkipTxt}>Пропустить</Text>
+        <Text style={s.btnSkipTxt}>{t("common.skip")}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -44,18 +45,26 @@ export function DemoStepScreen({
   onDone,
   speak,
 }: {
-  step: { title: string; emoji: string; praise: string };
+  step: { id?: string; title: string; emoji: string; praise: string };
   stepIndex: number;
   totalSteps: number;
   onDone: () => void;
   speak: (t: string) => void;
 }) {
   const [done, setDone] = useState(false);
+  // Resolve translated copy with the canonical Russian title/praise as fallback
+  // so custom or missing-key cases never break.
+  const localizedTitle = step.id
+    ? tDemoStepTitle(step.id, step.title)
+    : step.title;
+  const localizedPraise = step.id
+    ? tDemoStepPraise(step.id, step.praise)
+    : step.praise;
 
   function handleDone() {
     if (done) return;
     setDone(true);
-    speak(step.praise);
+    speak(localizedPraise);
     setTimeout(onDone, 1000);
   }
 
@@ -74,20 +83,20 @@ export function DemoStepScreen({
       </View>
       <TouchableOpacity
         style={s.demoCard}
-        onPress={() => speak(step.title)}
+        onPress={() => speak(localizedTitle)}
         activeOpacity={0.85}
       >
         <Text style={s.demoEmoji}>{step.emoji}</Text>
-        <Text style={s.demoTitle}>{step.title}</Text>
-        <Text style={s.tapHint}>нажми чтобы услышать</Text>
+        <Text style={s.demoTitle}>{localizedTitle}</Text>
+        <Text style={s.tapHint}>{t("demo.step_tap_hint")}</Text>
       </TouchableOpacity>
       {!done ? (
         <TouchableOpacity style={s.btnPrimary} onPress={handleDone}>
-          <Text style={s.btnPrimaryTxt}>✅ Сделал!</Text>
+          <Text style={s.btnPrimaryTxt}>{t("demo.step_done")}</Text>
         </TouchableOpacity>
       ) : (
         <View style={s.praiseRow}>
-          <Text style={s.praiseText}>{step.praise} 🎉</Text>
+          <Text style={s.praiseText}>{localizedPraise} 🎉</Text>
         </View>
       )}
     </View>
@@ -108,16 +117,16 @@ export function DemoCompleteScreen({
   return (
     <View style={s.screen}>
       <View style={{ height: BUDDY_FIXED_SPACER }} />
-      <Text style={s.celebTitle}>Ты справился! 🎉</Text>
+      <Text style={s.celebTitle}>{t("demo.complete_title")}</Text>
       <T style={s.msg} speak={speak}>
-        Хочешь попробовать настоящую миссию?
+        {t("demo.complete_msg")}
       </T>
       <View style={s.demoCompleteButtons}>
         <TouchableOpacity style={s.btnPrimary} onPress={onGoToMissions}>
-          <Text style={s.btnPrimaryTxt}>🚀 Да, хочу!</Text>
+          <Text style={s.btnPrimaryTxt}>{t("demo.complete_yes")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.btnSecondary} onPress={onGoHome}>
-          <Text style={s.btnSecondaryTxt}>⏳ Попозже</Text>
+          <Text style={s.btnSecondaryTxt}>{t("demo.complete_later")}</Text>
         </TouchableOpacity>
       </View>
     </View>

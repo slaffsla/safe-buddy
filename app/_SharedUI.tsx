@@ -4,6 +4,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { C, DAILY_SUGGESTIONS, getProgress } from "./_constants";
+import { t } from "./i18n";
 
 // ── T — Speakable text wrapper ─────────────────────────────────────────────────
 
@@ -39,21 +40,25 @@ export function ProgressBar({
   const { pct } = getProgress(total);
   const emotionalLabel =
     total === 0
-      ? "Первая звезда ждёт тебя!"
+      ? t("progress.label_first")
       : total < 5
-        ? "Ты только начинаешь — это здорово"
+        ? t("progress.label_lt5")
         : total < 10
-          ? "Ты уже так много сделал"
+          ? t("progress.label_lt10")
           : total < 20
-            ? "Ты становишься сильнее каждый день"
+            ? t("progress.label_lt20")
             : total < 50
-              ? "Бадди видит твой рост"
-              : "Ты настоящая звезда";
+              ? t("progress.label_lt50")
+              : t("progress.label_max");
 
   return (
     <TouchableOpacity
       style={s.pbWrap}
-      onPress={() => speak(`${emotionalLabel}. Звёзд: ${total}`)}
+      onPress={() =>
+        speak(
+          t("progress.stars_speak", { label: emotionalLabel, count: total }),
+        )
+      }
       activeOpacity={0.82}
     >
       <View style={s.pbRow}>

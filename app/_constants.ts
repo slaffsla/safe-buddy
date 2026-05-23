@@ -1,5 +1,15 @@
 // _constants.ts — SafeBuddy shared data, types, and pure helpers
 // No React imports here — pure TS so any file can import safely.
+//
+// LOCALIZATION NOTE
+// -----------------
+// Mission titles, MSG phrases, DAILY_SUGGESTIONS texts and reward titles
+// remain in Russian here as the **canonical source** (per i18n ticket).
+// `locales/ru.json` mirrors these strings and `locales/en.json` (plus future
+// locales) holds the translations. Helper functions in this file resolve
+// to the active locale via i18n; the screens never see hardcoded Russian.
+
+import { t } from "./i18n";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -802,7 +812,11 @@ export const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
 
 export function getDailySuggestion() {
   const dayOfYear = Math.floor(Date.now() / 86400000);
-  return DAILY_SUGGESTIONS[dayOfYear % DAILY_SUGGESTIONS.length];
+  const item = DAILY_SUGGESTIONS[dayOfYear % DAILY_SUGGESTIONS.length];
+  // Localized text via daily suggestion index in locales/<lang>.json.
+  // Falls back to the canonical Russian text if a key is missing.
+  const index = (dayOfYear % DAILY_SUGGESTIONS.length) + 1;
+  return { ...item, text: t(`dailySuggestions.${index}`) || item.text };
 }
 
 export function getBuddyImage(mood: BuddyMood) {
@@ -812,24 +826,24 @@ export function getBuddyImage(mood: BuddyMood) {
 export function getBuddyLine(mood: BuddyMood): string {
   switch (mood) {
     case "calm":
-      return MSG.idle;
+      return t("buddy.idle");
     case "gentle-reminder":
-      return MSG.idle_alt;
+      return t("buddy.idle_alt");
     case "serene":
-      return MSG.serene;
+      return t("buddy.serene");
     case "encouraging":
-      return MSG.encouraging;
+      return t("buddy.encouraging");
     case "thinking":
-      return MSG.thinking;
+      return t("buddy.thinking");
     case "excited":
-      return MSG.start;
+      return t("buddy.start");
     case "happy":
     case "proud":
-      return MSG.done;
+      return t("buddy.done");
     case "very-excited":
-      return MSG["very-excited"];
+      return t("buddy.very_excited");
     default:
-      return MSG.idle;
+      return t("buddy.idle");
   }
 }
 
@@ -995,25 +1009,22 @@ export function getProgressionMessage(
   totalMissions: number,
   completedToday: number,
 ): string {
-  if (totalMissions === 1) return "Первая миссия";
-  if (completedToday === 1) return "Ты начал сегодня";
-  if (completedToday === 2) return "Две миссии сегодня";
-  if (completedToday === 3) return "Три миссии сегодня";
-  if (completedToday >= 4) return "Ты продолжаешь";
-  if (totalMissions === 5) return "Пять миссий всего";
-  if (totalMissions === 10) return "Десять миссий";
-  return "Я вижу твой прогресс";
+  if (totalMissions === 1) return t("progression.first_mission");
+  if (completedToday === 1) return t("progression.started_today");
+  if (completedToday === 2) return t("progression.two_today");
+  if (completedToday === 3) return t("progression.three_today");
+  if (completedToday >= 4) return t("progression.more_today");
+  if (totalMissions === 5) return t("progression.five_total");
+  if (totalMissions === 10) return t("progression.ten_total");
+  return t("progression.default");
 }
 
 export function getMilestoneMessage(totalEver: number): string {
-  if (totalEver >= 10 && totalEver < 11) return "Десять звёзд! Ты сияешь!";
-  if (totalEver >= 20 && totalEver < 22)
-    return "Двадцать звёзд — ты растёшь каждый день";
-  if (totalEver >= 50 && totalEver < 52)
-    return "Пятьдесят звёзд! Бадди так тобой гордится!";
-  if (totalEver >= 100 && totalEver < 102)
-    return "Сто звёзд. Ты настоящая звезда!";
-  return `${totalEver} звёзд — и ты продолжаешь!`;
+  if (totalEver >= 10 && totalEver < 11) return t("milestone.ten");
+  if (totalEver >= 20 && totalEver < 22) return t("milestone.twenty");
+  if (totalEver >= 50 && totalEver < 52) return t("milestone.fifty");
+  if (totalEver >= 100 && totalEver < 102) return t("milestone.hundred");
+  return t("milestone.default", { count: totalEver });
 }
 
 // Expo Router: suppress "missing default export" warning for non-route files

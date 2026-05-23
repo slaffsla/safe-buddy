@@ -11,11 +11,11 @@ import {
 import {
   BUDDY_FIXED_SPACER,
   C,
-  MSG,
   ScheduleBlock,
   getDailySuggestion,
   getProgressionMessage,
 } from "./_constants";
+import { t } from "./i18n";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
 
 interface HomeScreenProps {
@@ -65,13 +65,15 @@ export default function HomeScreen({
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [idleMsg] = useState(() =>
     skipCount >= threshold
-      ? "Всё нормально. Я здесь с тобой"
+      ? t("home.idle_calm")
       : Math.random() > 0.7
-        ? MSG.idle_alt
-        : MSG.idle,
+        ? t("buddy.idle_alt")
+        : t("buddy.idle"),
   );
 
-  const greeting = childName ? `Привет, ${childName}!` : "Привет!";
+  const greeting = childName
+    ? t("home.greeting_with_name", { name: childName })
+    : t("home.greeting");
   const suggestion = getDailySuggestion();
   const progressMsg =
     totalMissions > 0
@@ -106,26 +108,32 @@ export default function HomeScreen({
           {currentBlock && (
             <TouchableOpacity
               style={s.scheduleNow}
-              onPress={() => speak(`Сейчас ${currentBlock.title}`)}
+              onPress={() =>
+                speak(t("home.schedule_now_speak", { title: currentBlock.title }))
+              }
               activeOpacity={0.8}
             >
               <Text style={s.scheduleEmoji}>{currentBlock.emoji}</Text>
               <View style={s.scheduleInfo}>
-                <Text style={s.scheduleNowLabel}>Сейчас</Text>
+                <Text style={s.scheduleNowLabel}>{t("home.schedule_now")}</Text>
                 <Text style={s.scheduleTitle}>{currentBlock.title}</Text>
               </View>
-              <Text style={s.scheduleTime}>до {currentBlock.endTime}</Text>
+              <Text style={s.scheduleTime}>
+                {t("home.schedule_until", { time: currentBlock.endTime })}
+              </Text>
             </TouchableOpacity>
           )}
           {nextBlock && (
             <TouchableOpacity
               style={s.scheduleNext}
-              onPress={() => speak(`Потом ${nextBlock.title}`)}
+              onPress={() =>
+                speak(t("home.schedule_next_speak", { title: nextBlock.title }))
+              }
               activeOpacity={0.8}
             >
               <Text style={s.scheduleNextEmoji}>{nextBlock.emoji}</Text>
               <View style={s.scheduleInfo}>
-                <Text style={s.scheduleNextLabel}>Потом</Text>
+                <Text style={s.scheduleNextLabel}>{t("home.schedule_next")}</Text>
                 <Text style={s.scheduleNextTitle}>{nextBlock.title}</Text>
               </View>
               <Text style={s.scheduleTime}>{nextBlock.startTime}</Text>
@@ -135,23 +143,23 @@ export default function HomeScreen({
       )}
 
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>🚀 Выбрать миссию</Text>
+        <Text style={s.btnPrimaryTxt}>{t("home.btn_pick_mission")}</Text>
       </TouchableOpacity>
       {scheduleEnabled && onOpenDay && (
         <TouchableOpacity style={s.btnDay} onPress={onOpenDay}>
-          <Text style={s.btnDayTxt}>📅 Мой день</Text>
+          <Text style={s.btnDayTxt}>{t("home.btn_my_day")}</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>🎁 Мои награды</Text>
+        <Text style={s.btnSecondaryTxt}>{t("home.btn_rewards")}</Text>
       </TouchableOpacity>
       {onBreathing && (
         <TouchableOpacity style={s.btnBreathing} onPress={onBreathing}>
-          <Text style={s.btnBreathingTxt}>🌬️ Подышать с Бадди</Text>
+          <Text style={s.btnBreathingTxt}>{t("home.btn_breathing")}</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={s.btnSettings} onPress={onSettings}>
-        <Text style={s.btnSettingsTxt}>⚙️ Настройки для родителей</Text>
+        <Text style={s.btnSettingsTxt}>{t("home.btn_settings")}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

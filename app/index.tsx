@@ -642,9 +642,21 @@ export default function App() {
     appSettings.missions.map((m) => [m.id, m.type]),
   );
 
+  // Effective pools merge built-ins with parent-added custom items from
+  // the Parent Zone. Custom items participate in overrides + daily picker
+  // exactly like built-ins.
+  const allMissionPool: PoolMission[] = [
+    ...MISSION_POOL,
+    ...(appSettings.customMissions ?? []),
+  ];
+  const allRewardPool: Reward[] = [
+    ...REWARDS,
+    ...(appSettings.customRewards ?? []),
+  ];
+
   // Active pool: enabled for this day mode by parent override, and not inactive (mission-type setting)
   // Each mission's `stars` is replaced with the parent-override value (falls back to pool default).
-  const activePool: PoolMission[] = MISSION_POOL.filter(
+  const activePool: PoolMission[] = allMissionPool.filter(
     (m) =>
       effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
       missionTypeById[m.id] !== "inactive",
@@ -676,7 +688,7 @@ export default function App() {
     ]);
     // Keep MISSION_POOL order within the subset for stable slot-grouping in UI;
     // apply override stars so cards display the right value.
-    dayMissions = MISSION_POOL.filter((m) => subsetIds.has(m.id)).map((m) => ({
+    dayMissions = allMissionPool.filter((m) => subsetIds.has(m.id)).map((m) => ({
       ...m,
       stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
     }));
@@ -706,7 +718,7 @@ export default function App() {
   }
 
   // Effective rewards list (parent overrides applied; disabled rewards hidden).
-  const effectiveRewards: Reward[] = REWARDS.filter((r) =>
+  const effectiveRewards: Reward[] = allRewardPool.filter((r) =>
     effectiveRewardEnabled(r.id, rewardOverrides),
   ).map((r) => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
 
@@ -885,7 +897,7 @@ export default function App() {
           speak={speak}
           onClose={() => setScreen("home")}
           onStartMission={(missionId: number) => {
-            const m = MISSION_POOL.find((x) => x.id === missionId);
+            const m = allMissionPool.find((x) => x.id === missionId);
             if (m) pickMission(m);
           }}
         />

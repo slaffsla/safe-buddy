@@ -45,12 +45,22 @@ import {
   MissionOverrideMap,
   MissionType,
   MorningStep,
+  PoolMission,
+  Reward,
   RewardOverride,
   RewardOverrideMap,
   REWARDS,
   SCHEDULE_MAX_BLOCKS,
   ScheduleBlock,
 } from "./_constants";
+
+// Custom items added by parent in the Parent Zone are stored in settings.
+// Limits keep storage and UI manageable.
+const CUSTOM_MISSIONS_MAX = 20;
+const CUSTOM_REWARDS_MAX = 20;
+// IDs for user-added items start above this offset to avoid clashing with
+// MISSION_POOL / REWARDS ids (and any future built-in additions).
+const CUSTOM_ID_OFFSET = 10000;
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
 
@@ -114,6 +124,12 @@ export interface AppSettings {
   missionOverrides: MissionOverrideMap;
   rewardOverrides: RewardOverrideMap;
 
+  // Parent-added custom missions and rewards (managed from Parent Zone).
+  // These extend the built-in MISSION_POOL / REWARDS lists and flow through
+  // the same override / picker pipeline.
+  customMissions: PoolMission[];
+  customRewards: Reward[];
+
   // Day schedule (Option A — "what's now" card on HomeScreen; Option B reserved)
   scheduleEnabled: boolean;
   scheduleBlocks: ScheduleBlock[];
@@ -155,6 +171,8 @@ function buildDefaultSettings(): AppSettings {
     dayModeOverride: "auto" as DayModeOverride,
     missionOverrides: {},
     rewardOverrides: {},
+    customMissions: [],
+    customRewards: [],
     scheduleEnabled: false,
     scheduleBlocks: DEFAULT_SCHEDULE,
     morningReminderEnabled: false,
@@ -1698,9 +1716,27 @@ function ParentZoneView({
 }) {
   const missionOverrides = settings.missionOverrides ?? {};
   const rewardOverrides = settings.rewardOverrides ?? {};
+  const customMissions = settings.customMissions ?? [];
+  const customRewards = settings.customRewards ?? [];
+  // Effective pools — built-ins plus parent-added custom items.
+  const missionPool: PoolMission[] = [...MISSION_POOL, ...customMissions];
+  const rewardPool: Reward[] = [...REWARDS, ...customRewards];
+  const customMissionIds = new Set(customMissions.map((m) => m.id));
+  const customRewardIds = new Set(customRewards.map((r) => r.id));
   const missionTypeById: Record<number, MissionType> = Object.fromEntries(
     settings.missions.map((m) => [m.id, m.type]),
   );
+
+  // Add-form state for custom missions (shared between weekday/weekend cards).
+  const [showAddMission, setShowAddMission] = useState(false);
+  const [draftMissionEmoji, setDraftMissionEmoji] = useState("");
+  const [draftMissionTitle, setDraftMissionTitle] = useState("");
+  const [draftMissionSubtitle, setDraftMissionSubtitle] = useState("");
+
+  // Add-form state for custom rewards.
+  const [showAddReward, setShowAddReward] = useState(false);
+  const [draftRewardEmoji, setDraftRewardEmoji] = useState("");
+  const [draftRewardTitle, setDraftRewardTitle] = useState("");
 
   function patchMission(id: number, patch: Partial<MissionOverride>) {
     const cur: MissionOverride = missionOverrides[id] ?? {
@@ -1721,6 +1757,127 @@ function ParentZoneView({
     onChange({
       rewardOverrides: { ...rewardOverrides, [id]: { ...cur, ...patch } },
     });
+  }
+
+  function nextCustomMissionId(): number {
+    const existing = customMissions.map((m) => m.id);
+    return Math.max(CUSTOM_ID_OFFSET, ...existing) + 1;
+  }
+
+  function nextCustomRewardId(): number {
+    const existing = customRewards.map((r) => r.id);
+    return Math.max(CUSTOM_ID_OFFSET, ...existing) + 1;
+  }
+
+  function addCustomMission() {
+    const title = draftMissionTitle.trim();
+    if (!title) {
+      Alert.alert("Проверь название", "Название миссии не может быть пустым");
+      return;
+    }
+    if (customMissions.length >= CUSTOM_MISSIONS_MAX) {
+      Alert.alert("Лимит", `Максимум ${CUSTOM_MISSIONS_MAX} своих миссий`);
+      return;
+    }
+    const newMission: PoolMission = {
+      id: nextCustomMissionId(),
+      title,
+      subtitle: draftMissionSubtitle.trim() || "Своя миссия",
+      stars: 1,
+      emoji: draftMissionEmoji || "✨",
+      category: "movement",
+      slot: "any",
+      weekdayDefault: true,
+      weekendDefault: true,
+    };
+    // Also register a MissionConfig so the daily picker treats it like
+    // any rotating mission (visible in the daily pool, with an editable type).
+    const newConfig: MissionConfig = {
+      id: newMission.id,
+      title: newMission.title,
+      subtitle: newMission.subtitle,
+      stars: newMission.stars,
+      emoji: newMission.emoji,
+      type: "rotating",
+    };
+    onChange({
+      customMissions: [...customMissions, newMission],
+      missions: [...settings.missions, newConfig],
+    });
+    setShowAddMission(false);
+    setDraftMissionEmoji("");
+    setDraftMissionTitle("");
+    setDraftMissionSubtitle("");
+  }
+
+  function deleteCustomMission(id: number) {
+    Alert.alert("Удалить миссию?", "Эта миссия будет удалена навсегда", [
+      { text: "Отмена", style: "cancel" },
+      {
+        text: "Удалить",
+        style: "destructive",
+        onPress: () => {
+          const nextOverrides = { ...missionOverrides };
+          delete nextOverrides[id];
+          onChange({
+            customMissions: customMissions.filter((m) => m.id !== id),
+            missions: settings.missions.filter((m) => m.id !== id),
+            missionOverrides: nextOverrides,
+          });
+        },
+      },
+    ]);
+  }
+
+  function addCustomReward() {
+    const title = draftRewardTitle.trim();
+    if (!title) {
+      Alert.alert("Проверь название", "Название награды не может быть пустым");
+      return;
+    }
+    if (customRewards.length >= CUSTOM_REWARDS_MAX) {
+      Alert.alert("Лимит", `Максимум ${CUSTOM_REWARDS_MAX} своих наград`);
+      return;
+    }
+    const newReward: Reward = {
+      id: nextCustomRewardId(),
+      title,
+      cost: 3,
+      emoji: draftRewardEmoji || "🎁",
+    };
+    const newConfig: RewardConfig = {
+      id: newReward.id,
+      title: newReward.title,
+      cost: newReward.cost,
+      emoji: newReward.emoji,
+      active: true,
+    };
+    onChange({
+      customRewards: [...customRewards, newReward],
+      rewards: [...settings.rewards, newConfig],
+    });
+    setShowAddReward(false);
+    setDraftRewardEmoji("");
+    setDraftRewardTitle("");
+  }
+
+  function deleteCustomReward(id: number) {
+    Alert.alert("Удалить награду?", "Эта награда будет удалена навсегда", [
+      { text: "Отмена", style: "cancel" },
+      {
+        text: "Удалить",
+        style: "destructive",
+        onPress: () => {
+          const nextOverrides = { ...rewardOverrides };
+          delete nextOverrides[id];
+          onChange({
+            customRewards: customRewards.filter((r) => r.id !== id),
+            rewards: settings.rewards.filter((r) => r.id !== id),
+            rewardOverrides: nextOverrides,
+          });
+        },
+      },
+    ]);
   }
 
   function StarPicker({ id }: { id: number }) {
@@ -1755,9 +1912,10 @@ function ParentZoneView({
     id: number;
     mode: "weekday" | "weekend";
   }) {
-    const m = MISSION_POOL.find((x) => x.id === id);
+    const m = missionPool.find((x) => x.id === id);
     if (!m) return null;
     const enabled = effectiveMissionEnabled(id, mode, missionOverrides);
+    const isCustom = customMissionIds.has(id);
     const mType = missionTypeById[id];
     const tintStyle =
       mType === "permanent"
@@ -1772,12 +1930,17 @@ function ParentZoneView({
           <View style={{ flex: 1 }}>
             <Text style={u.rowLabel}>{m.title}</Text>
             <Text style={u.rowSublabel}>{m.subtitle}</Text>
-            {mType === "permanent" && (
+            {isCustom && (
+              <View style={[pz.typePill, pz.typePillCustom]}>
+                <Text style={pz.typePillTxt}>Своя</Text>
+              </View>
+            )}
+            {!isCustom && mType === "permanent" && (
               <View style={[pz.typePill, pz.typePillPermanent]}>
                 <Text style={pz.typePillTxt}>Всегда</Text>
               </View>
             )}
-            {mType === "rotating" && (
+            {!isCustom && mType === "rotating" && (
               <View style={[pz.typePill, pz.typePillRotating]}>
                 <Text style={pz.typePillTxt}>Ротация</Text>
               </View>
@@ -1796,6 +1959,14 @@ function ParentZoneView({
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
+          {isCustom && (
+            <TouchableOpacity
+              style={[u.dangerBtn, { marginLeft: 8 }]}
+              onPress={() => deleteCustomMission(id)}
+            >
+              <Text style={u.dangerBtnTxt}>✕</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <StarPicker id={id} />
       </View>
@@ -1803,11 +1974,12 @@ function ParentZoneView({
   }
 
   function RewardRow({ id }: { id: number }) {
-    const r = REWARDS.find((x) => x.id === id);
+    const r = rewardPool.find((x) => x.id === id);
     if (!r) return null;
     const enabled = effectiveRewardEnabled(id, rewardOverrides);
     const cost = effectiveRewardCost(id, rewardOverrides);
     const clampedCost = Math.max(1, Math.min(7, cost));
+    const isCustom = customRewardIds.has(id);
     return (
       <View style={pz.missionBlock}>
         <View style={u.row}>
@@ -1817,6 +1989,11 @@ function ParentZoneView({
             <Text style={u.rowSublabel}>
               {Array(clampedCost).fill("⭐").join("")}
             </Text>
+            {isCustom && (
+              <View style={[pz.typePill, pz.typePillCustom]}>
+                <Text style={pz.typePillTxt}>Своя</Text>
+              </View>
+            )}
           </View>
           <Switch
             value={enabled}
@@ -1824,6 +2001,14 @@ function ParentZoneView({
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
+          {isCustom && (
+            <TouchableOpacity
+              style={[u.dangerBtn, { marginLeft: 8 }]}
+              onPress={() => deleteCustomReward(id)}
+            >
+              <Text style={u.dangerBtnTxt}>✕</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={[u.row, { paddingTop: 0 }]}>
           <Text style={[u.rowSublabel, { flex: 1 }]}>Стоимость</Text>
@@ -1858,6 +2043,94 @@ function ParentZoneView({
     );
   }
 
+  // Inline editor for new mission — mirrors the day-schedule add UI.
+  function AddMissionBlock() {
+    return (
+      <View style={u.editBlock}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TextInput
+            style={[u.editInput, { width: 52 }]}
+            value={draftMissionEmoji}
+            onChangeText={setDraftMissionEmoji}
+            placeholder="✨"
+            placeholderTextColor={C.muted}
+          />
+          <TextInput
+            style={[u.editInput, { flex: 1 }]}
+            value={draftMissionTitle}
+            onChangeText={setDraftMissionTitle}
+            placeholder="Название миссии"
+            placeholderTextColor={C.muted}
+            autoFocus
+          />
+        </View>
+        <TextInput
+          style={u.editInput}
+          value={draftMissionSubtitle}
+          onChangeText={setDraftMissionSubtitle}
+          placeholder="Подсказка (необязательно)"
+          placeholderTextColor={C.muted}
+        />
+        <View style={u.rowBtns}>
+          <TouchableOpacity style={u.btnPrimary} onPress={addCustomMission}>
+            <Text style={u.btnPrimaryTxt}>Добавить</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={u.btnCancel}
+            onPress={() => {
+              setShowAddMission(false);
+              setDraftMissionEmoji("");
+              setDraftMissionTitle("");
+              setDraftMissionSubtitle("");
+            }}
+          >
+            <Text style={u.btnCancelTxt}>Отмена</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Inline editor for new reward — mirrors the day-schedule add UI.
+  function AddRewardBlock() {
+    return (
+      <View style={u.editBlock}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TextInput
+            style={[u.editInput, { width: 52 }]}
+            value={draftRewardEmoji}
+            onChangeText={setDraftRewardEmoji}
+            placeholder="🎁"
+            placeholderTextColor={C.muted}
+          />
+          <TextInput
+            style={[u.editInput, { flex: 1 }]}
+            value={draftRewardTitle}
+            onChangeText={setDraftRewardTitle}
+            placeholder="Название награды"
+            placeholderTextColor={C.muted}
+            autoFocus
+          />
+        </View>
+        <View style={u.rowBtns}>
+          <TouchableOpacity style={u.btnPrimary} onPress={addCustomReward}>
+            <Text style={u.btnPrimaryTxt}>Добавить</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={u.btnCancel}
+            onPress={() => {
+              setShowAddReward(false);
+              setDraftRewardEmoji("");
+              setDraftRewardTitle("");
+            }}
+          >
+            <Text style={u.btnCancelTxt}>Отмена</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={ss.root}>
       <View style={ss.header}>
@@ -1874,7 +2147,7 @@ function ParentZoneView({
       >
         <SectionHeader title="Миссии — будни" icon="📅" />
         <Card>
-          {MISSION_POOL.map((m, idx) => (
+          {missionPool.map((m, idx) => (
             <View key={m.id}>
               {idx > 0 && <Divider />}
               <MissionRow id={m.id} mode="weekday" />
@@ -1886,24 +2159,62 @@ function ParentZoneView({
 
         <SectionHeader title="Миссии — выходные" icon="🌈" />
         <Card>
-          {MISSION_POOL.map((m, idx) => (
+          {missionPool.map((m, idx) => (
             <View key={m.id}>
               {idx > 0 && <Divider />}
               <MissionRow id={m.id} mode="weekend" />
             </View>
           ))}
+
+          {showAddMission ? (
+            <>
+              <Divider />
+              <AddMissionBlock />
+            </>
+          ) : (
+            customMissions.length < CUSTOM_MISSIONS_MAX && (
+              <>
+                <Divider />
+                <TouchableOpacity
+                  style={u.inlineAction}
+                  onPress={() => setShowAddMission(true)}
+                >
+                  <Text style={u.inlineActionTxt}>+ Добавить миссию</Text>
+                </TouchableOpacity>
+              </>
+            )
+          )}
         </Card>
 
         <View style={ss.spacer} />
 
         <SectionHeader title="Награды" icon="🎁" />
         <Card>
-          {REWARDS.map((r, idx) => (
+          {rewardPool.map((r, idx) => (
             <View key={r.id}>
               {idx > 0 && <Divider />}
               <RewardRow id={r.id} />
             </View>
           ))}
+
+          {showAddReward ? (
+            <>
+              <Divider />
+              <AddRewardBlock />
+            </>
+          ) : (
+            customRewards.length < CUSTOM_REWARDS_MAX && (
+              <>
+                <Divider />
+                <TouchableOpacity
+                  style={u.inlineAction}
+                  onPress={() => setShowAddReward(true)}
+                >
+                  <Text style={u.inlineActionTxt}>+ Добавить награду</Text>
+                </TouchableOpacity>
+              </>
+            )
+          )}
         </Card>
 
         <View style={{ height: 40 }} />
@@ -1927,6 +2238,7 @@ const pz = StyleSheet.create({
   },
   typePillPermanent: { backgroundColor: C.green },
   typePillRotating: { backgroundColor: C.goldBdr },
+  typePillCustom: { backgroundColor: "#7C5CFF" },
   typePillTxt: {
     fontSize: 10,
     fontWeight: "700",

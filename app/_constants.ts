@@ -181,7 +181,7 @@ export const MISSION_POOL: PoolMission[] = [
   },
   {
     id: 7,
-    title: "Сожми кулачки",
+    title: "Сожми кулак и разожми",
     subtitle: "Три секунды",
     stars: 2,
     emoji: "✊",
@@ -237,7 +237,7 @@ export const MISSION_POOL: PoolMission[] = [
   {
     id: 12,
     title: "Убери немного дома",
-    subtitle: "Совсем чуть-чуть",
+    subtitle: "Самую малость",
     stars: 2,
     emoji: "🏠",
     category: "tidy",
@@ -340,8 +340,8 @@ export const MISSION_POOL: PoolMission[] = [
   },
   {
     id: 21,
-    title: "Сложи одежду",
-    subtitle: "Аккуратной стопкой",
+    title: "Наведи порядок в одежде",
+    subtitle: "Полоюи аккуратной стопкой",
     stars: 2,
     emoji: "👕",
     category: "tidy",

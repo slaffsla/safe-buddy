@@ -4,17 +4,14 @@
 
 import React, { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { BUDDY_FIXED_SPACER, C, MorningStep } from "./_constants";
 import { Confetti } from "./_SharedUI";
-
-const [doneIds, setDoneIds] = useState<number[]>([]);
-const [finished, setFinished] = useState(false);
 
 interface Props {
   childName: string;
@@ -33,6 +30,8 @@ export default function MorningRoutineScreen({
   onComplete,
   onSkip,
 }: Props) {
+  const [doneIds, setDoneIds] = useState<number[]>([]);
+  const [finished, setFinished] = useState(false);
   // Defensive: handle empty or invalid steps
   const validSteps = steps.filter((s) => s && s.id != null);
   if (validSteps.length === 0) {

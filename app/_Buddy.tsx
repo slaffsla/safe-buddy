@@ -48,7 +48,7 @@ export default function Buddy({
       breathAnim.current = Animated.loop(
         Animated.sequence([
           Animated.timing(breathScale, {
-            toValue: 1.17,
+            toValue: 1.19,
             duration: 2800,
             useNativeDriver: true,
           }),

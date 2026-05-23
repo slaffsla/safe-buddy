@@ -68,7 +68,7 @@ import {
   selectDailyMissions,
   shouldBeVeryExcited,
   shouldShowMorning,
-  todayStr
+  todayStr,
 } from "./_constants";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -233,6 +233,7 @@ export default function App() {
   const [morningDoneDate, setMorningDoneDate] = useState("");
   const [showMorning, setShowMorning] = useState(false);
   const [doneIdsToday, setDoneIdsToday] = useState<number[]>([]);
+  const [showGlobalBuddy, setShowGlobalBuddy] = useState(true);
 
   // Onboarding
   const [childName, setChildName] = useState("");
@@ -895,23 +896,28 @@ export default function App() {
           speak={speak}
           onComplete={() => setScreen("home")}
           onSkip={() => setScreen("home")}
+          onHideOverlay={() => setShowGlobalBuddy(false)}
+          onShowOverlay={() => setShowGlobalBuddy(true)}
         />
       )}
 
       {/* ── FIXED BUDDY + PROGRESS BAR OVERLAY (all screens except Settings) ───────── */}
-      {onboardingDone && !showPinScreen && screen !== "settings" && (
-        <View style={s.topOverlay} pointerEvents="box-none">
-          <View style={s.topOverlayContent}>
-            <Buddy
-              mood={fixedOverlayMood}
-              speak={speak}
-              size={PROFILE_CONFIGS[ageProfile].buddySize}
-              celebrate={fixedOverlayCelebrate}
-            />
-            <ProgressBar total={totalEver} speak={speak} />
+      {onboardingDone &&
+        !showPinScreen &&
+        screen !== "settings" &&
+        showGlobalBuddy && (
+          <View style={s.topOverlay} pointerEvents="box-none">
+            <View style={s.topOverlayContent}>
+              <Buddy
+                mood={fixedOverlayMood}
+                speak={speak}
+                size={PROFILE_CONFIGS[ageProfile].buddySize}
+                celebrate={fixedOverlayCelebrate}
+              />
+              <ProgressBar total={totalEver} speak={speak} />
+            </View>
           </View>
-        </View>
-      )}
+        )}
 
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
       {showPinScreen && (

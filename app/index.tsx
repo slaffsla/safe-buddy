@@ -96,21 +96,6 @@ const BUDDY = {
 // proud           → demo complete, milestone, reward redemption
 // very-excited    → first 10 stars, every 50 stars, first reward redeemed (RARE)
 
-// ── VERY-EXCITED TRIGGERS ─────────────────────────────────────────────────────
-
-function shouldBeVeryExcited(
-  totalEver: number,
-  prevTotalEver: number,
-  isFirstReward: boolean,
-): boolean {
-  if (isFirstReward) return true;
-  if (prevTotalEver < 10 && totalEver >= 10) return true;
-  const prevFifty = Math.floor(prevTotalEver / 50);
-  const currFifty = Math.floor(totalEver / 50);
-  if (currFifty > prevFifty && currFifty > 0) return true;
-  return false;
-}
-
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 
 const K = {

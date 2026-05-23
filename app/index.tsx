@@ -285,7 +285,6 @@ export default function App() {
     skipCount,
     appSettings.skipSensitivity,
     isVeryExcited,
-    mission,
     transientMood,
   ]);
 

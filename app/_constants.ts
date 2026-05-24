@@ -9,7 +9,14 @@
 // locales) holds the translations. Helper functions in this file resolve
 // to the active locale via i18n; the screens never see hardcoded Russian.
 
-import { t } from "./i18n";
+import { i18n, t } from "./i18n";
+
+/** Parent-created missions/rewards use ids at or above this (see SettingsScreen). */
+export const CUSTOM_CONTENT_ID_OFFSET = 10000;
+
+function localizedOrFallback(key: string, fallback: string): string {
+  return i18n.t(key, { defaultValue: fallback });
+}
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -431,24 +438,20 @@ export const MISSION_POOL: PoolMission[] = [
   },
 ];
 
-// Returns localized title for a mission, falling back to pool title
-export function getMissionTitle(id: number): string {
-  const key = `missions.${id}.title`;
-  const result = t(key);
-  if (result === key) {
-    return MISSION_POOL.find((m) => m.id === id)?.title ?? "";
-  }
-  return result;
+// Returns localized title for a mission, falling back to pool / custom title
+export function getMissionTitle(id: number, fallback?: string): string {
+  const poolFallback =
+    fallback ?? MISSION_POOL.find((m) => m.id === id)?.title ?? "";
+  if (id >= CUSTOM_CONTENT_ID_OFFSET) return poolFallback;
+  return localizedOrFallback(`missions.${id}.title`, poolFallback);
 }
 
-// Returns localized subtitle for a mission, falling back to pool subtitle
-export function getMissionSubtitle(id: number): string {
-  const key = `missions.${id}.subtitle`;
-  const result = t(key);
-  if (result === key) {
-    return MISSION_POOL.find((m) => m.id === id)?.subtitle ?? "";
-  }
-  return result;
+// Returns localized subtitle for a mission, falling back to pool / custom subtitle
+export function getMissionSubtitle(id: number, fallback?: string): string {
+  const poolFallback =
+    fallback ?? MISSION_POOL.find((m) => m.id === id)?.subtitle ?? "";
+  if (id >= CUSTOM_CONTENT_ID_OFFSET) return poolFallback;
+  return localizedOrFallback(`missions.${id}.subtitle`, poolFallback);
 }
 
 // Derives the AppSettings missions array from MISSION_POOL.
@@ -576,12 +579,10 @@ export const DEFAULT_MORNING_STEPS: MorningStep[] = [
 
 // Returns localized morning step title, falling back to pool / custom step title
 export function getMorningStepTitle(id: number, fallback?: string): string {
-  const key = `morning_step_titles.ms${id}`;
-  const result = t(key);
   const poolFallback =
     fallback ?? DEFAULT_MORNING_STEPS.find((s) => s.id === id)?.title ?? "";
-  if (result === key) return poolFallback;
-  return result;
+  if (!DEFAULT_MORNING_STEPS.some((s) => s.id === id)) return poolFallback;
+  return localizedOrFallback(`morning_step_titles.ms${id}`, poolFallback);
 }
 
 export const MORNING_CUTOFF_HOUR = 12;
@@ -757,12 +758,10 @@ export const DEFAULT_SCHEDULE: ScheduleBlock[] = [
 
 // Returns localized schedule block title, falling back to pool / override title
 export function getScheduleTitle(id: number, fallback?: string): string {
-  const key = `schedule_titles.s${id}`;
-  const result = t(key);
   const poolFallback =
     fallback ?? DEFAULT_SCHEDULE.find((b) => b.id === id)?.title ?? "";
-  if (result === key) return poolFallback;
-  return result;
+  if (!DEFAULT_SCHEDULE.some((b) => b.id === id)) return poolFallback;
+  return localizedOrFallback(`schedule_titles.s${id}`, poolFallback);
 }
 
 export const SCHEDULE_MAX_BLOCKS = 12;
@@ -863,11 +862,9 @@ export const REWARDS: Reward[] = [
 
 // Returns localized reward title, falling back to pool / custom reward title
 export function getRewardTitle(id: number, fallback?: string): string {
-  const key = `reward_titles.r${id}`;
-  const result = t(key);
   const poolFallback = fallback ?? REWARDS.find((r) => r.id === id)?.title ?? "";
-  if (result === key) return poolFallback;
-  return result;
+  if (id >= CUSTOM_CONTENT_ID_OFFSET) return poolFallback;
+  return localizedOrFallback(`reward_titles.r${id}`, poolFallback);
 }
 
 export interface RewardConfig {

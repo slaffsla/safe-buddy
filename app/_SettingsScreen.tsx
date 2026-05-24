@@ -1999,8 +1999,10 @@ function ParentZoneView({
         <View style={u.row}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{getMissionTitle(m.id)}</Text>
-            <Text style={u.rowSublabel}>{getMissionSubtitle(m.id)}</Text>
+            <Text style={u.rowLabel}>{getMissionTitle(m.id, m.title)}</Text>
+            <Text style={u.rowSublabel}>
+              {getMissionSubtitle(m.id, m.subtitle)}
+            </Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
                 <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>

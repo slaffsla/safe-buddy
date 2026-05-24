@@ -502,7 +502,9 @@ export default function App() {
     (m: any) => {
       setMission(m);
       setSkipCount(0);
-      speak(`${getMissionTitle(m.id)}. ${getMissionSubtitle(m.id)}`);
+      speak(
+        `${getMissionTitle(m.id, m.title)}. ${getMissionSubtitle(m.id, m.subtitle)}`,
+      );
       setScreen("active");
     },
     [speak],

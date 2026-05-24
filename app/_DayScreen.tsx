@@ -10,7 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { C, ScheduleBlock, getBlockStatus, getScheduleTitle } from "./_constants";
+import {
+  C,
+  ScheduleBlock,
+  getBlockStatus,
+  getScheduleTitle,
+} from "./_constants";
 import { t } from "./i18n";
 
 interface DayScreenProps {
@@ -50,7 +55,7 @@ export default function DayScreen({
       }
     }, 150);
     return () => clearTimeout(t);
-  }, [visibleBlocks.length]);
+  }, [visibleBlocks]);
 
   return (
     <View style={s.root}>

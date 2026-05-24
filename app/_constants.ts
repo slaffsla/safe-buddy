@@ -764,7 +764,7 @@ export function getScheduleTitle(id: number, fallback?: string): string {
   return localizedOrFallback(`schedule_titles.s${id}`, poolFallback);
 }
 
-export const SCHEDULE_MAX_BLOCKS = 12;
+export const SCHEDULE_MAX_BLOCKS = 20;
 
 function parseHM(t: string): number {
   const [h, m] = t.split(":").map(Number);
@@ -862,7 +862,8 @@ export const REWARDS: Reward[] = [
 
 // Returns localized reward title, falling back to pool / custom reward title
 export function getRewardTitle(id: number, fallback?: string): string {
-  const poolFallback = fallback ?? REWARDS.find((r) => r.id === id)?.title ?? "";
+  const poolFallback =
+    fallback ?? REWARDS.find((r) => r.id === id)?.title ?? "";
   if (id >= CUSTOM_CONTENT_ID_OFFSET) return poolFallback;
   return localizedOrFallback(`reward_titles.r${id}`, poolFallback);
 }

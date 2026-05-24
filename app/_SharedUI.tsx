@@ -115,10 +115,10 @@ export function DailySuggestion({
       </T>
       <View style={s.suggestionRow}>
         <TouchableOpacity style={s.suggestionYes} onPress={onAccept}>
-          <Text style={s.suggestionYesTxt}>Попробую!</Text>
+          <Text style={s.suggestionYesTxt}>{t("suggestion.yes")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.suggestionNo} onPress={onSkip}>
-          <Text style={s.suggestionNoTxt}>Не сейчас</Text>
+          <Text style={s.suggestionNoTxt}>{t("suggestion.no")}</Text>
         </TouchableOpacity>
       </View>
     </View>

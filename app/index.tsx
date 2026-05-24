@@ -73,7 +73,7 @@ import {
   shouldShowMorning,
   todayStr,
 } from "./_constants";
-import { t } from "./i18n";
+import { getTtsLanguage, t } from "./i18n";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -132,18 +132,31 @@ function getRotationSeed(freq: RotationFrequency) {
 
 // ── TTS ───────────────────────────────────────────────────────────────────────
 
-async function resolveRussianVoice() {
+function ttsLanguagePrefix(tag: string): string {
+  return tag.split("-")[0] ?? tag;
+}
+
+function voiceMatchesLanguage(
+  voice: { language?: string } | null | undefined,
+  language: string,
+): boolean {
+  if (!voice?.language) return false;
+  return voice.language.startsWith(ttsLanguagePrefix(language));
+}
+
+async function resolveVoiceForLanguage(language: string) {
   try {
     await new Promise((r) => setTimeout(r, 800));
     const voices = await Speech.getAvailableVoicesAsync();
     if (!voices?.length) return null;
+    const prefix = ttsLanguagePrefix(language);
+    const enhanced = (Speech as any).VoiceQuality?.Enhanced;
     return (
       voices.find(
-        (v) =>
-          v.language === "ru-RU" &&
-          v.quality === (Speech as any).VoiceQuality?.Enhanced,
+        (v) => v.language === language && v.quality === enhanced,
       ) ||
-      voices.find((v) => v.language?.startsWith("ru")) ||
+      voices.find((v) => v.language === language) ||
+      voices.find((v) => v.language?.startsWith(prefix)) ||
       null
     );
   } catch {
@@ -153,8 +166,12 @@ async function resolveRussianVoice() {
 
 function useSpeech(enabled: boolean) {
   const voiceRef = useRef<any>(null);
+  const languageRef = useRef(getTtsLanguage());
+
   useEffect(() => {
-    resolveRussianVoice().then((v) => {
+    const lang = getTtsLanguage();
+    languageRef.current = lang;
+    resolveVoiceForLanguage(lang).then((v) => {
       voiceRef.current = v;
     });
     return () => {
@@ -174,13 +191,24 @@ function useSpeech(enabled: boolean) {
         /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
         "",
       );
+      const lang = getTtsLanguage();
+      if (languageRef.current !== lang) {
+        languageRef.current = lang;
+        resolveVoiceForLanguage(lang).then((v) => {
+          voiceRef.current = v;
+        });
+      }
       const opts: any = {
-        language: "ru-RU",
+        language: lang,
         pitch: 1.05,
         rate: Platform.OS === "ios" ? 0.52 : 0.65,
       };
-      if (voiceRef.current?.identifier)
+      if (
+        voiceMatchesLanguage(voiceRef.current, lang) &&
+        voiceRef.current?.identifier
+      ) {
         opts.voice = voiceRef.current.identifier;
+      }
       setTimeout(
         () => {
           try {
@@ -446,7 +474,7 @@ export default function App() {
       setAgeProfile(getAgeProfile(childAge));
       setChildName(name);
       setOnboardingDone(true);
-      speak(`Привет, ${name}! Рад тебя видеть!`);
+      speak(t("onboarding.welcome_greeting", { name }));
       // After onboarding go to demo if not done, else home
       setScreen("demo_intro");
     } catch (e) {

@@ -2199,7 +2199,6 @@ function ParentZoneView({
             onChangeText={setDraftRewardTitle}
             placeholder={t("settings.reward_name_placeholder")}
             placeholderTextColor={C.muted}
-            autoFocus
           />
         </View>
         <View style={u.rowBtns}>
@@ -2292,7 +2291,7 @@ function ParentZoneView({
           {showAddReward ? (
             <>
               <Divider />
-              <AddRewardBlock />
+              {AddRewardBlock()}
             </>
           ) : (
             customRewards.length < CUSTOM_REWARDS_MAX && (

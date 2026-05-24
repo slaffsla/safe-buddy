@@ -41,7 +41,6 @@ import {
   effectiveRewardEnabled,
   getMissionSubtitle,
   getMissionTitle,
-  getMorningStepTitle,
   getRewardTitle,
   getScheduleTitle,
   MISSION_POOL,
@@ -494,7 +493,11 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
       value: String(totalMissions),
       emoji: "🎯",
     },
-    { label: t("settings.stat_today"), value: String(completedToday), emoji: "📅" },
+    {
+      label: t("settings.stat_today"),
+      value: String(completedToday),
+      emoji: "📅",
+    },
     {
       label: t("settings.stat_stars_left"),
       value: String(stars),
@@ -625,7 +628,9 @@ function PinSection({
               style={u.inlineAction}
               onPress={() => setShowSetPin(true)}
             >
-              <Text style={u.inlineActionTxt}>{t("settings.pin_set_link")}</Text>
+              <Text style={u.inlineActionTxt}>
+                {t("settings.pin_set_link")}
+              </Text>
             </TouchableOpacity>
           </>
         ) : null}
@@ -1253,7 +1258,9 @@ function DailyRoutineSection({
                     </View>
                     <View style={u.rowBtns}>
                       <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
-                        <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
+                        <Text style={u.btnPrimaryTxt}>
+                          {t("settings.save")}
+                        </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={u.btnCancel}
@@ -1263,7 +1270,9 @@ function DailyRoutineSection({
                           setStepEmoji("");
                         }}
                       >
-                        <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                        <Text style={u.btnCancelTxt}>
+                          {t("settings.cancel")}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1272,9 +1281,7 @@ function DailyRoutineSection({
                     <Text style={{ fontSize: 22, marginRight: 10 }}>
                       {step.emoji}
                     </Text>
-                    <Text style={[u.rowLabel, { flex: 1 }]}>
-                      {getMorningStepTitle(step.id, step.title)}
-                    </Text>
+                    <Text style={[u.rowLabel, { flex: 1 }]}>{step.title}</Text>
                     <TouchableOpacity
                       style={u.stepperBtn}
                       onPress={() => moveStep(step.id, -1)}
@@ -1310,7 +1317,9 @@ function DailyRoutineSection({
                         setStepEmoji(step.emoji);
                       }}
                     >
-                      <Text style={u.linkBtnTxt}>{t("settings.edit_short")}</Text>
+                      <Text style={u.linkBtnTxt}>
+                        {t("settings.edit_short")}
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={u.dangerBtn}
@@ -1334,7 +1343,9 @@ function DailyRoutineSection({
                     setStepEmoji("");
                   }}
                 >
-                  <Text style={u.inlineActionTxt}>{t("settings.add_step")}</Text>
+                  <Text style={u.inlineActionTxt}>
+                    {t("settings.add_step")}
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
@@ -1619,7 +1630,9 @@ function ScheduleSection({
                       style={u.linkBtn}
                       onPress={() => startEdit(it)}
                     >
-                      <Text style={u.linkBtnTxt}>{t("settings.edit_short")}</Text>
+                      <Text style={u.linkBtnTxt}>
+                        {t("settings.edit_short")}
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={u.dangerBtn}
@@ -1999,10 +2012,8 @@ function ParentZoneView({
         <View style={u.row}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{getMissionTitle(m.id, m.title)}</Text>
-            <Text style={u.rowSublabel}>
-              {getMissionSubtitle(m.id, m.subtitle)}
-            </Text>
+            <Text style={u.rowLabel}>{getMissionTitle(m.id)}</Text>
+            <Text style={u.rowSublabel}>{getMissionSubtitle(m.id)}</Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
                 <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>
@@ -2248,7 +2259,7 @@ function ParentZoneView({
           {showAddMission ? (
             <>
               <Divider />
-              <AddMissionBlock />
+              {AddMissionBlock()}
             </>
           ) : (
             customMissions.length < CUSTOM_MISSIONS_MAX && (
@@ -2274,7 +2285,7 @@ function ParentZoneView({
           {rewardPool.map((r, idx) => (
             <View key={r.id}>
               {idx > 0 && <Divider />}
-              <RewardRow id={r.id} />
+              {RewardRow({ id: r.id })}
             </View>
           ))}
 

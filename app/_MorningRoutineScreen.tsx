@@ -10,7 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { BUDDY_FIXED_SPACER, C, MorningStep } from "./_constants";
+import {
+  BUDDY_FIXED_SPACER,
+  C,
+  MorningStep,
+  getMorningStepTitle,
+} from "./_constants";
 import { Confetti } from "./_SharedUI";
 import { t } from "./i18n";
 
@@ -50,7 +55,7 @@ export default function MorningRoutineScreen({
     if (finished) return;
     setDoneIds((prev) => {
       if (prev.includes(step.id)) return prev.filter((x) => x !== step.id);
-      speak(step.title);
+      speak(getMorningStepTitle(step.id, step.title));
       return [...prev, step.id];
     });
   }
@@ -103,7 +108,7 @@ export default function MorningRoutineScreen({
               >
                 <Text style={s.stepEmoji}>{step.emoji}</Text>
                 <Text style={[s.stepTitle, done && s.stepDone]}>
-                  {step.title}
+                  {getMorningStepTitle(step.id, step.title)}
                 </Text>
                 <View style={[s.checkbox, done && s.checkboxDone]}>
                   {done && <Text style={s.checkmark}>✓</Text>}

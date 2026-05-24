@@ -39,6 +39,11 @@ import {
   effectiveMissionStars,
   effectiveRewardCost,
   effectiveRewardEnabled,
+  getMissionSubtitle,
+  getMissionTitle,
+  getMorningStepTitle,
+  getRewardTitle,
+  getScheduleTitle,
   MISSION_POOL,
   MissionConfig,
   MissionOverride,
@@ -53,6 +58,7 @@ import {
   SCHEDULE_MAX_BLOCKS,
   ScheduleBlock,
 } from "./_constants";
+import { t } from "./i18n";
 
 // Custom items added by parent in the Parent Zone are stored in settings.
 // Limits keep storage and UI manageable.
@@ -478,15 +484,27 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
     progress;
 
   const statCards = [
-    { label: "Звёзд всего", value: String(totalEver), emoji: "⭐" },
-    { label: "Миссий всего", value: String(totalMissions), emoji: "🎯" },
-    { label: "Сегодня", value: String(completedToday), emoji: "📅" },
-    { label: "Осталось звёзд", value: String(stars), emoji: "💰" },
+    {
+      label: t("settings.stat_stars_total"),
+      value: String(totalEver),
+      emoji: "⭐",
+    },
+    {
+      label: t("settings.stat_missions_total"),
+      value: String(totalMissions),
+      emoji: "🎯",
+    },
+    { label: t("settings.stat_today"), value: String(completedToday), emoji: "📅" },
+    {
+      label: t("settings.stat_stars_left"),
+      value: String(stars),
+      emoji: "💰",
+    },
   ];
 
   return (
     <View>
-      <SectionHeader title="Отчёт о прогрессе" icon="📊" />
+      <SectionHeader title={t("settings.progress_section")} icon="📊" />
       <View style={u.statsGrid}>
         {statCards.map((sc) => (
           <View key={sc.label} style={u.statCard}>
@@ -498,14 +516,16 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
       </View>
       {lastMission && (
         <Card>
-          <Text style={u.lastMissionLabel}>Последняя выполненная миссия</Text>
+          <Text style={u.lastMissionLabel}>
+            {t("settings.last_mission_label")}
+          </Text>
           <Text style={u.lastMissionValue}>{lastMission}</Text>
         </Card>
       )}
       {totalMissions === 0 && (
         <Card>
           <Text style={[u.rowSublabel, { textAlign: "center", padding: 8 }]}>
-            Миссии ещё не выполнялись. Статистика появится здесь.
+            {t("settings.progress_empty")}
           </Text>
         </Card>
       )}
@@ -528,25 +548,25 @@ function PinSection({
 
   function handleSetPin() {
     if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
-      Alert.alert("PIN должен быть 4 цифры");
+      Alert.alert(t("settings.pin_invalid"));
       return;
     }
     if (newPin !== confirmPin) {
-      Alert.alert("PIN не совпадает");
+      Alert.alert(t("settings.pin_mismatch"));
       return;
     }
     onChange({ parentPin: newPin, pinEnabled: true });
     setShowSetPin(false);
     setNewPin("");
     setConfirmPin("");
-    Alert.alert("PIN установлен");
+    Alert.alert(t("settings.pin_set_ok"));
   }
 
   function handleRemovePin() {
-    Alert.alert("Удалить PIN?", "Защита наград будет отключена", [
-      { text: "Отмена", style: "cancel" },
+    Alert.alert(t("settings.pin_delete_title"), t("settings.pin_delete_msg"), [
+      { text: t("settings.cancel"), style: "cancel" },
       {
-        text: "Удалить",
+        text: t("settings.delete"),
         style: "destructive",
         onPress: () => onChange({ parentPin: "", pinEnabled: false }),
       },
@@ -555,11 +575,11 @@ function PinSection({
 
   return (
     <View>
-      <SectionHeader title="Безопасность" icon="🔒" />
+      <SectionHeader title={t("settings.security_section")} icon="🔒" />
       <Card>
         <SettingRow
-          label="PIN для наград"
-          sublabel="Ребёнок не сможет получить награду без родителя"
+          label={t("settings.pin_label")}
+          sublabel={t("settings.pin_sublabel")}
         >
           <Switch
             value={settings.pinEnabled}
@@ -578,18 +598,21 @@ function PinSection({
         {settings.pinEnabled && settings.parentPin ? (
           <>
             <Divider />
-            <SettingRow label="Изменить PIN" sublabel="PIN установлен">
+            <SettingRow
+              label={t("settings.pin_change_label")}
+              sublabel={t("settings.pin_change_sublabel")}
+            >
               <TouchableOpacity
                 onPress={() => setShowSetPin(true)}
                 style={u.linkBtn}
               >
-                <Text style={u.linkBtnTxt}>Изменить</Text>
+                <Text style={u.linkBtnTxt}>{t("settings.edit")}</Text>
               </TouchableOpacity>
             </SettingRow>
             <Divider />
-            <SettingRow label="Удалить PIN" danger>
+            <SettingRow label={t("settings.pin_remove_label")} danger>
               <TouchableOpacity onPress={handleRemovePin} style={u.dangerBtn}>
-                <Text style={u.dangerBtnTxt}>Удалить</Text>
+                <Text style={u.dangerBtnTxt}>{t("settings.delete")}</Text>
               </TouchableOpacity>
             </SettingRow>
           </>
@@ -602,7 +625,7 @@ function PinSection({
               style={u.inlineAction}
               onPress={() => setShowSetPin(true)}
             >
-              <Text style={u.inlineActionTxt}>Установить PIN →</Text>
+              <Text style={u.inlineActionTxt}>{t("settings.pin_set_link")}</Text>
             </TouchableOpacity>
           </>
         ) : null}
@@ -610,7 +633,7 @@ function PinSection({
 
       {showSetPin && (
         <Card>
-          <Text style={u.subheading}>Новый PIN (4 цифры)</Text>
+          <Text style={u.subheading}>{t("settings.pin_new_heading")}</Text>
           <TextInput
             style={u.pinInput}
             keyboardType="numeric"
@@ -621,7 +644,7 @@ function PinSection({
             value={newPin}
             onChangeText={setNewPin}
           />
-          <Text style={u.subheading}>Повтори PIN</Text>
+          <Text style={u.subheading}>{t("settings.pin_confirm_heading")}</Text>
           <TextInput
             style={u.pinInput}
             keyboardType="numeric"
@@ -634,7 +657,7 @@ function PinSection({
           />
           <View style={u.rowBtns}>
             <TouchableOpacity style={u.btnPrimary} onPress={handleSetPin}>
-              <Text style={u.btnPrimaryTxt}>Сохранить</Text>
+              <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={u.btnCancel}
@@ -644,7 +667,7 @@ function PinSection({
                 setConfirmPin("");
               }}
             >
-              <Text style={u.btnCancelTxt}>Отмена</Text>
+              <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -657,20 +680,20 @@ function PinSection({
             { marginBottom: 1, marginLeft: 12, marginTop: 10 },
           ]}
         >
-          Уровень контроля
+          {t("settings.control_level")}
         </Text>
         <Text style={[u.rowSublabel, { marginLeft: 10 }]}>
           {settings.controlLevel === "hands-on"
-            ? "Родитель подтверждает каждую награду"
+            ? t("settings.control_hands_on")
             : settings.controlLevel === "balanced"
-              ? "Стандартный режим — минимальное участие родителя"
-              : "Ребёнок действует самостоятельно"}
+              ? t("settings.control_balanced")
+              : t("settings.control_independent")}
         </Text>
         <PillSelector
           options={[
-            { label: "Вместе", value: "hands-on" },
-            { label: "Стандарт", value: "balanced" },
-            { label: "Сам", value: "independent" },
+            { label: t("settings.control_pill_together"), value: "hands-on" },
+            { label: t("settings.control_pill_standard"), value: "balanced" },
+            { label: t("settings.control_pill_alone"), value: "independent" },
           ]}
           value={settings.controlLevel}
           onChange={(v) => onChange({ controlLevel: v })}
@@ -691,17 +714,17 @@ function MissionsSection({
 }) {
   return (
     <View>
-      <SectionHeader title="Миссии" icon="🎯" />
+      <SectionHeader title={t("settings.missions_section")} icon="🎯" />
       <Card>
         <Text style={[u.rowSublabel, { padding: 12, textAlign: "center" }]}>
-          Управление миссиями — в Родительской зоне
+          {t("settings.missions_parent_hint")}
         </Text>
       </Card>
 
       <Card>
         <SettingRow
-          label="Бесконечный цикл"
-          sublabel="Каждый день — небольшой набор миссий, обновляется к утру"
+          label={t("settings.infinity_loop")}
+          sublabel={t("settings.infinity_loop_sub")}
         >
           <Switch
             value={settings.infinityLoopEnabled}
@@ -714,8 +737,8 @@ function MissionsSection({
           <>
             <Divider />
             <SettingRow
-              label="Миссий в день"
-              sublabel="Сколько миссий видно на экране выбора"
+              label={t("settings.missions_per_day")}
+              sublabel={t("settings.missions_per_day_sub")}
             >
               <PillSelector
                 options={[
@@ -737,8 +760,8 @@ function MissionsSection({
             </SettingRow>
             <Divider />
             <SettingRow
-              label="Бонусная миссия"
-              sublabel="Предложить одну дополнительную, когда все выполнены"
+              label={t("settings.bonus_mission")}
+              sublabel={t("settings.bonus_mission_sub")}
             >
               <Switch
                 value={settings.bonusAfterCompletion}
@@ -753,8 +776,8 @@ function MissionsSection({
 
       <Card>
         <SettingRow
-          label="Ротация задач 🔜"
-          sublabel="Задачи меняются по расписанию (скоро)"
+          label={t("settings.rotation_soon")}
+          sublabel={t("settings.rotation_soon_sub")}
         >
           <Switch
             value={false}
@@ -790,7 +813,7 @@ function RewardsSection({
   function saveEdit() {
     const cost = parseInt(editCost, 10);
     if (!editTitle.trim() || isNaN(cost) || cost < 1 || cost > 20) {
-      Alert.alert("Проверь название и стоимость (1-20 звёзд)");
+      Alert.alert(t("settings.reward_check_alert"));
       return;
     }
     const updated = settings.rewards.map((r) =>
@@ -809,7 +832,7 @@ function RewardsSection({
 
   return (
     <View>
-      <SectionHeader title="Награды" icon="🎁" />
+      <SectionHeader title={t("settings.rewards_section")} icon="🎁" />
       <Card>
         {settings.rewards.map((r, idx) => (
           <View key={r.id}>
@@ -820,11 +843,13 @@ function RewardsSection({
                   style={u.editInput}
                   value={editTitle}
                   onChangeText={setEditTitle}
-                  placeholder="Название награды"
+                  placeholder={t("settings.reward_name_placeholder")}
                   placeholderTextColor={C.muted}
                 />
                 <View style={u.editCostRow}>
-                  <Text style={u.rowSublabel}>Стоимость (⭐):</Text>
+                  <Text style={u.rowSublabel}>
+                    {t("settings.reward_cost_label")}
+                  </Text>
                   <TextInput
                     style={[
                       u.editInput,
@@ -838,13 +863,13 @@ function RewardsSection({
                 </View>
                 <View style={u.rowBtns}>
                   <TouchableOpacity style={u.btnPrimary} onPress={saveEdit}>
-                    <Text style={u.btnPrimaryTxt}>Сохранить</Text>
+                    <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={u.btnCancel}
                     onPress={() => setEditingId(null)}
                   >
-                    <Text style={u.btnCancelTxt}>Отмена</Text>
+                    <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -852,7 +877,9 @@ function RewardsSection({
               <View style={[u.missionRow, !r.active && { opacity: 0.45 }]}>
                 <Text style={u.missionEmoji}>{r.emoji}</Text>
                 <View style={u.missionInfo}>
-                  <Text style={u.missionTitle}>{r.title}</Text>
+                  <Text style={u.missionTitle}>
+                    {getRewardTitle(r.id, r.title)}
+                  </Text>
                   <Text style={u.missionSub}>
                     {Array(r.cost).fill("⭐").join("")}
                   </Text>
@@ -861,7 +888,7 @@ function RewardsSection({
                   style={u.linkBtn}
                   onPress={() => startEdit(r)}
                 >
-                  <Text style={u.linkBtnTxt}>Изменить</Text>
+                  <Text style={u.linkBtnTxt}>{t("settings.edit")}</Text>
                 </TouchableOpacity>
                 <Switch
                   value={r.active}
@@ -890,9 +917,12 @@ function BuddySection({
 }) {
   return (
     <View>
-      <SectionHeader title="Поведение Бадди" icon="🐻" />
+      <SectionHeader title={t("settings.buddy_section")} icon="🐻" />
       <Card>
-        <SettingRow label="Голос (TTS)" sublabel="Бадди читает текст вслух">
+        <SettingRow
+          label={t("settings.tts_label")}
+          sublabel={t("settings.tts_sub")}
+        >
           <Switch
             value={settings.ttsEnabled}
             onValueChange={(v) => onChange({ ttsEnabled: v })}
@@ -902,8 +932,8 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
-          label="Ежедневная подсказка"
-          sublabel="Карточка с предложением задания на главном экране"
+          label={t("settings.nudge_label")}
+          sublabel={t("settings.nudge_sub")}
         >
           <Switch
             value={settings.nudgingEnabled}
@@ -914,8 +944,10 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
-          label="Реакция на пропуски"
-          sublabel={`Бадди меняется после ${settings.skipSensitivity} пропусков подряд`}
+          label={t("settings.skip_label")}
+          sublabel={t("settings.skip_sub", {
+            count: settings.skipSensitivity,
+          })}
         >
           <View style={u.stepperRow}>
             <TouchableOpacity
@@ -943,11 +975,11 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
-          label="Показывать точную стоимость"
+          label={t("settings.exact_cost_label")}
           sublabel={
             settings.showExactStarCost
-              ? "Ребёнок видит «нужно ещё 2 ⭐»"
-              : "Ребёнок видит «ещё немного»"
+              ? t("settings.exact_cost_on")
+              : t("settings.exact_cost_off")
           }
         >
           <Switch
@@ -958,16 +990,16 @@ function BuddySection({
           />
           <Divider />
           <SettingRow
-            label="Профиль ребёнка"
-            sublabel="Авто определяет по возрасту"
+            label={t("settings.age_profile_label")}
+            sublabel={t("settings.age_profile_sub")}
           >
             <View style={{ minWidth: 120 }}>
               <PillSelector
                 options={[
-                  { label: "Авто", value: "auto" },
-                  { label: "Малыш", value: "little" },
-                  { label: "Средний", value: "middle" },
-                  { label: "Подросток", value: "teen" },
+                  { label: t("settings.age_auto"), value: "auto" },
+                  { label: t("settings.age_little"), value: "little" },
+                  { label: t("settings.age_middle"), value: "middle" },
+                  { label: t("settings.age_teen"), value: "teen" },
                 ]}
                 value={settings.ageProfileOverride ?? "auto"}
                 onChange={(v) =>
@@ -982,8 +1014,8 @@ function BuddySection({
         <Divider />
         {/* V1.5 placeholders — shown but disabled with coming-soon badge */}
         <SettingRow
-          label="Интересные факты 🔜"
-          sublabel="Бадди делится фактами во время миссий (скоро)"
+          label={t("settings.facts_soon")}
+          sublabel={t("settings.facts_soon_sub")}
         >
           <Switch
             value={false}
@@ -994,8 +1026,8 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
-          label="Дыхательные упражнения"
-          sublabel="Расслабься с Бадди"
+          label={t("settings.breathing_label")}
+          sublabel={t("settings.breathing_sub")}
         >
           <Switch
             value={settings.breathingEnabled}
@@ -1025,7 +1057,7 @@ function ChildSection({
 
   function saveName() {
     if (!nameInput.trim()) {
-      Alert.alert("Введи имя");
+      Alert.alert(t("settings.name_empty"));
       return;
     }
     onChange({ childName: nameInput.trim() });
@@ -1034,7 +1066,7 @@ function ChildSection({
 
   return (
     <View>
-      <SectionHeader title="Профиль ребёнка" icon="👤" />
+      <SectionHeader title={t("settings.profile_section")} icon="👤" />
       <Card>
         {editingName ? (
           <View style={u.editBlock}>
@@ -1042,24 +1074,27 @@ function ChildSection({
               style={u.editInput}
               value={nameInput}
               onChangeText={setNameInput}
-              placeholder="Имя ребёнка"
+              placeholder={t("settings.name_placeholder")}
               placeholderTextColor={C.muted}
               autoFocus
             />
             <View style={u.rowBtns}>
               <TouchableOpacity style={u.btnPrimary} onPress={saveName}>
-                <Text style={u.btnPrimaryTxt}>Сохранить</Text>
+                <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={u.btnCancel}
                 onPress={() => setEditingName(false)}
               >
-                <Text style={u.btnCancelTxt}>Отмена</Text>
+                <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
-          <SettingRow label="Имя" sublabel={settings.childName || "—"}>
+          <SettingRow
+            label={t("settings.name_label")}
+            sublabel={settings.childName || t("settings.empty_dash")}
+          >
             <TouchableOpacity
               onPress={() => {
                 setNameInput(settings.childName);
@@ -1067,18 +1102,18 @@ function ChildSection({
               }}
               style={u.linkBtn}
             >
-              <Text style={u.linkBtnTxt}>Изменить</Text>
+              <Text style={u.linkBtnTxt}>{t("settings.edit")}</Text>
             </TouchableOpacity>
           </SettingRow>
         )}
         <Divider />
         <SettingRow
-          label="Сбросить прогресс"
-          sublabel="Звёзды, миссии и награды будут обнулены"
+          label={t("settings.reset_progress")}
+          sublabel={t("settings.reset_progress_sub")}
           danger
         >
           <TouchableOpacity style={u.dangerBtn} onPress={onResetProgress}>
-            <Text style={u.dangerBtnTxt}>Сброс</Text>
+            <Text style={u.dangerBtnTxt}>{t("settings.reset")}</Text>
           </TouchableOpacity>
         </SettingRow>
       </Card>
@@ -1141,13 +1176,13 @@ function DailyRoutineSection({
 
   return (
     <View>
-      <SectionHeader title="Распорядок дня" icon="🌅" />
+      <SectionHeader title={t("settings.routine_section")} icon="🌅" />
 
       {/* Morning routine toggle + star count + steps editor */}
       <Card>
         <SettingRow
-          label="Утренняя рутина"
-          sublabel="При первом открытии до 12:00"
+          label={t("settings.morning_label")}
+          sublabel={t("settings.morning_sub")}
         >
           <Switch
             value={settings.morningEnabled}
@@ -1161,8 +1196,8 @@ function DailyRoutineSection({
           <>
             <Divider />
             <SettingRow
-              label="Звёзд за рутину"
-              sublabel="За весь комплект шагов"
+              label={t("settings.morning_stars")}
+              sublabel={t("settings.morning_stars_sub")}
             >
               <View style={u.stepperRow}>
                 <TouchableOpacity
@@ -1190,7 +1225,9 @@ function DailyRoutineSection({
             </SettingRow>
 
             <Divider />
-            <Text style={u.subheading}>Шаги утренней рутины</Text>
+            <Text style={u.subheading}>
+              {t("settings.morning_steps_heading")}
+            </Text>
 
             {settings.morningSteps.map((step, idx) => (
               <View key={step.id}>
@@ -1209,14 +1246,14 @@ function DailyRoutineSection({
                         style={[u.editInput, { flex: 1 }]}
                         value={stepTitle}
                         onChangeText={setStepTitle}
-                        placeholder="Название шага"
+                        placeholder={t("settings.step_name_placeholder")}
                         placeholderTextColor={C.muted}
                         autoFocus
                       />
                     </View>
                     <View style={u.rowBtns}>
                       <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
-                        <Text style={u.btnPrimaryTxt}>Сохранить</Text>
+                        <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={u.btnCancel}
@@ -1226,7 +1263,7 @@ function DailyRoutineSection({
                           setStepEmoji("");
                         }}
                       >
-                        <Text style={u.btnCancelTxt}>Отмена</Text>
+                        <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1235,7 +1272,9 @@ function DailyRoutineSection({
                     <Text style={{ fontSize: 22, marginRight: 10 }}>
                       {step.emoji}
                     </Text>
-                    <Text style={[u.rowLabel, { flex: 1 }]}>{step.title}</Text>
+                    <Text style={[u.rowLabel, { flex: 1 }]}>
+                      {getMorningStepTitle(step.id, step.title)}
+                    </Text>
                     <TouchableOpacity
                       style={u.stepperBtn}
                       onPress={() => moveStep(step.id, -1)}
@@ -1271,7 +1310,7 @@ function DailyRoutineSection({
                         setStepEmoji(step.emoji);
                       }}
                     >
-                      <Text style={u.linkBtnTxt}>Изм.</Text>
+                      <Text style={u.linkBtnTxt}>{t("settings.edit_short")}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={u.dangerBtn}
@@ -1295,7 +1334,7 @@ function DailyRoutineSection({
                     setStepEmoji("");
                   }}
                 >
-                  <Text style={u.inlineActionTxt}>+ Добавить шаг</Text>
+                  <Text style={u.inlineActionTxt}>{t("settings.add_step")}</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -1313,14 +1352,14 @@ function DailyRoutineSection({
                     style={[u.editInput, { flex: 1 }]}
                     value={stepTitle}
                     onChangeText={setStepTitle}
-                    placeholder="Название шага"
+                    placeholder={t("settings.step_name_placeholder")}
                     placeholderTextColor={C.muted}
                     autoFocus
                   />
                 </View>
                 <View style={u.rowBtns}>
                   <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
-                    <Text style={u.btnPrimaryTxt}>Добавить</Text>
+                    <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={u.btnCancel}
@@ -1330,7 +1369,7 @@ function DailyRoutineSection({
                       setStepEmoji("");
                     }}
                   >
-                    <Text style={u.btnCancelTxt}>Отмена</Text>
+                    <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1342,22 +1381,22 @@ function DailyRoutineSection({
       {/* Day mode override */}
       <Card>
         <Text style={[u.rowLabel, { padding: 14, paddingBottom: 4 }]}>
-          Режим дня
+          {t("settings.day_mode")}
         </Text>
         <Text
           style={[u.rowSublabel, { paddingHorizontal: 14, paddingBottom: 8 }]}
         >
           {(settings.dayModeOverride ?? "auto") === "auto"
-            ? "Авто — будни / выходные по дате"
+            ? t("settings.day_mode_auto")
             : settings.dayModeOverride === "weekday"
-              ? "Всегда режим буднего дня"
-              : "Всегда режим выходного дня"}
+              ? t("settings.day_mode_weekday")
+              : t("settings.day_mode_weekend")}
         </Text>
         <PillSelector
           options={[
-            { label: "Авто", value: "auto" },
-            { label: "Будни", value: "weekday" },
-            { label: "Выходной", value: "weekend" },
+            { label: t("settings.day_pill_auto"), value: "auto" },
+            { label: t("settings.day_pill_weekday"), value: "weekday" },
+            { label: t("settings.day_pill_weekend"), value: "weekend" },
           ]}
           value={settings.dayModeOverride ?? "auto"}
           onChange={(v) => onChange({ dayModeOverride: v as DayModeOverride })}
@@ -1395,7 +1434,10 @@ function ScheduleSection({
 
   function startAdd() {
     if (blocks.length >= SCHEDULE_MAX_BLOCKS) {
-      Alert.alert("Лимит", `Максимум ${SCHEDULE_MAX_BLOCKS} пунктов в дне`);
+      Alert.alert(
+        t("settings.schedule_limit_title"),
+        t("settings.schedule_limit_msg", { max: SCHEDULE_MAX_BLOCKS }),
+      );
       return;
     }
     setEditingId(-1);
@@ -1413,8 +1455,8 @@ function ScheduleSection({
     const title = draftTitle.trim();
     if (!title || !isValidTime(draftStart) || !isValidTime(draftEnd)) {
       Alert.alert(
-        "Проверь название и время",
-        "Формат времени ЧЧ:ММ (например 08:00)",
+        t("settings.schedule_invalid_title"),
+        t("settings.schedule_invalid_msg"),
       );
       return;
     }
@@ -1476,11 +1518,11 @@ function ScheduleSection({
 
   return (
     <View>
-      <SectionHeader title="Распорядок дня" icon="📅" />
+      <SectionHeader title={t("settings.schedule_section")} icon="📅" />
       <Card>
         <SettingRow
-          label='Карточка "Сейчас"'
-          sublabel="Показывать на главном экране, что происходит сейчас и далее"
+          label={t("settings.schedule_now_card")}
+          sublabel={t("settings.schedule_now_sub")}
         >
           <Switch
             value={settings.scheduleEnabled}
@@ -1510,7 +1552,7 @@ function ScheduleSection({
                       style={[u.editInput, { flex: 1 }]}
                       value={draftTitle}
                       onChangeText={setDraftTitle}
-                      placeholder="Название"
+                      placeholder={t("settings.schedule_name_placeholder")}
                       placeholderTextColor={C.muted}
                       autoFocus
                     />
@@ -1520,7 +1562,7 @@ function ScheduleSection({
                       style={[u.editInput, { flex: 1 }]}
                       value={draftStart}
                       onChangeText={setDraftStart}
-                      placeholder="ЧЧ:ММ начало"
+                      placeholder={t("settings.schedule_time_start")}
                       placeholderTextColor={C.muted}
                       maxLength={5}
                     />
@@ -1528,20 +1570,20 @@ function ScheduleSection({
                       style={[u.editInput, { flex: 1 }]}
                       value={draftEnd}
                       onChangeText={setDraftEnd}
-                      placeholder="ЧЧ:ММ конец"
+                      placeholder={t("settings.schedule_time_end")}
                       placeholderTextColor={C.muted}
                       maxLength={5}
                     />
                   </View>
                   <View style={u.rowBtns}>
                     <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}>
-                      <Text style={u.btnPrimaryTxt}>Сохранить</Text>
+                      <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={u.btnCancel}
                       onPress={() => setEditingId(null)}
                     >
-                      <Text style={u.btnCancelTxt}>Отмена</Text>
+                      <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1552,7 +1594,9 @@ function ScheduleSection({
                       {it.emoji}
                     </Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={u.rowLabel}>{it.title}</Text>
+                      <Text style={u.rowLabel}>
+                        {getScheduleTitle(it.id, it.title)}
+                      </Text>
                       <Text style={u.rowSublabel}>
                         {it.startTime} — {it.endTime}
                       </Text>
@@ -1575,7 +1619,7 @@ function ScheduleSection({
                       style={u.linkBtn}
                       onPress={() => startEdit(it)}
                     >
-                      <Text style={u.linkBtnTxt}>Изм.</Text>
+                      <Text style={u.linkBtnTxt}>{t("settings.edit_short")}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={u.dangerBtn}
@@ -1585,7 +1629,9 @@ function ScheduleSection({
                     </TouchableOpacity>
                   </View>
                   <View style={[u.row, { paddingTop: 0 }]}>
-                    <Text style={[u.rowSublabel, { flex: 1 }]}>Будни</Text>
+                    <Text style={[u.rowSublabel, { flex: 1 }]}>
+                      {t("settings.schedule_weekdays")}
+                    </Text>
                     <Switch
                       value={it.weekdays}
                       onValueChange={() => toggleFlag(it.id, "weekdays")}
@@ -1594,7 +1640,9 @@ function ScheduleSection({
                     />
                   </View>
                   <View style={[u.row, { paddingTop: 0 }]}>
-                    <Text style={[u.rowSublabel, { flex: 1 }]}>Выходные</Text>
+                    <Text style={[u.rowSublabel, { flex: 1 }]}>
+                      {t("settings.schedule_weekends")}
+                    </Text>
                     <Switch
                       value={it.weekends}
                       onValueChange={() => toggleFlag(it.id, "weekends")}
@@ -1621,7 +1669,7 @@ function ScheduleSection({
                   style={[u.editInput, { flex: 1 }]}
                   value={draftTitle}
                   onChangeText={setDraftTitle}
-                  placeholder="Название"
+                  placeholder={t("settings.schedule_name_placeholder")}
                   placeholderTextColor={C.muted}
                   autoFocus
                 />
@@ -1631,7 +1679,7 @@ function ScheduleSection({
                   style={[u.editInput, { flex: 1 }]}
                   value={draftStart}
                   onChangeText={setDraftStart}
-                  placeholder="ЧЧ:ММ начало"
+                  placeholder={t("settings.schedule_time_start")}
                   placeholderTextColor={C.muted}
                   maxLength={5}
                 />
@@ -1639,20 +1687,20 @@ function ScheduleSection({
                   style={[u.editInput, { flex: 1 }]}
                   value={draftEnd}
                   onChangeText={setDraftEnd}
-                  placeholder="ЧЧ:ММ конец"
+                  placeholder={t("settings.schedule_time_end")}
                   placeholderTextColor={C.muted}
                   maxLength={5}
                 />
               </View>
               <View style={u.rowBtns}>
                 <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}>
-                  <Text style={u.btnPrimaryTxt}>Добавить</Text>
+                  <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={u.btnCancel}
                   onPress={() => setEditingId(null)}
                 >
-                  <Text style={u.btnCancelTxt}>Отмена</Text>
+                  <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1662,7 +1710,9 @@ function ScheduleSection({
             <>
               <Divider />
               <TouchableOpacity style={u.inlineAction} onPress={startAdd}>
-                <Text style={u.inlineActionTxt}>+ Добавить пункт</Text>
+                <Text style={u.inlineActionTxt}>
+                  {t("settings.add_schedule_item")}
+                </Text>
               </TouchableOpacity>
             </>
           )}
@@ -1683,11 +1733,11 @@ function NotificationsSection({
 }) {
   return (
     <View>
-      <SectionHeader title="Уведомления 🔜" icon="🔔" />
+      <SectionHeader title={t("settings.notifications_section")} icon="🔔" />
       <Card>
         <SettingRow
-          label="Утреннее напоминание"
-          sublabel="Бадди напомнит о миссиях утром (скоро)"
+          label={t("settings.morning_reminder")}
+          sublabel={t("settings.morning_reminder_sub")}
         >
           <Switch
             value={false}
@@ -1772,17 +1822,24 @@ function ParentZoneView({
   function addCustomMission() {
     const title = draftMissionTitle.trim();
     if (!title) {
-      Alert.alert("Проверь название", "Название миссии не может быть пустым");
+      Alert.alert(
+        t("settings.mission_check_title"),
+        t("settings.mission_check_msg"),
+      );
       return;
     }
     if (customMissions.length >= CUSTOM_MISSIONS_MAX) {
-      Alert.alert("Лимит", `Максимум ${CUSTOM_MISSIONS_MAX} своих миссий`);
+      Alert.alert(
+        t("settings.schedule_limit_title"),
+        t("settings.mission_limit_msg", { max: CUSTOM_MISSIONS_MAX }),
+      );
       return;
     }
     const newMission: PoolMission = {
       id: nextCustomMissionId(),
       title,
-      subtitle: draftMissionSubtitle.trim() || "Своя миссия",
+      subtitle:
+        draftMissionSubtitle.trim() || t("settings.custom_mission_subtitle"),
       stars: 1,
       emoji: draftMissionEmoji || "✨",
       category: "movement",
@@ -1811,32 +1868,42 @@ function ParentZoneView({
   }
 
   function deleteCustomMission(id: number) {
-    Alert.alert("Удалить миссию?", "Эта миссия будет удалена навсегда", [
-      { text: "Отмена", style: "cancel" },
-      {
-        text: "Удалить",
-        style: "destructive",
-        onPress: () => {
-          const nextOverrides = { ...missionOverrides };
-          delete nextOverrides[id];
-          onChange({
-            customMissions: customMissions.filter((m) => m.id !== id),
-            missions: settings.missions.filter((m) => m.id !== id),
-            missionOverrides: nextOverrides,
-          });
+    Alert.alert(
+      t("settings.mission_delete_title"),
+      t("settings.mission_delete_msg"),
+      [
+        { text: t("settings.cancel"), style: "cancel" },
+        {
+          text: t("settings.delete"),
+          style: "destructive",
+          onPress: () => {
+            const nextOverrides = { ...missionOverrides };
+            delete nextOverrides[id];
+            onChange({
+              customMissions: customMissions.filter((m) => m.id !== id),
+              missions: settings.missions.filter((m) => m.id !== id),
+              missionOverrides: nextOverrides,
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
   }
 
   function addCustomReward() {
     const title = draftRewardTitle.trim();
     if (!title) {
-      Alert.alert("Проверь название", "Название награды не может быть пустым");
+      Alert.alert(
+        t("settings.mission_check_title"),
+        t("settings.reward_check_msg"),
+      );
       return;
     }
     if (customRewards.length >= CUSTOM_REWARDS_MAX) {
-      Alert.alert("Лимит", `Максимум ${CUSTOM_REWARDS_MAX} своих наград`);
+      Alert.alert(
+        t("settings.schedule_limit_title"),
+        t("settings.reward_limit_msg", { max: CUSTOM_REWARDS_MAX }),
+      );
       return;
     }
     const newReward: Reward = {
@@ -1862,22 +1929,26 @@ function ParentZoneView({
   }
 
   function deleteCustomReward(id: number) {
-    Alert.alert("Удалить награду?", "Эта награда будет удалена навсегда", [
-      { text: "Отмена", style: "cancel" },
-      {
-        text: "Удалить",
-        style: "destructive",
-        onPress: () => {
-          const nextOverrides = { ...rewardOverrides };
-          delete nextOverrides[id];
-          onChange({
-            customRewards: customRewards.filter((r) => r.id !== id),
-            rewards: settings.rewards.filter((r) => r.id !== id),
-            rewardOverrides: nextOverrides,
-          });
+    Alert.alert(
+      t("settings.reward_delete_title"),
+      t("settings.reward_delete_msg"),
+      [
+        { text: t("settings.cancel"), style: "cancel" },
+        {
+          text: t("settings.delete"),
+          style: "destructive",
+          onPress: () => {
+            const nextOverrides = { ...rewardOverrides };
+            delete nextOverrides[id];
+            onChange({
+              customRewards: customRewards.filter((r) => r.id !== id),
+              rewards: settings.rewards.filter((r) => r.id !== id),
+              rewardOverrides: nextOverrides,
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
   }
 
   function StarPicker({ id }: { id: number }) {
@@ -1928,21 +1999,25 @@ function ParentZoneView({
         <View style={u.row}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{m.title}</Text>
-            <Text style={u.rowSublabel}>{m.subtitle}</Text>
+            <Text style={u.rowLabel}>{getMissionTitle(m.id)}</Text>
+            <Text style={u.rowSublabel}>{getMissionSubtitle(m.id)}</Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
-                <Text style={pz.typePillTxt}>Своя</Text>
+                <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>
               </View>
             )}
             {!isCustom && mType === "permanent" && (
               <View style={[pz.typePill, pz.typePillPermanent]}>
-                <Text style={pz.typePillTxt}>Всегда</Text>
+                <Text style={pz.typePillTxt}>
+                  {t("settings.type_permanent")}
+                </Text>
               </View>
             )}
             {!isCustom && mType === "rotating" && (
               <View style={[pz.typePill, pz.typePillRotating]}>
-                <Text style={pz.typePillTxt}>Ротация</Text>
+                <Text style={pz.typePillTxt}>
+                  {t("settings.type_rotating")}
+                </Text>
               </View>
             )}
           </View>
@@ -1985,13 +2060,13 @@ function ParentZoneView({
         <View style={u.row}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{r.emoji}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{r.title}</Text>
+            <Text style={u.rowLabel}>{getRewardTitle(r.id, r.title)}</Text>
             <Text style={u.rowSublabel}>
               {Array(clampedCost).fill("⭐").join("")}
             </Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
-                <Text style={pz.typePillTxt}>Своя</Text>
+                <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>
               </View>
             )}
           </View>
@@ -2011,7 +2086,9 @@ function ParentZoneView({
           )}
         </View>
         <View style={[u.row, { paddingTop: 0 }]}>
-          <Text style={[u.rowSublabel, { flex: 1 }]}>Стоимость</Text>
+          <Text style={[u.rowSublabel, { flex: 1 }]}>
+            {t("settings.cost_label")}
+          </Text>
           <View style={pz.starStepperRow}>
             <TouchableOpacity
               style={u.stepperBtn}
@@ -2059,7 +2136,7 @@ function ParentZoneView({
             style={[u.editInput, { flex: 1 }]}
             value={draftMissionTitle}
             onChangeText={setDraftMissionTitle}
-            placeholder="Название миссии"
+            placeholder={t("settings.mission_name_placeholder")}
             placeholderTextColor={C.muted}
             autoFocus
           />
@@ -2068,12 +2145,12 @@ function ParentZoneView({
           style={u.editInput}
           value={draftMissionSubtitle}
           onChangeText={setDraftMissionSubtitle}
-          placeholder="Подсказка (необязательно)"
+          placeholder={t("settings.mission_hint_placeholder")}
           placeholderTextColor={C.muted}
         />
         <View style={u.rowBtns}>
           <TouchableOpacity style={u.btnPrimary} onPress={addCustomMission}>
-            <Text style={u.btnPrimaryTxt}>Добавить</Text>
+            <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={u.btnCancel}
@@ -2084,7 +2161,7 @@ function ParentZoneView({
               setDraftMissionSubtitle("");
             }}
           >
-            <Text style={u.btnCancelTxt}>Отмена</Text>
+            <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2107,14 +2184,14 @@ function ParentZoneView({
             style={[u.editInput, { flex: 1 }]}
             value={draftRewardTitle}
             onChangeText={setDraftRewardTitle}
-            placeholder="Название награды"
+            placeholder={t("settings.reward_name_placeholder")}
             placeholderTextColor={C.muted}
             autoFocus
           />
         </View>
         <View style={u.rowBtns}>
           <TouchableOpacity style={u.btnPrimary} onPress={addCustomReward}>
-            <Text style={u.btnPrimaryTxt}>Добавить</Text>
+            <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={u.btnCancel}
@@ -2124,7 +2201,7 @@ function ParentZoneView({
               setDraftRewardTitle("");
             }}
           >
-            <Text style={u.btnCancelTxt}>Отмена</Text>
+            <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2135,9 +2212,9 @@ function ParentZoneView({
     <SafeAreaView style={ss.root}>
       <View style={ss.header}>
         <TouchableOpacity onPress={onBack} style={ss.backBtn}>
-          <Text style={ss.backBtnTxt}>← Назад</Text>
+          <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
         </TouchableOpacity>
-        <Text style={ss.headerTitle}>Родительская зона</Text>
+        <Text style={ss.headerTitle}>{t("settings.parent_zone_header")}</Text>
         <View style={{ width: 80 }} />
       </View>
       <ScrollView
@@ -2145,7 +2222,7 @@ function ParentZoneView({
         contentContainerStyle={ss.content}
         keyboardShouldPersistTaps="handled"
       >
-        <SectionHeader title="Миссии — будни" icon="📅" />
+        <SectionHeader title={t("settings.missions_weekday")} icon="📅" />
         <Card>
           {missionPool.map((m, idx) => (
             <View key={m.id}>
@@ -2157,7 +2234,7 @@ function ParentZoneView({
 
         <View style={ss.spacer} />
 
-        <SectionHeader title="Миссии — выходные" icon="🌈" />
+        <SectionHeader title={t("settings.missions_weekend")} icon="🌈" />
         <Card>
           {missionPool.map((m, idx) => (
             <View key={m.id}>
@@ -2179,7 +2256,9 @@ function ParentZoneView({
                   style={u.inlineAction}
                   onPress={() => setShowAddMission(true)}
                 >
-                  <Text style={u.inlineActionTxt}>+ Добавить миссию</Text>
+                  <Text style={u.inlineActionTxt}>
+                    {t("settings.add_mission")}
+                  </Text>
                 </TouchableOpacity>
               </>
             )
@@ -2188,7 +2267,7 @@ function ParentZoneView({
 
         <View style={ss.spacer} />
 
-        <SectionHeader title="Награды" icon="🎁" />
+        <SectionHeader title={t("settings.rewards_section")} icon="🎁" />
         <Card>
           {rewardPool.map((r, idx) => (
             <View key={r.id}>
@@ -2210,7 +2289,9 @@ function ParentZoneView({
                   style={u.inlineAction}
                   onPress={() => setShowAddReward(true)}
                 >
-                  <Text style={u.inlineActionTxt}>+ Добавить награду</Text>
+                  <Text style={u.inlineActionTxt}>
+                    {t("settings.add_reward")}
+                  </Text>
                 </TouchableOpacity>
               </>
             )
@@ -2335,7 +2416,7 @@ export default function SettingsScreen({
       pendingAction?.();
       setPendingAction(null);
     } else {
-      Alert.alert("Неверный PIN");
+      Alert.alert(t("settings.pin_wrong"));
       setPinInput("");
     }
   }
@@ -2343,12 +2424,12 @@ export default function SettingsScreen({
   function handleResetProgress() {
     requirePin(() => {
       Alert.alert(
-        "Сбросить весь прогресс?",
-        "Звёзды, миссии и история будут удалены. Настройки сохранятся.",
+        t("settings.reset_full_title"),
+        t("settings.reset_full_msg"),
         [
-          { text: "Отмена", style: "cancel" },
+          { text: t("settings.cancel"), style: "cancel" },
           {
-            text: "Сбросить",
+            text: t("settings.reset_full_btn"),
             style: "destructive",
             onPress: async () => {
               await AsyncStorage.multiSet([
@@ -2368,7 +2449,7 @@ export default function SettingsScreen({
                 lastMission: null,
                 firstRewardRedeemed: false,
               });
-              Alert.alert("Прогресс сброшен");
+              Alert.alert(t("settings.reset_done"));
             },
           },
         ],
@@ -2380,7 +2461,7 @@ export default function SettingsScreen({
     return (
       <SafeAreaView style={ss.root}>
         <View style={ss.loadingCenter}>
-          <Text style={ss.loadingText}>Загрузка настроек...</Text>
+          <Text style={ss.loadingText}>{t("settings.loading")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -2401,9 +2482,9 @@ export default function SettingsScreen({
       {/* Header */}
       <View style={ss.header}>
         <TouchableOpacity onPress={onClose} style={ss.backBtn}>
-          <Text style={ss.backBtnTxt}>← Назад</Text>
+          <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
         </TouchableOpacity>
-        <Text style={ss.headerTitle}>Настройки</Text>
+        <Text style={ss.headerTitle}>{t("settings.title")}</Text>
         <View style={{ width: 80 }} />
       </View>
 
@@ -2426,9 +2507,11 @@ export default function SettingsScreen({
           <View style={ss.parentZoneLeft}>
             <Text style={ss.parentZoneIcon}>🔐</Text>
             <View style={{ flex: 1 }}>
-              <Text style={ss.parentZoneTitle}>Родительская зона</Text>
+              <Text style={ss.parentZoneTitle}>
+                {t("settings.parent_zone_title")}
+              </Text>
               <Text style={ss.parentZoneSub}>
-                Миссии, награды, расписание, поведение Бадди
+                {t("settings.parent_zone_sub")}
               </Text>
             </View>
           </View>
@@ -2481,7 +2564,7 @@ export default function SettingsScreen({
       {showPin && (
         <View style={ss.pinOverlay}>
           <View style={ss.pinCard}>
-            <Text style={ss.pinTitle}>Введи PIN родителя</Text>
+            <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
             <TextInput
               style={ss.pinInput}
               keyboardType="numeric"
@@ -2493,7 +2576,7 @@ export default function SettingsScreen({
               onSubmitEditing={verifyAndRun}
             />
             <TouchableOpacity style={ss.pinBtnPrimary} onPress={verifyAndRun}>
-              <Text style={ss.pinBtnPrimaryTxt}>Подтвердить</Text>
+              <Text style={ss.pinBtnPrimaryTxt}>{t("settings.confirm")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={ss.pinBtnCancel}
@@ -2503,7 +2586,7 @@ export default function SettingsScreen({
                 setPendingAction(null);
               }}
             >
-              <Text style={ss.pinBtnCancelTxt}>Отмена</Text>
+              <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
             </TouchableOpacity>
           </View>
         </View>

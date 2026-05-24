@@ -574,6 +574,16 @@ export const DEFAULT_MORNING_STEPS: MorningStep[] = [
   { id: 3, title: "Почисти зубы", emoji: "🪥" },
 ];
 
+// Returns localized morning step title, falling back to pool / custom step title
+export function getMorningStepTitle(id: number, fallback?: string): string {
+  const key = `morning_step_titles.ms${id}`;
+  const result = t(key);
+  const poolFallback =
+    fallback ?? DEFAULT_MORNING_STEPS.find((s) => s.id === id)?.title ?? "";
+  if (result === key) return poolFallback;
+  return result;
+}
+
 export const MORNING_CUTOFF_HOUR = 12;
 
 // ── DAY SCHEDULE ──────────────────────────────────────────────────────────────

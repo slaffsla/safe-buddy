@@ -45,7 +45,13 @@ export function DemoStepScreen({
   onDone,
   speak,
 }: {
-  step: { id?: string; title: string; emoji: string; praise: string };
+  step: {
+    id?: string;
+    title: string;
+    emoji: string;
+    praise: string;
+    praiseKey: string;
+  };
   stepIndex: number;
   totalSteps: number;
   onDone: () => void;
@@ -58,7 +64,7 @@ export function DemoStepScreen({
     ? tDemoStepTitle(step.id, step.title)
     : step.title;
   const localizedPraise = step.id
-    ? tDemoStepPraise(step.id, step.praise)
+    ? tDemoStepPraise(step.id, t(step.praiseKey))
     : step.praise;
 
   function handleDone() {

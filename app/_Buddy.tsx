@@ -17,6 +17,7 @@ import {
   getBuddyLine,
   isAmbientMood,
 } from "./_constants";
+import { t } from "./i18n";
 
 interface BuddyProps {
   mood?: BuddyMood;
@@ -136,7 +137,7 @@ export default function Buddy({
           resizeMode="contain"
         />
       </Animated.View>
-      <Text style={s.buddyName}>Бадди</Text>
+      <Text style={s.buddyName}>{t("buddy.name")}</Text>
     </TouchableOpacity>
   );
 

@@ -1932,7 +1932,7 @@ function ParentZoneView({
             <Text style={u.rowSublabel}>{m.subtitle}</Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
-                <Text style={pz.typePillTxt}>Своя</Text>
+                <Text style={pz.typePillTxt}>t(common.own)</Text>
               </View>
             )}
             {!isCustom && mType === "permanent" && (

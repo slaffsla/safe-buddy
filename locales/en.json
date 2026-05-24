@@ -18,7 +18,8 @@
     "confirm": "Confirm",
     "skip": "Skip",
     "done": "Done",
-    "close": "Close"
+    "close": "Close",
+    "own": "by Parent"
   },
   "home": {
     "greeting_with_name": "Hi {{name}}!",
@@ -52,7 +53,10 @@
     "complete_title": "You did it! 🎉",
     "complete_msg": "Want to try a real mission?",
     "complete_yes": "🚀 Yes, let's go!",
-    "complete_later": "⏳ Later"
+    "complete_later": "⏳ Later",
+    "praise_1": "You did it",
+    "praise_2": "Good",
+    "praise_3": "That was great"
   },
   "demoSteps": {
     "d1": { "title": "Clap your hands", "praise": "Nicely done" },
@@ -222,6 +226,7 @@
     "9": "Take a deep breath",
     "10": "Reach up. As high as you can."
   },
+
   "settings": {
     "title": "Parent settings",
     "child_name": "Child's name",

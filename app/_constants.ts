@@ -351,7 +351,7 @@ export const MISSION_POOL: PoolMission[] = [
   {
     id: 21,
     title: "Наведи порядок в одежде",
-    subtitle: "Полоюи аккуратной стопкой",
+    subtitle: "Положи аккуратной стопкой",
     stars: 2,
     emoji: "👕",
     category: "tidy",
@@ -430,6 +430,26 @@ export const MISSION_POOL: PoolMission[] = [
     weekendDefault: true,
   },
 ];
+
+// Returns localized title for a mission, falling back to pool title
+export function getMissionTitle(id: number): string {
+  const key = `missions.${id}.title`;
+  const result = t(key);
+  if (result === key) {
+    return MISSION_POOL.find((m) => m.id === id)?.title ?? "";
+  }
+  return result;
+}
+
+// Returns localized subtitle for a mission, falling back to pool subtitle
+export function getMissionSubtitle(id: number): string {
+  const key = `missions.${id}.subtitle`;
+  const result = t(key);
+  if (result === key) {
+    return MISSION_POOL.find((m) => m.id === id)?.subtitle ?? "";
+  }
+  return result;
+}
 
 // Derives the AppSettings missions array from MISSION_POOL.
 // The first 6 original missions keep their proven types.
@@ -780,13 +800,26 @@ export function getBlockStatus(block: ScheduleBlock): BlockStatus {
 export const CONFETTI_AT: number[] = [1, 5, 10, 25, 50, 100];
 
 export const DEMO_STEPS = [
-  { id: "d1", title: "Хлопни в ладоши", emoji: "👏", praise: "Получилось" },
-  { id: "d2", title: "Прыгни один раз", emoji: "🦘", praise: "Хорошо" },
+  {
+    id: "d1",
+    title: "Хлопни в ладоши",
+    emoji: "👏",
+    praise: "Получилось",
+    praiseKey: "demo.praise_1",
+  },
+  {
+    id: "d2",
+    title: "Прыгни один раз",
+    emoji: "🦘",
+    praise: "Хорошо",
+    praiseKey: "demo.praise_2",
+  },
   {
     id: "d3",
     title: "Коснись носа",
     emoji: "👃",
     praise: "Отлично получилось",
+    praiseKey: "demo.praise_3",
   },
 ];
 

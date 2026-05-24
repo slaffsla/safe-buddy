@@ -16,6 +16,8 @@ import {
   C,
   currentSlot,
   getMilestoneMessage,
+  getMissionSubtitle,
+  getMissionTitle,
   getProgressionMessage,
   MISSION_POOL,
   MissionSlot,
@@ -113,13 +115,19 @@ export function MissionPickScreen({
                 style={[s.mCard, s.bonusCard]}
                 onPress={() => onPick(bonusMission)}
                 onLongPress={() =>
-                  speak(`${bonusMission.title}. ${bonusMission.subtitle}`)
+                  speak(
+                    `${getMissionTitle(bonusMission.id)}. ${getMissionSubtitle(bonusMission.id)}`,
+                  )
                 }
               >
                 <Text style={s.mEmoji}>{bonusMission.emoji}</Text>
                 <View style={s.mInfo}>
-                  <Text style={s.mTitle}>{bonusMission.title}</Text>
-                  <Text style={s.mSub}>{bonusMission.subtitle}</Text>
+                  <Text style={s.mTitle}>
+                    {getMissionTitle(bonusMission.id)}
+                  </Text>
+                  <Text style={s.mSub}>
+                    {getMissionSubtitle(bonusMission.id)}
+                  </Text>
                 </View>
                 <Text style={s.mStar}>
                   {Array(bonusMission.stars).fill("⭐").join("")}
@@ -179,10 +187,16 @@ export function MissionPickScreen({
                       if (!isDone) onPick(m);
                       else
                         speak(
-                          t("missionPick.already_done", { title: m.title }),
+                          t("missionPick.already_done", {
+                            title: getMissionTitle(m.id),
+                          }),
                         );
                     }}
-                    onLongPress={() => speak(`${m.title}. ${m.subtitle}`)}
+                    onLongPress={() =>
+                      speak(
+                        `${getMissionTitle(m.id)}. ${getMissionSubtitle(m.id)}`,
+                      )
+                    }
                     activeOpacity={isDone ? 1 : 0.7}
                   >
                     <Text style={[s.mEmoji, isDone && s.mEmojiDone]}>
@@ -190,10 +204,10 @@ export function MissionPickScreen({
                     </Text>
                     <View style={s.mInfo}>
                       <Text style={[s.mTitle, isDone && s.mTxtDone]}>
-                        {m.title}
+                        {getMissionTitle(m.id)}
                       </Text>
                       <Text style={[s.mSub, isDone && s.mTxtDone]}>
-                        {m.subtitle}
+                        {getMissionSubtitle(m.id)}
                       </Text>
                       {!isDone && mType === "permanent" && (
                         <View style={[s.typePill, s.typePillPermanent]}>
@@ -256,12 +270,16 @@ export function ActiveScreen({
       </T>
       <TouchableOpacity
         style={s.activeCard}
-        onPress={() => speak(`${mission.title}. ${mission.subtitle}`)}
+        onPress={() =>
+          speak(
+            `${getMissionTitle(mission.id)}. ${getMissionSubtitle(mission.id)}`,
+          )
+        }
         activeOpacity={0.85}
       >
         <Text style={s.activeEmoji}>{mission.emoji}</Text>
-        <Text style={s.activeTitle}>{mission.title}</Text>
-        <Text style={s.activeSub}>{mission.subtitle}</Text>
+        <Text style={s.activeTitle}>{getMissionTitle(mission.id)}</Text>
+        <Text style={s.activeSub}>{getMissionSubtitle(mission.id)}</Text>
         <View style={s.starsRow}>
           {Array(mission.stars)
             .fill("⭐")
@@ -328,7 +346,7 @@ export function CelebrateScreen({
         activeOpacity={0.85}
       >
         <Text style={s.earnedEmoji}>{mission.emoji}</Text>
-        <Text style={s.earnedName}>{mission.title}</Text>
+        <Text style={s.earnedName}>{getMissionTitle(mission.id)}</Text>
         <Text style={s.earnedStars}>
           {Array(mission.stars).fill("⭐").join(" ")}
         </Text>

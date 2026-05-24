@@ -221,5 +221,17 @@
     "8": "Say thanks to someone today",
     "9": "Take a deep breath",
     "10": "Reach up. As high as you can."
+  },
+  "settings": {
+    "title": "Parent settings",
+    "child_name": "Child's name",
+    "child_age": "Child's age",
+    "language": "Language",
+    "notifications": "Notifications",
+    "reset_progress": "Reset progress",
+    "reset_progress_confirm_title": "Are you sure?",
+    "reset_progress_confirm_msg": "This cannot be undone.",
+    "reset_progress_confirm_btn": "Yes, reset",
+    "reset_progress_cancel_btn": "No, keep it"
   }
 }

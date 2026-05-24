@@ -19,6 +19,7 @@ import {
   getMissionSubtitle,
   getMissionTitle,
   getProgressionMessage,
+  getRewardTitle,
   MISSION_POOL,
   MissionSlot,
   PoolMission,
@@ -400,13 +401,15 @@ export function RewardsScreen({
             key={r.id}
             style={[s.rCard, !can && s.rLocked]}
             onPress={() =>
-              can ? onRedeem(r) : speak(`${r.title}. ${needText}`)
+              can
+                ? onRedeem(r)
+                : speak(`${getRewardTitle(r.id, r.title)}. ${needText}`)
             }
             activeOpacity={0.7}
           >
             <Text style={s.rEmoji}>{r.emoji}</Text>
             <View style={s.rInfo}>
-              <Text style={s.rTitle}>{r.title}</Text>
+              <Text style={s.rTitle}>{getRewardTitle(r.id, r.title)}</Text>
               <Text style={s.rCost}>{Array(r.cost).fill("⭐").join("")}</Text>
             </View>
             {can ? (

@@ -46,7 +46,7 @@ export function tMissionSubtitle(id: number, fallback: string): string {
  * Returns the localized reward title, or the provided fallback.
  */
 export function tRewardTitle(id: number, fallback: string): string {
-  return i18n.t(`rewardItems.${id}`, { defaultValue: fallback });
+  return i18n.t(`reward_titles.r${id}`, { defaultValue: fallback });
 }
 
 /**

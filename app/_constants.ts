@@ -745,6 +745,16 @@ export const DEFAULT_SCHEDULE: ScheduleBlock[] = [
   },
 ];
 
+// Returns localized schedule block title, falling back to pool / override title
+export function getScheduleTitle(id: number, fallback?: string): string {
+  const key = `schedule_titles.s${id}`;
+  const result = t(key);
+  const poolFallback =
+    fallback ?? DEFAULT_SCHEDULE.find((b) => b.id === id)?.title ?? "";
+  if (result === key) return poolFallback;
+  return result;
+}
+
 export const SCHEDULE_MAX_BLOCKS = 12;
 
 function parseHM(t: string): number {
@@ -840,6 +850,15 @@ export const REWARDS: Reward[] = [
   { id: 14, title: "Прыжки на батуте", cost: 3, emoji: "🦘" },
   { id: 15, title: "Остаться подольше в ванне", cost: 2, emoji: "🛁" },
 ];
+
+// Returns localized reward title, falling back to pool / custom reward title
+export function getRewardTitle(id: number, fallback?: string): string {
+  const key = `reward_titles.r${id}`;
+  const result = t(key);
+  const poolFallback = fallback ?? REWARDS.find((r) => r.id === id)?.title ?? "";
+  if (result === key) return poolFallback;
+  return result;
+}
 
 export interface RewardConfig {
   id: number;

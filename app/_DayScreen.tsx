@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { C, ScheduleBlock, getBlockStatus } from "./_constants";
+import { C, ScheduleBlock, getBlockStatus, getScheduleTitle } from "./_constants";
 import { t } from "./i18n";
 
 interface DayScreenProps {
@@ -105,7 +105,11 @@ export default function DayScreen({
                 {/* Block card */}
                 <TouchableOpacity
                   style={cardStyle}
-                  onPress={() => speak(`${block.title}. ${block.startTime}`)}
+                  onPress={() =>
+                    speak(
+                      `${getScheduleTitle(block.id, block.title)}. ${block.startTime}`,
+                    )
+                  }
                   activeOpacity={0.75}
                 >
                   <Text
@@ -125,7 +129,7 @@ export default function DayScreen({
                         isPast && s.cardTitlePast,
                       ]}
                     >
-                      {block.title}
+                      {getScheduleTitle(block.id, block.title)}
                     </Text>
                     <Text style={[s.cardTime, isPast && s.cardTimePast]}>
                       {block.startTime} — {block.endTime}
@@ -136,7 +140,7 @@ export default function DayScreen({
                       style={s.startBtn}
                       onPress={() => onStartMission(block.missionId!)}
                       accessibilityLabel={t("day.start_mission_a11y", {
-                        title: block.title,
+                        title: getScheduleTitle(block.id, block.title),
                       })}
                     >
                       <Text style={s.startBtnTxt}>▶</Text>

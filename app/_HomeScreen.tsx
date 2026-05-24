@@ -14,6 +14,7 @@ import {
   ScheduleBlock,
   getDailySuggestion,
   getProgressionMessage,
+  getScheduleTitle,
 } from "./_constants";
 import { t } from "./i18n";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
@@ -109,14 +110,23 @@ export default function HomeScreen({
             <TouchableOpacity
               style={s.scheduleNow}
               onPress={() =>
-                speak(t("home.schedule_now_speak", { title: currentBlock.title }))
+                speak(
+                  t("home.schedule_now_speak", {
+                    title: getScheduleTitle(
+                      currentBlock.id,
+                      currentBlock.title,
+                    ),
+                  }),
+                )
               }
               activeOpacity={0.8}
             >
               <Text style={s.scheduleEmoji}>{currentBlock.emoji}</Text>
               <View style={s.scheduleInfo}>
                 <Text style={s.scheduleNowLabel}>{t("home.schedule_now")}</Text>
-                <Text style={s.scheduleTitle}>{currentBlock.title}</Text>
+                <Text style={s.scheduleTitle}>
+                  {getScheduleTitle(currentBlock.id, currentBlock.title)}
+                </Text>
               </View>
               <Text style={s.scheduleTime}>
                 {t("home.schedule_until", { time: currentBlock.endTime })}
@@ -127,14 +137,20 @@ export default function HomeScreen({
             <TouchableOpacity
               style={s.scheduleNext}
               onPress={() =>
-                speak(t("home.schedule_next_speak", { title: nextBlock.title }))
+                speak(
+                  t("home.schedule_next_speak", {
+                    title: getScheduleTitle(nextBlock.id, nextBlock.title),
+                  }),
+                )
               }
               activeOpacity={0.8}
             >
               <Text style={s.scheduleNextEmoji}>{nextBlock.emoji}</Text>
               <View style={s.scheduleInfo}>
                 <Text style={s.scheduleNextLabel}>{t("home.schedule_next")}</Text>
-                <Text style={s.scheduleNextTitle}>{nextBlock.title}</Text>
+                <Text style={s.scheduleNextTitle}>
+                  {getScheduleTitle(nextBlock.id, nextBlock.title)}
+                </Text>
               </View>
               <Text style={s.scheduleTime}>{nextBlock.startTime}</Text>
             </TouchableOpacity>

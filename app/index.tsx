@@ -55,6 +55,9 @@ import {
   effectiveRewardCost,
   effectiveRewardEnabled,
   getAgeProfile,
+  getMissionSubtitle,
+  getMissionTitle,
+  getRewardTitle,
   getCurrentBlock,
   getNextBlock,
   isWeekend,
@@ -70,6 +73,7 @@ import {
   shouldShowMorning,
   todayStr,
 } from "./_constants";
+import { t } from "./i18n";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -470,7 +474,7 @@ export default function App() {
     (m: any) => {
       setMission(m);
       setSkipCount(0);
-      speak(`${m.title}. ${m.subtitle}`);
+      speak(`${getMissionTitle(m.id)}. ${getMissionSubtitle(m.id)}`);
       setScreen("active");
     },
     [speak],
@@ -559,8 +563,11 @@ export default function App() {
       setIsVeryExcited(true);
       AsyncStorage.setItem(K.FIRST_REWARD, "true").catch(console.log);
     }
-    speak("Молодец! Ты заслужил награду");
-    Alert.alert("🎉 Награда получена!", reward.title);
+    speak(t("rewards.redeemed_speak"));
+    Alert.alert(
+      t("rewards.redeemed_alert_title"),
+      getRewardTitle(reward.id, reward.title),
+    );
   }
 
   function verifyPin() {

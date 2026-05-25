@@ -4,6 +4,7 @@
 
 import React from "react";
 import {
+  Animated,
   ScrollView,
   StyleSheet,
   Text,
@@ -378,6 +379,80 @@ export function CelebrateScreen({
 
 // ── RewardsScreen ─────────────────────────────────────────────────────────────
 
+function RewardCard({
+  reward,
+  stars,
+  speak,
+  onRedeem,
+  showExactStarCost,
+}: {
+  reward: (typeof REWARDS)[number];
+  stars: number;
+  speak: (t: string) => void;
+  onRedeem: (r: any) => void;
+  showExactStarCost: boolean;
+}) {
+  const scale = React.useRef(new Animated.Value(1)).current;
+  const animatingRef = React.useRef(false);
+  const can = stars >= reward.cost;
+  const title = getRewardTitle(reward.id, reward.title);
+  const needText = showExactStarCost
+    ? t("rewards.need_exact", { count: Math.max(0, reward.cost - stars) })
+    : t("rewards.need_vague");
+  const statusText = can ? t("rewards.ready") : needText;
+
+  function handleRedeem() {
+    if (animatingRef.current) return;
+    animatingRef.current = true;
+    Animated.sequence([
+      Animated.timing(scale, {
+        toValue: 1.04,
+        duration: 110,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 4,
+        tension: 90,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      animatingRef.current = false;
+      onRedeem(reward);
+    });
+  }
+
+  return (
+    <Animated.View style={[s.rAnimWrap, { transform: [{ scale }] }]}>
+      <TouchableOpacity
+        style={[s.rCard, !can && s.rLocked]}
+        onPress={() => speak(`${title}. ${statusText}`)}
+        activeOpacity={0.7}
+      >
+        <Text style={s.rEmoji}>{reward.emoji}</Text>
+        <View style={s.rInfo}>
+          <Text style={s.rTitle}>{title}</Text>
+          <Text style={s.rCost}>{Array(reward.cost).fill("⭐").join("")}</Text>
+        </View>
+        {can ? (
+          <TouchableOpacity
+            style={s.rReadyBtn}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleRedeem();
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={s.rReadyBtnTxt}>{t("rewards.ready")}</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={s.rNeed}>{needText}</Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 export function RewardsScreen({
   stars,
   totalEver,
@@ -402,35 +477,16 @@ export function RewardsScreen({
       <T style={s.pageTitle} speak={speak}>
         {t("rewards.title")}
       </T>
-      {list.map((r) => {
-        const can = stars >= r.cost;
-        const needText = showExactStarCost
-          ? t("rewards.need_exact", { count: Math.max(0, r.cost - stars) })
-          : t("rewards.need_vague");
-        return (
-          <TouchableOpacity
-            key={r.id}
-            style={[s.rCard, !can && s.rLocked]}
-            onPress={() =>
-              can
-                ? onRedeem(r)
-                : speak(`${getRewardTitle(r.id, r.title)}. ${needText}`)
-            }
-            activeOpacity={0.7}
-          >
-            <Text style={s.rEmoji}>{r.emoji}</Text>
-            <View style={s.rInfo}>
-              <Text style={s.rTitle}>{getRewardTitle(r.id, r.title)}</Text>
-              <Text style={s.rCost}>{Array(r.cost).fill("⭐").join("")}</Text>
-            </View>
-            {can ? (
-              <Text style={s.rReady}>{t("rewards.ready")}</Text>
-            ) : (
-              <Text style={s.rNeed}>{needText}</Text>
-            )}
-          </TouchableOpacity>
-        );
-      })}
+      {list.map((r) => (
+        <RewardCard
+          key={r.id}
+          reward={r}
+          stars={stars}
+          speak={speak}
+          onRedeem={onRedeem}
+          showExactStarCost={showExactStarCost}
+        />
+      ))}
       <T style={s.hint} speak={speak}>
         {t("rewards.hint")}
       </T>
@@ -680,6 +736,10 @@ const s = StyleSheet.create({
   starsRow: { flexDirection: "row", marginTop: 12, gap: 4 },
   starBig: { fontSize: 24 },
 
+  rAnimWrap: {
+    width: "100%",
+    marginBottom: 7,
+  },
   rCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -688,7 +748,6 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     padding: 13,
-    marginBottom: 7,
     width: "100%",
   },
   rLocked: { opacity: 0.42 },
@@ -696,7 +755,16 @@ const s = StyleSheet.create({
   rInfo: { flex: 1 },
   rTitle: { fontSize: 15, fontWeight: "600", color: C.text },
   rCost: { fontSize: 12, color: C.muted, marginTop: 2 },
-  rReady: { fontSize: 13, color: C.green, fontWeight: "700" },
+  rReadyBtn: {
+    backgroundColor: C.greenLt,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.green,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginLeft: 10,
+  },
+  rReadyBtnTxt: { fontSize: 13, color: C.green, fontWeight: "700" },
   rNeed: { fontSize: 11, color: C.muted, textAlign: "right" },
 });
 

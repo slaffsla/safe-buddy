@@ -12,6 +12,7 @@
 // "complete" state, BUDDY_FIXED_SPACER at the top so the global Buddy
 // overlay is visible, same speak prop usage.
 
+import { Audio } from "expo-av";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -39,16 +40,6 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
   { labelKey: "breathing.phase_hold", duration: 1000, target: 1.0 },
   { labelKey: "breathing.phase_out", duration: 4000, target: 0.55 },
 ];
-
-// Try to load expo-av at runtime. If the package isn't installed (or fails
-// to load for any reason), audio is silently disabled — never crashes the
-// app per the ticket's safety rule.
-let ExpoAudio: any = null;
-try {
-  ExpoAudio = require("expo-av").Audio;
-} catch {
-  ExpoAudio = null;
-}
 
 interface Props {
   speak: (t: string) => void;
@@ -98,9 +89,9 @@ export default function BreathingScreen({
   }
 
   async function loadAndPlayAudio() {
-    if (!musicEnabled || !ExpoAudio) return;
+    if (!musicEnabled) return;
     try {
-      await ExpoAudio.setAudioModeAsync({
+      await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
       });
@@ -109,7 +100,7 @@ export default function BreathingScreen({
     }
     try {
       const source = require("../assets/audio/breathing.mp3");
-      const { sound } = await ExpoAudio.Sound.createAsync(source, {
+      const { sound } = await Audio.Sound.createAsync(source, {
         isLooping: true,
         volume: 0.65,
       });

@@ -358,7 +358,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
       [SK.PARENT_PIN, settings.parentPin || ""],
       [SK.PIN_ENABLED, String(settings.pinEnabled)],
     ]);
-  } catch (e) {
+  } catch {
     // Non-critical persistence error — app will continue but data may be lost
     // User's device storage may be full or permissions issue
   }

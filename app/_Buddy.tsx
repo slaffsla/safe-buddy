@@ -68,7 +68,7 @@ export default function Buddy({
     return () => {
       breathAnim.current?.stop();
     };
-  }, [isAmbient]);
+  }, [breathScale, isAmbient]);
 
   useEffect(() => {
     if (!celebrate) return;
@@ -94,7 +94,7 @@ export default function Buddy({
         useNativeDriver: true,
       }),
     ]).start();
-  }, [celebrate]);
+  }, [celebrate, tapScale]);
 
   function handlePress() {
     Animated.sequence([

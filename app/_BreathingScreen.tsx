@@ -232,8 +232,12 @@ export default function BreathingScreen({
         >
           <Text style={s.btnPrimaryTxt}>{t("breathing.btn_start")}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-          <Text style={s.btnSkipTxt}>{t("breathing.btn_back")}</Text>
+        <TouchableOpacity
+          style={s.btnSecondary}
+          onPress={onSkip}
+          activeOpacity={0.78}
+        >
+          <Text style={s.btnSecondaryTxt}>{t("breathing.btn_back")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -298,11 +302,11 @@ export default function BreathingScreen({
       </View>
 
       <TouchableOpacity
-        style={s.btnSkip}
+        style={s.btnExit}
         onPress={handleExit}
         activeOpacity={0.7}
       >
-        <Text style={s.btnSkipTxt}>{t("breathing.btn_finish")}</Text>
+        <Text style={s.btnExitTxt}>{t("breathing.btn_finish")}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -395,19 +399,37 @@ const s = StyleSheet.create({
   },
   btnPrimaryTxt: { fontSize: 18, color: C.white, fontWeight: "700" },
 
-  btnSkip: {
-    marginTop: 32,
-    padding: 12,
-    backgroundColor: C.greenLt,
+  btnSecondary: {
+    backgroundColor: C.white,
     borderRadius: 16,
-    paddingVertical: 17,
+    borderWidth: 1,
+    borderColor: C.green,
+    paddingVertical: 15,
     paddingHorizontal: 48,
+    marginTop: 12,
     minWidth: 220,
     alignItems: "center",
   },
-  btnSkipTxt: {
+  btnSecondaryTxt: {
+    fontSize: 16,
+    color: C.green,
+    fontWeight: "600",
+  },
+  btnExit: {
+    marginTop: 24,
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    minWidth: 180,
+    alignItems: "center",
+  },
+  btnExitTxt: {
     fontSize: 14,
     color: C.muted,
+    fontWeight: "600",
   },
 
   celebTitle: {

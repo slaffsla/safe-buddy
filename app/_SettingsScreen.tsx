@@ -369,7 +369,7 @@ interface ProgressData {
   totalEver: number;
   totalMissions: number;
   completedToday: number;
-  lastMission: string | null;
+  lastMissionRaw: string | null;
   firstRewardRedeemed: boolean;
 }
 
@@ -395,7 +395,7 @@ async function loadProgress(): Promise<ProgressData> {
       completedToday: v[SK.COMPLETED_TODAY]
         ? parseInt(v[SK.COMPLETED_TODAY], 10)
         : 0,
-      lastMission: getStoredMissionTitle(v[SK.LAST_MISSION]),
+      lastMissionRaw: v[SK.LAST_MISSION] || null,
       firstRewardRedeemed: v[SK.FIRST_REWARD] === "true",
     };
   } catch {
@@ -404,7 +404,7 @@ async function loadProgress(): Promise<ProgressData> {
       totalEver: 0,
       totalMissions: 0,
       completedToday: 0,
-      lastMission: null,
+      lastMissionRaw: null,
       firstRewardRedeemed: false,
     };
   }
@@ -497,8 +497,9 @@ function PillSelector<T extends string>({
 // ── PROGRESS SECTION ──────────────────────────────────────────────────────────
 
 function ProgressSection({ progress }: { progress: ProgressData }) {
-  const { totalEver, totalMissions, completedToday, stars, lastMission } =
+  const { totalEver, totalMissions, completedToday, stars, lastMissionRaw } =
     progress;
+  const lastMission = getStoredMissionTitle(lastMissionRaw);
 
   const statCards = [
     {
@@ -2590,6 +2591,7 @@ export default function SettingsScreen({
     const next = { ...settings, ...patch };
     if (patch.appLocale) {
       setAppLocale(patch.appLocale);
+      setProgress((prev) => (prev ? { ...prev } : prev));
     }
     setSettings(next);
     onSettingsChange(next); // notify parent immediately for live updates
@@ -2649,7 +2651,7 @@ export default function SettingsScreen({
                 totalEver: 0,
                 totalMissions: 0,
                 completedToday: 0,
-                lastMission: null,
+                lastMissionRaw: null,
                 firstRewardRedeemed: false,
               });
               Alert.alert(t("settings.reset_done"));

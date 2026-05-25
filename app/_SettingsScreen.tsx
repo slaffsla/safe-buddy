@@ -546,8 +546,10 @@ function PinSection({
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
   const [showSetPin, setShowSetPin] = useState(false);
+  const [showRemovePin, setShowRemovePin] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [removePinInput, setRemovePinInput] = useState("");
 
   function handleSetPin() {
     if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
@@ -565,7 +567,7 @@ function PinSection({
     Alert.alert(t("settings.pin_set_ok"));
   }
 
-  function handleRemovePin() {
+  function confirmRemovePin() {
     Alert.alert(t("settings.pin_delete_title"), t("settings.pin_delete_msg"), [
       { text: t("settings.cancel"), style: "cancel" },
       {
@@ -574,6 +576,26 @@ function PinSection({
         onPress: () => onChange({ parentPin: "", pinEnabled: false }),
       },
     ]);
+  }
+
+  function requestRemovePin() {
+    if (!settings.parentPin) {
+      confirmRemovePin();
+      return;
+    }
+    setRemovePinInput("");
+    setShowRemovePin(true);
+  }
+
+  function verifyRemovePin() {
+    if (removePinInput === settings.parentPin) {
+      setShowRemovePin(false);
+      setRemovePinInput("");
+      confirmRemovePin();
+    } else {
+      Alert.alert(t("settings.pin_wrong"));
+      setRemovePinInput("");
+    }
   }
 
   return (
@@ -589,6 +611,8 @@ function PinSection({
             onValueChange={(v) => {
               if (v && !settings.parentPin) {
                 setShowSetPin(true);
+              } else if (!v && settings.parentPin) {
+                requestRemovePin();
               } else {
                 onChange({ pinEnabled: v });
               }
@@ -614,7 +638,7 @@ function PinSection({
             </SettingRow>
             <Divider />
             <SettingRow label={t("settings.pin_remove_label")} danger>
-              <TouchableOpacity onPress={handleRemovePin} style={u.dangerBtn}>
+              <TouchableOpacity onPress={requestRemovePin} style={u.dangerBtn}>
                 <Text style={u.dangerBtnTxt}>{t("settings.delete")}</Text>
               </TouchableOpacity>
             </SettingRow>
@@ -670,6 +694,38 @@ function PinSection({
                 setShowSetPin(false);
                 setNewPin("");
                 setConfirmPin("");
+              }}
+            >
+              <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+            </TouchableOpacity>
+          </View>
+        </Card>
+      )}
+
+      {showRemovePin && (
+        <Card>
+          <Text style={u.subheading}>{t("settings.pin_enter_title")}</Text>
+          <TextInput
+            style={u.pinInput}
+            keyboardType="numeric"
+            maxLength={4}
+            secureTextEntry
+            placeholder="····"
+            placeholderTextColor={C.muted}
+            value={removePinInput}
+            onChangeText={setRemovePinInput}
+            autoFocus
+            onSubmitEditing={verifyRemovePin}
+          />
+          <View style={u.rowBtns}>
+            <TouchableOpacity style={u.btnPrimary} onPress={verifyRemovePin}>
+              <Text style={u.btnPrimaryTxt}>{t("settings.confirm")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={u.btnCancel}
+              onPress={() => {
+                setShowRemovePin(false);
+                setRemovePinInput("");
               }}
             >
               <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>

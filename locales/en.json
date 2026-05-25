@@ -362,6 +362,8 @@
     "buddy_section": "Buddy behavior",
     "tts_label": "Voice (TTS)",
     "tts_sub": "Buddy reads text aloud",
+    "breathing_music_label": "Breathing music",
+    "breathing_music_sub": "Play music during breathing sessions",
     "nudge_label": "Daily suggestion",
     "nudge_sub": "Suggestion card on the home screen",
     "skip_label": "Skip reaction",

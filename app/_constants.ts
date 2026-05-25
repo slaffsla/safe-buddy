@@ -454,6 +454,22 @@ export function getMissionSubtitle(id: number, fallback?: string): string {
   return localizedOrFallback(`missions.${id}.subtitle`, poolFallback);
 }
 
+export function getStoredMissionTitle(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.id === "number") {
+      return getMissionTitle(
+        parsed.id,
+        typeof parsed.title === "string" ? parsed.title : raw,
+      );
+    }
+  } catch {}
+
+  const builtIn = MISSION_POOL.find((m) => m.title === raw);
+  return builtIn ? getMissionTitle(builtIn.id, builtIn.title) : raw;
+}
+
 // Derives the AppSettings missions array from MISSION_POOL.
 // The first 6 original missions keep their proven types.
 // All new missions default to 'rotating' so they appear in the daily picker.

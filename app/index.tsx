@@ -61,6 +61,7 @@ import {
   getMissionTitle,
   getNextBlock,
   getRewardTitle,
+  getStoredMissionTitle,
   isWeekend,
   MISSION_POOL,
   MISSIONS_EASY,
@@ -167,6 +168,21 @@ async function resolveVoiceForLanguage(language: string) {
 function useSpeech(enabled: boolean) {
   const voiceRef = useRef<any>(null);
   const languageRef = useRef(getTtsLanguage());
+  const enabledRef = useRef(enabled);
+  const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+    if (!enabled) {
+      if (speakTimerRef.current) {
+        clearTimeout(speakTimerRef.current);
+        speakTimerRef.current = null;
+      }
+      try {
+        Speech.stop();
+      } catch {}
+    }
+  }, [enabled]);
 
   useEffect(() => {
     const lang = getTtsLanguage();
@@ -175,51 +191,55 @@ function useSpeech(enabled: boolean) {
       voiceRef.current = v;
     });
     return () => {
+      if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
       try {
         Speech.stop();
       } catch {}
     };
   }, []);
 
-  return useCallback(
-    (text: string) => {
-      if (!enabled || !text) return;
-      try {
-        Speech.stop();
-      } catch {}
-      const cleanedText = text.replace(
-        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
-        "",
-      );
-      const lang = getTtsLanguage();
-      if (languageRef.current !== lang) {
-        languageRef.current = lang;
-        resolveVoiceForLanguage(lang).then((v) => {
-          voiceRef.current = v;
-        });
-      }
-      const opts: any = {
-        language: lang,
-        pitch: 1.05,
-        rate: Platform.OS === "ios" ? 0.52 : 0.65,
-      };
-      if (
-        voiceMatchesLanguage(voiceRef.current, lang) &&
-        voiceRef.current?.identifier
-      ) {
-        opts.voice = voiceRef.current.identifier;
-      }
-      setTimeout(
-        () => {
-          try {
-            Speech.speak(cleanedText, opts);
-          } catch {}
-        },
-        Platform.OS === "ios" ? 120 : 0,
-      );
-    },
-    [enabled],
-  );
+  return useCallback((text: string) => {
+    if (!enabledRef.current || !text) return;
+    if (speakTimerRef.current) {
+      clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = null;
+    }
+    try {
+      Speech.stop();
+    } catch {}
+    const cleanedText = text.replace(
+      /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+      "",
+    );
+    const lang = getTtsLanguage();
+    if (languageRef.current !== lang) {
+      languageRef.current = lang;
+      resolveVoiceForLanguage(lang).then((v) => {
+        voiceRef.current = v;
+      });
+    }
+    const opts: any = {
+      language: lang,
+      pitch: 1.05,
+      rate: Platform.OS === "ios" ? 0.52 : 0.65,
+    };
+    if (
+      voiceMatchesLanguage(voiceRef.current, lang) &&
+      voiceRef.current?.identifier
+    ) {
+      opts.voice = voiceRef.current.identifier;
+    }
+    speakTimerRef.current = setTimeout(
+      () => {
+        speakTimerRef.current = null;
+        if (!enabledRef.current) return;
+        try {
+          Speech.speak(cleanedText, opts);
+        } catch {}
+      },
+      Platform.OS === "ios" ? 120 : 0,
+    );
+  }, []);
 }
 
 // Speakable text
@@ -374,7 +394,9 @@ export default function App() {
         setCompletedToday(comp);
         setTotalMissions(tm);
         setChildName(v[K.CHILD_NAME] || "");
-        setLastMission(newDay ? v[K.LAST_MISSION] || null : null);
+        setLastMission(
+          newDay ? getStoredMissionTitle(v[K.LAST_MISSION]) : null,
+        );
         setSkipCount(sk);
         setFirstReward(v[K.FIRST_REWARD] === "true");
         setFirstMission(tm === 0);
@@ -560,7 +582,11 @@ export default function App() {
         ids.includes(mission.id) ? ids : [...ids, mission.id],
       );
     }
-    AsyncStorage.setItem(K.LAST_MISSION, mission.title).catch(console.log);
+    setLastMission(getMissionTitle(mission.id, mission.title));
+    AsyncStorage.setItem(
+      K.LAST_MISSION,
+      JSON.stringify({ id: mission.id, title: mission.title }),
+    ).catch(console.log);
     flashBuddyMood(completionMood);
     setScreen("celebrate");
   }
@@ -943,6 +969,7 @@ export default function App() {
             setChildName(s.childName);
             setParentPin(s.parentPin);
             setPinEnabled(s.pinEnabled);
+            setTtsEnabled(s.ttsEnabled);
           }}
           currentPin={parentPin}
           pinEnabled={pinEnabled}
@@ -965,6 +992,7 @@ export default function App() {
       {screen === "breathing" && (
         <BreathingScreen
           speak={speak}
+          musicEnabled={appSettings.breathingMusicEnabled}
           onComplete={() => setScreen("home")}
           onSkip={() => setScreen("home")}
           onHideOverlay={() => setShowGlobalBuddy(false)}

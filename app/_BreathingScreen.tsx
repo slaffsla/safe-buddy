@@ -56,6 +56,7 @@ interface Props {
   onSkip: () => void;
   onHideOverlay: () => void; // ← new
   onShowOverlay: () => void; // ← new
+  musicEnabled?: boolean;
 }
 
 type State = "idle" | "active" | "complete";
@@ -66,6 +67,7 @@ export default function BreathingScreen({
   onSkip,
   onHideOverlay,
   onShowOverlay,
+  musicEnabled = true,
 }: Props) {
   const [state, setState] = useState<State>("idle");
   const [phaseIdx, setPhaseIdx] = useState(0);
@@ -90,7 +92,7 @@ export default function BreathingScreen({
   }
 
   async function loadAndPlayAudio() {
-    if (!ExpoAudio) return;
+    if (!musicEnabled || !ExpoAudio) return;
     try {
       await ExpoAudio.setAudioModeAsync({
         playsInSilentModeIOS: true,
@@ -178,7 +180,7 @@ export default function BreathingScreen({
     // start the breath loop
     //    DEL.runPhase(0);
     // best-effort audio
-    loadAndPlayAudio();
+    if (musicEnabled) loadAndPlayAudio();
   }
 
   function finishSession() {

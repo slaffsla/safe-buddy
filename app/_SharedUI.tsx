@@ -82,7 +82,7 @@ export function ReflectiveBoost({
   speak: (t: string) => void;
 }) {
   if (!lastMission) return null;
-  const text = `Вчера ты справился с "${lastMission}" — Бадди помнит это`;
+  const text = t("reflect.boost", { title: lastMission });
   return (
     <TouchableOpacity
       style={s.reflectCard}

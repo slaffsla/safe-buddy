@@ -39,10 +39,12 @@ import {
   effectiveMissionStars,
   effectiveRewardCost,
   effectiveRewardEnabled,
+  getMorningStepTitle,
   getMissionSubtitle,
   getMissionTitle,
   getRewardTitle,
   getScheduleTitle,
+  getStoredMissionTitle,
   MISSION_POOL,
   MissionConfig,
   MissionOverride,
@@ -97,6 +99,7 @@ export interface AppSettings {
   nudgingEnabled: boolean; // daily suggestion card
   tinyFactsEnabled: boolean; // tiny facts during missions (V1.5)
   breathingEnabled: boolean; // relax with buddy button (V1.5)
+  breathingMusicEnabled: boolean; // ambient music during breathing sessions
   ttsEnabled: boolean; // text-to-speech
   skipSensitivity: number; // skips before gentle-reminder (default 2)
   showExactStarCost: boolean; // show exact cost vs "ещё немного"
@@ -157,6 +160,7 @@ function buildDefaultSettings(): AppSettings {
     nudgingEnabled: true,
     tinyFactsEnabled: false,
     breathingEnabled: true,
+    breathingMusicEnabled: true,
     ttsEnabled: true,
     skipSensitivity: 2,
     showExactStarCost: false,
@@ -377,7 +381,7 @@ async function loadProgress(): Promise<ProgressData> {
       completedToday: v[SK.COMPLETED_TODAY]
         ? parseInt(v[SK.COMPLETED_TODAY], 10)
         : 0,
-      lastMission: v[SK.LAST_MISSION] || null,
+      lastMission: getStoredMissionTitle(v[SK.LAST_MISSION]),
       firstRewardRedeemed: v[SK.FIRST_REWARD] === "true",
     };
   } catch {
@@ -997,6 +1001,18 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
+          label={t("settings.breathing_music_label")}
+          sublabel={t("settings.breathing_music_sub")}
+        >
+          <Switch
+            value={settings.breathingMusicEnabled}
+            onValueChange={(v) => onChange({ breathingMusicEnabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </SettingRow>
+        <Divider />
+        <SettingRow
           label={t("settings.nudge_label")}
           sublabel={t("settings.nudge_sub")}
         >
@@ -1341,7 +1357,9 @@ function DailyRoutineSection({
                     <Text style={{ fontSize: 22, marginRight: 10 }}>
                       {step.emoji}
                     </Text>
-                    <Text style={[u.rowLabel, { flex: 1 }]}>{step.title}</Text>
+                    <Text style={[u.rowLabel, { flex: 1 }]}>
+                      {getMorningStepTitle(step.id, step.title)}
+                    </Text>
                     <TouchableOpacity
                       style={u.stepperBtn}
                       onPress={() => moveStep(step.id, -1)}

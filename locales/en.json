@@ -476,5 +476,33 @@
     "type_rotating": "Rotation",
     "type_inactive": "Inactive",
     "cost_label": "Cost"
+  },
+  "tiny_facts": {
+    "f1": "Your body has over 600 muscles. Standing on one leg uses most of them.",
+    "f2": "Touching your toes stretches your spine. It grows a tiny bit every night.",
+    "f3": "Jumping sends signals to your brain that say: wake up and feel good.",
+    "f4": "Your brain is 75% water. A glass of water helps it think faster.",
+    "f5": "One minute without a screen gives your eyes a real rest.",
+    "f7": "Squeezing your fists for three seconds tells your body to calm down.",
+    "f8": "Two minutes away from a screen helps your brain remember things better.",
+    "f9": "Tidying one corner makes the whole room feel different. Really.",
+    "f10": "A hug releases a chemical called oxytocin. It makes both people feel safer.",
+    "f11": "Asking for help is one of the bravest things a person can do.",
+    "f12": "A tidy space helps a calm mind. Even a small tidy counts.",
+    "f13": "Shaking your hands for ten seconds wakes up the nerves in your fingers.",
+    "f14": "Walking slowly and feeling the floor helps your brain know where you are.",
+    "f15": "Stretching tall makes you breathe deeper without even trying.",
+    "f16": "Cold water on your face sends a signal to your heart to slow down.",
+    "f17": "Three slow breaths can change how your whole body feels in under a minute.",
+    "f18": "Drinking water twice a day keeps your brain working at full speed.",
+    "f19": "A made bed is the first win of the day. Everything feels easier after.",
+    "f20": "Clearing your plate is a small act of care for the people around you.",
+    "f21": "Folded clothes stay cleaner. Your future self will thank you.",
+    "f22": "Saying thank you makes the other person feel seen. That matters a lot.",
+    "f23": "A smile uses fewer muscles than a frown. And it's contagious.",
+    "f24": "Sharing something good before bed helps your brain remember the day kindly.",
+    "f25": "One minute of silence gives your brain a chance to sort itself out.",
+    "f26": "Drawing activates a different part of your brain than words do.",
+    "f27": "Looking out the window rests your eyes and your thoughts at the same time."
   }
 }

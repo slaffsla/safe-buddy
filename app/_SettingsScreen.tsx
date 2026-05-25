@@ -789,7 +789,9 @@ function MissionsSection({
         >
           <Switch
             value={settings.infinityLoopEnabled}
-            onValueChange={(v) => onChange({ infinityLoopEnabled: v })}
+            onValueChange={(v) =>
+              onChange({ infinityLoopEnabled: v, rotationEnabled: !v })
+            }
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
@@ -841,8 +843,10 @@ function MissionsSection({
           sublabel={t("settings.rotation_soon_sub")}
         >
           <Switch
-            value={false}
-            disabled
+            value={settings.rotationEnabled}
+            onValueChange={(v) =>
+              onChange({ rotationEnabled: v, infinityLoopEnabled: !v })
+            }
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />

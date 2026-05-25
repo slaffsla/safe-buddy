@@ -774,9 +774,11 @@ export const DEFAULT_SCHEDULE: ScheduleBlock[] = [
 
 // Returns localized schedule block title, falling back to pool / override title
 export function getScheduleTitle(id: number, fallback?: string): string {
-  const poolFallback =
-    fallback ?? DEFAULT_SCHEDULE.find((b) => b.id === id)?.title ?? "";
-  if (!DEFAULT_SCHEDULE.some((b) => b.id === id)) return poolFallback;
+  const defaultBlock = DEFAULT_SCHEDULE.find((b) => b.id === id);
+  const poolFallback = fallback ?? defaultBlock?.title ?? "";
+  if (!defaultBlock || (fallback && fallback !== defaultBlock.title)) {
+    return poolFallback;
+  }
   return localizedOrFallback(`schedule_titles.s${id}`, poolFallback);
 }
 

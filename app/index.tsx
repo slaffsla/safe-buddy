@@ -44,6 +44,7 @@ import SettingsScreen, {
   DEFAULT_SETTINGS,
   loadSettings,
   RotationFrequency,
+  saveSettings,
 } from "./_SettingsScreen";
 import { ProgressBar } from "./_SharedUI";
 import {
@@ -631,6 +632,14 @@ export default function App() {
     [stars, pinEnabled, parentPin, redeemReward],
   );
 
+  const handleBreathingGuidanceChange = useCallback((enabled: boolean) => {
+    setAppSettings((prev) => {
+      const next = { ...prev, breathingGuidanceEnabled: enabled };
+      saveSettings(next).catch(console.log);
+      return next;
+    });
+  }, []);
+
   function verifyPin() {
     if (enteredPin === parentPin) {
       setShowPinScreen(false);
@@ -995,6 +1004,8 @@ export default function App() {
         <BreathingScreen
           speak={speak}
           musicEnabled={appSettings.breathingMusicEnabled}
+          guidanceEnabled={appSettings.breathingGuidanceEnabled}
+          onGuidanceChange={handleBreathingGuidanceChange}
           onComplete={() => setScreen("home")}
           onSkip={() => setScreen("home")}
           onHideOverlay={() => setShowGlobalBuddy(false)}

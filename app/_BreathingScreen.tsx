@@ -2,8 +2,8 @@
 //
 // Safety constraints (non-negotiable, see ticket):
 //   • Maximum session: 3 minutes. Hard-coded. Never derived from settings.
-//   • Pattern is box breathing 4-4-4-4 (inhale, hold, exhale, hold).
-//   • Breath holds never exceed 7s; here they are 4s.
+//   • Pattern is 3-1-4 (inhale, pause, exhale).
+//   • Breath holds never exceed 7s; here the pause is 1s.
 //   • The animated circle sets the pace; the child follows it.
 //   • Exit button is always visible. No guilt messaging on early exit.
 //   • No stars, no economy connection.
@@ -32,7 +32,7 @@ export const BUDDY_BASE = Math.round(SCREEN_W * 0.38); // ~145px phone, ~290px t
 // Hard-coded session length. Do not lift to settings.
 const BREATHING_DURATION_MS = 120_000;
 
-// Box breathing: 4s each phase, 16s per cycle.
+// Breathing rhythm: 3s inhale, 1s pause, 4s exhale.
 // Labels are resolved via i18n at render time so they follow the device locale.
 const PHASES: { labelKey: string; duration: number; target: number }[] = [
   { labelKey: "breathing.phase_in", duration: 3000, target: 1.0 },
@@ -57,6 +57,8 @@ interface Props {
   onHideOverlay: () => void; // ← new
   onShowOverlay: () => void; // ← new
   musicEnabled?: boolean;
+  guidanceEnabled?: boolean;
+  onGuidanceChange?: (enabled: boolean) => void;
 }
 
 type State = "idle" | "active" | "complete";
@@ -68,6 +70,8 @@ export default function BreathingScreen({
   onHideOverlay,
   onShowOverlay,
   musicEnabled = true,
+  guidanceEnabled = true,
+  onGuidanceChange,
 }: Props) {
   const [state, setState] = useState<State>("idle");
   const [phaseIdx, setPhaseIdx] = useState(0);
@@ -79,6 +83,7 @@ export default function BreathingScreen({
   const sessionStart = useRef<number>(0);
   const soundRef = useRef<any>(null);
   const firstInhaleRef = useRef(true);
+  const guidanceEnabledRef = useRef(guidanceEnabled);
 
   // ── Lifecycle helpers ───────────────────────────────────────────────────────
   function clearTimers() {
@@ -134,7 +139,9 @@ export default function BreathingScreen({
         ? "breathing.phase_first_in"
         : phase.labelKey;
     firstInhaleRef.current = false;
-    speak(t(spokenKey));
+    if (guidanceEnabledRef.current) {
+      speak(t(spokenKey));
+    }
     Animated.timing(buddyScale, {
       toValue: phase.target,
       duration: phase.duration,
@@ -220,6 +227,10 @@ export default function BreathingScreen({
     };
   }, []);
 
+  useEffect(() => {
+    guidanceEnabledRef.current = guidanceEnabled;
+  }, [guidanceEnabled]);
+
   // ── IDLE ────────────────────────────────────────────────────────────────────
   if (state === "idle") {
     return (
@@ -285,6 +296,26 @@ export default function BreathingScreen({
 
   return (
     <View style={s.screen}>
+      <TouchableOpacity
+        style={[
+          s.guidanceToggle,
+          guidanceEnabled && s.guidanceToggleEnabled,
+        ]}
+        onPress={() => onGuidanceChange?.(!guidanceEnabled)}
+        activeOpacity={0.75}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: guidanceEnabled }}
+        accessibilityLabel={t(
+          guidanceEnabled
+            ? "breathing.guidance_off_a11y"
+            : "breathing.guidance_on_a11y",
+        )}
+      >
+        <Text style={s.guidanceToggleTxt}>
+          {guidanceEnabled ? "🔊" : "🔇"}
+        </Text>
+      </TouchableOpacity>
+
       {/* Phase label + timer sit above Buddy */}
       <Text style={s.phaseLabel}>{phaseLabel}</Text>
       <Text style={s.timeLeft}>
@@ -357,6 +388,25 @@ const s = StyleSheet.create({
     marginBottom: 18,
     textAlign: "center",
   },
+  guidanceToggle: {
+    position: "absolute",
+    top: 14,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
+  },
+  guidanceToggleEnabled: {
+    backgroundColor: C.greenLt,
+    borderColor: C.green,
+  },
+  guidanceToggleTxt: { fontSize: 20 },
 
   circleStatic: {
     width: CIRCLE_BASE,

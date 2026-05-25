@@ -108,6 +108,7 @@ export interface AppSettings {
   tinyFactsEnabled: boolean; // tiny facts during missions (V1.5)
   breathingEnabled: boolean; // relax with buddy button (V1.5)
   breathingMusicEnabled: boolean; // ambient music during breathing sessions
+  breathingGuidanceEnabled: boolean; // spoken breathing phase prompts
   ttsEnabled: boolean; // text-to-speech
   skipSensitivity: number; // skips before gentle-reminder (default 2)
   showExactStarCost: boolean; // show exact cost vs "ещё немного"
@@ -170,6 +171,7 @@ function buildDefaultSettings(): AppSettings {
     tinyFactsEnabled: false,
     breathingEnabled: true,
     breathingMusicEnabled: true,
+    breathingGuidanceEnabled: true,
     ttsEnabled: true,
     skipSensitivity: 2,
     showExactStarCost: false,

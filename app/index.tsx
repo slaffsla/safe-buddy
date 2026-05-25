@@ -31,6 +31,7 @@ import {
   DemoStepScreen,
 } from "./_DemoScreens";
 import HomeScreen from "./_HomeScreen";
+import { incrementLocalUsage } from "./_localUsage";
 import {
   ActiveScreen,
   CelebrateScreen,
@@ -515,6 +516,7 @@ export default function App() {
   // ── Missions ────────────────────────────────────────────────────────────────
   const pickMission = useCallback(
     (m: any) => {
+      incrementLocalUsage("missionsStarted").catch(console.log);
       setMission(m);
       setSkipCount(0);
       speak(
@@ -526,6 +528,7 @@ export default function App() {
   );
 
   const handleSkip = useCallback(() => {
+    incrementLocalUsage("missionsSkipped").catch(console.log);
     setSkipCount((n) => n + 1);
     setMission(null);
     setScreen("home");
@@ -579,6 +582,7 @@ export default function App() {
     setTotalEver(newEver);
     setCompletedToday((n) => n + 1);
     setTotalMissions(newTotal);
+    incrementLocalUsage("missionsCompleted").catch(console.log);
     setSkipCount(0);
     setFirstMission(false);
     setIsVeryExcited(veryExcited);
@@ -617,6 +621,7 @@ export default function App() {
         setIsVeryExcited(true);
         AsyncStorage.setItem(K.FIRST_REWARD, "true").catch(console.log);
       }
+      incrementLocalUsage("rewardsRedeemed").catch(console.log);
       speak(t("rewards.redeemed_speak"));
       Alert.alert(
         t("rewards.redeemed_alert_title"),
@@ -647,6 +652,16 @@ export default function App() {
       return next;
     });
   }, []);
+
+  function openRewardsScreen() {
+    incrementLocalUsage("rewardsViewed").catch(console.log);
+    setScreen("rewards");
+  }
+
+  function openBreathingScreen() {
+    incrementLocalUsage("breathingStarted").catch(console.log);
+    setScreen("breathing");
+  }
 
   function verifyPin() {
     if (enteredPin === parentPin) {
@@ -849,11 +864,13 @@ export default function App() {
             const today = todayStr();
             setStars((n) => n + earned);
             setTotalEver((n) => n + earned);
+            incrementLocalUsage("morningCompleted").catch(console.log);
             setShowMorning(false);
             setScreen("home");
             await AsyncStorage.setItem(K.MORNING_DONE, today);
           }}
           onSkip={() => {
+            incrementLocalUsage("morningSkipped").catch(console.log);
             setShowMorning(false);
             setScreen("home");
           }}
@@ -916,7 +933,7 @@ export default function App() {
           onSettings={() => setScreen("settings")}
           skipCount={skipCount}
           onStart={() => setScreen("pick")}
-          onRewards={() => setScreen("rewards")}
+          onRewards={openRewardsScreen}
           onSuggestionAccept={handleSuggestionAccept}
           onSuggestionSkip={() => setShowSuggestion(false)}
           currentBlock={currentBlock}
@@ -925,7 +942,7 @@ export default function App() {
           onOpenDay={() => setScreen("day")}
           onBreathing={
             appSettings.breathingEnabled
-              ? () => setScreen("breathing")
+              ? openBreathingScreen
               : undefined
           }
         />
@@ -965,7 +982,7 @@ export default function App() {
           completedToday={completedToday}
           isVeryExcited={isVeryExcited}
           onContinue={() => setScreen("pick")}
-          onRewards={() => setScreen("rewards")}
+          onRewards={openRewardsScreen}
           onBack={() => setScreen("home")}
         />
       )}
@@ -1014,8 +1031,14 @@ export default function App() {
           musicEnabled={appSettings.breathingMusicEnabled}
           guidanceEnabled={appSettings.breathingGuidanceEnabled}
           onGuidanceChange={handleBreathingGuidanceChange}
-          onComplete={() => setScreen("home")}
-          onSkip={() => setScreen("home")}
+          onComplete={() => {
+            incrementLocalUsage("breathingCompleted").catch(console.log);
+            setScreen("home");
+          }}
+          onSkip={() => {
+            incrementLocalUsage("breathingSkipped").catch(console.log);
+            setScreen("home");
+          }}
           onHideOverlay={() => setShowGlobalBuddy(false)}
           onShowOverlay={() => setShowGlobalBuddy(true)}
         />

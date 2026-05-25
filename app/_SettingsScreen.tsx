@@ -61,6 +61,13 @@ import {
   ScheduleBlock,
 } from "./_constants";
 import {
+  DEFAULT_LOCAL_USAGE,
+  incrementLocalUsage,
+  loadLocalUsage,
+  LocalUsage,
+  resetLocalUsage,
+} from "./_localUsage";
+import {
   AppLocale,
   getAppLocale,
   normalizeAppLocale,
@@ -376,18 +383,22 @@ interface ProgressData {
   lastMissionRaw: string | null;
   firstRewardRedeemed: boolean;
   morningDoneDate: string | null;
+  usage: LocalUsage;
 }
 
 async function loadProgress(): Promise<ProgressData> {
   try {
-    const vals = await AsyncStorage.multiGet([
-      SK.STARS,
-      SK.TOTAL_EVER,
-      SK.TOTAL_MISSIONS,
-      SK.COMPLETED_TODAY,
-      SK.LAST_MISSION,
-      SK.FIRST_REWARD,
-      SK.MORNING_DONE,
+    const [vals, usage] = await Promise.all([
+      AsyncStorage.multiGet([
+        SK.STARS,
+        SK.TOTAL_EVER,
+        SK.TOTAL_MISSIONS,
+        SK.COMPLETED_TODAY,
+        SK.LAST_MISSION,
+        SK.FIRST_REWARD,
+        SK.MORNING_DONE,
+      ]),
+      loadLocalUsage(),
     ]);
     const v: Record<string, string> = Object.fromEntries(
       vals.map(([k, val]) => [k, val ?? ""]),
@@ -404,6 +415,7 @@ async function loadProgress(): Promise<ProgressData> {
       lastMissionRaw: v[SK.LAST_MISSION] || null,
       firstRewardRedeemed: v[SK.FIRST_REWARD] === "true",
       morningDoneDate: v[SK.MORNING_DONE] || null,
+      usage,
     };
   } catch {
     return {
@@ -414,6 +426,7 @@ async function loadProgress(): Promise<ProgressData> {
       lastMissionRaw: null,
       firstRewardRedeemed: false,
       morningDoneDate: null,
+      usage: DEFAULT_LOCAL_USAGE,
     };
   }
 }
@@ -523,8 +536,44 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
     lastMissionRaw,
     firstRewardRedeemed,
     morningDoneDate,
+    usage,
   } = progress;
   const lastMission = getStoredMissionTitle(lastMissionRaw);
+  const completionRate =
+    usage.missionsStarted > 0
+      ? Math.round((usage.missionsCompleted / usage.missionsStarted) * 100)
+      : 0;
+  const usageRows = [
+    {
+      label: t("settings.usage_completion"),
+      value:
+        usage.missionsStarted > 0
+          ? t("settings.usage_completion_value", {
+              percent: completionRate,
+              completed: usage.missionsCompleted,
+              started: usage.missionsStarted,
+            })
+          : t("settings.progress_not_yet"),
+    },
+    {
+      label: t("settings.usage_skips"),
+      value: String(usage.missionsSkipped),
+    },
+    {
+      label: t("settings.usage_breathing"),
+      value: t("settings.usage_breathing_value", {
+        completed: usage.breathingCompleted,
+        started: usage.breathingStarted,
+      }),
+    },
+    {
+      label: t("settings.usage_rewards"),
+      value: t("settings.usage_rewards_value", {
+        redeemed: usage.rewardsRedeemed,
+        viewed: usage.rewardsViewed,
+      }),
+    },
+  ];
 
   const statCards = [
     {
@@ -613,6 +662,17 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
           </View>
         ))}
       </View>
+      <Card>
+        <View style={u.usageCard}>
+          <Text style={u.usageTitle}>{t("settings.usage_title")}</Text>
+          {usageRows.map((row) => (
+            <View key={row.label} style={u.usageRow}>
+              <Text style={u.snapshotLabel}>{row.label}</Text>
+              <Text style={u.snapshotValue}>{row.value}</Text>
+            </View>
+          ))}
+        </View>
+      </Card>
       {totalMissions === 0 && (
         <Card>
           <Text style={[u.rowSublabel, { textAlign: "center", padding: 8 }]}>
@@ -1824,6 +1884,7 @@ function CreditsSection() {
 
 function FeedbackSection() {
   async function openFeedbackEmail() {
+    incrementLocalUsage("feedbackTapped").catch(console.log);
     const email = "slasla@gmail.com";
     const subject = encodeURIComponent(t("settings.feedback_email_subject"));
     const body = encodeURIComponent(t("settings.feedback_email_body"));
@@ -2638,6 +2699,7 @@ export default function SettingsScreen({
                 [SK.MORNING_DONE, ""],
                 ["sb_skip_count", "0"],
               ]);
+              await resetLocalUsage();
               setProgress({
                 stars: 0,
                 totalEver: 0,
@@ -2646,6 +2708,7 @@ export default function SettingsScreen({
                 lastMissionRaw: null,
                 firstRewardRedeemed: false,
                 morningDoneDate: null,
+                usage: DEFAULT_LOCAL_USAGE,
               });
               Alert.alert(t("settings.reset_done"));
             },
@@ -3178,6 +3241,21 @@ const u = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 18,
     marginTop: 3,
+  },
+  usageCard: { padding: 14 },
+  usageTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: C.text,
+    marginBottom: 8,
+  },
+  usageRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingVertical: 7,
+    borderTopWidth: 0.5,
+    borderTopColor: C.border,
   },
   statsGrid: {
     flexDirection: "row",

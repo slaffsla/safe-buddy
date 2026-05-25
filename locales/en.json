@@ -64,7 +64,7 @@
     "screen3_body": "When a child breathes slowly and rhythmically, their nervous system shifts from anxiety mode to calm mode. Not a metaphor — it's physiology.",
     "screen3_pattern": "4 seconds in · pause · 3 seconds out",
     "screen3_try": "Try it now — follow the circle",
-    "screen3_science": "Box breathing activates the parasympathetic nervous system, slowing heart rate and reducing cortisol. It's used in clinical settings with children with ADHD and autism."
+    "screen3_science": "The longer exhale is the active ingredient — it directly signals the nervous system to slow down. The pattern was adapted and tested with a real child and adjusted until it worked."
   },
   "demo": {
     "intro_title": "Let's try together!",
@@ -176,7 +176,7 @@
     "title": "Breathe together",
     "subtitle": "Two minutes of calm breathing with Buddy",
     "phase_in": "In",
-    "phase_hold": "Hold",
+    "phase_hold": "Pause",
     "phase_out": "Out",
     "start_speak": "Breathe together",
     "done_speak": "Well done. You rested.",

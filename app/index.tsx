@@ -47,7 +47,7 @@ import SettingsScreen, {
   RotationFrequency,
   saveSettings,
 } from "./_SettingsScreen";
-import { Confetti, ProgressBar } from "./_SharedUI";
+import { Confetti, ProgressBar, T } from "./_SharedUI";
 import {
   AgeProfile,
   BuddyMood,
@@ -64,6 +64,7 @@ import {
   getNextBlock,
   getRewardTitle,
   getStoredMissionTitle,
+  getTinyFact,
   isWeekend,
   MISSION_POOL,
   MISSIONS_EASY,
@@ -295,6 +296,9 @@ export default function App() {
 
   const [transientMood, setTransientMood] = useState<BuddyMood | null>(null);
   const transientMoodTimer = useRef<any>(null);
+  const [tinyFactBubble, setTinyFactBubble] = useState<string | null>(null);
+  const tinyFactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tinyFactHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showCelebrateConfetti, setShowCelebrateConfetti] = useState(false);
   const [celebrateConfettiKey, setCelebrateConfettiKey] = useState(0);
   const celebrateConfettiTimer = useRef<ReturnType<typeof setTimeout> | null>(
@@ -534,7 +538,7 @@ export default function App() {
     setScreen("home");
   }, []);
 
-  function flashBuddyMood(mood: BuddyMood, duration = 2200) {
+  const flashBuddyMood = useCallback((mood: BuddyMood, duration = 2200) => {
     setTransientMood(mood);
     if (transientMoodTimer.current) {
       clearTimeout(transientMoodTimer.current);
@@ -543,16 +547,53 @@ export default function App() {
       () => setTransientMood(null),
       duration,
     );
-  }
+  }, []);
 
   useEffect(() => {
     return () => {
       if (transientMoodTimer.current) clearTimeout(transientMoodTimer.current);
+      if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
+      if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
       if (celebrateConfettiTimer.current) {
         clearTimeout(celebrateConfettiTimer.current);
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
+    if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
+    setTinyFactBubble(null);
+
+    if (
+      screen !== "active" ||
+      !mission ||
+      !appSettings.tinyFactsEnabled
+    ) {
+      return;
+    }
+
+    const fact = getTinyFact(mission.id);
+    if (!fact) return;
+
+    function scheduleFact() {
+      const delay = 7000 + Math.round(Math.random() * 5000);
+      tinyFactTimer.current = setTimeout(() => {
+        setTinyFactBubble(fact);
+        flashBuddyMood("thinking", 6500);
+        tinyFactHideTimer.current = setTimeout(() => {
+          setTinyFactBubble(null);
+          scheduleFact();
+        }, 6500);
+      }, delay);
+    }
+
+    scheduleFact();
+    return () => {
+      if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
+      if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
+    };
+  }, [screen, mission, appSettings.tinyFactsEnabled, flashBuddyMood]);
 
   function triggerCelebrateConfetti() {
     if (celebrateConfettiTimer.current) {
@@ -1057,6 +1098,14 @@ export default function App() {
                 size={PROFILE_CONFIGS[ageProfile].buddySize}
                 celebrate={fixedOverlayCelebrate}
               />
+              {screen === "active" && tinyFactBubble && (
+                <View style={s.tinyFactBubble}>
+                  <T style={s.tinyFactText} speak={speak}>
+                    {`💡 ${tinyFactBubble}`}
+                  </T>
+                  <View style={s.tinyFactTail} />
+                </View>
+              )}
               <ProgressBar total={totalEver} speak={speak} />
             </View>
           </View>
@@ -1164,6 +1213,35 @@ const s = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
     pointerEvents: "auto",
+  },
+  tinyFactBubble: {
+    width: "100%",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  tinyFactText: {
+    fontSize: 12,
+    color: C.text,
+    lineHeight: 17,
+    textAlign: "center",
+  },
+  tinyFactTail: {
+    position: "absolute",
+    top: -6,
+    alignSelf: "center",
+    width: 12,
+    height: 12,
+    backgroundColor: "#FFFDF9",
+    borderLeftWidth: 0.5,
+    borderTopWidth: 0.5,
+    borderColor: "#DED8CE",
+    transform: [{ rotate: "45deg" }],
   },
 
   // Onboarding

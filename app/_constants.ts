@@ -782,6 +782,12 @@ export function getScheduleTitle(id: number, fallback?: string): string {
   return localizedOrFallback(`schedule_titles.s${id}`, poolFallback);
 }
 
+export function getTinyFact(missionId: number): string | null {
+  const key = `tiny_facts.f${missionId}`;
+  const result = i18n.t(key, { defaultValue: "" });
+  return result ? result : null;
+}
+
 export const SCHEDULE_MAX_BLOCKS = 30;
 
 function parseHM(t: string): number {

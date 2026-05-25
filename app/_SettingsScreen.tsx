@@ -1163,14 +1163,13 @@ function BuddySection({
           </SettingRow>
         </SettingRow>
         <Divider />
-        {/* V1.5 placeholders — shown but disabled with coming-soon badge */}
         <SettingRow
           label={t("settings.facts_soon")}
           sublabel={t("settings.facts_soon_sub")}
         >
           <Switch
-            value={false}
-            disabled
+            value={settings.tinyFactsEnabled}
+            onValueChange={(v) => onChange({ tinyFactsEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />

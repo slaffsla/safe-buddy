@@ -1873,7 +1873,7 @@ function ScheduleSection({
   );
 }
 
-// ── NOTIFICATIONS SECTION (placeholder) ───────────────────────────────────────
+// ── NOTIFICATIONS SECTION ─────────────────────────────────────────────────────
 
 function NotificationsSection({
   settings,
@@ -1891,8 +1891,8 @@ function NotificationsSection({
           sublabel={t("settings.morning_reminder_sub")}
         >
           <Switch
-            value={false}
-            disabled
+            value={settings.morningReminderEnabled}
+            onValueChange={(v) => onChange({ morningReminderEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />

@@ -23,7 +23,11 @@ interface Props {
 // ── Breathing circle for screen 3 ─────────────────────────────────────────────
 // Self-contained preview: no audio and no session timer.
 
-const PHASES = ["Вдох", "Держи", "Выдох"] as const;
+const PHASE_KEYS = [
+  "breathing.phase_in",
+  "breathing.phase_hold",
+  "breathing.phase_out",
+] as const;
 const PHASE_DURATIONS = [4000, 1000, 3000] as const;
 
 function MiniBreathingCircle() {
@@ -56,7 +60,7 @@ function MiniBreathingCircle() {
         useNativeDriver: true,
       });
       animRef.current.start(({ finished }) => {
-        if (finished) runPhase((idx + 1) % PHASES.length);
+        if (finished) runPhase((idx + 1) % PHASE_KEYS.length);
       });
     }
 
@@ -74,7 +78,9 @@ function MiniBreathingCircle() {
         activeOpacity={0.9}
       >
         <Animated.View style={[bc.circle, { transform: [{ scale }] }]}>
-          <Text style={bc.phaseText}>{active ? PHASES[phase] : "▶"}</Text>
+          <Text style={bc.phaseText}>
+            {active ? t(PHASE_KEYS[phase]) : "▶"}
+          </Text>
         </Animated.View>
       </TouchableOpacity>
       <Text style={bc.hint}>{t("parent_onboarding.screen3_try")}</Text>

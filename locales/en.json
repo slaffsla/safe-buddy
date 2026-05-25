@@ -41,6 +41,7 @@
     "name_placeholder": "Name",
     "age_placeholder": "Age",
     "start_btn": "Start the adventure",
+    "name_required": "Please enter your child's name",
     "welcome_greeting": "Hi {{name}}. Glad to see you.",
     "save_error": "Save failed"
   },
@@ -411,6 +412,8 @@
     "notifications_section": "Notifications 🔜",
     "morning_reminder": "Morning reminder",
     "morning_reminder_sub": "Buddy will remind about missions in the morning (soon)",
+    "credits_section": "Credits",
+    "credits_body": "The App (and music recording) was made by a father of an autistic child. Built with care. Not with a team.",
     "reset_full_title": "Reset all progress?",
     "reset_full_msg": "Stars, missions and history will be deleted. Settings are kept.",
     "reset_full_btn": "Reset",

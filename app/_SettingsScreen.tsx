@@ -1764,6 +1764,17 @@ function NotificationsSection({
   );
 }
 
+function CreditsSection() {
+  return (
+    <View>
+      <SectionHeader title={t("settings.credits_section")} icon="♡" />
+      <Card>
+        <Text style={u.creditsText}>{t("settings.credits_body")}</Text>
+      </Card>
+    </View>
+  );
+}
+
 // ── PARENT ZONE ────────────────────────────────────────────────────────────────
 // PIN-gated screen for per-mission and per-reward overrides.
 // Sections: Weekday Missions, Weekend Missions, Rewards.
@@ -2569,6 +2580,11 @@ export default function SettingsScreen({
         {/* Notifications (placeholder) */}
         <NotificationsSection settings={settings} onChange={updateSettings} />
 
+        <View style={ss.spacer} />
+
+        {/* Credits */}
+        <CreditsSection />
+
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -2742,6 +2758,12 @@ const u = StyleSheet.create({
   rowLabels: { flex: 1 },
   rowLabel: { fontSize: 14, fontWeight: "500", color: C.text },
   rowSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 17 },
+  creditsText: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 18,
+    padding: 14,
+  },
   rowControl: {
     alignItems: "flex-end",
     justifyContent: "center",

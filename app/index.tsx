@@ -465,7 +465,7 @@ export default function App() {
   async function saveChildName() {
     const name = childName.trim();
     if (!name) {
-      Alert.alert("Пожалуйста, введи имя ребёнка");
+      Alert.alert(t("onboarding.name_required"));
       return;
     }
     try {
@@ -481,7 +481,7 @@ export default function App() {
       // After onboarding go to demo if not done, else home
       setScreen("demo_intro");
     } catch (e) {
-      Alert.alert("Ошибка сохранения");
+      Alert.alert(t("onboarding.save_error"));
     }
   }
 
@@ -612,7 +612,7 @@ export default function App() {
         setPendingReward(null);
       }
     } else {
-      Alert.alert("Неверный PIN", "Попробуй ещё раз");
+      Alert.alert(t("pinChild.wrong_title"), t("pinChild.wrong_msg"));
       setEnteredPin("");
     }
   }
@@ -652,10 +652,10 @@ export default function App() {
           style={{ width: 180, height: 180, backgroundColor: "transparent" }}
           resizeMode="contain"
         />
-        <Text style={s.onboardingTitle}>Привет! Как зовут твоего ребёнка?</Text>
+        <Text style={s.onboardingTitle}>{t("onboarding.title")}</Text>
         <TextInput
           style={s.onboardingInput}
-          placeholder="Имя"
+          placeholder={t("onboarding.name_placeholder")}
           placeholderTextColor={C.muted}
           value={childName}
           onChangeText={setChildName}
@@ -665,7 +665,7 @@ export default function App() {
         />
         <TextInput
           style={s.onboardingInput}
-          placeholder="Возраст"
+          placeholder={t("onboarding.age_placeholder")}
           placeholderTextColor={C.muted}
           value={childAge > 0 ? String(childAge) : ""}
           onChangeText={(t) => setChildAge(parseInt(t) || 7)}
@@ -673,7 +673,7 @@ export default function App() {
           maxLength={2}
         />
         <TouchableOpacity style={s.onboardingBtn} onPress={saveChildName}>
-          <Text style={s.onboardingBtnTxt}>Начать приключение</Text>
+          <Text style={s.onboardingBtnTxt}>{t("onboarding.start_btn")}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -1004,10 +1004,10 @@ export default function App() {
               }}
               resizeMode="contain"
             />
-            <Text style={s.pinTitle}>ПИН родителя</Text>
+            <Text style={s.pinTitle}>{t("pinChild.title")}</Text>
             {pendingReward && (
               <Text style={s.pinSub}>
-                Разблокировать: {pendingReward.title}
+                {t("pinChild.unlock_label", { title: pendingReward.title })}
               </Text>
             )}
             <TextInput
@@ -1021,7 +1021,7 @@ export default function App() {
               onSubmitEditing={verifyPin}
             />
             <TouchableOpacity style={s.pinConfirm} onPress={verifyPin}>
-              <Text style={s.pinConfirmTxt}>Подтвердить</Text>
+              <Text style={s.pinConfirmTxt}>{t("pinChild.confirm")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={s.pinCancel}
@@ -1031,7 +1031,7 @@ export default function App() {
                 setPendingReward(null);
               }}
             >
-              <Text style={s.pinCancelTxt}>Отмена</Text>
+              <Text style={s.pinCancelTxt}>{t("pinChild.cancel")}</Text>
             </TouchableOpacity>
           </View>
         </View>

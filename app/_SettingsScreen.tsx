@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Switch,
@@ -1755,6 +1756,43 @@ function CreditsSection() {
   );
 }
 
+function FeedbackSection() {
+  async function openFeedbackEmail() {
+    const email = "slasla@gmail.com";
+    const subject = encodeURIComponent(t("settings.feedback_email_subject"));
+    const body = encodeURIComponent(t("settings.feedback_email_body"));
+    const url = `mailto:${email}?subject=${subject}&body=${body}`;
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        t("settings.feedback_email_error_title"),
+        t("settings.feedback_email_error_msg", { email }),
+      );
+    }
+  }
+
+  return (
+    <View>
+      <SectionHeader title={t("settings.feedback_section")} icon="✉️" />
+      <Card>
+        <View style={u.feedbackCard}>
+          <Text style={u.feedbackText}>{t("settings.feedback_body")}</Text>
+          <TouchableOpacity
+            style={u.feedbackBtn}
+            onPress={openFeedbackEmail}
+            activeOpacity={0.82}
+          >
+            <Text style={u.feedbackBtnTxt}>
+              {t("settings.feedback_button")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Card>
+    </View>
+  );
+}
+
 // ── PARENT ZONE ────────────────────────────────────────────────────────────────
 // PIN-gated screen for per-mission and per-reward overrides.
 // Sections: Weekday Missions, Weekend Missions, Rewards.
@@ -2658,6 +2696,11 @@ export default function SettingsScreen({
 
         <View style={ss.spacer} />
 
+        {/* Feedback */}
+        <FeedbackSection />
+
+        <View style={ss.spacer} />
+
         {/* Credits */}
         <CreditsSection />
 
@@ -2863,6 +2906,26 @@ const u = StyleSheet.create({
     color: C.muted,
     lineHeight: 18,
     padding: 14,
+  },
+  feedbackCard: { padding: 14 },
+  feedbackText: {
+    fontSize: 13,
+    color: C.muted,
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  feedbackBtn: {
+    backgroundColor: C.green,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  feedbackBtnTxt: {
+    fontSize: 14,
+    color: C.white,
+    fontWeight: "600",
+    textAlign: "center",
   },
   rowControl: {
     alignItems: "flex-end",

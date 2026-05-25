@@ -338,7 +338,6 @@ export default function App() {
     skipCount,
     appSettings.skipSensitivity,
     isVeryExcited,
-    mission,
     transientMood,
   ]);
 
@@ -600,6 +599,24 @@ export default function App() {
   }
 
   // ── PIN / Reward redemption ─────────────────────────────────────────────────
+  const redeemReward = useCallback(
+    (reward: any) => {
+      const isFirst = !firstReward;
+      setStars((n) => Math.max(0, n - reward.cost));
+      if (isFirst) {
+        setFirstReward(true);
+        setIsVeryExcited(true);
+        AsyncStorage.setItem(K.FIRST_REWARD, "true").catch(console.log);
+      }
+      speak(t("rewards.redeemed_speak"));
+      Alert.alert(
+        t("rewards.redeemed_alert_title"),
+        getRewardTitle(reward.id, reward.title),
+      );
+    },
+    [firstReward, speak],
+  );
+
   const handleRewardRedeem = useCallback(
     (reward: any) => {
       if (stars < reward.cost) return;
@@ -611,23 +628,8 @@ export default function App() {
         redeemReward(reward);
       }
     },
-    [stars, pinEnabled, parentPin],
+    [stars, pinEnabled, parentPin, redeemReward],
   );
-
-  function redeemReward(reward: any) {
-    const isFirst = !firstReward;
-    setStars((n) => Math.max(0, n - reward.cost));
-    if (isFirst) {
-      setFirstReward(true);
-      setIsVeryExcited(true);
-      AsyncStorage.setItem(K.FIRST_REWARD, "true").catch(console.log);
-    }
-    speak(t("rewards.redeemed_speak"));
-    Alert.alert(
-      t("rewards.redeemed_alert_title"),
-      getRewardTitle(reward.id, reward.title),
-    );
-  }
 
   function verifyPin() {
     if (enteredPin === parentPin) {

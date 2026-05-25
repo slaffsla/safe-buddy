@@ -764,7 +764,7 @@ export function getScheduleTitle(id: number, fallback?: string): string {
   return localizedOrFallback(`schedule_titles.s${id}`, poolFallback);
 }
 
-export const SCHEDULE_MAX_BLOCKS = 20;
+export const SCHEDULE_MAX_BLOCKS = 30;
 
 function parseHM(t: string): number {
   const [h, m] = t.split(":").map(Number);

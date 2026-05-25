@@ -16,7 +16,7 @@ import {
   getBlockStatus,
   getScheduleTitle,
 } from "./_constants";
-import { t } from "./i18n";
+import { getAppLocale, t } from "./i18n";
 
 interface DayScreenProps {
   blocks: ScheduleBlock[];
@@ -24,6 +24,76 @@ interface DayScreenProps {
   speak: (t: string) => void;
   onClose: () => void;
   onStartMission: (missionId: number) => void;
+}
+
+function englishHour(hour: number): string {
+  const h = hour % 12 || 12;
+  const words = [
+    "twelve",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+  ];
+  return words[h % 12];
+}
+
+function russianHour(hour: number): string {
+  const h = hour % 24;
+  const words: Record<number, string> = {
+    0: "двенадцать",
+    1: "час",
+    2: "два",
+    3: "три",
+    4: "четыре",
+    5: "пять",
+    6: "шесть",
+    7: "семь",
+    8: "восемь",
+    9: "девять",
+    10: "десять",
+    11: "одиннадцать",
+    12: "двенадцать",
+    13: "час",
+    14: "два",
+    15: "три",
+    16: "четыре",
+    17: "пять",
+    18: "шесть",
+    19: "семь",
+    20: "восемь",
+    21: "девять",
+    22: "десять",
+    23: "одиннадцать",
+  };
+  return words[h] ?? String(h);
+}
+
+function formatTimeForSpeech(time: string): string {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time);
+  if (!match) return time;
+  const hour = parseInt(match[1], 10);
+  const minute = parseInt(match[2], 10);
+
+  if (getAppLocale() === "en") {
+    const hourText = englishHour(hour);
+    if (minute === 0) return `${hourText} o'clock`;
+    if (minute < 10) return `${hourText} oh ${minute}`;
+    return `${hourText} ${minute}`;
+  }
+
+  const hourText = russianHour(hour);
+  if (minute === 0) {
+    return hour % 12 === 1 ? `${hourText}` : `${hourText} часов`;
+  }
+  return `${hourText} ${minute}`;
 }
 
 export default function DayScreen({
@@ -112,7 +182,7 @@ export default function DayScreen({
                   style={cardStyle}
                   onPress={() =>
                     speak(
-                      `${getScheduleTitle(block.id, block.title)}. ${block.startTime}`,
+                      `${getScheduleTitle(block.id, block.title)}, ${formatTimeForSpeech(block.startTime)}`,
                     )
                   }
                   activeOpacity={0.75}

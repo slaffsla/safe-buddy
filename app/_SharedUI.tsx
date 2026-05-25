@@ -142,8 +142,8 @@ export function Confetti({ trigger }: { trigger: boolean }) {
         origin={{ x: width / 2, y: 0 }}
         autoStart={true}
         fadeOut={true}
-        explosionSpeed={650}
-        fallSpeed={4200}
+        explosionSpeed={520}
+        fallSpeed={3600}
         colors={[
           C.green,
           C.greenLt,

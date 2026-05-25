@@ -63,7 +63,7 @@ export default function MorningRoutineScreen({
   function handleComplete() {
     setFinished(true);
     speak(t("morning.ready_speak"));
-    setTimeout(() => onComplete(stars), 1900);
+    setTimeout(() => onComplete(stars), 3500);
   }
 
   // Celebrate state — shown briefly before onComplete fires

@@ -216,6 +216,7 @@ const SK = {
   COMPLETED_TODAY: "sb_today_v2",
   LAST_MISSION: "sb_last_mission",
   FIRST_REWARD: "sb_first_reward",
+  MORNING_DONE: "sb_morning_done",
   DEMO_DONE: "sb_demo_done",
   ONBOARDING_DONE: "sb_onboarding_done",
   CHILD_NAME: "sb_child_name",
@@ -374,6 +375,7 @@ interface ProgressData {
   completedToday: number;
   lastMissionRaw: string | null;
   firstRewardRedeemed: boolean;
+  morningDoneDate: string | null;
 }
 
 async function loadProgress(): Promise<ProgressData> {
@@ -385,6 +387,7 @@ async function loadProgress(): Promise<ProgressData> {
       SK.COMPLETED_TODAY,
       SK.LAST_MISSION,
       SK.FIRST_REWARD,
+      SK.MORNING_DONE,
     ]);
     const v: Record<string, string> = Object.fromEntries(
       vals.map(([k, val]) => [k, val ?? ""]),
@@ -400,6 +403,7 @@ async function loadProgress(): Promise<ProgressData> {
         : 0,
       lastMissionRaw: v[SK.LAST_MISSION] || null,
       firstRewardRedeemed: v[SK.FIRST_REWARD] === "true",
+      morningDoneDate: v[SK.MORNING_DONE] || null,
     };
   } catch {
     return {
@@ -409,6 +413,7 @@ async function loadProgress(): Promise<ProgressData> {
       completedToday: 0,
       lastMissionRaw: null,
       firstRewardRedeemed: false,
+      morningDoneDate: null,
     };
   }
 }
@@ -499,9 +504,26 @@ function PillSelector<T extends string>({
 
 // ── PROGRESS SECTION ──────────────────────────────────────────────────────────
 
+function formatProgressDate(value: string | null) {
+  if (!value) return t("settings.progress_not_yet");
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(getAppLocale(), {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function ProgressSection({ progress }: { progress: ProgressData }) {
-  const { totalEver, totalMissions, completedToday, stars, lastMissionRaw } =
-    progress;
+  const {
+    totalEver,
+    totalMissions,
+    completedToday,
+    stars,
+    lastMissionRaw,
+    firstRewardRedeemed,
+    morningDoneDate,
+  } = progress;
   const lastMission = getStoredMissionTitle(lastMissionRaw);
 
   const statCards = [
@@ -526,10 +548,62 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
       emoji: "💰",
     },
   ];
+  const snapshotRows = [
+    {
+      label: t("settings.snapshot_today"),
+      value: t("settings.snapshot_today_value", {
+        count: completedToday,
+      }),
+    },
+    {
+      label: t("settings.snapshot_all_time"),
+      value: t("settings.snapshot_all_time_value", {
+        count: totalMissions,
+      }),
+    },
+    {
+      label: t("settings.snapshot_morning"),
+      value: morningDoneDate
+        ? t("settings.snapshot_morning_done", {
+            date: formatProgressDate(morningDoneDate),
+          })
+        : t("settings.progress_not_yet"),
+    },
+    {
+      label: t("settings.snapshot_first_reward"),
+      value: firstRewardRedeemed
+        ? t("settings.snapshot_yes")
+        : t("settings.progress_not_yet"),
+    },
+  ];
 
   return (
     <View>
       <SectionHeader title={t("settings.progress_section")} icon="📊" />
+      <Card>
+        <View style={u.snapshotCard}>
+          <Text style={u.snapshotTitle}>
+            {t("settings.snapshot_title")}
+          </Text>
+          <Text style={u.snapshotPrivacy}>
+            {t("settings.snapshot_privacy")}
+          </Text>
+          <View style={u.snapshotRows}>
+            {snapshotRows.map((row) => (
+              <View key={row.label} style={u.snapshotRow}>
+                <Text style={u.snapshotLabel}>{row.label}</Text>
+                <Text style={u.snapshotValue}>{row.value}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={u.snapshotLastWin}>
+            <Text style={u.snapshotLabel}>{t("settings.snapshot_last_win")}</Text>
+            <Text style={u.snapshotLastWinValue}>
+              {lastMission || t("settings.progress_not_yet")}
+            </Text>
+          </View>
+        </View>
+      </Card>
       <View style={u.statsGrid}>
         {statCards.map((sc) => (
           <View key={sc.label} style={u.statCard}>
@@ -539,14 +613,6 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
           </View>
         ))}
       </View>
-      {lastMission && (
-        <Card>
-          <Text style={u.lastMissionLabel}>
-            {t("settings.last_mission_label")}
-          </Text>
-          <Text style={u.lastMissionValue}>{lastMission}</Text>
-        </Card>
-      )}
       {totalMissions === 0 && (
         <Card>
           <Text style={[u.rowSublabel, { textAlign: "center", padding: 8 }]}>
@@ -2569,6 +2635,7 @@ export default function SettingsScreen({
                 ["sb_today_v2", "0"],
                 ["sb_last_mission", ""],
                 ["sb_first_reward", "false"],
+                [SK.MORNING_DONE, ""],
                 ["sb_skip_count", "0"],
               ]);
               setProgress({
@@ -2578,6 +2645,7 @@ export default function SettingsScreen({
                 completedToday: 0,
                 lastMissionRaw: null,
                 firstRewardRedeemed: false,
+                morningDoneDate: null,
               });
               Alert.alert(t("settings.reset_done"));
             },
@@ -3057,6 +3125,60 @@ const u = StyleSheet.create({
   editCostRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
 
   // Progress stats
+  snapshotCard: {
+    padding: 14,
+    backgroundColor: C.white,
+  },
+  snapshotTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: C.text,
+    marginBottom: 4,
+  },
+  snapshotPrivacy: {
+    fontSize: 11,
+    color: C.muted,
+    lineHeight: 16,
+    marginBottom: 12,
+  },
+  snapshotRows: {
+    borderTopWidth: 0.5,
+    borderTopColor: C.border,
+  },
+  snapshotRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: C.border,
+    paddingVertical: 9,
+  },
+  snapshotLabel: {
+    fontSize: 12,
+    color: C.muted,
+    flex: 1,
+  },
+  snapshotValue: {
+    fontSize: 12,
+    color: C.text,
+    fontWeight: "600",
+    textAlign: "right",
+    flexShrink: 0,
+    maxWidth: "58%",
+  },
+  snapshotLastWin: {
+    backgroundColor: C.greenLt,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 12,
+  },
+  snapshotLastWinValue: {
+    fontSize: 13,
+    color: C.green,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 3,
+  },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

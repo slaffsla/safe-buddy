@@ -116,21 +116,21 @@
     "r15": "Stay in the bath longer"
   },
   "schedule_titles": {
-    "s1": "Wake up",
+    "s1": "Waking up",
     "s2": "Breakfast",
-    "s3": "Get ready",
+    "s3": "Getting ready",
     "s4": "School",
     "s5": "Lunch",
     "s6": "Quiet time",
     "s7": "Free play",
-    "s8": "Quiet time",
+    "s8": "Nap time",
     "s9": "Snack",
     "s10": "Walk outside",
-    "s11": "Calm play at home",
+    "s11": "Quiet play at home",
     "s12": "Dinner",
     "s13": "Family time",
     "s14": "Getting ready for bed",
-    "s15": "Wind-down time"
+    "s15": "Bedtime wind-down"
   },
   "morning_step_titles": {
     "ms1": "Drink a glass of water",

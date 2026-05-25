@@ -55,11 +55,11 @@ import {
   effectiveRewardCost,
   effectiveRewardEnabled,
   getAgeProfile,
+  getCurrentBlock,
   getMissionSubtitle,
   getMissionTitle,
-  getRewardTitle,
-  getCurrentBlock,
   getNextBlock,
+  getRewardTitle,
   isWeekend,
   MISSION_POOL,
   MISSIONS_EASY,
@@ -152,9 +152,7 @@ async function resolveVoiceForLanguage(language: string) {
     const prefix = ttsLanguagePrefix(language);
     const enhanced = (Speech as any).VoiceQuality?.Enhanced;
     return (
-      voices.find(
-        (v) => v.language === language && v.quality === enhanced,
-      ) ||
+      voices.find((v) => v.language === language && v.quality === enhanced) ||
       voices.find((v) => v.language === language) ||
       voices.find((v) => v.language?.startsWith(prefix)) ||
       null
@@ -693,14 +691,16 @@ export default function App() {
 
   // Active pool: enabled for this day mode by parent override, and not inactive (mission-type setting)
   // Each mission's `stars` is replaced with the parent-override value (falls back to pool default).
-  const activePool: PoolMission[] = allMissionPool.filter(
-    (m) =>
-      effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
-      missionTypeById[m.id] !== "inactive",
-  ).map((m) => ({
-    ...m,
-    stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
-  }));
+  const activePool: PoolMission[] = allMissionPool
+    .filter(
+      (m) =>
+        effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
+        missionTypeById[m.id] !== "inactive",
+    )
+    .map((m) => ({
+      ...m,
+      stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
+    }));
 
   let dayMissions: PoolMission[] = activePool;
   let bonusMission: PoolMission | null = null;
@@ -725,10 +725,12 @@ export default function App() {
     ]);
     // Keep MISSION_POOL order within the subset for stable slot-grouping in UI;
     // apply override stars so cards display the right value.
-    dayMissions = allMissionPool.filter((m) => subsetIds.has(m.id)).map((m) => ({
-      ...m,
-      stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
-    }));
+    dayMissions = allMissionPool
+      .filter((m) => subsetIds.has(m.id))
+      .map((m) => ({
+        ...m,
+        stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
+      }));
 
     if (appSettings.bonusAfterCompletion) {
       const leftover = activePool.filter(
@@ -755,9 +757,9 @@ export default function App() {
   }
 
   // Effective rewards list (parent overrides applied; disabled rewards hidden).
-  const effectiveRewards: Reward[] = allRewardPool.filter((r) =>
-    effectiveRewardEnabled(r.id, rewardOverrides),
-  ).map((r) => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
+  const effectiveRewards: Reward[] = allRewardPool
+    .filter((r) => effectiveRewardEnabled(r.id, rewardOverrides))
+    .map((r) => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
 
   const currentBlock = appSettings.scheduleEnabled
     ? getCurrentBlock(appSettings.scheduleBlocks, isWeekendDay)
@@ -900,6 +902,7 @@ export default function App() {
           isVeryExcited={isVeryExcited}
           onContinue={() => setScreen("pick")}
           onRewards={() => setScreen("rewards")}
+          onBack={() => setScreen("home")}
         />
       )}
 

@@ -318,6 +318,7 @@ export function CelebrateScreen({
   onContinue,
   onRewards,
   speak,
+  onBack,
 }: {
   mission: any;
   stars: number;
@@ -328,6 +329,7 @@ export function CelebrateScreen({
   onContinue: () => void;
   onRewards: () => void;
   speak: (t: string) => void;
+  onBack: () => void;
 }) {
   if (!mission) return null;
   const showConfetti = shouldShowConfetti(totalMissions) || isVeryExcited;
@@ -366,6 +368,9 @@ export function CelebrateScreen({
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
         <Text style={s.btnSecondaryTxt}>{t("celebrate.btn_rewards")}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={s.btnBack} onPress={onBack}>
+        <Text style={s.btnBackTxt}>{t("common.back")}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -394,9 +394,6 @@ export default function App() {
         setCompletedToday(comp);
         setTotalMissions(tm);
         setChildName(v[K.CHILD_NAME] || "");
-        setLastMission(
-          newDay ? getStoredMissionTitle(v[K.LAST_MISSION]) : null,
-        );
         setSkipCount(sk);
         setFirstReward(v[K.FIRST_REWARD] === "true");
         setFirstMission(tm === 0);
@@ -427,6 +424,9 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
+        setLastMission(
+          newDay ? getStoredMissionTitle(v[K.LAST_MISSION]) : null,
+        );
         const morningDone = v[K.MORNING_DONE] ?? "";
         setMorningDoneDate(morningDone);
         if (s.morningEnabled && shouldShowMorning(morningDone)) {

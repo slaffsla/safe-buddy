@@ -59,7 +59,13 @@ import {
   SCHEDULE_MAX_BLOCKS,
   ScheduleBlock,
 } from "./_constants";
-import { t } from "./i18n";
+import {
+  AppLocale,
+  getAppLocale,
+  normalizeAppLocale,
+  setAppLocale,
+  t,
+} from "./i18n";
 
 // Custom items added by parent in the Parent Zone are stored in settings.
 // Limits keep storage and UI manageable.
@@ -86,6 +92,8 @@ export interface RewardConfig {
 }
 
 export interface AppSettings {
+  appLocale: AppLocale;
+
   // Child
   childName: string;
   ageProfileOverride: "auto" | "little" | "middle" | "teen";
@@ -152,6 +160,7 @@ export interface AppSettings {
 
 function buildDefaultSettings(): AppSettings {
   return {
+    appLocale: getAppLocale(),
     childName: "",
     ageProfileOverride: "auto",
     parentPin: "",
@@ -221,6 +230,10 @@ export async function loadSettings(): Promise<AppSettings> {
       const parsed = JSON.parse(raw);
       // Merge with defaults so new fields added later always have values
       const merged = { ...DEFAULT_SETTINGS, ...parsed };
+      merged.appLocale = parsed.appLocale
+        ? normalizeAppLocale(parsed.appLocale)
+        : DEFAULT_SETTINGS.appLocale;
+      setAppLocale(merged.appLocale);
 
       // Upgrade: if stored missions array is smaller than the full pool,
       // merge in any missing IDs from DEFAULT_MISSION_CONFIGS
@@ -324,6 +337,7 @@ export async function loadSettings(): Promise<AppSettings> {
     ]);
     return {
       ...DEFAULT_SETTINGS,
+      appLocale: getAppLocale(),
       childName: legacy[0][1] ?? "",
       parentPin: legacy[1][1] ?? "",
       pinEnabled: legacy[2][1] === "true",
@@ -2514,6 +2528,39 @@ interface SettingsScreenProps {
   pinEnabled?: boolean;
 }
 
+function LanguageToggle({
+  value,
+  onChange,
+}: {
+  value: AppLocale;
+  onChange: (locale: AppLocale) => void;
+}) {
+  const options: { label: string; value: AppLocale }[] = [
+    { label: "RU", value: "ru" },
+    { label: "EN", value: "en" },
+  ];
+
+  return (
+    <View style={ss.langToggle}>
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <TouchableOpacity
+            key={option.value}
+            style={[ss.langBtn, active && ss.langBtnActive]}
+            onPress={() => onChange(option.value)}
+            activeOpacity={0.75}
+          >
+            <Text style={[ss.langBtnTxt, active && ss.langBtnTxtActive]}>
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function SettingsScreen({
   onClose,
   onSettingsChange,
@@ -2541,10 +2588,18 @@ export default function SettingsScreen({
   // Auto-save with debounce — 800ms after last change
   function updateSettings(patch: Partial<AppSettings>) {
     const next = { ...settings, ...patch };
+    if (patch.appLocale) {
+      setAppLocale(patch.appLocale);
+    }
     setSettings(next);
     onSettingsChange(next); // notify parent immediately for live updates
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => saveSettings(next), 800);
+    if (patch.appLocale) {
+      saveSettings(next).catch(console.log);
+      saveTimer.current = null;
+    } else {
+      saveTimer.current = setTimeout(() => saveSettings(next), 800);
+    }
   }
 
   // PIN-protected action (reset progress)
@@ -2633,7 +2688,12 @@ export default function SettingsScreen({
           <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
         </TouchableOpacity>
         <Text style={ss.headerTitle}>{t("settings.title")}</Text>
-        <View style={{ width: 80 }} />
+        <View style={ss.headerRight}>
+          <LanguageToggle
+            value={settings.appLocale}
+            onChange={(appLocale) => updateSettings({ appLocale })}
+          />
+        </View>
       </View>
 
       <ScrollView
@@ -2764,9 +2824,33 @@ const ss = StyleSheet.create({
     borderColor: C.border,
     backgroundColor: C.white,
   },
-  headerTitle: { fontSize: 17, fontWeight: "600", color: C.text },
-  backBtn: { paddingVertical: 4, paddingHorizontal: 8 },
+  headerTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: "600",
+    color: C.text,
+    textAlign: "center",
+  },
+  backBtn: { width: 86, paddingVertical: 4, paddingHorizontal: 8 },
   backBtnTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
+  headerRight: { width: 86, alignItems: "flex-end" },
+  langToggle: {
+    flexDirection: "row",
+    backgroundColor: C.bg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 2,
+  },
+  langBtn: {
+    minWidth: 34,
+    paddingVertical: 5,
+    alignItems: "center",
+    borderRadius: 9,
+  },
+  langBtnActive: { backgroundColor: C.green },
+  langBtnTxt: { fontSize: 11, color: C.muted, fontWeight: "700" },
+  langBtnTxtActive: { color: C.white },
   scroll: { flex: 1 },
   content: { padding: 16 },
   spacer: { height: 24 },

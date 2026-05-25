@@ -3,9 +3,8 @@
 // Architecture supports Hebrew, Arabic, Spanish without code changes — just
 // drop a new JSON in /locales and add an `import` + entry in the I18n map.
 //
-// Reactivity: locale is read once from the device at app start. Changing
-// the device language requires an app relaunch (standard pattern for
-// i18n-js + Expo). This keeps the implementation simple and predictable.
+// Reactivity: locale starts from the device but can be overridden by the
+// saved Parent settings language toggle.
 
 import { getLocales } from "expo-localization";
 import { I18n } from "i18n-js";
@@ -16,9 +15,25 @@ export const i18n = new I18n({ ru, en });
 i18n.defaultLocale = "ru";
 i18n.enableFallback = true; // Missing keys fall back to ru.json
 
+export type AppLocale = "ru" | "en";
+
+export function normalizeAppLocale(
+  locale: string | null | undefined,
+): AppLocale {
+  return locale?.startsWith("en") ? "en" : "ru";
+}
+
 // Device language → app locale. Unknown languages fall back to ru.
 const deviceLang = getLocales()[0]?.languageCode ?? "ru";
-i18n.locale = deviceLang;
+i18n.locale = normalizeAppLocale(deviceLang);
+
+export function getAppLocale(): AppLocale {
+  return normalizeAppLocale(i18n.locale);
+}
+
+export function setAppLocale(locale: AppLocale) {
+  i18n.locale = locale;
+}
 
 /**
  * Translate a key. Optional params for {{interpolation}}.

@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Image,
   Linking,
   ScrollView,
   StyleSheet,
@@ -40,6 +41,7 @@ import {
   effectiveMissionStars,
   effectiveRewardCost,
   effectiveRewardEnabled,
+  getBuddyImage,
   getMissionSubtitle,
   getMissionTitle,
   getMorningStepTitle,
@@ -574,6 +576,28 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
       }),
     },
   ];
+  const insightChips = [
+    {
+      label: t("settings.insight_routine"),
+      value: morningDoneDate
+        ? t("settings.insight_active")
+        : t("settings.progress_not_yet"),
+    },
+    {
+      label: t("settings.insight_rewards"),
+      value:
+        usage.rewardsRedeemed > 0
+          ? String(usage.rewardsRedeemed)
+          : t("settings.progress_not_yet"),
+    },
+    {
+      label: t("settings.insight_breathing"),
+      value:
+        usage.breathingStarted > 0
+          ? String(usage.breathingStarted)
+          : t("settings.progress_not_yet"),
+    },
+  ];
 
   const statCards = [
     {
@@ -631,12 +655,29 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
       <SectionHeader title={t("settings.progress_section")} icon="📊" />
       <Card>
         <View style={u.snapshotCard}>
-          <Text style={u.snapshotTitle}>
-            {t("settings.snapshot_title")}
-          </Text>
-          <Text style={u.snapshotPrivacy}>
-            {t("settings.snapshot_privacy")}
-          </Text>
+          <View style={u.snapshotHero}>
+            <View style={u.snapshotHeroText}>
+              <Text style={u.snapshotTitle}>
+                {t("settings.snapshot_title")}
+              </Text>
+              <Text style={u.snapshotPrivacy}>
+                {t("settings.snapshot_privacy")}
+              </Text>
+            </View>
+            <Image
+              source={getBuddyImage("serene")}
+              style={u.snapshotBuddy}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={u.insightChips}>
+            {insightChips.map((chip) => (
+              <View key={chip.label} style={u.insightChip}>
+                <Text style={u.insightChipLabel}>{chip.label}</Text>
+                <Text style={u.insightChipValue}>{chip.value}</Text>
+              </View>
+            ))}
+          </View>
           <View style={u.snapshotRows}>
             {snapshotRows.map((row) => (
               <View key={row.label} style={u.snapshotRow}>
@@ -2741,6 +2782,8 @@ export default function SettingsScreen({
 
   return (
     <SafeAreaView style={ss.root}>
+      <View pointerEvents="none" style={ss.bgBandTop} />
+      <View pointerEvents="none" style={ss.bgBandMid} />
       {/* Header */}
       <View style={ss.header}>
         <TouchableOpacity onPress={onClose} style={ss.backBtn}>
@@ -2877,6 +2920,22 @@ export default function SettingsScreen({
 
 const ss = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
+  bgBandTop: {
+    position: "absolute",
+    top: 74,
+    left: 0,
+    right: 0,
+    height: 220,
+    backgroundColor: "rgba(225,245,238,0.38)",
+  },
+  bgBandMid: {
+    position: "absolute",
+    top: 330,
+    left: 0,
+    right: 0,
+    height: 180,
+    backgroundColor: "rgba(255,248,231,0.42)",
+  },
   loadingCenter: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { fontSize: 16, color: C.muted },
   header: {
@@ -3019,10 +3078,10 @@ const u = StyleSheet.create({
 
   // Card
   card: {
-    backgroundColor: C.white,
+    backgroundColor: "#FFFDF9",
     borderRadius: 14,
     borderWidth: 0.5,
-    borderColor: C.border,
+    borderColor: "#DED8CE",
     overflow: "hidden",
     marginBottom: 8,
   },
@@ -3072,7 +3131,11 @@ const u = StyleSheet.create({
     paddingBottom: 6,
   },
 
-  divider: { height: 0.5, backgroundColor: C.border, marginHorizontal: 14 },
+  divider: {
+    height: 0.5,
+    backgroundColor: "rgba(107,107,104,0.16)",
+    marginHorizontal: 14,
+  },
 
   // Pill selector
   pillRow: {
@@ -3190,7 +3253,17 @@ const u = StyleSheet.create({
   // Progress stats
   snapshotCard: {
     padding: 14,
-    backgroundColor: C.white,
+    backgroundColor: "#FFFDF9",
+  },
+  snapshotHero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  snapshotHeroText: { flex: 1 },
+  snapshotBuddy: {
+    width: 62,
+    height: 62,
   },
   snapshotTitle: {
     fontSize: 16,
@@ -3202,18 +3275,43 @@ const u = StyleSheet.create({
     fontSize: 11,
     color: C.muted,
     lineHeight: 16,
+  },
+  insightChips: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
     marginBottom: 12,
+  },
+  insightChip: {
+    flex: 1,
+    backgroundColor: C.bg,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  insightChipLabel: {
+    fontSize: 10,
+    color: C.muted,
+    fontWeight: "600",
+  },
+  insightChipValue: {
+    fontSize: 12,
+    color: C.text,
+    fontWeight: "700",
+    marginTop: 2,
   },
   snapshotRows: {
     borderTopWidth: 0.5,
-    borderTopColor: C.border,
+    borderTopColor: "rgba(107,107,104,0.16)",
   },
   snapshotRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: C.border,
+    borderBottomColor: "rgba(107,107,104,0.16)",
     paddingVertical: 9,
   },
   snapshotLabel: {
@@ -3255,7 +3353,7 @@ const u = StyleSheet.create({
     gap: 12,
     paddingVertical: 7,
     borderTopWidth: 0.5,
-    borderTopColor: C.border,
+    borderTopColor: "rgba(107,107,104,0.16)",
   },
   statsGrid: {
     flexDirection: "row",
@@ -3266,10 +3364,10 @@ const u = StyleSheet.create({
   statCard: {
     flex: 1,
     minWidth: "45%",
-    backgroundColor: C.white,
+    backgroundColor: "#FFFDF9",
     borderRadius: 12,
     borderWidth: 0.5,
-    borderColor: C.border,
+    borderColor: "#DED8CE",
     padding: 14,
     alignItems: "center",
   },

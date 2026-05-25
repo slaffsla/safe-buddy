@@ -169,10 +169,10 @@ const s = StyleSheet.create({
   // Progress bar
   pbWrap: {
     width: "100%",
-    backgroundColor: C.white,
+    backgroundColor: "#FFFDF9",
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
     padding: 10,
     marginBottom: 14,
   },
@@ -200,13 +200,13 @@ const s = StyleSheet.create({
 
   // Reflective boost
   reflectCard: {
-    backgroundColor: C.reflect,
+    backgroundColor: "#F4FAF7",
     borderRadius: 12,
     padding: 12,
     width: "100%",
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: C.greenLt,
+    borderColor: "#CFE9DD",
   },
   reflectText: {
     fontSize: 13,
@@ -218,10 +218,10 @@ const s = StyleSheet.create({
 
   // Daily suggestion
   suggestionCard: {
-    backgroundColor: C.gold,
+    backgroundColor: "#FFF9EC",
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.goldBdr,
+    borderWidth: 0.5,
+    borderColor: "#E8D7A9",
     padding: 14,
     width: "100%",
     alignItems: "center",

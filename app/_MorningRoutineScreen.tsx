@@ -163,8 +163,14 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
+    backgroundColor: C.bg,
   },
-  scroll: { alignItems: "center", padding: 20, paddingBottom: 52 },
+  scroll: {
+    alignItems: "center",
+    padding: 20,
+    paddingBottom: 52,
+    backgroundColor: C.bg,
+  },
 
   headerRow: {
     flexDirection: "row",
@@ -179,10 +185,10 @@ const s = StyleSheet.create({
 
   card: {
     width: "100%",
-    backgroundColor: C.white,
+    backgroundColor: "#FFFDF9",
     borderRadius: 16,
     borderWidth: 0.5,
-    borderColor: C.border,
+    borderColor: "#DED8CE",
     overflow: "hidden",
     marginBottom: 16,
   },
@@ -195,14 +201,18 @@ const s = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: C.border,
+    borderColor: "#DED8CE",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: C.bg,
   },
   checkboxDone: { backgroundColor: C.green, borderColor: C.green },
   checkmark: { color: C.white, fontSize: 14, fontWeight: "700" },
-  divider: { height: 0.5, backgroundColor: C.border, marginHorizontal: 16 },
+  divider: {
+    height: 0.5,
+    backgroundColor: "rgba(107,107,104,0.16)",
+    marginHorizontal: 16,
+  },
 
   dotsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.border },

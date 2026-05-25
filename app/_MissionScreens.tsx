@@ -502,8 +502,14 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
+    backgroundColor: C.bg,
   },
-  scroll: { alignItems: "center", padding: 20, paddingBottom: 52 },
+  scroll: {
+    alignItems: "center",
+    padding: 20,
+    paddingBottom: 52,
+    backgroundColor: C.bg,
+  },
 
   msg: {
     fontSize: 17,
@@ -551,18 +557,18 @@ const s = StyleSheet.create({
   mCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: C.white,
+    backgroundColor: "#FFFDF9",
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
     padding: 13,
     marginBottom: 7,
     width: "100%",
   },
-  mCardBig: { backgroundColor: C.gold, borderColor: C.goldBdr },
+  mCardBig: { backgroundColor: "#FFF9EC", borderColor: "#E8D7A9" },
   mCardDone: {
-    backgroundColor: C.greenLt,
-    borderColor: C.green,
+    backgroundColor: "#F1FAF6",
+    borderColor: "#CFE9DD",
     opacity: 0.75,
   },
   mCardPermanent: { backgroundColor: "#F1FAF6", borderColor: "#CDE7DA" },
@@ -607,10 +613,10 @@ const s = StyleSheet.create({
   // Encore / bonus
   encoreCard: {
     width: "100%",
-    backgroundColor: C.greenLt,
+    backgroundColor: "#F4FAF7",
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: C.green,
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
     padding: 18,
     alignItems: "center",
     marginBottom: 14,
@@ -637,7 +643,7 @@ const s = StyleSheet.create({
     marginBottom: 6,
     alignSelf: "flex-start",
   },
-  bonusCard: { backgroundColor: C.gold, borderColor: C.goldBdr },
+  bonusCard: { backgroundColor: "#FFF9EC", borderColor: "#E8D7A9" },
 
   celebTitle: {
     fontSize: 24,
@@ -663,8 +669,10 @@ const s = StyleSheet.create({
   },
 
   earnedCard: {
-    backgroundColor: C.greenLt,
+    backgroundColor: "#F4FAF7",
     borderRadius: 20,
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
     padding: 22,
     alignItems: "center",
     width: "100%",
@@ -691,10 +699,10 @@ const s = StyleSheet.create({
   },
   btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
   btnSecondary: {
-    backgroundColor: C.gold,
+    backgroundColor: "#FFF9EC",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.goldBdr,
+    borderWidth: 0.5,
+    borderColor: "#E8D7A9",
     paddingVertical: 15,
     paddingHorizontal: 32,
     marginTop: 8,
@@ -708,10 +716,10 @@ const s = StyleSheet.create({
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
 
   activeCard: {
-    backgroundColor: C.white,
+    backgroundColor: "#FFFDF9",
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: C.border,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
     padding: 26,
     alignItems: "center",
     width: "100%",
@@ -740,10 +748,10 @@ const s = StyleSheet.create({
   rCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: C.white,
+    backgroundColor: "#FFFDF9",
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
     padding: 13,
     width: "100%",
   },
@@ -755,8 +763,8 @@ const s = StyleSheet.create({
   rReadyBtn: {
     backgroundColor: C.greenLt,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.green,
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
     paddingVertical: 8,
     paddingHorizontal: 12,
     marginLeft: 10,

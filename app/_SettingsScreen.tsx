@@ -39,9 +39,9 @@ import {
   effectiveMissionStars,
   effectiveRewardCost,
   effectiveRewardEnabled,
-  getMorningStepTitle,
   getMissionSubtitle,
   getMissionTitle,
+  getMorningStepTitle,
   getRewardTitle,
   getScheduleTitle,
   getStoredMissionTitle,
@@ -870,121 +870,6 @@ function MissionsSection({
             thumbColor={C.white}
           />
         </SettingRow>
-      </Card>
-    </View>
-  );
-}
-
-// ── REWARDS SECTION ───────────────────────────────────────────────────────────
-
-function RewardsSection({
-  settings,
-  onChange,
-}: {
-  settings: AppSettings;
-  onChange: (patch: Partial<AppSettings>) => void;
-}) {
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editCost, setEditCost] = useState("");
-
-  function startEdit(r: RewardConfig) {
-    setEditingId(r.id);
-    setEditTitle(getRewardTitle(r.id, r.title));
-    setEditCost(String(r.cost));
-  }
-
-  function saveEdit() {
-    const cost = parseInt(editCost, 10);
-    if (!editTitle.trim() || isNaN(cost) || cost < 1 || cost > 20) {
-      Alert.alert(t("settings.reward_check_alert"));
-      return;
-    }
-    const updated = settings.rewards.map((r) =>
-      r.id === editingId ? { ...r, title: editTitle.trim(), cost } : r,
-    );
-    onChange({ rewards: updated });
-    setEditingId(null);
-  }
-
-  function toggleReward(id: number) {
-    const updated = settings.rewards.map((r) =>
-      r.id === id ? { ...r, active: !r.active } : r,
-    );
-    onChange({ rewards: updated });
-  }
-
-  return (
-    <View>
-      <SectionHeader title={t("settings.rewards_section")} icon="🎁" />
-      <Card>
-        {settings.rewards.map((r, idx) => (
-          <View key={r.id}>
-            {idx > 0 && <Divider />}
-            {editingId === r.id ? (
-              <View style={u.editBlock}>
-                <TextInput
-                  style={u.editInput}
-                  value={editTitle}
-                  onChangeText={setEditTitle}
-                  placeholder={t("settings.reward_name_placeholder")}
-                  placeholderTextColor={C.muted}
-                />
-                <View style={u.editCostRow}>
-                  <Text style={u.rowSublabel}>
-                    {t("settings.reward_cost_label")}
-                  </Text>
-                  <TextInput
-                    style={[
-                      u.editInput,
-                      { width: 60, textAlign: "center", marginLeft: 8 },
-                    ]}
-                    value={editCost}
-                    onChangeText={setEditCost}
-                    keyboardType="numeric"
-                    maxLength={2}
-                  />
-                </View>
-                <View style={u.rowBtns}>
-                  <TouchableOpacity style={u.btnPrimary} onPress={saveEdit}>
-                    <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={u.btnCancel}
-                    onPress={() => setEditingId(null)}
-                  >
-                    <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View style={[u.missionRow, !r.active && { opacity: 0.45 }]}>
-                <Text style={u.missionEmoji}>{r.emoji}</Text>
-                <View style={u.missionInfo}>
-                  <Text style={u.missionTitle}>
-                    {getRewardTitle(r.id, r.title)}
-                  </Text>
-                  <Text style={u.missionSub}>
-                    {Array(r.cost).fill("⭐").join("")}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={u.linkBtn}
-                  onPress={() => startEdit(r)}
-                >
-                  <Text style={u.linkBtnTxt}>{t("settings.edit")}</Text>
-                </TouchableOpacity>
-                <Switch
-                  value={r.active}
-                  onValueChange={() => toggleReward(r.id)}
-                  trackColor={{ false: C.track, true: C.green }}
-                  thumbColor={C.white}
-                  style={{ marginLeft: 8 }}
-                />
-              </View>
-            )}
-          </View>
-        ))}
       </Card>
     </View>
   );

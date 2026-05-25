@@ -126,7 +126,13 @@ const K = {
   MORNING_DONE: "sb_morning_done",
   DONE_IDS_TODAY: "sb_done_ids_today",
   CHILD_AGE: "sb_child_age",
+  TINY_FACT_LAST_SHOWN: "sb_tiny_fact_last_shown",
 };
+
+const TINY_FACT_COOLDOWN_MS = 5 * 60 * 1000;
+const TINY_FACT_IDLE_MIN_MS = 2000;
+const TINY_FACT_IDLE_JITTER_MS = 3000;
+const TINY_FACT_VISIBLE_MS = 6500;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -299,6 +305,7 @@ export default function App() {
   const [tinyFactBubble, setTinyFactBubble] = useState<string | null>(null);
   const tinyFactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tinyFactHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tinyFactLastShownRef = useRef(0);
   const [showCelebrateConfetti, setShowCelebrateConfetti] = useState(false);
   const [celebrateConfettiKey, setCelebrateConfettiKey] = useState(0);
   const celebrateConfettiTimer = useRef<ReturnType<typeof setTimeout> | null>(
@@ -362,6 +369,7 @@ export default function App() {
           K.MORNING_DONE,
           K.DONE_IDS_TODAY,
           K.CHILD_AGE,
+          K.TINY_FACT_LAST_SHOWN,
         ]);
         // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
         const v: Record<string, string> = Object.fromEntries(
@@ -399,6 +407,9 @@ export default function App() {
         const age = v[K.CHILD_AGE] ? parseInt(v[K.CHILD_AGE], 10) : 7;
         setChildAge(age);
         setAgeProfile(getAgeProfile(age));
+        tinyFactLastShownRef.current = v[K.TINY_FACT_LAST_SHOWN]
+          ? parseInt(v[K.TINY_FACT_LAST_SHOWN], 10)
+          : 0;
 
         // Restore today's completed mission IDs (reset on new day)
         if (newDay) {
@@ -565,31 +576,48 @@ export default function App() {
     if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
     setTinyFactBubble(null);
 
-    if (
-      screen !== "active" ||
-      !mission ||
-      !appSettings.tinyFactsEnabled
-    ) {
+    if (screen !== "active" || !mission || !appSettings.tinyFactsEnabled) {
       return;
     }
 
     const fact = getTinyFact(mission.id);
     if (!fact) return;
 
+    let cancelled = false;
+
     function scheduleFact() {
-      const delay = 7000 + Math.round(Math.random() * 5000);
+      const lastShown = Number.isFinite(tinyFactLastShownRef.current)
+        ? tinyFactLastShownRef.current
+        : 0;
+      const cooldownRemaining =
+        lastShown > 0
+          ? Math.max(0, TINY_FACT_COOLDOWN_MS - (Date.now() - lastShown))
+          : 0;
+      const idleDelay =
+        TINY_FACT_IDLE_MIN_MS +
+        Math.round(Math.random() * TINY_FACT_IDLE_JITTER_MS);
+      const delay = cooldownRemaining + idleDelay;
+
       tinyFactTimer.current = setTimeout(() => {
+        if (cancelled) return;
+        const now = Date.now();
+        tinyFactLastShownRef.current = now;
+        AsyncStorage.setItem(K.TINY_FACT_LAST_SHOWN, String(now)).catch(
+          console.log,
+        );
         setTinyFactBubble(fact);
-        flashBuddyMood("thinking", 6500);
+        flashBuddyMood("thinking", TINY_FACT_VISIBLE_MS);
         tinyFactHideTimer.current = setTimeout(() => {
+          if (cancelled) return;
           setTinyFactBubble(null);
           scheduleFact();
-        }, 6500);
+        }, TINY_FACT_VISIBLE_MS);
       }, delay);
     }
 
     scheduleFact();
     return () => {
+      cancelled = true;
       if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
       if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
     };

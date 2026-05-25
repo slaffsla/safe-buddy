@@ -1,4 +1,4 @@
-// _DayScreen.tsx — Option B full day timeline
+// _DayScreen.tsx — full day timeline
 // Vertical list of all schedule blocks. Past fades, current is prominent,
 // upcoming is normal. Never shows a "missed" state.
 

@@ -38,6 +38,7 @@ import {
   RewardsScreen,
 } from "./_MissionScreens";
 import MorningRoutineScreen from "./_MorningRoutineScreen";
+import ParentOnboarding from "./_ParentOnboarding";
 import SettingsScreen, {
   AppSettings,
   DEFAULT_SETTINGS,
@@ -115,6 +116,7 @@ const K = {
   FIRST_REWARD: "sb_first_reward",
   PARENT_PIN: "sb_parent_pin",
   PIN_ENABLED: "sb_pin_enabled",
+  PARENT_ONBOARDING_DONE: "sb_parent_onboarding_done",
   ONBOARDING_DONE: "sb_onboarding_done",
   MORNING_DONE: "sb_morning_done",
   DONE_IDS_TODAY: "sb_done_ids_today",
@@ -266,6 +268,7 @@ export default function App() {
   const [showGlobalBuddy, setShowGlobalBuddy] = useState(true);
 
   // Onboarding
+  const [parentOnboardingDone, setParentOnboardingDone] = useState(false);
   const [childName, setChildName] = useState("");
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [childAge, setChildAge] = useState(7);
@@ -338,6 +341,7 @@ export default function App() {
           K.FIRST_REWARD,
           K.PARENT_PIN,
           K.PIN_ENABLED,
+          K.PARENT_ONBOARDING_DONE,
           K.ONBOARDING_DONE,
           K.MORNING_DONE,
           K.DONE_IDS_TODAY,
@@ -374,6 +378,7 @@ export default function App() {
         setSkipCount(sk);
         setFirstReward(v[K.FIRST_REWARD] === "true");
         setFirstMission(tm === 0);
+        setParentOnboardingDone(v[K.PARENT_ONBOARDING_DONE] === "true");
         setOnboardingDone(v[K.ONBOARDING_DONE] === "true");
         setParentPin(v[K.PARENT_PIN] || "");
         const age = v[K.CHILD_AGE] ? parseInt(v[K.CHILD_AGE], 10) : 7;
@@ -624,6 +629,20 @@ export default function App() {
   }
 
   // ── ONBOARDING SCREEN (first launch only) ───────────────────────────────────
+  if (!parentOnboardingDone) {
+    return (
+      <SafeAreaView style={s.root}>
+        <StatusBar style="dark" />
+        <ParentOnboarding
+          onDone={async () => {
+            await AsyncStorage.setItem(K.PARENT_ONBOARDING_DONE, "true");
+            setParentOnboardingDone(true);
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
   if (!onboardingDone) {
     return (
       <SafeAreaView style={[s.root, s.center]}>

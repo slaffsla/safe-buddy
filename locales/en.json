@@ -44,6 +44,27 @@
     "welcome_greeting": "Hi {{name}}. Glad to see you.",
     "save_error": "Save failed"
   },
+  "parent_onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "done": "Got it, let's start",
+    "screen1_heading": "This is Buddy.",
+    "screen1_sub": "Buddy helps children do small real-world things — move, tidy up, breathe. Not as a chore. As a game.",
+    "screen1_note": "Validated by real kids. One called it a game after an hour of play.",
+    "screen2_heading": "Sit together the first time.",
+    "screen2_body": "Show Buddy to your child. Tap him together. Let your child pick the first mission themselves.",
+    "screen2_note": "Your presence at the start is all that's needed. After that, they'll manage on their own.",
+    "screen2_tip_label": "HOW IT WORKS",
+    "screen2_tip_1": "Child picks a mission",
+    "screen2_tip_2": "Completes it in real life",
+    "screen2_tip_3": "Earns stars",
+    "screen2_tip_4": "Redeems real rewards you set",
+    "screen3_heading": "Why breathing?",
+    "screen3_body": "When a child breathes slowly and rhythmically, their nervous system shifts from anxiety mode to calm mode. Not a metaphor — it's physiology.",
+    "screen3_pattern": "4 seconds in · pause · 3 seconds out",
+    "screen3_try": "Try it now — follow the circle",
+    "screen3_science": "Box breathing activates the parasympathetic nervous system, slowing heart rate and reducing cortisol. It's used in clinical settings with children with ADHD and autism."
+  },
   "demo": {
     "intro_title": "Let's try together!",
     "intro_sub": "Three simple tasks. A warm-up.",

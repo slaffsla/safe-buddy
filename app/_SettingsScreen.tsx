@@ -1577,6 +1577,7 @@ function ScheduleSection({
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
   const blocks = settings.scheduleBlocks ?? DEFAULT_SCHEDULE;
+  const sortedBlocks = sortScheduleBlocks(blocks);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftEmoji, setDraftEmoji] = useState("");
@@ -1610,6 +1611,14 @@ function ScheduleSection({
     return /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
   }
 
+  function sortScheduleBlocks(items: ScheduleBlock[]) {
+    return [...items].sort((a, b) => {
+      const byStart = a.startTime.localeCompare(b.startTime);
+      if (byStart !== 0) return byStart;
+      return a.endTime.localeCompare(b.endTime);
+    });
+  }
+
   function saveDraft() {
     const title = draftTitle.trim();
     if (!title || !isValidTime(draftStart) || !isValidTime(draftEnd)) {
@@ -1622,7 +1631,7 @@ function ScheduleSection({
     if (editingId === -1) {
       const newId = Math.max(0, ...blocks.map((i) => i.id)) + 1;
       onChange({
-        scheduleBlocks: [
+        scheduleBlocks: sortScheduleBlocks([
           ...blocks,
           {
             id: newId,
@@ -1633,20 +1642,22 @@ function ScheduleSection({
             weekdays: true,
             weekends: true,
           },
-        ],
+        ]),
       });
     } else {
       onChange({
-        scheduleBlocks: blocks.map((i) =>
-          i.id === editingId
-            ? {
-                ...i,
-                title,
-                emoji: draftEmoji || i.emoji,
-                startTime: draftStart,
-                endTime: draftEnd,
-              }
-            : i,
+        scheduleBlocks: sortScheduleBlocks(
+          blocks.map((i) =>
+            i.id === editingId
+              ? {
+                  ...i,
+                  title,
+                  emoji: draftEmoji || i.emoji,
+                  startTime: draftStart,
+                  endTime: draftEnd,
+                }
+              : i,
+          ),
         ),
       });
     }
@@ -1654,25 +1665,17 @@ function ScheduleSection({
   }
 
   function deleteBlock(id: number) {
-    onChange({ scheduleBlocks: blocks.filter((i) => i.id !== id) });
+    onChange({
+      scheduleBlocks: sortScheduleBlocks(blocks.filter((i) => i.id !== id)),
+    });
   }
 
   function toggleFlag(id: number, key: "weekdays" | "weekends") {
     onChange({
-      scheduleBlocks: blocks.map((i) =>
-        i.id === id ? { ...i, [key]: !i[key] } : i,
+      scheduleBlocks: sortScheduleBlocks(
+        blocks.map((i) => (i.id === id ? { ...i, [key]: !i[key] } : i)),
       ),
     });
-  }
-
-  function moveBlock(id: number, dir: -1 | 1) {
-    const idx = blocks.findIndex((b) => b.id === id);
-    if (idx < 0) return;
-    const j = idx + dir;
-    if (j < 0 || j >= blocks.length) return;
-    const next = blocks.slice();
-    [next[idx], next[j]] = [next[j], next[idx]];
-    onChange({ scheduleBlocks: next });
   }
 
   return (
@@ -1694,7 +1697,7 @@ function ScheduleSection({
 
       {settings.scheduleEnabled && (
         <Card>
-          {blocks.map((it, idx) => (
+          {sortedBlocks.map((it, idx) => (
             <View key={it.id}>
               {idx > 0 && <Divider />}
               {editingId === it.id ? (
@@ -1760,20 +1763,6 @@ function ScheduleSection({
                         {it.startTime} — {it.endTime}
                       </Text>
                     </View>
-                    <TouchableOpacity
-                      style={u.stepperBtn}
-                      onPress={() => moveBlock(it.id, -1)}
-                      disabled={idx === 0}
-                    >
-                      <Text style={u.stepperTxt}>↑</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[u.stepperBtn, { marginLeft: 4 }]}
-                      onPress={() => moveBlock(it.id, 1)}
-                      disabled={idx === blocks.length - 1}
-                    >
-                      <Text style={u.stepperTxt}>↓</Text>
-                    </TouchableOpacity>
                     <TouchableOpacity
                       style={u.linkBtn}
                       onPress={() => startEdit(it)}

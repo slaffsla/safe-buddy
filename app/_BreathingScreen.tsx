@@ -78,6 +78,7 @@ export default function BreathingScreen({
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionStart = useRef<number>(0);
   const soundRef = useRef<any>(null);
+  const firstInhaleRef = useRef(true);
 
   // ── Lifecycle helpers ───────────────────────────────────────────────────────
   function clearTimers() {
@@ -128,6 +129,12 @@ export default function BreathingScreen({
 
   function runPhase(idx: number) {
     const phase = PHASES[idx];
+    const spokenKey =
+      idx === 0 && firstInhaleRef.current
+        ? "breathing.phase_first_in"
+        : phase.labelKey;
+    firstInhaleRef.current = false;
+    speak(t(spokenKey));
     Animated.timing(buddyScale, {
       toValue: phase.target,
       duration: phase.duration,
@@ -144,10 +151,10 @@ export default function BreathingScreen({
     setState("active");
     setElapsedMs(0);
     setPhaseIdx(0);
+    firstInhaleRef.current = true;
     sessionStart.current = Date.now();
     // 1. Hide the global overlay Buddy
     onHideOverlay();
-    speak(t("breathing.start_speak"));
     // 2. Entrance spring: Buddy jumps from tiny → full size
     //    When spring settles, breathing loop begins
     buddyScale.setValue(0.2);

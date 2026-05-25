@@ -175,9 +175,10 @@
   "breathing": {
     "title": "Breathe together",
     "subtitle": "Two minutes of calm breathing with Buddy",
-    "phase_in": "In",
+    "phase_first_in": "Take a deep breath",
+    "phase_in": "Inhale",
     "phase_hold": "Pause",
-    "phase_out": "Out",
+    "phase_out": "Exhale",
     "start_speak": "Breathe together",
     "done_speak": "Well done. You rested.",
     "btn_start": "Start",

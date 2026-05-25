@@ -294,6 +294,11 @@ export default function App() {
 
   const [transientMood, setTransientMood] = useState<BuddyMood | null>(null);
   const transientMoodTimer = useRef<any>(null);
+  const [showCelebrateConfetti, setShowCelebrateConfetti] = useState(false);
+  const [celebrateConfettiKey, setCelebrateConfettiKey] = useState(0);
+  const celebrateConfettiTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const speak = useSpeech(ttsEnabled);
 
@@ -540,8 +545,23 @@ export default function App() {
   useEffect(() => {
     return () => {
       if (transientMoodTimer.current) clearTimeout(transientMoodTimer.current);
+      if (celebrateConfettiTimer.current) {
+        clearTimeout(celebrateConfettiTimer.current);
+      }
     };
   }, []);
+
+  function triggerCelebrateConfetti() {
+    if (celebrateConfettiTimer.current) {
+      clearTimeout(celebrateConfettiTimer.current);
+    }
+    setCelebrateConfettiKey((n) => n + 1);
+    setShowCelebrateConfetti(true);
+    celebrateConfettiTimer.current = setTimeout(() => {
+      setShowCelebrateConfetti(false);
+      celebrateConfettiTimer.current = null;
+    }, 5200);
+  }
 
   function completeMission() {
     if (!mission) return;
@@ -573,6 +593,9 @@ export default function App() {
       JSON.stringify({ id: mission.id, title: mission.title }),
     ).catch(console.log);
     flashBuddyMood(completionMood);
+    if (shouldShowConfetti(newTotal) || veryExcited) {
+      triggerCelebrateConfetti();
+    }
     setScreen("celebrate");
   }
 
@@ -808,9 +831,6 @@ export default function App() {
   const nextBlock = appSettings.scheduleEnabled
     ? getNextBlock(appSettings.scheduleBlocks, isWeekendDay)
     : null;
-  const showCelebrateConfetti =
-    screen === "celebrate" &&
-    (shouldShowConfetti(totalMissions) || isVeryExcited);
 
   if (showMorning) {
     return (
@@ -1066,7 +1086,10 @@ export default function App() {
         </View>
       )}
 
-      <Confetti trigger={showCelebrateConfetti} />
+      <Confetti
+        key={celebrateConfettiKey}
+        trigger={screen === "celebrate" && showCelebrateConfetti}
+      />
     </SafeAreaView>
   );
 }

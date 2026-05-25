@@ -46,7 +46,7 @@ import SettingsScreen, {
   RotationFrequency,
   saveSettings,
 } from "./_SettingsScreen";
-import { ProgressBar } from "./_SharedUI";
+import { Confetti, ProgressBar } from "./_SharedUI";
 import {
   AgeProfile,
   BuddyMood,
@@ -73,6 +73,7 @@ import {
   selectBonusMission,
   selectDailyMissions,
   shouldBeVeryExcited,
+  shouldShowConfetti,
   shouldShowMorning,
   todayStr,
 } from "./_constants";
@@ -243,27 +244,6 @@ function useSpeech(enabled: boolean) {
   }, []);
 }
 
-// Speakable text
-function T({
-  children,
-  style,
-  speak,
-}: {
-  children: any;
-  style: any;
-  speak: (t: string) => void;
-}) {
-  if (!children) return null;
-  return (
-    <TouchableOpacity
-      onPress={() => speak(String(children))}
-      activeOpacity={0.65}
-    >
-      <Text style={style}>{children}</Text>
-    </TouchableOpacity>
-  );
-}
-
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -283,7 +263,6 @@ export default function App() {
   const [isVeryExcited, setIsVeryExcited] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(true);
   const [firstReward, setFirstReward] = useState(false);
-  const [morningDoneDate, setMorningDoneDate] = useState("");
   const [showMorning, setShowMorning] = useState(false);
   const [doneIdsToday, setDoneIdsToday] = useState<number[]>([]);
   const [showGlobalBuddy, setShowGlobalBuddy] = useState(true);
@@ -428,7 +407,6 @@ export default function App() {
           newDay ? getStoredMissionTitle(v[K.LAST_MISSION]) : null,
         );
         const morningDone = v[K.MORNING_DONE] ?? "";
-        setMorningDoneDate(morningDone);
         if (s.morningEnabled && shouldShowMorning(morningDone)) {
           setShowMorning(true);
         }
@@ -502,7 +480,7 @@ export default function App() {
       speak(t("onboarding.welcome_greeting", { name }));
       // After onboarding go to demo if not done, else home
       setScreen("demo_intro");
-    } catch (e) {
+    } catch {
       Alert.alert(t("onboarding.save_error"));
     }
   }
@@ -823,6 +801,10 @@ export default function App() {
   const nextBlock = appSettings.scheduleEnabled
     ? getNextBlock(appSettings.scheduleBlocks, isWeekendDay)
     : null;
+  const showCelebrateConfetti =
+    screen === "celebrate" &&
+    (shouldShowConfetti(totalMissions) || isVeryExcited);
+
   if (showMorning) {
     return (
       <SafeAreaView style={s.root}>
@@ -840,7 +822,6 @@ export default function App() {
             const today = todayStr();
             setStars((n) => n + earned);
             setTotalEver((n) => n + earned);
-            setMorningDoneDate(today);
             setShowMorning(false);
             setScreen("home");
             await AsyncStorage.setItem(K.MORNING_DONE, today);
@@ -1077,6 +1058,8 @@ export default function App() {
           </View>
         </View>
       )}
+
+      <Confetti trigger={showCelebrateConfetti} />
     </SafeAreaView>
   );
 }

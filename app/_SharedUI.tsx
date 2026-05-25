@@ -1,7 +1,13 @@
 // _SharedUI.tsx — SafeBuddy small shared UI components
 // T, ProgressBar, ReflectiveBoost, DailySuggestion, Confetti
 
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { C, DAILY_SUGGESTIONS, getProgress } from "./_constants";
 import { t } from "./i18n";
@@ -128,28 +134,38 @@ export function DailySuggestion({
 // ── Confetti ──────────────────────────────────────────────────────────────────
 export function Confetti({ trigger }: { trigger: boolean }) {
   if (!trigger) return null;
+  const { width } = Dimensions.get("window");
   return (
-    <ConfettiCannon
-      count={130}
-      origin={{ x: -20, y: 0 }}
-      autoStart={true}
-      fadeOut={true}
-      fallSpeed={3200}
-      colors={[
-        "#1D6B4F",
-        "#F59E0B",
-        "#E1F5EE",
-        "#FFD700",
-        "#FF6B6B",
-        "#4ECDC4",
-      ]}
-    />
+    <View pointerEvents="none" style={s.confettiOverlay}>
+      <ConfettiCannon
+        count={64}
+        origin={{ x: width / 2, y: 0 }}
+        autoStart={true}
+        fadeOut={true}
+        explosionSpeed={650}
+        fallSpeed={4200}
+        colors={[
+          C.green,
+          C.greenLt,
+          C.gold,
+          C.border,
+          "#8FCFB8",
+          "#EEF2FF",
+        ]}
+      />
+    </View>
   );
 }
 
 // ── STYLES ────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
+  confettiOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2000,
+    elevation: 2000,
+  },
+
   // Progress bar
   pbWrap: {
     width: "100%",

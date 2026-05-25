@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Confetti, T } from "./_SharedUI";
+import { T } from "./_SharedUI";
 import {
   BUDDY_FIXED_SPACER,
   C,
@@ -25,7 +25,6 @@ import {
   MissionSlot,
   PoolMission,
   REWARDS,
-  shouldShowConfetti,
 } from "./_constants";
 import { t } from "./i18n";
 
@@ -333,14 +332,12 @@ export function CelebrateScreen({
   onBack: () => void;
 }) {
   if (!mission) return null;
-  const showConfetti = shouldShowConfetti(totalMissions) || isVeryExcited;
   const emotionalMsg = isVeryExcited
     ? getMilestoneMessage(totalEver)
     : getProgressionMessage(totalMissions, completedToday);
 
   return (
     <View style={s.screen}>
-      {showConfetti && <Confetti trigger={true} />}
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
         {isVeryExcited ? t("celebrate.milestone_title") : t("celebrate.title")}

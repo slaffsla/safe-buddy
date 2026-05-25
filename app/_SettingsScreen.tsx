@@ -890,7 +890,7 @@ function RewardsSection({
 
   function startEdit(r: RewardConfig) {
     setEditingId(r.id);
-    setEditTitle(r.title);
+    setEditTitle(getRewardTitle(r.id, r.title));
     setEditCost(String(r.cost));
   }
 
@@ -1406,7 +1406,7 @@ function DailyRoutineSection({
                       style={[u.linkBtn, { marginLeft: 4 }]}
                       onPress={() => {
                         setEditingId(step.id);
-                        setStepTitle(step.title);
+                        setStepTitle(getMorningStepTitle(step.id, step.title));
                         setStepEmoji(step.emoji);
                       }}
                     >
@@ -1530,7 +1530,7 @@ function ScheduleSection({
 
   function startEdit(it: ScheduleBlock) {
     setEditingId(it.id);
-    setDraftTitle(it.title);
+    setDraftTitle(getScheduleTitle(it.id, it.title));
     setDraftEmoji(it.emoji);
     setDraftStart(it.startTime);
     setDraftEnd(it.endTime);
@@ -2675,6 +2675,7 @@ export default function SettingsScreen({
   if (parentZoneOpen) {
     return (
       <ParentZoneView
+        key={settings.appLocale}
         settings={settings}
         onChange={updateSettings}
         onBack={() => setParentZoneOpen(false)}
@@ -2699,6 +2700,7 @@ export default function SettingsScreen({
       </View>
 
       <ScrollView
+        key={settings.appLocale}
         style={ss.scroll}
         contentContainerStyle={ss.content}
         keyboardShouldPersistTaps="handled"

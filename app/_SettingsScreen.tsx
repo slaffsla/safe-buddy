@@ -1860,6 +1860,7 @@ function ParentZoneView({
   const missionTypeById: Record<number, MissionType> = Object.fromEntries(
     settings.missions.map((m) => [m.id, m.type]),
   );
+  const missionTypeOrder: MissionType[] = ["permanent", "rotating", "inactive"];
 
   // Add-form state for custom missions (shared between weekday/weekend cards).
   const [showAddMission, setShowAddMission] = useState(false);
@@ -1891,6 +1892,62 @@ function ParentZoneView({
     onChange({
       rewardOverrides: { ...rewardOverrides, [id]: { ...cur, ...patch } },
     });
+  }
+
+  function cycleMissionType(mission: PoolMission) {
+    const currentType = missionTypeById[mission.id] ?? "rotating";
+    const nextType =
+      missionTypeOrder[
+        (missionTypeOrder.indexOf(currentType) + 1) % missionTypeOrder.length
+      ];
+    const existing = settings.missions.find((m) => m.id === mission.id);
+    const nextMissions = existing
+      ? settings.missions.map((m) =>
+          m.id === mission.id ? { ...m, type: nextType } : m,
+        )
+      : [
+          ...settings.missions,
+          {
+            id: mission.id,
+            title: mission.title,
+            subtitle: mission.subtitle,
+            stars: mission.stars,
+            emoji: mission.emoji,
+            type: nextType,
+          },
+        ];
+    onChange({ missions: nextMissions });
+  }
+
+  function MissionTypePill({
+    mission,
+    type,
+  }: {
+    mission: PoolMission;
+    type: MissionType;
+  }) {
+    const style =
+      type === "permanent"
+        ? pz.typePillPermanent
+        : type === "rotating"
+          ? pz.typePillRotating
+          : pz.typePillInactive;
+    const label =
+      type === "permanent"
+        ? t("settings.type_permanent")
+        : type === "rotating"
+          ? t("settings.type_rotating")
+          : t("settings.type_inactive");
+
+    return (
+      <TouchableOpacity
+        style={[pz.typePill, style]}
+        onPress={() => cycleMissionType(mission)}
+        activeOpacity={0.75}
+      >
+        <Text style={pz.typePillTxt}>{label}</Text>
+      </TouchableOpacity>
+    );
   }
 
   function nextCustomMissionId(): number {
@@ -2071,7 +2128,7 @@ function ParentZoneView({
     if (!m) return null;
     const enabled = effectiveMissionEnabled(id, mode, missionOverrides);
     const isCustom = customMissionIds.has(id);
-    const mType = missionTypeById[id];
+    const mType = missionTypeById[id] ?? "rotating";
     const tintStyle =
       mType === "permanent"
         ? pz.blockPermanent
@@ -2083,27 +2140,16 @@ function ParentZoneView({
         <View style={u.row}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{getMissionTitle(m.id)}</Text>
-            <Text style={u.rowSublabel}>{getMissionSubtitle(m.id)}</Text>
+            <Text style={u.rowLabel}>{getMissionTitle(m.id, m.title)}</Text>
+            <Text style={u.rowSublabel}>
+              {getMissionSubtitle(m.id, m.subtitle)}
+            </Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
                 <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>
               </View>
             )}
-            {!isCustom && mType === "permanent" && (
-              <View style={[pz.typePill, pz.typePillPermanent]}>
-                <Text style={pz.typePillTxt}>
-                  {t("settings.type_permanent")}
-                </Text>
-              </View>
-            )}
-            {!isCustom && mType === "rotating" && (
-              <View style={[pz.typePill, pz.typePillRotating]}>
-                <Text style={pz.typePillTxt}>
-                  {t("settings.type_rotating")}
-                </Text>
-              </View>
-            )}
+            <MissionTypePill mission={m} type={mType} />
           </View>
           <Switch
             value={enabled}
@@ -2402,6 +2448,7 @@ const pz = StyleSheet.create({
   },
   typePillPermanent: { backgroundColor: C.green },
   typePillRotating: { backgroundColor: C.goldBdr },
+  typePillInactive: { backgroundColor: C.muted },
   typePillCustom: { backgroundColor: "#7C5CFF" },
   typePillTxt: {
     fontSize: 10,

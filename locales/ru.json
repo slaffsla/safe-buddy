@@ -431,6 +431,7 @@
     "type_custom": "Своя",
     "type_permanent": "Всегда",
     "type_rotating": "Ротация",
+    "type_inactive": "Неактивна",
     "cost_label": "Стоимость"
   }
 }

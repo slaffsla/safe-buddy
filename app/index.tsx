@@ -167,6 +167,10 @@ async function resolveVoiceForLanguage(language: string) {
   }
 }
 
+type SpeechCallOptions = {
+  volume?: number;
+};
+
 function useSpeech(enabled: boolean) {
   const voiceRef = useRef<any>(null);
   const languageRef = useRef(getTtsLanguage());
@@ -200,7 +204,7 @@ function useSpeech(enabled: boolean) {
     };
   }, []);
 
-  return useCallback((text: string) => {
+  return useCallback((text: string, options: SpeechCallOptions = {}) => {
     if (!enabledRef.current || !text) return;
     if (speakTimerRef.current) {
       clearTimeout(speakTimerRef.current);
@@ -225,6 +229,9 @@ function useSpeech(enabled: boolean) {
       pitch: 1.05,
       rate: Platform.OS === "ios" ? 0.52 : 0.65,
     };
+    if (typeof options.volume === "number") {
+      opts.volume = Math.max(0, Math.min(1, options.volume));
+    }
     if (
       voiceMatchesLanguage(voiceRef.current, lang) &&
       voiceRef.current?.identifier

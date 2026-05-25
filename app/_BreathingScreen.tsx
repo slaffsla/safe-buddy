@@ -40,9 +40,12 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
   { labelKey: "breathing.phase_hold", duration: 1000, target: 1.0 },
   { labelKey: "breathing.phase_out", duration: 4000, target: 0.55 },
 ];
+const GUIDANCE_FULL_CYCLES = 3;
+const GUIDANCE_SOFT_CYCLES = 1;
+const GUIDANCE_SOFT_VOLUME = 0.65;
 
 interface Props {
-  speak: (t: string) => void;
+  speak: (t: string, options?: { volume?: number }) => void;
   onComplete: () => void;
   onSkip: () => void;
   onHideOverlay: () => void; // ← new
@@ -74,6 +77,7 @@ export default function BreathingScreen({
   const sessionStart = useRef<number>(0);
   const soundRef = useRef<any>(null);
   const firstInhaleRef = useRef(true);
+  const guidanceStepRef = useRef(0);
   const guidanceEnabledRef = useRef(guidanceEnabled);
 
   // ── Lifecycle helpers ───────────────────────────────────────────────────────
@@ -130,9 +134,19 @@ export default function BreathingScreen({
         ? "breathing.phase_first_in"
         : phase.labelKey;
     firstInhaleRef.current = false;
+    const guidanceCycle = Math.floor(guidanceStepRef.current / PHASES.length);
+    const guidanceVolume =
+      guidanceCycle < GUIDANCE_FULL_CYCLES
+        ? 1
+        : guidanceCycle < GUIDANCE_FULL_CYCLES + GUIDANCE_SOFT_CYCLES
+          ? GUIDANCE_SOFT_VOLUME
+          : 0;
     if (guidanceEnabledRef.current) {
-      speak(t(spokenKey));
+      if (guidanceVolume > 0) {
+        speak(t(spokenKey), { volume: guidanceVolume });
+      }
     }
+    guidanceStepRef.current += 1;
     Animated.timing(buddyScale, {
       toValue: phase.target,
       duration: phase.duration,
@@ -150,6 +164,7 @@ export default function BreathingScreen({
     setElapsedMs(0);
     setPhaseIdx(0);
     firstInhaleRef.current = true;
+    guidanceStepRef.current = 0;
     sessionStart.current = Date.now();
     // 1. Hide the global overlay Buddy
     onHideOverlay();

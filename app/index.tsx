@@ -312,6 +312,7 @@ export default function App() {
   const tinyFactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tinyFactHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tinyFactLastShownRef = useRef(0);
+  const tinyFactLastTextRef = useRef<string | null>(null);
   const [showCelebrateConfetti, setShowCelebrateConfetti] = useState(false);
   const [celebrateConfettiKey, setCelebrateConfettiKey] = useState(0);
   const celebrateConfettiTimer = useRef<ReturnType<typeof setTimeout> | null>(
@@ -586,10 +587,24 @@ export default function App() {
       return;
     }
 
-    const fact = getTinyFact(mission.id);
-    if (!fact) return;
+    const allFacts = MISSION_POOL.map((m) => getTinyFact(m.id)).filter(
+      (f): f is string => !!f,
+    );
+    if (allFacts.length === 0) {
+      return;
+    }
 
     let cancelled = false;
+
+    function pickFact(): string {
+      const missionFact = getTinyFact(mission.id);
+      const pool = missionFact
+        ? [missionFact, ...allFacts.filter((f) => f !== missionFact)]
+        : allFacts;
+      const withoutLast = pool.filter((f) => f !== tinyFactLastTextRef.current);
+      const source = withoutLast.length > 0 ? withoutLast : pool;
+      return source[Math.floor(Math.random() * source.length)];
+    }
 
     function scheduleFact() {
       const lastShown = Number.isFinite(tinyFactLastShownRef.current)
@@ -606,12 +621,14 @@ export default function App() {
 
       tinyFactTimer.current = setTimeout(() => {
         if (cancelled) return;
+        const factText = pickFact();
         const now = Date.now();
         tinyFactLastShownRef.current = now;
+        tinyFactLastTextRef.current = factText;
         AsyncStorage.setItem(K.TINY_FACT_LAST_SHOWN, String(now)).catch(
           console.log,
         );
-        setTinyFactBubble(fact);
+        setTinyFactBubble(factText);
         flashBuddyMood("thinking", TINY_FACT_VISIBLE_MS);
         tinyFactHideTimer.current = setTimeout(() => {
           if (cancelled) return;

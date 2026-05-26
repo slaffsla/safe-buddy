@@ -1025,6 +1025,7 @@ function MissionsSection({
               sublabel={t("settings.missions_per_day_sub")}
             >
               <PillSelector
+                compact
                 options={[
                   { label: "5", value: "5" },
                   { label: "8", value: "8" },

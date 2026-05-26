@@ -663,7 +663,7 @@ export default function App() {
     }
     // Ensure confetti is paired with a visible mood lift, then naturally
     // fall back through the existing transient mood cooldown path.
-    flashBuddyMood(elevatedMood, 3800);
+    flashBuddyMood(elevatedMood, 3950);
     setCelebrateConfettiKey((n) => n + 1);
     setShowCelebrateConfetti(true);
     celebrateConfettiTimer.current = setTimeout(() => {

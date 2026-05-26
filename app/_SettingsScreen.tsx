@@ -2622,6 +2622,7 @@ function LanguageToggle({
   const options: { label: string; value: AppLocale }[] = [
     { label: "RU", value: "ru" },
     { label: "EN", value: "en" },
+    { label: "HE", value: "he" },
   ];
 
   return (
@@ -2945,9 +2946,9 @@ const ss = StyleSheet.create({
     color: C.text,
     textAlign: "center",
   },
-  backBtn: { width: 86, paddingVertical: 4, paddingHorizontal: 8 },
+  backBtn: { width: 114, paddingVertical: 4, paddingHorizontal: 8 },
   backBtnTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
-  headerRight: { width: 86, alignItems: "flex-end" },
+  headerRight: { width: 114, alignItems: "flex-end" },
   langToggle: {
     flexDirection: "row",
     backgroundColor: C.bg,

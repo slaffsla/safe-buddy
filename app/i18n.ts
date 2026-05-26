@@ -9,17 +9,19 @@
 import { getLocales } from "expo-localization";
 import { I18n } from "i18n-js";
 import en from "../locales/en.json";
+import he from "../locales/he.json";
 import ru from "../locales/ru.json";
 
-export const i18n = new I18n({ ru, en });
+export const i18n = new I18n({ ru, en, he });
 i18n.defaultLocale = "ru";
 i18n.enableFallback = true; // Missing keys fall back to ru.json
 
-export type AppLocale = "ru" | "en";
+export type AppLocale = "ru" | "en" | "he";
 
 export function normalizeAppLocale(
   locale: string | null | undefined,
 ): AppLocale {
+  if (locale?.startsWith("he")) return "he";
   return locale?.startsWith("en") ? "en" : "ru";
 }
 

@@ -613,7 +613,7 @@ export default function App() {
         appSettings.tinyFactsMinMinutes === 10
           ? appSettings.tinyFactsMinMinutes
           : 5;
-      const cooldownMs = minutes * 60 * 1;
+      const cooldownMs = minutes * 60 * 1000;
       const lastShown = Number.isFinite(tinyFactLastShownRef.current)
         ? tinyFactLastShownRef.current
         : 0;

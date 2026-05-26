@@ -469,15 +469,21 @@ function SettingRow({
   children,
   danger,
 }: {
-  label: string;
+  label: React.ReactNode;
   sublabel?: string;
   children: React.ReactNode;
   danger?: boolean;
 }) {
+  const labelNode =
+    typeof label === "string" ? (
+      <Text style={[u.rowLabel, danger && { color: C.red }]}>{label}</Text>
+    ) : (
+      label
+    );
   return (
     <View style={u.row}>
       <View style={u.rowLabels}>
-        <Text style={[u.rowLabel, danger && { color: C.red }]}>{label}</Text>
+        {labelNode}
         {sublabel ? <Text style={u.rowSublabel}>{sublabel}</Text> : null}
       </View>
       <View style={u.rowControl}>{children}</View>
@@ -497,20 +503,32 @@ function PillSelector<T extends string>({
   options,
   value,
   onChange,
+  compact = false,
 }: {
   options: { label: string; value: T }[];
   value: T;
   onChange: (v: T) => void;
+  compact?: boolean;
 }) {
   return (
-    <View style={u.pillRow}>
+    <View style={[u.pillRow, compact && u.pillRowCompact]}>
       {options.map((o) => (
         <TouchableOpacity
           key={o.value}
-          style={[u.pill, o.value === value && u.pillActive]}
+          style={[
+            u.pill,
+            compact && u.pillCompact,
+            o.value === value && u.pillActive,
+          ]}
           onPress={() => onChange(o.value)}
         >
-          <Text style={[u.pillTxt, o.value === value && u.pillTxtActive]}>
+          <Text
+            style={[
+              u.pillTxt,
+              compact && u.pillTxtCompact,
+              o.value === value && u.pillTxtActive,
+            ]}
+          >
             {o.label}
           </Text>
         </TouchableOpacity>
@@ -1058,6 +1076,13 @@ function BuddySection({
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
+  function showTinyFactsHint() {
+    Alert.alert(
+      t("settings.facts_hint_title"),
+      t("settings.facts_hint_body"),
+    );
+  }
+
   return (
     <View>
       <SectionHeader title={t("settings.buddy_section")} icon="🐻" />
@@ -1143,32 +1168,44 @@ function BuddySection({
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
-          <Divider />
-          <SettingRow
-            label={t("settings.age_profile_label")}
-            sublabel={t("settings.age_profile_sub")}
-          >
-            <View style={{ minWidth: 120 }}>
-              <PillSelector
-                options={[
-                  { label: t("settings.age_auto"), value: "auto" },
-                  { label: t("settings.age_little"), value: "little" },
-                  { label: t("settings.age_middle"), value: "middle" },
-                  { label: t("settings.age_teen"), value: "teen" },
-                ]}
-                value={settings.ageProfileOverride ?? "auto"}
-                onChange={(v) =>
-                  onChange({
-                    ageProfileOverride: v as AppSettings["ageProfileOverride"],
-                  })
-                }
-              />
-            </View>
-          </SettingRow>
         </SettingRow>
         <Divider />
         <SettingRow
-          label={t("settings.facts_soon")}
+          label={t("settings.age_profile_label")}
+          sublabel={t("settings.age_profile_sub")}
+        >
+          <View>
+            <PillSelector
+              compact
+              options={[
+                { label: t("settings.age_auto"), value: "auto" },
+                { label: t("settings.age_little"), value: "little" },
+                { label: t("settings.age_middle"), value: "middle" },
+                { label: t("settings.age_teen"), value: "teen" },
+              ]}
+              value={settings.ageProfileOverride ?? "auto"}
+              onChange={(v) =>
+                onChange({
+                  ageProfileOverride: v as AppSettings["ageProfileOverride"],
+                })
+              }
+            />
+          </View>
+        </SettingRow>
+        <Divider />
+        <SettingRow
+          label={
+            <View style={u.rowLabelWithInfo}>
+              <Text style={u.rowLabel}>{t("settings.facts_soon")}</Text>
+              <TouchableOpacity
+                style={u.infoDot}
+                onPress={showTinyFactsHint}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={u.infoDotTxt}>i</Text>
+              </TouchableOpacity>
+            </View>
+          }
           sublabel={t("settings.facts_soon_sub")}
         >
           <Switch
@@ -1183,8 +1220,9 @@ function BuddySection({
           label={t("settings.facts_min_gap")}
           sublabel={t("settings.facts_min_gap_sub")}
         >
-          <View style={{ minWidth: 180 }}>
+          <View>
             <PillSelector
+              compact
               options={[
                 { label: "1m", value: "1" },
                 { label: "2m", value: "2" },
@@ -3103,9 +3141,21 @@ const u = StyleSheet.create({
 
   // Row
   row: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12 },
-  rowLabels: { flex: 1 },
+  rowLabels: { flex: 1, minWidth: 0 },
   rowLabel: { fontSize: 14, fontWeight: "500", color: C.text },
   rowSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 17 },
+  rowLabelWithInfo: { flexDirection: "row", alignItems: "center", gap: 6 },
+  infoDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: C.muted,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  infoDotTxt: { fontSize: 10, color: C.muted, fontWeight: "700" },
   creditsText: {
     fontSize: 12,
     color: C.muted,
@@ -3160,6 +3210,11 @@ const u = StyleSheet.create({
     padding: 14,
     paddingTop: 8,
   },
+  pillRowCompact: {
+    flexWrap: "nowrap",
+    padding: 0,
+    gap: 4,
+  },
   pill: {
     paddingVertical: 6,
     paddingHorizontal: 14,
@@ -3170,6 +3225,8 @@ const u = StyleSheet.create({
   },
   pillActive: { backgroundColor: C.green, borderColor: C.green },
   pillTxt: { fontSize: 13, color: C.muted, fontWeight: "500" },
+  pillCompact: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 14 },
+  pillTxtCompact: { fontSize: 11 },
   pillTxtActive: { color: C.white },
 
   // Stepper

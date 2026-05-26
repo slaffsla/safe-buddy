@@ -657,10 +657,13 @@ export default function App() {
     flashBuddyMood,
   ]);
 
-  function triggerCelebrateConfetti() {
+  function triggerCelebrateConfetti(elevatedMood: BuddyMood = "excited") {
     if (celebrateConfettiTimer.current) {
       clearTimeout(celebrateConfettiTimer.current);
     }
+    // Ensure confetti is paired with a visible mood lift, then naturally
+    // fall back through the existing transient mood cooldown path.
+    flashBuddyMood(elevatedMood, 3800);
     setCelebrateConfettiKey((n) => n + 1);
     setShowCelebrateConfetti(true);
     celebrateConfettiTimer.current = setTimeout(() => {
@@ -701,7 +704,7 @@ export default function App() {
     ).catch(console.log);
     flashBuddyMood(completionMood);
     if (shouldShowConfetti(newTotal) || veryExcited) {
-      triggerCelebrateConfetti();
+      triggerCelebrateConfetti(veryExcited ? "very-excited" : "excited");
     }
     setScreen("celebrate");
   }

@@ -24,30 +24,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
-import DayScreen from "./_DayScreen";
-import {
-  DemoCompleteScreen,
-  DemoIntroScreen,
-  DemoStepScreen,
-} from "./_DemoScreens";
-import HomeScreen from "./_HomeScreen";
-import { incrementLocalUsage } from "./_localUsage";
-import {
-  ActiveScreen,
-  CelebrateScreen,
-  MissionPickScreen,
-  RewardsScreen,
-} from "./_MissionScreens";
-import MorningRoutineScreen from "./_MorningRoutineScreen";
-import ParentOnboarding from "./_ParentOnboarding";
-import SettingsScreen, {
-  AppSettings,
-  DEFAULT_SETTINGS,
-  loadSettings,
-  RotationFrequency,
-  saveSettings,
-} from "./_SettingsScreen";
-import { Confetti, ProgressBar, T } from "./_SharedUI";
 import {
   AgeProfile,
   BuddyMood,
@@ -79,6 +55,30 @@ import {
   shouldShowMorning,
   todayStr,
 } from "./_constants";
+import DayScreen from "./_DayScreen";
+import {
+  DemoCompleteScreen,
+  DemoIntroScreen,
+  DemoStepScreen,
+} from "./_DemoScreens";
+import HomeScreen from "./_HomeScreen";
+import { incrementLocalUsage } from "./_localUsage";
+import {
+  ActiveScreen,
+  CelebrateScreen,
+  MissionPickScreen,
+  RewardsScreen,
+} from "./_MissionScreens";
+import MorningRoutineScreen from "./_MorningRoutineScreen";
+import ParentOnboarding from "./_ParentOnboarding";
+import SettingsScreen, {
+  AppSettings,
+  DEFAULT_SETTINGS,
+  loadSettings,
+  RotationFrequency,
+  saveSettings,
+} from "./_SettingsScreen";
+import { Confetti, ProgressBar, T } from "./_SharedUI";
 import { getTtsLanguage, t } from "./i18n";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -132,7 +132,7 @@ const K = {
 const TINY_FACT_COOLDOWN_MS = 5 * 60 * 1000;
 const TINY_FACT_IDLE_MIN_MS = 2000;
 const TINY_FACT_IDLE_JITTER_MS = 3000;
-const TINY_FACT_VISIBLE_MS = 6500;
+const TINY_FACT_VISIBLE_MS = 8000;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -946,6 +946,8 @@ export default function App() {
     completedToday === 0 &&
     nowMinutes < 12 * 60 &&
     nowMinutes >= (reminderMinutes ?? 8 * 60);
+  const overlayBuddySize = PROFILE_CONFIGS[ageProfile].buddySize;
+  const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);
 
   if (showMorning) {
     return (
@@ -1041,9 +1043,7 @@ export default function App() {
           scheduleEnabled={appSettings.scheduleEnabled}
           onOpenDay={() => setScreen("day")}
           onBreathing={
-            appSettings.breathingEnabled
-              ? openBreathingScreen
-              : undefined
+            appSettings.breathingEnabled ? openBreathingScreen : undefined
           }
           showMorningNudge={showMorningNudge}
           onMorningNudge={() => {
@@ -1156,20 +1156,31 @@ export default function App() {
         showGlobalBuddy && (
           <View style={s.topOverlay} pointerEvents="box-none">
             <View style={s.topOverlayContent}>
-              <Buddy
-                mood={fixedOverlayMood}
-                speak={speak}
-                size={PROFILE_CONFIGS[ageProfile].buddySize}
-                celebrate={fixedOverlayCelebrate}
-              />
-              {screen === "active" && tinyFactBubble && (
-                <View style={s.tinyFactBubble}>
-                  <T style={s.tinyFactText} speak={speak}>
-                    {`💡 ${tinyFactBubble}`}
-                  </T>
-                  <View style={s.tinyFactTail} />
-                </View>
-              )}
+              <View
+                style={[
+                  s.buddyBubbleWrap,
+                  {
+                    minHeight:
+                      overlayBuddySize +
+                      (screen === "active" && tinyFactBubble ? 70 : 10),
+                  },
+                ]}
+              >
+                <Buddy
+                  mood={fixedOverlayMood}
+                  speak={speak}
+                  size={overlayBuddySize}
+                  celebrate={fixedOverlayCelebrate}
+                />
+                {screen === "active" && tinyFactBubble && (
+                  <View style={[s.tinyFactBubble, { top: tinyFactBubbleTop }]}>
+                    <T style={s.tinyFactText} speak={speak}>
+                      {`💡 ${tinyFactBubble}`}
+                    </T>
+                    <View style={s.tinyFactTail} />
+                  </View>
+                )}
+              </View>
               <ProgressBar total={totalEver} speak={speak} />
             </View>
           </View>
@@ -1278,32 +1289,41 @@ const s = StyleSheet.create({
     paddingBottom: 8,
     pointerEvents: "auto",
   },
-  tinyFactBubble: {
+  buddyBubbleWrap: {
     width: "100%",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    position: "relative",
+    marginBottom: 6,
+  },
+  tinyFactBubble: {
+    position: "absolute",
+    left: "50%",
+    width: "46%",
     backgroundColor: "#FFFDF9",
-    borderRadius: 16,
+    borderRadius: 24,
     borderWidth: 0.5,
     borderColor: "#DED8CE",
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginTop: 4,
-    marginBottom: 10,
+    paddingHorizontal: 14,
+    minHeight: 52,
+    justifyContent: "center",
   },
   tinyFactText: {
     fontSize: 12,
     color: C.text,
     lineHeight: 17,
-    textAlign: "center",
+    textAlign: "left",
   },
   tinyFactTail: {
     position: "absolute",
-    top: -6,
-    alignSelf: "center",
-    width: 12,
-    height: 12,
+    left: -7,
+    top: 28,
+    width: 13,
+    height: 13,
     backgroundColor: "#FFFDF9",
     borderLeftWidth: 0.5,
-    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
     borderColor: "#DED8CE",
     transform: [{ rotate: "45deg" }],
   },

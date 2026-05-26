@@ -1916,7 +1916,7 @@ function CreditsSection() {
 function FeedbackSection() {
   async function openFeedbackEmail() {
     incrementLocalUsage("feedbackTapped").catch(console.log);
-    const email = "slasla@gmail.com";
+    const email = "buddy@realokids.com";
     const subject = encodeURIComponent(t("settings.feedback_email_subject"));
     const body = encodeURIComponent(t("settings.feedback_email_body"));
     const url = `mailto:${email}?subject=${subject}&body=${body}`;

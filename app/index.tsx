@@ -292,7 +292,6 @@ export default function App() {
   const [childName, setChildName] = useState("");
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [childAge, setChildAge] = useState(7);
-  const [ageProfile, setAgeProfile] = useState<AgeProfile>("little");
 
   // PIN
   const [parentPin, setParentPin] = useState("");
@@ -319,6 +318,10 @@ export default function App() {
   );
 
   const speak = useSpeech(ttsEnabled);
+  const ageProfile: AgeProfile =
+    appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
+      ? appSettings.ageProfileOverride
+      : getAgeProfile(childAge);
 
   const fixedOverlayMood = useMemo(() => {
     if (transientMood) return transientMood;
@@ -412,7 +415,6 @@ export default function App() {
         setParentPin(v[K.PARENT_PIN] || "");
         const age = v[K.CHILD_AGE] ? parseInt(v[K.CHILD_AGE], 10) : 7;
         setChildAge(age);
-        setAgeProfile(getAgeProfile(age));
         tinyFactLastShownRef.current = v[K.TINY_FACT_LAST_SHOWN]
           ? parseInt(v[K.TINY_FACT_LAST_SHOWN], 10)
           : 0;
@@ -508,7 +510,6 @@ export default function App() {
         [K.CHILD_AGE, String(childAge)],
         [K.ONBOARDING_DONE, "true"],
       ]);
-      setAgeProfile(getAgeProfile(childAge));
       setChildName(name);
       setOnboardingDone(true);
       speak(t("onboarding.welcome_greeting", { name }));
@@ -606,12 +607,18 @@ export default function App() {
     }
 
     function scheduleFact() {
-      const minutes =
-        appSettings.tinyFactsMinMinutes === 1 ||
-        appSettings.tinyFactsMinMinutes === 2 ||
-        appSettings.tinyFactsMinMinutes === 5 ||
-        appSettings.tinyFactsMinMinutes === 10
+      const profileDefaultMinutes: 1 | 2 | 5 | 10 =
+        ageProfile === "little" ? 10 : ageProfile === "teen" ? 2 : 5;
+      const effectiveMinutes =
+        appSettings.tinyFactsMinMinutesManual === true
           ? appSettings.tinyFactsMinMinutes
+          : profileDefaultMinutes;
+      const minutes =
+        effectiveMinutes === 1 ||
+        effectiveMinutes === 2 ||
+        effectiveMinutes === 5 ||
+        effectiveMinutes === 10
+          ? effectiveMinutes
           : 5;
       const cooldownMs = minutes * 60 * 1000;
       const lastShown = Number.isFinite(tinyFactLastShownRef.current)
@@ -654,7 +661,9 @@ export default function App() {
     mission,
     appSettings.tinyFactsEnabled,
     appSettings.tinyFactsMinMinutes,
+    appSettings.tinyFactsMinMinutesManual,
     flashBuddyMood,
+    ageProfile,
   ]);
 
   function triggerCelebrateConfetti(elevatedMood: BuddyMood = "excited") {

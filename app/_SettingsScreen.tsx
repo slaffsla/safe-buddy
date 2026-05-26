@@ -117,6 +117,7 @@ export interface AppSettings {
   nudgingEnabled: boolean; // daily suggestion card
   tinyFactsEnabled: boolean; // tiny facts during missions (V1.5)
   tinyFactsMinMinutes: 1 | 2 | 5 | 10; // min delay between fact bubbles
+  tinyFactsMinMinutesManual: boolean; // true once parent explicitly picks interval
   breathingEnabled: boolean; // relax with buddy button (V1.5)
   breathingMusicEnabled: boolean; // ambient music during breathing sessions
   breathingGuidanceEnabled: boolean; // spoken breathing phase prompts
@@ -181,6 +182,7 @@ function buildDefaultSettings(): AppSettings {
     nudgingEnabled: true,
     tinyFactsEnabled: false,
     tinyFactsMinMinutes: 5,
+    tinyFactsMinMinutesManual: false,
     breathingEnabled: true,
     breathingMusicEnabled: true,
     breathingGuidanceEnabled: true,
@@ -339,6 +341,14 @@ export async function loadSettings(): Promise<AppSettings> {
         legacyParsed.scheduleItems.length > 0
       ) {
         merged.scheduleBlocks = legacyParsed.scheduleItems;
+      }
+      // Migration: if interval exists from older builds but manual flag
+      // doesn't, treat it as an explicit parent choice.
+      if (
+        typeof parsed.tinyFactsMinMinutes !== "undefined" &&
+        typeof parsed.tinyFactsMinMinutesManual === "undefined"
+      ) {
+        merged.tinyFactsMinMinutesManual = true;
       }
 
       return merged;
@@ -1233,6 +1243,7 @@ function BuddySection({
               onChange={(v) =>
                 onChange({
                   tinyFactsMinMinutes: parseInt(v, 10) as 1 | 2 | 5 | 10,
+                  tinyFactsMinMinutesManual: true,
                 })
               }
             />

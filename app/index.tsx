@@ -613,14 +613,12 @@ export default function App() {
         appSettings.tinyFactsMinMinutes === 10
           ? appSettings.tinyFactsMinMinutes
           : 5;
-      const cooldownMs = minutes * 60 * 1000;
+      const cooldownMs = minutes * 60 * 1;
       const lastShown = Number.isFinite(tinyFactLastShownRef.current)
         ? tinyFactLastShownRef.current
         : 0;
       const cooldownRemaining =
-        lastShown > 0
-          ? Math.max(0, cooldownMs - (Date.now() - lastShown))
-          : 0;
+        lastShown > 0 ? Math.max(0, cooldownMs - (Date.now() - lastShown)) : 0;
       const idleDelay =
         TINY_FACT_IDLE_MIN_MS +
         Math.round(Math.random() * TINY_FACT_IDLE_JITTER_MS);
@@ -1311,27 +1309,27 @@ const s = StyleSheet.create({
   },
   tinyFactBubble: {
     position: "absolute",
-    left: "50%",
-    width: "46%",
+    left: "56%",
+    width: "47%",
     backgroundColor: "#FFFDF9",
-    borderRadius: 24,
+    borderRadius: 14,
     borderWidth: 0.5,
     borderColor: "#DED8CE",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    minHeight: 52,
+    paddingVertical: 7,
+    paddingHorizontal: 7,
+    minHeight: 46,
     justifyContent: "center",
   },
   tinyFactText: {
-    fontSize: 12,
+    fontSize: 11,
     color: C.text,
-    lineHeight: 17,
+    lineHeight: 16,
     textAlign: "left",
   },
   tinyFactTail: {
     position: "absolute",
     left: -7,
-    top: 28,
+    top: 16,
     width: 13,
     height: 13,
     backgroundColor: "#FFFDF9",

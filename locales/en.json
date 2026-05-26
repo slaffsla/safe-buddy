@@ -410,6 +410,8 @@
     "age_teen": "Teen",
     "facts_soon": "Fun facts",
     "facts_soon_sub": "Buddy shares small facts during missions",
+    "facts_min_gap": "Facts minimum interval",
+    "facts_min_gap_sub": "Minimum minutes between fact bubbles",
     "breathing_label": "Breathing exercises",
     "breathing_sub": "Relax with Buddy",
     "profile_section": "Child profile",

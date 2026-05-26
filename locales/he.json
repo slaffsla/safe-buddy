@@ -409,6 +409,8 @@
     "age_teen": "מתבגר",
     "facts_soon": "עובדות קצרות",
     "facts_soon_sub": "באדי משתף עובדות קטנות בזמן משימות",
+    "facts_min_gap": "מרווח מינימלי בין עובדות",
+    "facts_min_gap_sub": "מינימום דקות בין בועות עובדות",
     "breathing_label": "תרגילי נשימה",
     "breathing_sub": "להירגע עם באדי",
     "profile_section": "פרופיל ילד/ה",

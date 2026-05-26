@@ -129,7 +129,6 @@ const K = {
   TINY_FACT_LAST_SHOWN: "sb_tiny_fact_last_shown",
 };
 
-const TINY_FACT_COOLDOWN_MS = 5 * 60 * 1000;
 const TINY_FACT_IDLE_MIN_MS = 2000;
 const TINY_FACT_IDLE_JITTER_MS = 3000;
 const TINY_FACT_VISIBLE_MS = 8000;
@@ -607,12 +606,20 @@ export default function App() {
     }
 
     function scheduleFact() {
+      const minutes =
+        appSettings.tinyFactsMinMinutes === 1 ||
+        appSettings.tinyFactsMinMinutes === 2 ||
+        appSettings.tinyFactsMinMinutes === 5 ||
+        appSettings.tinyFactsMinMinutes === 10
+          ? appSettings.tinyFactsMinMinutes
+          : 5;
+      const cooldownMs = minutes * 60 * 1000;
       const lastShown = Number.isFinite(tinyFactLastShownRef.current)
         ? tinyFactLastShownRef.current
         : 0;
       const cooldownRemaining =
         lastShown > 0
-          ? Math.max(0, TINY_FACT_COOLDOWN_MS - (Date.now() - lastShown))
+          ? Math.max(0, cooldownMs - (Date.now() - lastShown))
           : 0;
       const idleDelay =
         TINY_FACT_IDLE_MIN_MS +
@@ -644,7 +651,13 @@ export default function App() {
       if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
       if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
     };
-  }, [screen, mission, appSettings.tinyFactsEnabled, flashBuddyMood]);
+  }, [
+    screen,
+    mission,
+    appSettings.tinyFactsEnabled,
+    appSettings.tinyFactsMinMinutes,
+    flashBuddyMood,
+  ]);
 
   function triggerCelebrateConfetti() {
     if (celebrateConfettiTimer.current) {

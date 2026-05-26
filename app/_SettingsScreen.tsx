@@ -116,6 +116,7 @@ export interface AppSettings {
   // Buddy behavior
   nudgingEnabled: boolean; // daily suggestion card
   tinyFactsEnabled: boolean; // tiny facts during missions (V1.5)
+  tinyFactsMinMinutes: 1 | 2 | 5 | 10; // min delay between fact bubbles
   breathingEnabled: boolean; // relax with buddy button (V1.5)
   breathingMusicEnabled: boolean; // ambient music during breathing sessions
   breathingGuidanceEnabled: boolean; // spoken breathing phase prompts
@@ -179,6 +180,7 @@ function buildDefaultSettings(): AppSettings {
     controlLevel: "balanced",
     nudgingEnabled: true,
     tinyFactsEnabled: false,
+    tinyFactsMinMinutes: 5,
     breathingEnabled: true,
     breathingMusicEnabled: true,
     breathingGuidanceEnabled: true,
@@ -1175,6 +1177,28 @@ function BuddySection({
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />
+        </SettingRow>
+        <Divider />
+        <SettingRow
+          label={t("settings.facts_min_gap")}
+          sublabel={t("settings.facts_min_gap_sub")}
+        >
+          <View style={{ minWidth: 180 }}>
+            <PillSelector
+              options={[
+                { label: "1m", value: "1" },
+                { label: "2m", value: "2" },
+                { label: "5m", value: "5" },
+                { label: "10m", value: "10" },
+              ]}
+              value={String(settings.tinyFactsMinMinutes ?? 5)}
+              onChange={(v) =>
+                onChange({
+                  tinyFactsMinMinutes: parseInt(v, 10) as 1 | 2 | 5 | 10,
+                })
+              }
+            />
+          </View>
         </SettingRow>
         <Divider />
         <SettingRow

@@ -40,6 +40,8 @@ interface HomeScreenProps {
   scheduleEnabled?: boolean;
   onOpenDay?: () => void;
   onBreathing?: () => void;
+  showMorningNudge?: boolean;
+  onMorningNudge?: () => void;
 }
 
 export default function HomeScreen({
@@ -62,6 +64,8 @@ export default function HomeScreen({
   scheduleEnabled,
   onOpenDay,
   onBreathing,
+  showMorningNudge,
+  onMorningNudge,
 }: HomeScreenProps) {
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [idleMsg] = useState(() =>
@@ -95,6 +99,20 @@ export default function HomeScreen({
       <T style={s.msg} speak={speak}>
         {idleMsg}
       </T>
+      {showMorningNudge && (
+        <TouchableOpacity
+          style={s.morningNudgeCard}
+          onPress={onMorningNudge}
+          activeOpacity={0.85}
+        >
+          <Text style={s.morningNudgeIcon}>🌅</Text>
+          <View style={s.morningNudgeContent}>
+            <Text style={s.morningNudgeTitle}>{t("home.morning_nudge_title")}</Text>
+            <Text style={s.morningNudgeText}>{t("home.morning_nudge_sub")}</Text>
+          </View>
+          <Text style={s.morningNudgeCta}>{t("home.morning_nudge_cta")}</Text>
+        </TouchableOpacity>
+      )}
       {showSuggestion && (
         <DailySuggestion
           suggestion={suggestion}
@@ -211,6 +229,36 @@ const s = StyleSheet.create({
     marginVertical: 8,
     lineHeight: 25,
     paddingHorizontal: 8,
+  },
+  morningNudgeCard: {
+    width: "100%",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  morningNudgeIcon: { fontSize: 22 },
+  morningNudgeContent: { flex: 1 },
+  morningNudgeTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: C.text,
+    marginBottom: 2,
+  },
+  morningNudgeText: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 17,
+  },
+  morningNudgeCta: {
+    fontSize: 13,
+    color: C.green,
+    fontWeight: "700",
   },
   btnPrimary: {
     backgroundColor: C.green,

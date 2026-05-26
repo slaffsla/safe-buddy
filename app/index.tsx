@@ -143,6 +143,12 @@ function getRotationSeed(freq: RotationFrequency) {
   return dayIndex;
 }
 
+function parseTimeToMinutes(hhmm: string): number | null {
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(hhmm);
+  if (!m) return null;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+
 // ── TTS ───────────────────────────────────────────────────────────────────────
 
 function ttsLanguagePrefix(tag: string): string {
@@ -915,6 +921,14 @@ export default function App() {
   const nextBlock = appSettings.scheduleEnabled
     ? getNextBlock(appSettings.scheduleBlocks, isWeekendDay)
     : null;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const reminderMinutes = parseTimeToMinutes(appSettings.morningReminderTime);
+  const showMorningNudge =
+    appSettings.morningReminderEnabled &&
+    completedToday === 0 &&
+    nowMinutes < 12 * 60 &&
+    nowMinutes >= (reminderMinutes ?? 8 * 60);
 
   if (showMorning) {
     return (
@@ -1014,6 +1028,11 @@ export default function App() {
               ? openBreathingScreen
               : undefined
           }
+          showMorningNudge={showMorningNudge}
+          onMorningNudge={() => {
+            speak(t("home.morning_nudge_speak"));
+            setScreen("pick");
+          }}
         />
       )}
 

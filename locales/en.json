@@ -448,7 +448,7 @@
     "feedback_section": "Feedback",
     "feedback_body": "Buddy is still young. Tell us what would make it work better for your family.",
     "feedback_button": "Tell us what Buddy should do next",
-    "feedback_email_subject": "SafeBuddy feedback",
+    "feedback_email_subject": "RealoKids feedback",
     "feedback_email_body": "Hi, I wanted to share this about Buddy:\n\n",
     "feedback_email_error_title": "Could not open email",
     "feedback_email_error_msg": "Please email {{email}} directly.",

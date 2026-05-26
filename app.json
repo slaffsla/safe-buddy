@@ -1,22 +1,24 @@
 {
   "expo": {
-    "name": "SafeBuddy",
-    "slug": "safe-buddy",
+    "name": "RealoKids",
+    "slug": "realokids",
     "version": "1.0.0",
     "icon": "./assets/Character/buddy-happy.png",
-    "scheme": "safebuddy",
+    "scheme": "realokids",
     "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/Character/buddy-happy.png",
         "backgroundColor": "#F7F6F2"
       },
-      "package": "com.slaff.safebuddy"
+      "package": "com.slaff.realokids",
+      "versionCode": 1
     },
     "ios": {
       "icon": "./assets/Character/buddy-happy.png",
       "supportsTablet": true,
-      "bundleIdentifier": "com.slaff.safebuddy"
+      "bundleIdentifier": "com.slaff.realokids",
+      "buildNumber": "1"
     },
     "web": {
       "output": "static",
@@ -42,16 +44,10 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "aed5fa10-e8e4-451a-8bed-3371c14235a5"
-      }
+      "router": {}
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/78ab1b33-4629-4e73-9213-6a89efe7baae"
     },
     "owner": "slaff"
   }

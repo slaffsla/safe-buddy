@@ -23,13 +23,13 @@ import {
   Animated,
   Dimensions,
   Easing,
-  Image as RNImage,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { BUDDY_FIXED_SPACER, C, getBuddyImage } from "./_constants";
+import Buddy from "./_Buddy";
+import { BUDDY_FIXED_SPACER, C } from "./_constants";
 import { RtlChildSex, t, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -45,9 +45,16 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
   { labelKey: "breathing.phase_hold", duration: 1000, target: 1.0 },
   { labelKey: "breathing.phase_out", duration: 4000, target: 0.55 },
 ];
+const EXHALE_PET_MULTIPLIER = 1.15;
 const GUIDANCE_FULL_CYCLES = 3;
 const GUIDANCE_SOFT_CYCLES = 1;
 const GUIDANCE_SOFT_VOLUME = 0.65;
+const NATURE_FACT_VISIBLE_MS = 6000;
+// Shows around 2:00 in a 3:00 session; for shorter sessions, show near the end.
+const NATURE_FACT_DELAY_MS = Math.min(
+  120000,
+  Math.max(10000, BREATHING_DURATION_MS - 20000),
+);
 const AUDIO_DEBUG = true;
 
 interface Props {
@@ -77,11 +84,20 @@ export default function BreathingScreen({
 }: Props) {
   const [state, setState] = useState<State>("idle");
   const [phaseIdx, setPhaseIdx] = useState(0);
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+  const [isPetting, setIsPetting] = useState(false);
+  const [showNatureFact, setShowNatureFact] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
 
   const buddyScale = useRef(new Animated.Value(0.2)).current;
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const natureFactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const natureFactHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const natureFactShown = useRef(false);
+  const isPettingRef = useRef(false);
   const sessionStart = useRef<number>(0);
   const soundRef = useRef<AudioPlayer | null>(null);
   const soundSubRef = useRef<{ remove: () => void } | null>(null);
@@ -98,6 +114,14 @@ export default function BreathingScreen({
     if (tickRef.current) {
       clearInterval(tickRef.current);
       tickRef.current = null;
+    }
+    if (natureFactTimerRef.current) {
+      clearTimeout(natureFactTimerRef.current);
+      natureFactTimerRef.current = null;
+    }
+    if (natureFactHideTimerRef.current) {
+      clearTimeout(natureFactHideTimerRef.current);
+      natureFactHideTimerRef.current = null;
     }
   }
 
@@ -186,6 +210,13 @@ export default function BreathingScreen({
 
   function runPhase(idx: number) {
     const phase = PHASES[idx];
+    const phaseDuration =
+      idx === 2
+        ? Math.round(
+            phase.duration *
+              (isPettingRef.current ? EXHALE_PET_MULTIPLIER : 1),
+          )
+        : phase.duration;
     const spokenKey =
       idx === 0 && firstInhaleRef.current
         ? "breathing.phase_first_in"
@@ -206,22 +237,28 @@ export default function BreathingScreen({
       }
     }
     guidanceStepRef.current += 1;
+    setCurrentPhaseIndex(idx);
     Animated.timing(buddyScale, {
       toValue: phase.target,
-      duration: phase.duration,
+      duration: phaseDuration,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
     }).start();
     setPhaseIdx(idx);
     phaseTimerRef.current = setTimeout(() => {
       runPhase((idx + 1) % PHASES.length);
-    }, phase.duration);
+    }, phaseDuration);
   }
 
   function startSession() {
     setState("active");
     setElapsedMs(0);
     setPhaseIdx(0);
+    setCurrentPhaseIndex(0);
+    setIsPetting(false);
+    isPettingRef.current = false;
+    setShowNatureFact(false);
+    natureFactShown.current = false;
     firstInhaleRef.current = true;
     guidanceStepRef.current = 0;
     sessionStart.current = Date.now();
@@ -256,6 +293,14 @@ export default function BreathingScreen({
       }
       setElapsedMs(dt);
     }, 200);
+    natureFactTimerRef.current = setTimeout(() => {
+      if (natureFactShown.current) return;
+      natureFactShown.current = true;
+      setShowNatureFact(true);
+      natureFactHideTimerRef.current = setTimeout(() => {
+        setShowNatureFact(false);
+      }, NATURE_FACT_VISIBLE_MS);
+    }, NATURE_FACT_DELAY_MS);
     // start the breath loop
     //    DEL.runPhase(0);
     // best-effort audio
@@ -265,6 +310,9 @@ export default function BreathingScreen({
   function finishSession() {
     clearTimers();
     stopAudio();
+    setIsPetting(false);
+    isPettingRef.current = false;
+    setShowNatureFact(false);
     setState("complete");
     speak(tSpeak("breathing.done_speak", undefined, rtlChildSex));
     onShowOverlay(); // ← restore global Buddy
@@ -280,6 +328,9 @@ export default function BreathingScreen({
   function handleExit() {
     clearTimers();
     stopAudio();
+    setIsPetting(false);
+    isPettingRef.current = false;
+    setShowNatureFact(false);
     onShowOverlay(); // ← restore global Buddy
     onSkip();
   }
@@ -295,6 +346,10 @@ export default function BreathingScreen({
   useEffect(() => {
     guidanceEnabledRef.current = guidanceEnabled;
   }, [guidanceEnabled]);
+
+  useEffect(() => {
+    isPettingRef.current = isPetting;
+  }, [isPetting]);
 
   // ── IDLE ────────────────────────────────────────────────────────────────────
   if (state === "idle") {
@@ -389,17 +444,29 @@ export default function BreathingScreen({
 
       {/* Buddy IS the breathing element — no separate circle */}
       <View style={s.buddyContainer}>
-        <Animated.View
-          style={{ transform: [{ scale: buddyScale }], alignItems: "center" }}
-        >
-          <RNImage
-            source={getBuddyImage("serene")}
-            style={s.buddyBreathing}
-            resizeMode="contain"
-          />
-          <Text style={s.buddyName}>{t("buddy.name")}</Text>
-        </Animated.View>
+        <Buddy
+          mood="serene"
+          speak={speak}
+          size={BUDDY_BASE}
+          phaseScale={buddyScale}
+          pettable={currentPhaseIndex !== 0}
+          onPettingChange={(petting) => {
+            setIsPetting(petting);
+            isPettingRef.current = petting;
+          }}
+        />
       </View>
+      {showNatureFact && (
+        <TouchableOpacity
+          style={s.natureFact}
+          onPress={() => speak(t("tiny_facts.breathing_nature"))}
+          activeOpacity={0.8}
+        >
+          <Text style={s.natureFactText}>
+            🌿 {t("tiny_facts.breathing_nature")}
+          </Text>
+        </TouchableOpacity>
+      )}
       <View style={s.progressTrack}>
         <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
       </View>
@@ -562,23 +629,28 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   celebSub: { fontSize: 17, color: C.text, marginTop: 6, textAlign: "center" },
-
-  buddyBreathing: {
-    width: BUDDY_BASE,
-    height: BUDDY_BASE,
-    backgroundColor: "transparent",
-  },
-  buddyName: {
-    fontSize: 12,
-    color: C.muted,
-    marginTop: 4,
-    fontWeight: "500",
-  },
   buddyContainer: {
     width: BUDDY_BASE * 1.1, // just enough room for scale: 1.0
     height: BUDDY_BASE * 1.1,
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 16,
+    overflow: "visible",
+  },
+  natureFact: {
+    backgroundColor: C.greenLt,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.green,
+    padding: 14,
+    marginTop: 4,
+    width: "100%",
+  },
+  natureFactText: {
+    fontSize: 13,
+    color: C.green,
+    textAlign: "center",
+    lineHeight: 20,
+    fontStyle: "italic",
   },
 });

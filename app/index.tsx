@@ -381,6 +381,7 @@ export default function App() {
   const [pendingReward, setPendingReward] = useState<any>(null);
   const [pendingMissionComplete, setPendingMissionComplete] = useState(false);
   const [pinError, setPinError] = useState("");
+  const [pinFocused, setPinFocused] = useState(false);
 
   // Settings
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -821,6 +822,8 @@ export default function App() {
       setPendingReward(null);
       setPendingMissionComplete(true);
       setEnteredPin("");
+      setPinError("");
+      setPinFocused(false);
       setShowPinScreen(true);
       return;
     }
@@ -861,6 +864,8 @@ export default function App() {
       if (pinEnabled && parentPin) {
         setPendingReward(reward);
         setEnteredPin("");
+        setPinError("");
+        setPinFocused(false);
         setShowPinScreen(true);
       } else {
         redeemReward(reward);
@@ -900,6 +905,7 @@ export default function App() {
       setShowPinScreen(false);
       setEnteredPin("");
       setPinError("");
+      setPinFocused(false);
       if (pendingReward) {
         redeemReward(pendingReward);
         setPendingReward(null);
@@ -911,6 +917,7 @@ export default function App() {
       Alert.alert(t("pinChild.wrong_title"), t("pinChild.wrong_msg"));
       setEnteredPin("");
       setPinError("");
+      setPinFocused(false);
     }
   }
 
@@ -1372,7 +1379,11 @@ export default function App() {
                 </Text>
               )}
               <TextInput
-                style={[s.pinInput, pinError ? s.pinInputError : null]}
+                style={[
+                  s.pinInput,
+                  pinFocused ? s.pinInputFocused : null,
+                  pinError ? s.pinInputError : null,
+                ]}
                 keyboardType="numeric"
                 maxLength={4}
                 secureTextEntry
@@ -1381,10 +1392,18 @@ export default function App() {
                   setEnteredPin(v);
                   if (pinError) setPinError("");
                 }}
-                autoFocus
+                onFocus={() => setPinFocused(true)}
+                onBlur={() => setPinFocused(false)}
                 onSubmitEditing={verifyPin}
               />
-              {!!pinError && <Text style={s.pinErrorText}>{pinError}</Text>}
+              <Text
+                style={[
+                  s.pinErrorText,
+                  !pinError ? s.pinErrorTextHidden : null,
+                ]}
+              >
+                {pinError || " "}
+              </Text>
               <TouchableOpacity style={s.pinConfirm} onPress={verifyPin}>
                 <Text style={s.pinConfirmTxt}>{t("pinChild.confirm")}</Text>
               </TouchableOpacity>
@@ -1394,6 +1413,7 @@ export default function App() {
                   setShowPinScreen(false);
                   setEnteredPin("");
                   setPinError("");
+                  setPinFocused(false);
                   setPendingReward(null);
                   setPendingMissionComplete(false);
                 }}
@@ -1538,7 +1558,7 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.75)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    padding: 12,
     zIndex: 2000,
   },
   pinCard: {
@@ -1547,8 +1567,8 @@ const s = StyleSheet.create({
     paddingVertical: 28,
     paddingHorizontal: 22,
     alignItems: "center",
-    width: "100%",
-    maxWidth: 460,
+    width: "96%",
+    maxWidth: 560,
   },
   pinTitle: { fontSize: 20, fontWeight: "700", color: C.text, marginBottom: 4 },
   pinSub: {
@@ -1567,6 +1587,9 @@ const s = StyleSheet.create({
     borderBottomWidth: 2,
     borderColor: C.border,
     paddingBottom: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: "#FAFBFA",
     color: C.text,
   },
   pinConfirm: {
@@ -1596,15 +1619,24 @@ const s = StyleSheet.create({
   },
   pinCancelTxt: { fontSize: 15, color: C.text, fontWeight: "500" },
   pinInputError: {
-    borderColor: C.red,
+    borderColor: "#E24B4A",
+    backgroundColor: "#FCEBEB",
+  },
+  pinInputFocused: {
+    borderColor: C.green,
+    backgroundColor: "#EAF7F1",
   },
   pinErrorText: {
     alignSelf: "flex-start",
-    marginTop: -8,
-    marginBottom: 12,
+    marginTop: -4,
+    marginBottom: 10,
     fontSize: 12,
-    color: C.red,
+    color: "#E24B4A",
     fontWeight: "500",
+    minHeight: 18,
+  },
+  pinErrorTextHidden: {
+    opacity: 0,
   },
 
   // Progress bar

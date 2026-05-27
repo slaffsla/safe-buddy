@@ -1,7 +1,7 @@
 // _Buddy.tsx — SafeBuddy character component
 // Breathing animation on ambient moods, tap bounce on all moods.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Image,
@@ -24,6 +24,10 @@ interface BuddyProps {
   speak: (t: string) => void;
   size?: number;
   celebrate?: boolean;
+  pettable?: boolean; // enabled only on breathing screen
+  onPettingChange?: (petting: boolean) => void;
+  // Optional external phase scale (used by BreathingScreen to sync phases).
+  phaseScale?: Animated.Value | Animated.AnimatedInterpolation<number>;
   fixed?: boolean; // If true, Buddy stays fixed on screen (absolute positioning)
   fixedBottom?: number; // Distance from bottom when fixed (default: 180)
   fixedTop?: number; // Distance from top when fixed
@@ -34,17 +38,32 @@ export default function Buddy({
   speak,
   size = 130,
   celebrate = false,
+  pettable = false,
+  onPettingChange,
+  phaseScale,
   fixed = false,
   fixedBottom,
   fixedTop = 90,
 }: BuddyProps) {
   const tapScale = useRef(new Animated.Value(1)).current;
   const breathScale = useRef(new Animated.Value(1)).current;
+  const pettingScale = useRef(new Animated.Value(1)).current;
   const breathAnim = useRef<Animated.CompositeAnimation | null>(null);
+  const [isPetting, setIsPetting] = useState(false);
+  const [showHearts, setShowHearts] = useState(false);
+  const heartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pettableRef = useRef(pettable);
+  const onPettingChangeRef = useRef(onPettingChange);
 
   const isAmbient = isAmbientMood(mood);
+  const activePhaseScale = phaseScale ?? breathScale;
 
   useEffect(() => {
+    if (phaseScale) {
+      breathAnim.current?.stop();
+      breathScale.setValue(1);
+      return;
+    }
     if (isAmbient) {
       breathAnim.current = Animated.loop(
         Animated.sequence([
@@ -68,7 +87,7 @@ export default function Buddy({
     return () => {
       breathAnim.current?.stop();
     };
-  }, [breathScale, isAmbient]);
+  }, [breathScale, isAmbient, phaseScale]);
 
   useEffect(() => {
     if (!celebrate) return;
@@ -96,7 +115,63 @@ export default function Buddy({
     ]).start();
   }, [celebrate, tapScale]);
 
+  useEffect(() => {
+    return () => {
+      if (heartTimeout.current) clearTimeout(heartTimeout.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    pettableRef.current = pettable;
+  }, [pettable]);
+
+  useEffect(() => {
+    onPettingChangeRef.current = onPettingChange;
+  }, [onPettingChange]);
+
+  useEffect(() => {
+    if (pettable) return;
+    setIsPetting(false);
+    setShowHearts(false);
+    onPettingChangeRef.current?.(false);
+    if (heartTimeout.current) clearTimeout(heartTimeout.current);
+    Animated.spring(pettingScale, {
+      toValue: 1,
+      friction: 6,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }, [pettable, pettingScale]);
+
+  function startPetting() {
+    if (!pettableRef.current) return;
+    if (heartTimeout.current) clearTimeout(heartTimeout.current);
+    setIsPetting(true);
+    onPettingChangeRef.current?.(true);
+    setShowHearts(true);
+    Animated.spring(pettingScale, {
+      toValue: 1.08,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  function endPetting() {
+    if (!isPetting && !showHearts) return;
+    setIsPetting(false);
+    onPettingChangeRef.current?.(false);
+    Animated.spring(pettingScale, {
+      toValue: 1,
+      friction: 6,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+    heartTimeout.current = setTimeout(() => setShowHearts(false), 1200);
+  }
+
   function handlePress() {
+    if (pettable || isPetting) return;
     Animated.sequence([
       Animated.timing(tapScale, {
         toValue: 1.12,
@@ -114,31 +189,51 @@ export default function Buddy({
 
   const image = getBuddyImage(mood);
   const buddyContent = (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={1}
-      style={[s.buddyWrapper]}
-    >
-      <Animated.View
-        style={[
-          s.buddyAnimated,
-          {
-            transform: [{ scale: Animated.multiply(tapScale, breathScale) }],
-          },
-        ]}
+    <View>
+      <TouchableOpacity
+        onPress={handlePress}
+        onPressIn={startPetting}
+        onPressOut={endPetting}
+        activeOpacity={1}
+        style={s.buddyWrapper}
       >
-        <Image
-          source={image}
-          style={{
-            width: size,
-            height: size,
-            backgroundColor: "transparent",
-          }}
-          resizeMode="contain"
-        />
-      </Animated.View>
+        <Animated.View
+          style={[
+            s.buddyAnimated,
+            {
+              transform: [
+                {
+                  scale: Animated.multiply(
+                    Animated.multiply(tapScale, activePhaseScale),
+                    pettingScale,
+                  ),
+                },
+              ],
+            },
+          ]}
+        >
+          <Image
+            source={image}
+            style={{
+              width: size,
+              height: size,
+              backgroundColor: "transparent",
+            }}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      </TouchableOpacity>
+
       <Text style={s.buddyName}>{t("buddy.name")}</Text>
-    </TouchableOpacity>
+
+      {pettable && showHearts && (
+        <View style={s.heartsContainer} pointerEvents="none">
+          <FloatingHeart delay={0} />
+          <FloatingHeart delay={300} />
+          <FloatingHeart delay={600} />
+        </View>
+      )}
+    </View>
   );
 
   // If fixed mode is enabled, render Buddy in a fixed position overlay
@@ -158,6 +253,42 @@ export default function Buddy({
   return buddyContent;
 }
 
+function FloatingHeart({ delay }: { delay: number }) {
+  const translateY = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: -48,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]),
+    ]).start();
+  }, [delay, opacity, translateY]);
+
+  return (
+    <Animated.Text style={[s.heart, { transform: [{ translateY }], opacity }]}>
+      ♡
+    </Animated.Text>
+  );
+}
+
 const s = StyleSheet.create({
   buddyFixedContainer: {
     position: "absolute",
@@ -175,4 +306,17 @@ const s = StyleSheet.create({
   },
   buddyAnimated: { alignItems: "center" },
   buddyName: { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: "500" },
+  heartsContainer: {
+    position: "absolute",
+    top: 12,
+    right: -6,
+    width: 44,
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  heart: {
+    position: "absolute",
+    fontSize: 20,
+    color: "#FF8FAB",
+  },
 });

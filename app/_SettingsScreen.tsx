@@ -1840,36 +1840,36 @@ function ScheduleSection({
                   </View>
                 </View>
               ) : (
-                <View style={{ padding: 4 }}>
-                  <View style={u.row}>
-                    <Text style={{ fontSize: 22, marginRight: 10 }}>
+                <View style={u.scheduleItemWrap}>
+                  <View style={u.scheduleMainRow}>
+                    <Text style={u.scheduleEmoji}>
                       {it.emoji}
                     </Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={u.rowLabel}>
+                      <Text style={u.scheduleLabel}>
                         {getScheduleTitle(it.id, it.title)}
                       </Text>
-                      <Text style={u.rowSublabel}>
+                      <Text style={u.scheduleSublabel}>
                         {it.startTime} — {it.endTime}
                       </Text>
                     </View>
                     <TouchableOpacity
-                      style={u.linkBtn}
+                      style={u.scheduleLinkBtn}
                       onPress={() => startEdit(it)}
                     >
-                      <Text style={u.linkBtnTxt}>
+                      <Text style={u.scheduleLinkBtnTxt}>
                         {t("settings.edit_short")}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={u.dangerBtn}
+                      style={u.scheduleDangerBtn}
                       onPress={() => deleteBlock(it.id)}
                     >
-                      <Text style={u.dangerBtnTxt}>✕</Text>
+                      <Text style={u.scheduleDangerBtnTxt}>✕</Text>
                     </TouchableOpacity>
                   </View>
-                  <View style={[u.row, { paddingTop: 0 }]}>
-                    <Text style={[u.rowSublabel, { flex: 1 }]}>
+                  <View style={u.scheduleSubRow}>
+                    <Text style={[u.scheduleSublabel, { flex: 1 }]}>
                       {t("settings.schedule_weekdays")}
                     </Text>
                     <Switch
@@ -1879,8 +1879,8 @@ function ScheduleSection({
                       thumbColor={C.white}
                     />
                   </View>
-                  <View style={[u.row, { paddingTop: 0 }]}>
-                    <Text style={[u.rowSublabel, { flex: 1 }]}>
+                  <View style={u.scheduleSubRow}>
+                    <Text style={[u.scheduleSublabel, { flex: 1 }]}>
                       {t("settings.schedule_weekends")}
                     </Text>
                     <Switch
@@ -3348,6 +3348,34 @@ const u = StyleSheet.create({
     marginBottom: 8,
   },
   editCostRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  scheduleItemWrap: { paddingHorizontal: 4, paddingVertical: 2 },
+  scheduleMainRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  scheduleSubRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingTop: 0,
+    paddingBottom: 6,
+    gap: 8,
+  },
+  scheduleEmoji: { fontSize: 18, marginRight: 2 },
+  scheduleLabel: { fontSize: 13, fontWeight: "500", color: C.text },
+  scheduleSublabel: { fontSize: 11, color: C.muted, marginTop: 1, lineHeight: 15 },
+  scheduleLinkBtn: { paddingVertical: 2, paddingHorizontal: 6 },
+  scheduleLinkBtnTxt: { fontSize: 12, color: C.green, fontWeight: "500" },
+  scheduleDangerBtn: {
+    backgroundColor: C.redLt,
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  scheduleDangerBtnTxt: { fontSize: 12, color: C.red, fontWeight: "600" },
 
   // Progress stats
   snapshotCard: {

@@ -240,7 +240,9 @@
     "confirm": "Подтвердить",
     "cancel": "Отмена",
     "wrong_title": "Неверный PIN",
-    "wrong_msg": "Попробуй ещё раз"
+    "wrong_msg": "Попробуй ещё раз",
+    "empty_msg": "Введите PIN",
+    "short_msg": "PIN должен быть из 4 цифр"
   },
   "missions": {
     "1": { "title": "Постой на одной ноге", "subtitle": "Пять секунд" },

@@ -20,8 +20,10 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
   Linking,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -786,16 +788,25 @@ function PinSection({
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [removePinInput, setRemovePinInput] = useState("");
+  const [setPinError, setSetPinError] = useState("");
+  const [removePinError, setRemovePinError] = useState("");
 
   function handleSetPin() {
+    if (!newPin || !confirmPin) {
+      setSetPinError(t("pinChild.empty_msg"));
+      return;
+    }
     if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+      setSetPinError(t("pinChild.short_msg"));
       Alert.alert(t("settings.pin_invalid"));
       return;
     }
     if (newPin !== confirmPin) {
+      setSetPinError(t("settings.pin_mismatch"));
       Alert.alert(t("settings.pin_mismatch"));
       return;
     }
+    setSetPinError("");
     onChange({ parentPin: newPin, pinEnabled: true });
     setShowSetPin(false);
     setNewPin("");
@@ -820,17 +831,28 @@ function PinSection({
       return;
     }
     setRemovePinInput("");
+    setRemovePinError("");
     setShowRemovePin(true);
   }
 
   function verifyRemovePin() {
+    if (!removePinInput) {
+      setRemovePinError(t("pinChild.empty_msg"));
+      return;
+    }
+    if (removePinInput.length < 4) {
+      setRemovePinError(t("pinChild.short_msg"));
+      return;
+    }
     if (removePinInput === settings.parentPin) {
       setShowRemovePin(false);
       setRemovePinInput("");
+      setRemovePinError("");
       confirmRemovePin();
     } else {
       Alert.alert(t("settings.pin_wrong"));
       setRemovePinInput("");
+      setRemovePinError("");
     }
   }
 
@@ -919,81 +941,112 @@ function PinSection({
         }}
       >
         <View style={ss.pinOverlay}>
-          <View style={ss.pinCard}>
-            {showSetPin ? (
-              <>
-                <Text style={ss.pinTitle}>{t("settings.pin_new_heading")}</Text>
-                <TextInput
-                  style={ss.pinInput}
-                  keyboardType="numeric"
-                  maxLength={4}
-                  secureTextEntry
-                  placeholder="····"
-                  placeholderTextColor={C.muted}
-                  value={newPin}
-                  onChangeText={setNewPin}
-                  autoFocus
-                />
-                <Text style={ss.pinTitle}>
-                  {t("settings.pin_confirm_heading")}
-                </Text>
-                <TextInput
-                  style={ss.pinInput}
-                  keyboardType="numeric"
-                  maxLength={4}
-                  secureTextEntry
-                  placeholder="····"
-                  placeholderTextColor={C.muted}
-                  value={confirmPin}
-                  onChangeText={setConfirmPin}
-                  onSubmitEditing={handleSetPin}
-                />
-                <TouchableOpacity style={ss.pinBtnPrimary} onPress={handleSetPin}>
-                  <Text style={ss.pinBtnPrimaryTxt}>{t("settings.save")}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={ss.pinBtnCancel}
-                  onPress={() => {
-                    setShowSetPin(false);
-                    setNewPin("");
-                    setConfirmPin("");
-                  }}
-                >
-                  <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
-                <TextInput
-                  style={ss.pinInput}
-                  keyboardType="numeric"
-                  maxLength={4}
-                  secureTextEntry
-                  placeholder="····"
-                  placeholderTextColor={C.muted}
-                  value={removePinInput}
-                  onChangeText={setRemovePinInput}
-                  autoFocus
-                  onSubmitEditing={verifyRemovePin}
-                />
-                <TouchableOpacity style={ss.pinBtnPrimary} onPress={verifyRemovePin}>
-                  <Text style={ss.pinBtnPrimaryTxt}>
-                    {t("settings.confirm")}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={20}
+          >
+            <View style={ss.pinCard}>
+              {showSetPin ? (
+                <>
+                  <Text style={ss.pinTitle}>{t("settings.pin_new_heading")}</Text>
+                  <TextInput
+                    keyboardType="numeric"
+                    maxLength={4}
+                    secureTextEntry
+                    placeholder="····"
+                    placeholderTextColor={C.muted}
+                    value={newPin}
+                    onChangeText={(v) => {
+                      setNewPin(v);
+                      if (setPinError) setSetPinError("");
+                    }}
+                    autoFocus
+                    style={[ss.pinInput, setPinError ? ss.pinInputError : null]}
+                  />
+                  <Text style={ss.pinTitle}>
+                    {t("settings.pin_confirm_heading")}
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={ss.pinBtnCancel}
-                  onPress={() => {
-                    setShowRemovePin(false);
-                    setRemovePinInput("");
-                  }}
-                >
-                  <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+                  <TextInput
+                    keyboardType="numeric"
+                    maxLength={4}
+                    secureTextEntry
+                    placeholder="····"
+                    placeholderTextColor={C.muted}
+                    value={confirmPin}
+                    onChangeText={(v) => {
+                      setConfirmPin(v);
+                      if (setPinError) setSetPinError("");
+                    }}
+                    onSubmitEditing={handleSetPin}
+                    style={[ss.pinInput, setPinError ? ss.pinInputError : null]}
+                  />
+                  {!!setPinError && (
+                    <Text style={ss.pinErrorText}>{setPinError}</Text>
+                  )}
+                  <TouchableOpacity
+                    style={ss.pinBtnPrimary}
+                    onPress={handleSetPin}
+                  >
+                    <Text style={ss.pinBtnPrimaryTxt}>{t("settings.save")}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={ss.pinBtnCancel}
+                    onPress={() => {
+                      setShowSetPin(false);
+                      setNewPin("");
+                      setConfirmPin("");
+                      setSetPinError("");
+                    }}
+                  >
+                    <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
+                  <TextInput
+                    keyboardType="numeric"
+                    maxLength={4}
+                    secureTextEntry
+                    placeholder="····"
+                    placeholderTextColor={C.muted}
+                    value={removePinInput}
+                    onChangeText={(v) => {
+                      setRemovePinInput(v);
+                      if (removePinError) setRemovePinError("");
+                    }}
+                    autoFocus
+                    onSubmitEditing={verifyRemovePin}
+                    style={[
+                      ss.pinInput,
+                      removePinError ? ss.pinInputError : null,
+                    ]}
+                  />
+                  {!!removePinError && (
+                    <Text style={ss.pinErrorText}>{removePinError}</Text>
+                  )}
+                  <TouchableOpacity
+                    style={ss.pinBtnPrimary}
+                    onPress={verifyRemovePin}
+                  >
+                    <Text style={ss.pinBtnPrimaryTxt}>
+                      {t("settings.confirm")}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={ss.pinBtnCancel}
+                    onPress={() => {
+                      setShowRemovePin(false);
+                      setRemovePinInput("");
+                      setRemovePinError("");
+                    }}
+                  >
+                    <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -2844,6 +2897,7 @@ export default function SettingsScreen({
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
   const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [parentZoneOpen, setParentZoneOpen] = useState(false);
@@ -2891,13 +2945,23 @@ export default function SettingsScreen({
   }
 
   function verifyAndRun() {
+    if (!pinInput) {
+      setPinError(t("pinChild.empty_msg"));
+      return;
+    }
+    if (pinInput.length < 4) {
+      setPinError(t("pinChild.short_msg"));
+      return;
+    }
     if (pinInput === currentPin) {
       setShowPin(false);
+      setPinError("");
       pendingAction?.();
       setPendingAction(null);
     } else {
       Alert.alert(t("settings.pin_wrong"));
       setPinInput("");
+      setPinError("");
     }
   }
 
@@ -3171,32 +3235,42 @@ export default function SettingsScreen({
       {/* PIN overlay for protected actions */}
       {showPin && (
         <View style={ss.pinOverlay}>
-          <View style={ss.pinCard}>
-            <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
-            <TextInput
-              style={ss.pinInput}
-              keyboardType="numeric"
-              maxLength={4}
-              secureTextEntry
-              value={pinInput}
-              onChangeText={setPinInput}
-              autoFocus
-              onSubmitEditing={verifyAndRun}
-            />
-            <TouchableOpacity style={ss.pinBtnPrimary} onPress={verifyAndRun}>
-              <Text style={ss.pinBtnPrimaryTxt}>{t("settings.confirm")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={ss.pinBtnCancel}
-              onPress={() => {
-                setShowPin(false);
-                setPinInput("");
-                setPendingAction(null);
-              }}
-            >
-              <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
-            </TouchableOpacity>
-          </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={20}
+          >
+            <View style={ss.pinCard}>
+              <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
+              <TextInput
+                keyboardType="numeric"
+                maxLength={4}
+                secureTextEntry
+                value={pinInput}
+                onChangeText={(v) => {
+                  setPinInput(v);
+                  if (pinError) setPinError("");
+                }}
+                autoFocus
+                onSubmitEditing={verifyAndRun}
+                style={[ss.pinInput, pinError ? ss.pinInputError : null]}
+              />
+              {!!pinError && <Text style={ss.pinErrorText}>{pinError}</Text>}
+              <TouchableOpacity style={ss.pinBtnPrimary} onPress={verifyAndRun}>
+                <Text style={ss.pinBtnPrimaryTxt}>{t("settings.confirm")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={ss.pinBtnCancel}
+                onPress={() => {
+                  setShowPin(false);
+                  setPinInput("");
+                  setPinError("");
+                  setPendingAction(null);
+                }}
+              >
+                <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       )}
     </SafeAreaView>
@@ -3303,9 +3377,11 @@ const ss = StyleSheet.create({
   pinCard: {
     backgroundColor: C.white,
     borderRadius: 20,
-    padding: 28,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
     alignItems: "center",
     width: "100%",
+    maxWidth: 460,
   },
   pinTitle: {
     fontSize: 18,
@@ -3314,10 +3390,10 @@ const ss = StyleSheet.create({
     marginBottom: 16,
   },
   pinInput: {
-    fontSize: 28,
+    fontSize: 30,
     textAlign: "center",
-    letterSpacing: 8,
-    marginBottom: 24,
+    letterSpacing: 10,
+    marginBottom: 18,
     width: "100%",
     height: 52,
     borderBottomWidth: 2,
@@ -3329,6 +3405,7 @@ const ss = StyleSheet.create({
     backgroundColor: C.green,
     borderRadius: 12,
     paddingVertical: 14,
+    paddingHorizontal: 14,
     alignItems: "center",
     width: "100%",
     marginBottom: 10,
@@ -3340,10 +3417,22 @@ const ss = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     paddingVertical: 14,
+    paddingHorizontal: 14,
     alignItems: "center",
     width: "100%",
   },
   pinBtnCancelTxt: { fontSize: 15, color: C.text, fontWeight: "500" },
+  pinInputError: {
+    borderColor: C.red,
+  },
+  pinErrorText: {
+    alignSelf: "flex-start",
+    marginTop: -8,
+    marginBottom: 12,
+    fontSize: 12,
+    color: C.red,
+    fontWeight: "500",
+  },
   parentZoneCard: {
     flexDirection: "row",
     alignItems: "center",

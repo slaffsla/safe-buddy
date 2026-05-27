@@ -240,7 +240,9 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "wrong_title": "Wrong PIN",
-    "wrong_msg": "Try again"
+    "wrong_msg": "Try again",
+    "empty_msg": "Enter PIN",
+    "short_msg": "PIN should be 4 digits"
   },
   "missions": {
     "1": { "title": "Stand on one foot", "subtitle": "Five seconds" },

@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
@@ -379,6 +380,7 @@ export default function App() {
   const [enteredPin, setEnteredPin] = useState("");
   const [pendingReward, setPendingReward] = useState<any>(null);
   const [pendingMissionComplete, setPendingMissionComplete] = useState(false);
+  const [pinError, setPinError] = useState("");
 
   // Settings
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -886,9 +888,18 @@ export default function App() {
   }
 
   function verifyPin() {
+    if (enteredPin.length === 0) {
+      setPinError(t("pinChild.empty_msg"));
+      return;
+    }
+    if (enteredPin.length < 4) {
+      setPinError(t("pinChild.short_msg"));
+      return;
+    }
     if (enteredPin === parentPin) {
       setShowPinScreen(false);
       setEnteredPin("");
+      setPinError("");
       if (pendingReward) {
         redeemReward(pendingReward);
         setPendingReward(null);
@@ -899,6 +910,7 @@ export default function App() {
     } else {
       Alert.alert(t("pinChild.wrong_title"), t("pinChild.wrong_msg"));
       setEnteredPin("");
+      setPinError("");
     }
   }
 
@@ -1333,53 +1345,63 @@ export default function App() {
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
       {showPinScreen && (
         <View style={s.pinOverlay}>
-          <View style={s.pinCard}>
-            <Image
-              source={BUDDY.calm}
-              style={{
-                width: 80,
-                height: 80,
-                backgroundColor: "transparent",
-                marginBottom: 16,
-              }}
-              resizeMode="contain"
-            />
-            <Text style={s.pinTitle}>{t("pinChild.title")}</Text>
-            {pendingReward && (
-              <Text style={s.pinSub}>
-                {t("pinChild.unlock_label", {
-                  title: getRewardTitle(
-                    pendingReward.id,
-                    pendingReward.title,
-                  ),
-                })}
-              </Text>
-            )}
-            <TextInput
-              style={s.pinInput}
-              keyboardType="numeric"
-              maxLength={4}
-              secureTextEntry
-              value={enteredPin}
-              onChangeText={setEnteredPin}
-              autoFocus
-              onSubmitEditing={verifyPin}
-            />
-            <TouchableOpacity style={s.pinConfirm} onPress={verifyPin}>
-              <Text style={s.pinConfirmTxt}>{t("pinChild.confirm")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={s.pinCancel}
-              onPress={() => {
-                setShowPinScreen(false);
-                setEnteredPin("");
-                setPendingReward(null);
-                setPendingMissionComplete(false);
-              }}
-            >
-              <Text style={s.pinCancelTxt}>{t("pinChild.cancel")}</Text>
-            </TouchableOpacity>
-          </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={20}
+          >
+            <View style={s.pinCard}>
+              <Image
+                source={BUDDY.calm}
+                style={{
+                  width: 80,
+                  height: 80,
+                  backgroundColor: "transparent",
+                  marginBottom: 16,
+                }}
+                resizeMode="contain"
+              />
+              <Text style={s.pinTitle}>{t("pinChild.title")}</Text>
+              {pendingReward && (
+                <Text style={s.pinSub}>
+                  {t("pinChild.unlock_label", {
+                    title: getRewardTitle(
+                      pendingReward.id,
+                      pendingReward.title,
+                    ),
+                  })}
+                </Text>
+              )}
+              <TextInput
+                style={[s.pinInput, pinError ? s.pinInputError : null]}
+                keyboardType="numeric"
+                maxLength={4}
+                secureTextEntry
+                value={enteredPin}
+                onChangeText={(v) => {
+                  setEnteredPin(v);
+                  if (pinError) setPinError("");
+                }}
+                autoFocus
+                onSubmitEditing={verifyPin}
+              />
+              {!!pinError && <Text style={s.pinErrorText}>{pinError}</Text>}
+              <TouchableOpacity style={s.pinConfirm} onPress={verifyPin}>
+                <Text style={s.pinConfirmTxt}>{t("pinChild.confirm")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={s.pinCancel}
+                onPress={() => {
+                  setShowPinScreen(false);
+                  setEnteredPin("");
+                  setPinError("");
+                  setPendingReward(null);
+                  setPendingMissionComplete(false);
+                }}
+              >
+                <Text style={s.pinCancelTxt}>{t("pinChild.cancel")}</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       )}
 
@@ -1522,9 +1544,11 @@ const s = StyleSheet.create({
   pinCard: {
     backgroundColor: C.white,
     borderRadius: 20,
-    padding: 28,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
     alignItems: "center",
     width: "100%",
+    maxWidth: 460,
   },
   pinTitle: { fontSize: 20, fontWeight: "700", color: C.text, marginBottom: 4 },
   pinSub: {
@@ -1537,7 +1561,7 @@ const s = StyleSheet.create({
     fontSize: 36,
     textAlign: "center",
     letterSpacing: 12,
-    marginBottom: 24,
+    marginBottom: 16,
     width: "100%",
     height: 52,
     borderBottomWidth: 2,
@@ -1547,7 +1571,8 @@ const s = StyleSheet.create({
   },
   pinConfirm: {
     backgroundColor: C.green,
-    padding: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     borderRadius: 12,
     width: "100%",
     alignItems: "center",
@@ -1564,11 +1589,23 @@ const s = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: C.border,
-    padding: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     width: "100%",
     alignItems: "center",
   },
   pinCancelTxt: { fontSize: 15, color: C.text, fontWeight: "500" },
+  pinInputError: {
+    borderColor: C.red,
+  },
+  pinErrorText: {
+    alignSelf: "flex-start",
+    marginTop: -8,
+    marginBottom: 12,
+    fontSize: 12,
+    color: C.red,
+    fontWeight: "500",
+  },
 
   // Progress bar
   pbWrap: {

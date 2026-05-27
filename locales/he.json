@@ -257,7 +257,9 @@
     "confirm": "אישור",
     "cancel": "ביטול",
     "wrong_title": "קוד שגוי",
-    "wrong_msg": "נסה שוב"
+    "wrong_msg": "נסה שוב",
+    "empty_msg": "יש להזין קוד",
+    "short_msg": "הקוד צריך לכלול 4 ספרות"
   },
   "missions": {
     "1": { "title": "לעמוד על רגל אחת", "subtitle": "חמש שניות" },

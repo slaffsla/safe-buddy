@@ -18,7 +18,8 @@ import {
   setIsAudioActiveAsync,
   type AudioPlayer,
 } from "expo-audio";
-import React, { useEffect, useRef, useState } from "react";
+import { FontAwesome5 } from "@expo/vector-icons";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -56,7 +57,6 @@ const NATURE_FACT_DELAY_MS = Math.min(
   120000,
   Math.max(10000, BREATHING_DURATION_MS - 20000),
 );
-const AUDIO_DEBUG = true;
 
 interface Props {
   speak: (t: string, options?: { volume?: number }) => void;
@@ -66,6 +66,7 @@ interface Props {
   onShowOverlay: () => void; // ← new
   musicEnabled?: boolean;
   guidanceEnabled?: boolean;
+  onMusicChange?: (enabled: boolean) => void;
   onGuidanceChange?: (enabled: boolean) => void;
   rtlChildSex?: RtlChildSex;
 }
@@ -80,6 +81,7 @@ export default function BreathingScreen({
   onShowOverlay,
   musicEnabled = true,
   guidanceEnabled = true,
+  onMusicChange,
   onGuidanceChange,
   rtlChildSex = "male",
 }: Props) {
@@ -89,9 +91,11 @@ export default function BreathingScreen({
   const [isPetting, setIsPetting] = useState(false);
   const [showNatureFact, setShowNatureFact] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [prepRemainingMs, setPrepRemainingMs] = useState(PREP_HINT_DURATION_MS);
 
   const buddyScale = useRef(new Animated.Value(0.2)).current;
   const prepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prepTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const natureFactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -102,7 +106,6 @@ export default function BreathingScreen({
   const isPettingRef = useRef(false);
   const sessionStart = useRef<number>(0);
   const soundRef = useRef<AudioPlayer | null>(null);
-  const soundSubRef = useRef<{ remove: () => void } | null>(null);
   const firstInhaleRef = useRef(true);
   const guidanceStepRef = useRef(0);
   const guidanceEnabledRef = useRef(guidanceEnabled);
@@ -112,6 +115,10 @@ export default function BreathingScreen({
     if (prepTimerRef.current) {
       clearTimeout(prepTimerRef.current);
       prepTimerRef.current = null;
+    }
+    if (prepTickRef.current) {
+      clearInterval(prepTickRef.current);
+      prepTickRef.current = null;
     }
     if (phaseTimerRef.current) {
       clearTimeout(phaseTimerRef.current);
@@ -131,90 +138,61 @@ export default function BreathingScreen({
     }
   }
 
-  async function loadAndPlayAudio() {
+  const loadAndPlayAudio = useCallback(async () => {
     if (!musicEnabled) return;
-    if (AUDIO_DEBUG) console.log("[breathing-audio] loadAndPlayAudio:start");
+    if (soundRef.current) return;
     try {
       await setIsAudioActiveAsync(true);
-      if (AUDIO_DEBUG)
-        console.log("[breathing-audio] setIsAudioActiveAsync(true):ok");
       await setAudioModeAsync({
         playsInSilentMode: true,
-        interruptionMode: "doNotMix",
+        interruptionMode: "mixWithOthers",
         allowsRecording: false,
         shouldRouteThroughEarpiece: false,
         shouldPlayInBackground: false,
       });
-      if (AUDIO_DEBUG) console.log("[breathing-audio] setAudioModeAsync:ok");
     } catch (e) {
       console.warn("setAudioModeAsync failed:", e);
     }
     try {
       const source = require("../assets/audio/breathing.mp3");
-      if (AUDIO_DEBUG) console.log("[breathing-audio] source:", source);
       const sound = createAudioPlayer(source, {
         keepAudioSessionActive: true,
       });
-      if (AUDIO_DEBUG) console.log("[breathing-audio] player created");
-      try {
-        soundSubRef.current = sound.addListener(
-          "playbackStatusUpdate",
-          (status: any) => {
-            if (!AUDIO_DEBUG) return;
-            console.log("[breathing-audio] status:", {
-              playing: status?.playing,
-              muted: status?.muted,
-              currentTime: status?.currentTime,
-              duration: status?.duration,
-              reason: status?.reasonForWaitingToPlay,
-            });
-          },
-        );
-      } catch (e) {
-        if (AUDIO_DEBUG) {
-          console.log("[breathing-audio] addListener failed:", String(e));
-        }
-      }
       sound.loop = true;
       sound.volume = 0.65;
       soundRef.current = sound;
-      if (AUDIO_DEBUG) console.log("[breathing-audio] play()");
       sound.play();
       // iOS route/session quirk guard: retry once shortly after initial play.
       setTimeout(() => {
         try {
-          sound.play();
-          if (AUDIO_DEBUG) console.log("[breathing-audio] play() retry");
+          if (soundRef.current === sound && !sound.playing) sound.play();
         } catch {}
       }, 250);
     } catch (e) {
+      const msg = String(e);
+      if (
+        msg.includes("Received 4 arguments, but 3 was expected") ||
+        msg.includes("Received 3 arguments, but 4 was expected")
+      ) {
+        console.warn(
+          "Audio native/JS mismatch detected. Rebuild the iOS dev client so native expo modules match package versions.",
+        );
+      }
       console.warn("Audio load/play failed:", e);
       soundRef.current = null;
     }
-  }
+  }, [musicEnabled]);
 
-  async function stopAudio() {
-    if (AUDIO_DEBUG) console.log("[breathing-audio] stopAudio:start");
+  const stopAudio = useCallback(() => {
     if (!soundRef.current) return;
     try {
-      soundSubRef.current?.remove();
-    } catch {}
-    soundSubRef.current = null;
-    try {
       soundRef.current.pause();
-      if (AUDIO_DEBUG) console.log("[breathing-audio] pause:ok");
     } catch {}
     try {
       soundRef.current.remove();
-      if (AUDIO_DEBUG) console.log("[breathing-audio] remove:ok");
     } catch {}
     soundRef.current = null;
-    try {
-      await setIsAudioActiveAsync(false);
-      if (AUDIO_DEBUG)
-        console.log("[breathing-audio] setIsAudioActiveAsync(false):ok");
-    } catch {}
-  }
+  }, []);
 
   function runPhase(idx: number) {
     const phase = PHASES[idx];
@@ -258,6 +236,15 @@ export default function BreathingScreen({
   }
 
   function startSessionCore() {
+    if (prepTimerRef.current) {
+      clearTimeout(prepTimerRef.current);
+      prepTimerRef.current = null;
+    }
+    if (prepTickRef.current) {
+      clearInterval(prepTickRef.current);
+      prepTickRef.current = null;
+    }
+    setPrepRemainingMs(0);
     setState("active");
     setElapsedMs(0);
     setPhaseIdx(0);
@@ -308,16 +295,21 @@ export default function BreathingScreen({
         setShowNatureFact(false);
       }, NATURE_FACT_VISIBLE_MS);
     }, NATURE_FACT_DELAY_MS);
-    // start the breath loop
-    //    DEL.runPhase(0);
     // best-effort audio
     if (musicEnabled) loadAndPlayAudio();
   }
 
   function startSession() {
     clearTimers();
+    setPrepRemainingMs(PREP_HINT_DURATION_MS);
     setState("priming");
     speak(petHintText);
+    const prepStart = Date.now();
+    prepTickRef.current = setInterval(() => {
+      const dt = Date.now() - prepStart;
+      const remaining = Math.max(0, PREP_HINT_DURATION_MS - dt);
+      setPrepRemainingMs(remaining);
+    }, 100);
     prepTimerRef.current = setTimeout(() => {
       startSessionCore();
     }, PREP_HINT_DURATION_MS);
@@ -357,17 +349,28 @@ export default function BreathingScreen({
       clearTimers();
       stopAudio();
     };
-  }, []);
+  }, [stopAudio]);
 
   useEffect(() => {
     guidanceEnabledRef.current = guidanceEnabled;
   }, [guidanceEnabled]);
 
   useEffect(() => {
+    if (state !== "active") return;
+    if (musicEnabled) {
+      loadAndPlayAudio();
+      return;
+    }
+    stopAudio();
+  }, [musicEnabled, state, loadAndPlayAudio, stopAudio]);
+
+  useEffect(() => {
     isPettingRef.current = isPetting;
   }, [isPetting]);
 
   const petHintText = tSpeak("breathing.pet_hint", undefined, rtlChildSex);
+  const prepCountdown =
+    prepRemainingMs > 2000 ? 3 : prepRemainingMs > 1000 ? 2 : 1;
 
   // ── IDLE ────────────────────────────────────────────────────────────────────
   if (state === "idle") {
@@ -408,6 +411,9 @@ export default function BreathingScreen({
 
         <View style={s.circleStatic}>
           <Text style={s.circleEmoji}>🌬️</Text>
+          <View style={s.prepCountdownOverlay} pointerEvents="none">
+            <Text style={s.prepCountdownTxt}>{prepCountdown}</Text>
+          </View>
         </View>
 
         <View style={s.natureFact}>
@@ -460,20 +466,38 @@ export default function BreathingScreen({
 
   return (
     <View style={s.screen}>
-      <TouchableOpacity
-        style={[s.guidanceToggle, guidanceEnabled && s.guidanceToggleEnabled]}
-        onPress={() => onGuidanceChange?.(!guidanceEnabled)}
-        activeOpacity={0.75}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: guidanceEnabled }}
-        accessibilityLabel={t(
-          guidanceEnabled
-            ? "breathing.guidance_off_a11y"
-            : "breathing.guidance_on_a11y",
-        )}
-      >
-        <Text style={s.guidanceToggleTxt}>{guidanceEnabled ? "🔊" : "🔇"}</Text>
-      </TouchableOpacity>
+      <View style={s.topRightControls}>
+        <TouchableOpacity
+          style={[s.controlToggle, musicEnabled && s.controlToggleEnabled]}
+          onPress={() => onMusicChange?.(!musicEnabled)}
+          activeOpacity={0.75}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: musicEnabled }}
+          accessibilityLabel={t(
+            musicEnabled ? "breathing.music_off_a11y" : "breathing.music_on_a11y",
+          )}
+        >
+          <FontAwesome5
+            name="drum-steelpan"
+            size={18}
+            color={musicEnabled ? C.green : C.muted}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.controlToggle, guidanceEnabled && s.controlToggleEnabled]}
+          onPress={() => onGuidanceChange?.(!guidanceEnabled)}
+          activeOpacity={0.75}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: guidanceEnabled }}
+          accessibilityLabel={t(
+            guidanceEnabled
+              ? "breathing.guidance_off_a11y"
+              : "breathing.guidance_on_a11y",
+          )}
+        >
+          <Text style={s.guidanceToggleTxt}>{guidanceEnabled ? "🔊" : "🔇"}</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Phase label + timer sit above Buddy */}
       <Text style={s.phaseLabel}>{phaseLabel}</Text>
@@ -559,10 +583,15 @@ const s = StyleSheet.create({
     marginBottom: 18,
     textAlign: "center",
   },
-  guidanceToggle: {
+  topRightControls: {
     position: "absolute",
     top: 14,
     right: 16,
+    flexDirection: "row",
+    gap: 10,
+    zIndex: 5,
+  },
+  controlToggle: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -571,9 +600,8 @@ const s = StyleSheet.create({
     borderColor: "#DED8CE",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 5,
   },
-  guidanceToggleEnabled: {
+  controlToggleEnabled: {
     backgroundColor: C.greenLt,
     borderColor: "#CFE9DD",
   },
@@ -602,6 +630,22 @@ const s = StyleSheet.create({
     marginVertical: 16,
   },
   circleEmoji: { fontSize: 56 },
+  prepCountdownOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: CIRCLE_BASE / 2,
+    backgroundColor: C.greenLt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  prepCountdownTxt: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: C.green,
+  },
 
   progressTrack: {
     width: "90%",

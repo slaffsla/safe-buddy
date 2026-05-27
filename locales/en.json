@@ -190,6 +190,8 @@
     "btn_back": "Back",
     "btn_done": "Done",
     "btn_finish": "Finish",
+    "music_on_a11y": "Turn breathing music on",
+    "music_off_a11y": "Turn breathing music off",
     "guidance_on_a11y": "Turn breathing guidance on",
     "guidance_off_a11y": "Turn breathing guidance off",
     "celeb_title": "Well done",

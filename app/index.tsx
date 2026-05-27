@@ -882,6 +882,14 @@ export default function App() {
     });
   }, []);
 
+  const handleBreathingMusicChange = useCallback((enabled: boolean) => {
+    setAppSettings((prev) => {
+      const next = { ...prev, breathingMusicEnabled: enabled };
+      saveSettings(next).catch(console.log);
+      return next;
+    });
+  }, []);
+
   function openRewardsScreen() {
     incrementLocalUsage("rewardsViewed").catch(console.log);
     setScreen("rewards");
@@ -1294,6 +1302,7 @@ export default function App() {
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           musicEnabled={appSettings.breathingMusicEnabled}
           guidanceEnabled={appSettings.breathingGuidanceEnabled}
+          onMusicChange={handleBreathingMusicChange}
           onGuidanceChange={handleBreathingGuidanceChange}
           onComplete={() => {
             incrementLocalUsage("breathingCompleted").catch(console.log);

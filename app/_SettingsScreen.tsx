@@ -75,6 +75,7 @@ import {
 import {
   AppLocale,
   getAppLocale,
+  isRtl,
   normalizeAppLocale,
   setAppLocale,
   t,
@@ -2190,7 +2191,9 @@ function CreditsSection() {
     <View>
       <SectionHeader title={t("settings.credits_section")} icon="♡" />
       <Card>
-        <Text style={u.creditsText}>{t("settings.credits_body")}</Text>
+        <Text style={[u.creditsText, isRtl() && u.creditsTextRtl]}>
+          {t("settings.credits_body")}
+        </Text>
       </Card>
     </View>
   );
@@ -3597,6 +3600,10 @@ const u = StyleSheet.create({
     color: C.muted,
     lineHeight: 18,
     padding: 14,
+  },
+  creditsTextRtl: {
+    writingDirection: "rtl",
+    textAlign: "right",
   },
   feedbackCard: { padding: 14 },
   feedbackText: {

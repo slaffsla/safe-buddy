@@ -2371,7 +2371,7 @@ function ParentZoneView({
           : null;
     return (
       <View style={[pz.missionBlock, tintStyle]}>
-        <View style={u.row}>
+        <View style={[u.row, pz.compactRow]}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
           <View style={{ flex: 1 }}>
             <Text style={u.rowLabel}>{getMissionTitle(m.id, m.title)}</Text>
@@ -2421,7 +2421,7 @@ function ParentZoneView({
     const isCustom = customRewardIds.has(id);
     return (
       <View style={pz.missionBlock}>
-        <View style={u.row}>
+        <View style={[u.row, pz.compactRow]}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{r.emoji}</Text>
           <View style={{ flex: 1 }}>
             <Text style={u.rowLabel}>{getRewardTitle(r.id, r.title)}</Text>
@@ -2449,7 +2449,7 @@ function ParentZoneView({
             </TouchableOpacity>
           )}
         </View>
-        <View style={[u.row, { paddingTop: 0 }]}>
+        <View style={[u.row, pz.compactSubRow]}>
           <Text style={[u.rowSublabel, { flex: 1 }]}>
             {t("settings.cost_label")}
           </Text>
@@ -2595,7 +2595,7 @@ function ParentZoneView({
           ))}
         </Card>
 
-        <View style={ss.spacer} />
+        <View style={pz.sectionSpacer} />
 
         <SectionHeader title={t("settings.missions_weekend")} icon="🌈" />
         <Card>
@@ -2616,10 +2616,10 @@ function ParentZoneView({
               <>
                 <Divider />
                 <TouchableOpacity
-                  style={u.inlineAction}
+                  style={pz.addAction}
                   onPress={() => setShowAddMission(true)}
                 >
-                  <Text style={u.inlineActionTxt}>
+                  <Text style={pz.addActionTxt}>
                     {t("settings.add_mission")}
                   </Text>
                 </TouchableOpacity>
@@ -2628,7 +2628,7 @@ function ParentZoneView({
           )}
         </Card>
 
-        <View style={ss.spacer} />
+        <View style={pz.sectionSpacer} />
 
         <SectionHeader title={t("settings.rewards_section")} icon="🎁" />
         <Card>
@@ -2649,10 +2649,10 @@ function ParentZoneView({
               <>
                 <Divider />
                 <TouchableOpacity
-                  style={u.inlineAction}
+                  style={pz.addAction}
                   onPress={() => setShowAddReward(true)}
                 >
-                  <Text style={u.inlineActionTxt}>
+                  <Text style={pz.addActionTxt}>
                     {t("settings.add_reward")}
                   </Text>
                 </TouchableOpacity>
@@ -2669,6 +2669,9 @@ function ParentZoneView({
 
 const pz = StyleSheet.create({
   missionBlock: { paddingBottom: 8 },
+  compactRow: { paddingVertical: 10, paddingHorizontal: 12, gap: 10 },
+  compactSubRow: { paddingTop: 0, paddingBottom: 8, paddingHorizontal: 12 },
+  sectionSpacer: { height: 18 },
   blockPermanent: { backgroundColor: "#F1FAF6" },
   blockRotating: { backgroundColor: "#FFF8E7" },
 
@@ -2717,6 +2720,19 @@ const pz = StyleSheet.create({
     minWidth: 16,
     textAlign: "center",
   },
+  addAction: {
+    margin: 12,
+    marginTop: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CFE6DD",
+    backgroundColor: C.greenLt,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addActionTxt: { fontSize: 14, color: C.green, fontWeight: "700" },
 });
 
 // ── MAIN SETTINGS SCREEN ──────────────────────────────────────────────────────
@@ -2981,7 +2997,7 @@ export default function SettingsScreen({
         {/* Progress report — high priority, first */}
         {progress && <ProgressSection progress={progress} />}
 
-        <View style={ss.spacer} />
+        <View style={pz.sectionSpacer} />
 
         {/* Parent zone — PIN-gated overrides */}
         <TouchableOpacity

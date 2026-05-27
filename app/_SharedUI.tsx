@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { C, DAILY_SUGGESTIONS, getProgress } from "./_constants";
-import { t } from "./i18n";
+import { RtlChildSex, t, tSpeak } from "./i18n";
 
 // ── T — Speakable text wrapper ─────────────────────────────────────────────────
 
@@ -39,30 +39,36 @@ export function T({
 export function ProgressBar({
   total,
   speak,
+  rtlChildSex = "male",
 }: {
   total: number;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   const { pct } = getProgress(total);
   const emotionalLabel =
     total === 0
-      ? t("progress.label_first")
+      ? tSpeak("progress.label_first", undefined, rtlChildSex)
       : total < 5
-        ? t("progress.label_lt5")
+        ? tSpeak("progress.label_lt5", undefined, rtlChildSex)
         : total < 10
-          ? t("progress.label_lt10")
+          ? tSpeak("progress.label_lt10", undefined, rtlChildSex)
           : total < 20
-            ? t("progress.label_lt20")
+            ? tSpeak("progress.label_lt20", undefined, rtlChildSex)
             : total < 50
-              ? t("progress.label_lt50")
-              : t("progress.label_max");
+              ? tSpeak("progress.label_lt50", undefined, rtlChildSex)
+              : tSpeak("progress.label_max", undefined, rtlChildSex);
 
   return (
     <TouchableOpacity
       style={s.pbWrap}
       onPress={() =>
         speak(
-          t("progress.stars_speak", { label: emotionalLabel, count: total }),
+          tSpeak(
+            "progress.stars_speak",
+            { label: emotionalLabel, count: total },
+            rtlChildSex,
+          ),
         )
       }
       activeOpacity={0.82}

@@ -58,7 +58,10 @@ export function tSpeak(
   const rtl = loc.startsWith("he") || loc.startsWith("ar");
   if (rtl && sex === "female") {
     const femaleKey = `${key}_female`;
-    const femaleText = i18n.t(femaleKey, params);
+    const femaleText = i18n.t(femaleKey, {
+      ...(params ?? {}),
+      defaultValue: femaleKey,
+    });
     if (femaleText !== femaleKey) return femaleText;
   }
   return i18n.t(key, params);

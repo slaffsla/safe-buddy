@@ -1321,7 +1321,11 @@ export default function App() {
                   </View>
                 )}
               </View>
-              <ProgressBar total={totalEver} speak={speak} />
+              <ProgressBar
+                total={totalEver}
+                speak={speak}
+                rtlChildSex={appSettings.rtlChildSex ?? "male"}
+              />
             </View>
           </View>
         )}

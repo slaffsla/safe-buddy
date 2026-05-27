@@ -28,6 +28,10 @@ interface BuddyProps {
   onPettingChange?: (petting: boolean) => void;
   // Optional external phase scale (used by BreathingScreen to sync phases).
   phaseScale?: Animated.Value | Animated.AnimatedInterpolation<number>;
+  scaleNameWithImage?: boolean;
+  wrapperTopMargin?: number;
+  nameTopMargin?: number;
+  nameOffsetX?: number;
   fixed?: boolean; // If true, Buddy stays fixed on screen (absolute positioning)
   fixedBottom?: number; // Distance from bottom when fixed (default: 180)
   fixedTop?: number; // Distance from top when fixed
@@ -41,6 +45,10 @@ export default function Buddy({
   pettable = false,
   onPettingChange,
   phaseScale,
+  scaleNameWithImage = false,
+  wrapperTopMargin = 20,
+  nameTopMargin = 4,
+  nameOffsetX = 0,
   fixed = false,
   fixedBottom,
   fixedTop = 90,
@@ -188,6 +196,16 @@ export default function Buddy({
   }
 
   const image = getBuddyImage(mood);
+  const nameLabel = (
+    <Text
+      style={[
+        s.buddyName,
+        { marginTop: nameTopMargin, transform: [{ translateX: nameOffsetX }] },
+      ]}
+    >
+      {t("buddy.name")}
+    </Text>
+  );
   const buddyContent = (
     <View>
       <TouchableOpacity
@@ -195,7 +213,7 @@ export default function Buddy({
         onPressIn={startPetting}
         onPressOut={endPetting}
         activeOpacity={1}
-        style={s.buddyWrapper}
+        style={[s.buddyWrapper, { marginTop: wrapperTopMargin }]}
       >
         <Animated.View
           style={[
@@ -221,16 +239,17 @@ export default function Buddy({
             }}
             resizeMode="contain"
           />
+          {scaleNameWithImage && nameLabel}
         </Animated.View>
       </TouchableOpacity>
 
-      <Text style={s.buddyName}>{t("buddy.name")}</Text>
+      {!scaleNameWithImage && nameLabel}
 
       {pettable && showHearts && (
         <View style={s.heartsContainer} pointerEvents="none">
-          <FloatingHeart delay={0} />
-          <FloatingHeart delay={300} />
-          <FloatingHeart delay={600} />
+          <FloatingHeart delay={0} driftX={-10} />
+          <FloatingHeart delay={220} driftX={0} />
+          <FloatingHeart delay={440} driftX={10} />
         </View>
       )}
     </View>
@@ -253,16 +272,22 @@ export default function Buddy({
   return buddyContent;
 }
 
-function FloatingHeart({ delay }: { delay: number }) {
+function FloatingHeart({ delay, driftX }: { delay: number; driftX: number }) {
   const translateY = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.delay(delay),
       Animated.parallel([
+        Animated.timing(translateX, {
+          toValue: driftX,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
         Animated.timing(translateY, {
-          toValue: -48,
+          toValue: -52,
           duration: 1000,
           useNativeDriver: true,
         }),
@@ -280,10 +305,15 @@ function FloatingHeart({ delay }: { delay: number }) {
         ]),
       ]),
     ]).start();
-  }, [delay, opacity, translateY]);
+  }, [delay, driftX, opacity, translateX, translateY]);
 
   return (
-    <Animated.Text style={[s.heart, { transform: [{ translateY }], opacity }]}>
+    <Animated.Text
+      style={[
+        s.heart,
+        { transform: [{ translateX }, { translateY }], opacity },
+      ]}
+    >
       ♡
     </Animated.Text>
   );
@@ -302,21 +332,20 @@ const s = StyleSheet.create({
     alignItems: "center",
     marginBottom: 4,
     padding: 4,
-    marginTop: 20,
   },
   buddyAnimated: { alignItems: "center" },
   buddyName: { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: "500" },
   heartsContainer: {
     position: "absolute",
-    top: 12,
-    right: -6,
-    width: 44,
+    top: 18,
+    right: -10,
+    width: 52,
     alignItems: "center",
     pointerEvents: "none",
   },
   heart: {
     position: "absolute",
-    fontSize: 20,
+    fontSize: 21,
     color: "#FF8FAB",
   },
 });

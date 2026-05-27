@@ -133,7 +133,7 @@ const K = {
 
 const TINY_FACT_IDLE_MIN_MS = 2000;
 const TINY_FACT_IDLE_JITTER_MS = 3000;
-const TINY_FACT_VISIBLE_MS = 8000;
+const TINY_FACT_VISIBLE_MS = 10000;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 

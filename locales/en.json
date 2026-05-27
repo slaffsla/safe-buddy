@@ -180,6 +180,7 @@
     "title": "Breathe together",
     "subtitle": "Two minutes of calm breathing with Buddy",
     "phase_first_in": "Take a deep breath",
+    "pet_hint": "Watch my breath and try to pet me when I exhale if you want.",
     "phase_in": "Inhale",
     "phase_hold": "Pause",
     "phase_out": "Exhale",

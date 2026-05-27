@@ -14,8 +14,8 @@
 
 import {
   createAudioPlayer,
-  setIsAudioActiveAsync,
   setAudioModeAsync,
+  setIsAudioActiveAsync,
   type AudioPlayer,
 } from "expo-audio";
 import React, { useEffect, useRef, useState } from "react";
@@ -33,7 +33,7 @@ import { BUDDY_FIXED_SPACER, C } from "./_constants";
 import { RtlChildSex, t, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
-export const BUDDY_BASE = Math.round(SCREEN_W * 0.38); // ~145px phone, ~290px tablet
+export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
 
 // Hard-coded session length. Do not lift to settings.
 const BREATHING_DURATION_MS = 120_000;
@@ -43,13 +43,14 @@ const BREATHING_DURATION_MS = 120_000;
 const PHASES: { labelKey: string; duration: number; target: number }[] = [
   { labelKey: "breathing.phase_in", duration: 3000, target: 1.0 },
   { labelKey: "breathing.phase_hold", duration: 1000, target: 1.0 },
-  { labelKey: "breathing.phase_out", duration: 4000, target: 0.55 },
+  { labelKey: "breathing.phase_out", duration: 4000, target: 0.74 },
 ];
 const EXHALE_PET_MULTIPLIER = 1.15;
 const GUIDANCE_FULL_CYCLES = 3;
 const GUIDANCE_SOFT_CYCLES = 1;
 const GUIDANCE_SOFT_VOLUME = 0.65;
-const NATURE_FACT_VISIBLE_MS = 6000;
+const PREP_HINT_DURATION_MS = 3500;
+const NATURE_FACT_VISIBLE_MS = 10000;
 // Shows around 2:00 in a 3:00 session; for shorter sessions, show near the end.
 const NATURE_FACT_DELAY_MS = Math.min(
   120000,
@@ -69,7 +70,7 @@ interface Props {
   rtlChildSex?: RtlChildSex;
 }
 
-type State = "idle" | "active" | "complete";
+type State = "idle" | "priming" | "active" | "complete";
 
 export default function BreathingScreen({
   speak,
@@ -90,6 +91,7 @@ export default function BreathingScreen({
   const [elapsedMs, setElapsedMs] = useState(0);
 
   const buddyScale = useRef(new Animated.Value(0.2)).current;
+  const prepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const natureFactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -107,6 +109,10 @@ export default function BreathingScreen({
 
   // ── Lifecycle helpers ───────────────────────────────────────────────────────
   function clearTimers() {
+    if (prepTimerRef.current) {
+      clearTimeout(prepTimerRef.current);
+      prepTimerRef.current = null;
+    }
     if (phaseTimerRef.current) {
       clearTimeout(phaseTimerRef.current);
       phaseTimerRef.current = null;
@@ -130,7 +136,8 @@ export default function BreathingScreen({
     if (AUDIO_DEBUG) console.log("[breathing-audio] loadAndPlayAudio:start");
     try {
       await setIsAudioActiveAsync(true);
-      if (AUDIO_DEBUG) console.log("[breathing-audio] setIsAudioActiveAsync(true):ok");
+      if (AUDIO_DEBUG)
+        console.log("[breathing-audio] setIsAudioActiveAsync(true):ok");
       await setAudioModeAsync({
         playsInSilentMode: true,
         interruptionMode: "doNotMix",
@@ -204,7 +211,8 @@ export default function BreathingScreen({
     soundRef.current = null;
     try {
       await setIsAudioActiveAsync(false);
-      if (AUDIO_DEBUG) console.log("[breathing-audio] setIsAudioActiveAsync(false):ok");
+      if (AUDIO_DEBUG)
+        console.log("[breathing-audio] setIsAudioActiveAsync(false):ok");
     } catch {}
   }
 
@@ -213,8 +221,7 @@ export default function BreathingScreen({
     const phaseDuration =
       idx === 2
         ? Math.round(
-            phase.duration *
-              (isPettingRef.current ? EXHALE_PET_MULTIPLIER : 1),
+            phase.duration * (isPettingRef.current ? EXHALE_PET_MULTIPLIER : 1),
           )
         : phase.duration;
     const spokenKey =
@@ -250,7 +257,7 @@ export default function BreathingScreen({
     }, phaseDuration);
   }
 
-  function startSession() {
+  function startSessionCore() {
     setState("active");
     setElapsedMs(0);
     setPhaseIdx(0);
@@ -275,7 +282,7 @@ export default function BreathingScreen({
     }).start(() => {
       // Drop to exhale size first so first inhale is immediately dramatic
       Animated.timing(buddyScale, {
-        toValue: 0.65,
+        toValue: 0.83,
         duration: 650,
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
@@ -305,6 +312,15 @@ export default function BreathingScreen({
     //    DEL.runPhase(0);
     // best-effort audio
     if (musicEnabled) loadAndPlayAudio();
+  }
+
+  function startSession() {
+    clearTimers();
+    setState("priming");
+    speak(petHintText);
+    prepTimerRef.current = setTimeout(() => {
+      startSessionCore();
+    }, PREP_HINT_DURATION_MS);
   }
 
   function finishSession() {
@@ -351,6 +367,8 @@ export default function BreathingScreen({
     isPettingRef.current = isPetting;
   }, [isPetting]);
 
+  const petHintText = tSpeak("breathing.pet_hint", undefined, rtlChildSex);
+
   // ── IDLE ────────────────────────────────────────────────────────────────────
   if (state === "idle") {
     return (
@@ -373,6 +391,32 @@ export default function BreathingScreen({
         <TouchableOpacity
           style={s.btnSecondary}
           onPress={onSkip}
+          activeOpacity={0.78}
+        >
+          <Text style={s.btnSecondaryTxt}>{t("breathing.btn_back")}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (state === "priming") {
+    return (
+      <View style={s.screen}>
+        <View style={{ height: BUDDY_FIXED_SPACER }} />
+        <Text style={s.title}>{t("breathing.title")}</Text>
+        <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
+
+        <View style={s.circleStatic}>
+          <Text style={s.circleEmoji}>🌬️</Text>
+        </View>
+
+        <View style={s.natureFact}>
+          <Text style={s.natureFactText}>💡 {petHintText}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={s.btnSecondary}
+          onPress={handleExit}
           activeOpacity={0.78}
         >
           <Text style={s.btnSecondaryTxt}>{t("breathing.btn_back")}</Text>
@@ -417,10 +461,7 @@ export default function BreathingScreen({
   return (
     <View style={s.screen}>
       <TouchableOpacity
-        style={[
-          s.guidanceToggle,
-          guidanceEnabled && s.guidanceToggleEnabled,
-        ]}
+        style={[s.guidanceToggle, guidanceEnabled && s.guidanceToggleEnabled]}
         onPress={() => onGuidanceChange?.(!guidanceEnabled)}
         activeOpacity={0.75}
         accessibilityRole="switch"
@@ -431,9 +472,7 @@ export default function BreathingScreen({
             : "breathing.guidance_on_a11y",
         )}
       >
-        <Text style={s.guidanceToggleTxt}>
-          {guidanceEnabled ? "🔊" : "🔇"}
-        </Text>
+        <Text style={s.guidanceToggleTxt}>{guidanceEnabled ? "🔊" : "🔇"}</Text>
       </TouchableOpacity>
 
       {/* Phase label + timer sit above Buddy */}
@@ -449,6 +488,10 @@ export default function BreathingScreen({
           speak={speak}
           size={BUDDY_BASE}
           phaseScale={buddyScale}
+          scaleNameWithImage
+          wrapperTopMargin={0}
+          nameTopMargin={-2}
+          nameOffsetX={Math.round(BUDDY_BASE * 0.08)}
           pettable={currentPhaseIndex !== 0}
           onPettingChange={(petting) => {
             setIsPetting(petting);
@@ -630,11 +673,11 @@ const s = StyleSheet.create({
   },
   celebSub: { fontSize: 17, color: C.text, marginTop: 6, textAlign: "center" },
   buddyContainer: {
-    width: BUDDY_BASE * 1.1, // just enough room for scale: 1.0
-    height: BUDDY_BASE * 1.1,
+    width: BUDDY_BASE * 1.45,
+    height: BUDDY_BASE * 1.45,
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 16,
+    marginVertical: 12,
     overflow: "visible",
   },
   natureFact: {

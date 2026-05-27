@@ -26,7 +26,7 @@ import {
   PoolMission,
   REWARDS,
 } from "./_constants";
-import { t } from "./i18n";
+import { RtlChildSex, t, tSpeak } from "./i18n";
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
 
@@ -57,6 +57,7 @@ interface MissionPickProps {
   doneIds?: number[];
   bonusMission?: PoolMission | null;
   missionTypeById?: Record<number, "permanent" | "rotating" | "inactive">;
+  rtlChildSex?: RtlChildSex;
 }
 
 export function MissionPickScreen({
@@ -68,6 +69,7 @@ export function MissionPickScreen({
   doneIds,
   bonusMission,
   missionTypeById,
+  rtlChildSex = "male",
 }: MissionPickProps) {
   const pool = !missions || missions.length === 0 ? MISSION_POOL : missions;
 
@@ -188,9 +190,13 @@ export function MissionPickScreen({
                       if (!isDone) onPick(m);
                       else
                         speak(
-                          t("missionPick.already_done", {
-                            title: getMissionTitle(m.id, m.title),
-                          }),
+                          tSpeak(
+                            "missionPick.already_done",
+                            {
+                              title: getMissionTitle(m.id, m.title),
+                            },
+                            rtlChildSex,
+                          ),
                         );
                     }}
                     onLongPress={() =>
@@ -256,19 +262,24 @@ export function ActiveScreen({
   onDone,
   onSkip,
   speak,
+  rtlChildSex = "male",
 }: {
   mission: any;
   onDone: () => void;
   onSkip: () => void;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   if (!mission) return null;
   return (
     <View style={s.screen}>
       <View style={{ height: BUDDY_FIXED_SPACER }} />
-      <T style={s.msg} speak={speak}>
-        {t("buddy.start")}
-      </T>
+      <TouchableOpacity
+        onPress={() => speak(tSpeak("buddy.start", undefined, rtlChildSex))}
+        activeOpacity={0.65}
+      >
+        <Text style={s.msg}>{t("buddy.start")}</Text>
+      </TouchableOpacity>
       <TouchableOpacity
         style={s.activeCard}
         onPress={() =>
@@ -319,6 +330,7 @@ export function CelebrateScreen({
   onRewards,
   speak,
   onBack,
+  rtlChildSex = "male",
 }: {
   mission: any;
   stars: number;
@@ -330,6 +342,7 @@ export function CelebrateScreen({
   onRewards: () => void;
   speak: (t: string) => void;
   onBack: () => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   if (!mission) return null;
   const emotionalMsg = isVeryExcited
@@ -347,7 +360,7 @@ export function CelebrateScreen({
       </T>
       <TouchableOpacity
         style={s.earnedCard}
-        onPress={() => speak(t("buddy.done"))}
+        onPress={() => speak(tSpeak("buddy.done", undefined, rtlChildSex))}
         activeOpacity={0.85}
       >
         <Text style={s.earnedEmoji}>{mission.emoji}</Text>
@@ -382,12 +395,14 @@ function RewardCard({
   speak,
   onRedeem,
   showExactStarCost,
+  rtlChildSex = "male",
 }: {
   reward: (typeof REWARDS)[number];
   stars: number;
   speak: (t: string) => void;
   onRedeem: (r: any) => void;
   showExactStarCost: boolean;
+  rtlChildSex?: RtlChildSex;
 }) {
   const scale = React.useRef(new Animated.Value(1)).current;
   const animatingRef = React.useRef(false);
@@ -396,7 +411,9 @@ function RewardCard({
   const needText = showExactStarCost
     ? t("rewards.need_exact", { count: Math.max(0, reward.cost - stars) })
     : t("rewards.need_vague");
-  const statusText = can ? t("rewards.ready") : needText;
+  const statusText = can
+    ? tSpeak("rewards.ready", undefined, rtlChildSex)
+    : needText;
 
   function handleRedeem() {
     if (animatingRef.current) return;
@@ -458,6 +475,7 @@ export function RewardsScreen({
   onRedeem,
   showExactStarCost,
   rewards,
+  rtlChildSex = "male",
 }: {
   stars: number;
   totalEver: number;
@@ -466,6 +484,7 @@ export function RewardsScreen({
   onRedeem: (r: any) => void;
   showExactStarCost: boolean;
   rewards?: typeof REWARDS;
+  rtlChildSex?: RtlChildSex;
 }) {
   const list = rewards ?? REWARDS;
   return (
@@ -482,6 +501,7 @@ export function RewardsScreen({
           speak={speak}
           onRedeem={onRedeem}
           showExactStarCost={showExactStarCost}
+          rtlChildSex={rtlChildSex}
         />
       ))}
       <T style={s.hint} speak={speak}>

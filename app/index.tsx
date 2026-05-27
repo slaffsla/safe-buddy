@@ -1184,6 +1184,7 @@ export default function App() {
             speak(tSpeak("home.morning_nudge_speak", undefined, appSettings.rtlChildSex ?? "male"));
             setScreen("pick");
           }}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
         />
       )}
 
@@ -1199,6 +1200,7 @@ export default function App() {
               ? bonusMission
               : null
           }
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onPick={pickMission}
           onBack={() => setScreen("home")}
         />
@@ -1208,6 +1210,7 @@ export default function App() {
         <ActiveScreen
           {...p}
           mission={mission}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onDone={completeMission}
           onSkip={handleSkip}
         />
@@ -1220,6 +1223,7 @@ export default function App() {
           totalMissions={totalMissions}
           completedToday={completedToday}
           isVeryExcited={isVeryExcited}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onContinue={() => setScreen("pick")}
           onRewards={openRewardsScreen}
           onBack={() => setScreen("home")}
@@ -1230,6 +1234,7 @@ export default function App() {
         <RewardsScreen
           {...p}
           rewards={effectiveRewards}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onBack={() => setScreen("home")}
           onRedeem={handleRewardRedeem}
           showExactStarCost={appSettings.showExactStarCost}
@@ -1267,6 +1272,7 @@ export default function App() {
       {screen === "breathing" && (
         <BreathingScreen
           speak={speak}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           musicEnabled={appSettings.breathingMusicEnabled}
           guidanceEnabled={appSettings.breathingGuidanceEnabled}
           onGuidanceChange={handleBreathingGuidanceChange}

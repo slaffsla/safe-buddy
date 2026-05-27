@@ -16,7 +16,7 @@ import {
   getProgressionMessage,
   getScheduleTitle,
 } from "./_constants";
-import { t } from "./i18n";
+import { RtlChildSex, t, tSpeak } from "./i18n";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
 
 interface HomeScreenProps {
@@ -42,6 +42,7 @@ interface HomeScreenProps {
   onBreathing?: () => void;
   showMorningNudge?: boolean;
   onMorningNudge?: () => void;
+  rtlChildSex?: RtlChildSex;
 }
 
 export default function HomeScreen({
@@ -66,6 +67,7 @@ export default function HomeScreen({
   onBreathing,
   showMorningNudge,
   onMorningNudge,
+  rtlChildSex = "male",
 }: HomeScreenProps) {
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [idleMsg] = useState(() =>
@@ -129,12 +131,12 @@ export default function HomeScreen({
               style={s.scheduleNow}
               onPress={() =>
                 speak(
-                  t("home.schedule_now_speak", {
+                  tSpeak("home.schedule_now_speak", {
                     title: getScheduleTitle(
                       currentBlock.id,
                       currentBlock.title,
                     ),
-                  }),
+                  }, rtlChildSex),
                 )
               }
               activeOpacity={0.8}
@@ -156,9 +158,9 @@ export default function HomeScreen({
               style={s.scheduleNext}
               onPress={() =>
                 speak(
-                  t("home.schedule_next_speak", {
+                  tSpeak("home.schedule_next_speak", {
                     title: getScheduleTitle(nextBlock.id, nextBlock.title),
-                  }),
+                  }, rtlChildSex),
                 )
               }
               activeOpacity={0.8}

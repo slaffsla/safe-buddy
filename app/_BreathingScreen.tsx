@@ -25,7 +25,7 @@ import {
   View,
 } from "react-native";
 import { BUDDY_FIXED_SPACER, C, getBuddyImage } from "./_constants";
-import { t } from "./i18n";
+import { RtlChildSex, t, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.38); // ~145px phone, ~290px tablet
@@ -53,6 +53,7 @@ interface Props {
   musicEnabled?: boolean;
   guidanceEnabled?: boolean;
   onGuidanceChange?: (enabled: boolean) => void;
+  rtlChildSex?: RtlChildSex;
 }
 
 type State = "idle" | "active" | "complete";
@@ -66,6 +67,7 @@ export default function BreathingScreen({
   musicEnabled = true,
   guidanceEnabled = true,
   onGuidanceChange,
+  rtlChildSex = "male",
 }: Props) {
   const [state, setState] = useState<State>("idle");
   const [phaseIdx, setPhaseIdx] = useState(0);
@@ -143,7 +145,9 @@ export default function BreathingScreen({
           : 0;
     if (guidanceEnabledRef.current) {
       if (guidanceVolume > 0) {
-        speak(t(spokenKey), { volume: guidanceVolume });
+        speak(tSpeak(spokenKey, undefined, rtlChildSex), {
+          volume: guidanceVolume,
+        });
       }
     }
     guidanceStepRef.current += 1;
@@ -207,7 +211,7 @@ export default function BreathingScreen({
     clearTimers();
     stopAudio();
     setState("complete");
-    speak(t("breathing.done_speak"));
+    speak(tSpeak("breathing.done_speak", undefined, rtlChildSex));
     onShowOverlay(); // ← restore global Buddy
     // Reset visual circle to a calm middle size.
     Animated.timing(buddyScale, {

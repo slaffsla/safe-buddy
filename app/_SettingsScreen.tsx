@@ -92,6 +92,7 @@ const CUSTOM_ID_OFFSET = 10000;
 export type ControlLevel = "hands-on" | "balanced" | "independent";
 export type RotationFrequency = "daily" | "every3" | "weekly" | "manual";
 export type DayModeOverride = "auto" | "weekday" | "weekend";
+export type RtlChildGender = "boy" | "girl";
 
 export interface RewardConfig {
   id: number;
@@ -107,6 +108,7 @@ export interface AppSettings {
   // Child
   childName: string;
   ageProfileOverride: "auto" | "little" | "middle" | "teen";
+  rtlChildGender: RtlChildGender;
 
   // Security
   parentPin: string;
@@ -177,6 +179,7 @@ function buildDefaultSettings(): AppSettings {
     appLocale: getAppLocale(),
     childName: "",
     ageProfileOverride: "auto",
+    rtlChildGender: "boy",
     parentPin: "",
     pinEnabled: false,
     missionCompletionPinEnabled: false,
@@ -1295,6 +1298,8 @@ function ChildSection({
 }) {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(settings.childName);
+  const showRtlGender =
+    settings.appLocale.startsWith("he") || settings.appLocale.startsWith("ar");
 
   function saveName() {
     if (!nameInput.trim()) {
@@ -1348,6 +1353,25 @@ function ChildSection({
           </SettingRow>
         )}
         <Divider />
+        {showRtlGender && (
+          <>
+            <SettingRow
+              label={t("settings.rtl_gender_label")}
+              sublabel={t("settings.rtl_gender_sub")}
+            >
+              <PillSelector
+                compact
+                options={[
+                  { label: t("settings.rtl_gender_boy"), value: "boy" },
+                  { label: t("settings.rtl_gender_girl"), value: "girl" },
+                ]}
+                value={settings.rtlChildGender ?? "boy"}
+                onChange={(v) => onChange({ rtlChildGender: v as RtlChildGender })}
+              />
+            </SettingRow>
+            <Divider />
+          </>
+        )}
         <SettingRow
           label={t("settings.reset_progress")}
           sublabel={t("settings.reset_progress_sub")}

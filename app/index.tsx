@@ -152,7 +152,7 @@ function parseTimeToMinutes(hhmm: string): number | null {
 // ── TTS ───────────────────────────────────────────────────────────────────────
 
 function ttsLanguagePrefix(tag: string): string {
-  return tag.split("-")[0] ?? tag;
+  return tag.toLowerCase().split(/[-_]/)[0] ?? tag.toLowerCase();
 }
 
 function voiceMatchesLanguage(
@@ -160,7 +160,10 @@ function voiceMatchesLanguage(
   language: string,
 ): boolean {
   if (!voice?.language) return false;
-  return voice.language.startsWith(ttsLanguagePrefix(language));
+  const voiceLang = voice.language.toLowerCase().replace("_", "-");
+  const normalizedLanguage = language.toLowerCase().replace("_", "-");
+  const prefix = ttsLanguagePrefix(normalizedLanguage);
+  return voiceLang === normalizedLanguage || voiceLang.startsWith(prefix);
 }
 
 async function resolveVoiceForLanguage(language: string) {
@@ -168,12 +171,38 @@ async function resolveVoiceForLanguage(language: string) {
     await new Promise((r) => setTimeout(r, 800));
     const voices = await Speech.getAvailableVoicesAsync();
     if (!voices?.length) return null;
-    const prefix = ttsLanguagePrefix(language);
+    const normalizedLanguage = language.toLowerCase().replace("_", "-");
+    const prefix = ttsLanguagePrefix(normalizedLanguage);
     const enhanced = (Speech as any).VoiceQuality?.Enhanced;
+    const byLanguage = voices.filter((v) =>
+      voiceMatchesLanguage(v, normalizedLanguage),
+    );
+    // iOS/Samsung sometimes expose multiple he voices where one spells letters.
+    // Prefer enhanced/default and de-prioritize novelty voices.
+    const byNameScore = (v: any) => {
+      const name = String(v?.name ?? "").toLowerCase();
+      const qualityBonus = v?.quality === enhanced ? 10 : 0;
+      const minusNovelty =
+        /compact|novelty|enhanced\(novelty\)|eloquence/.test(name) ? -4 : 0;
+      const plusDefault = /default|siri|female|male/.test(name) ? 2 : 0;
+      return qualityBonus + plusDefault + minusNovelty;
+    };
+    const preferredByName = [...byLanguage].sort(
+      (a, b) => byNameScore(b) - byNameScore(a),
+    );
     return (
-      voices.find((v) => v.language === language && v.quality === enhanced) ||
-      voices.find((v) => v.language === language) ||
-      voices.find((v) => v.language?.startsWith(prefix)) ||
+      preferredByName[0] ||
+      voices.find(
+        (v) =>
+          v.language?.toLowerCase().replace("_", "-") === normalizedLanguage &&
+          v.quality === enhanced,
+      ) ||
+      voices.find(
+        (v) => v.language?.toLowerCase().replace("_", "-") === normalizedLanguage,
+      ) ||
+      voices.find((v) =>
+        v.language?.toLowerCase().replace("_", "-").startsWith(prefix),
+      ) ||
       null
     );
   } catch {
@@ -185,7 +214,21 @@ type SpeechCallOptions = {
   volume?: number;
 };
 
-function useSpeech(enabled: boolean) {
+function applyRtlGenderSpeech(text: string, language: string, gender: "boy" | "girl") {
+  if (gender !== "girl") return text;
+  const prefix = ttsLanguagePrefix(language);
+  if (prefix !== "he" && prefix !== "ar") return text;
+
+  // Lightweight practical fixes for common masculine Hebrew forms in prompts.
+  return text
+    .replace(/\bשמח\b/g, "שמחה")
+    .replace(/\bמוכן\b/g, "מוכנה")
+    .replace(/\bרגוע\b/g, "רגועה")
+    .replace(/\bבטוח\b/g, "בטוחה")
+    .replace(/\bעצמאי\b/g, "עצמאית");
+}
+
+function useSpeech(enabled: boolean, rtlChildGender: "boy" | "girl" = "boy") {
   const voiceRef = useRef<any>(null);
   const languageRef = useRef(getTtsLanguage());
   const enabledRef = useRef(enabled);
@@ -227,11 +270,19 @@ function useSpeech(enabled: boolean) {
     try {
       Speech.stop();
     } catch {}
-    const cleanedText = text.replace(
-      /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
-      "",
-    );
     const lang = getTtsLanguage();
+    const genderedText = applyRtlGenderSpeech(text, lang, rtlChildGender);
+    const cleanedText = genderedText
+      .replace(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+        "",
+      )
+      .replace(/[⭐★☆•▪︎▶️→←]/g, " ")
+      .replace(/\s*[—–-]\s*/g, ", ")
+      .replace(/\s*\.\s*/g, ". ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!cleanedText) return;
     if (languageRef.current !== lang) {
       languageRef.current = lang;
       resolveVoiceForLanguage(lang).then((v) => {
@@ -256,13 +307,36 @@ function useSpeech(enabled: boolean) {
       () => {
         speakTimerRef.current = null;
         if (!enabledRef.current) return;
+        const fallbackOpts: any = { ...opts };
+        delete fallbackOpts.voice;
+        const speakWithFallback = () => {
+          try {
+            Speech.speak(cleanedText, {
+              ...fallbackOpts,
+              onError: () => {
+                // Last resort for Hebrew engines that reject selected voice.
+                try {
+                  Speech.speak(cleanedText, fallbackOpts);
+                } catch {}
+              },
+            });
+          } catch {}
+        };
         try {
-          Speech.speak(cleanedText, opts);
-        } catch {}
+          Speech.speak(cleanedText, {
+            ...opts,
+            onError: () => {
+              voiceRef.current = null;
+              speakWithFallback();
+            },
+          });
+        } catch {
+          speakWithFallback();
+        }
       },
       Platform.OS === "ios" ? 120 : 0,
     );
-  }, []);
+  }, [rtlChildGender]);
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
@@ -319,7 +393,7 @@ export default function App() {
     null,
   );
 
-  const speak = useSpeech(ttsEnabled);
+  const speak = useSpeech(ttsEnabled, appSettings.rtlChildGender ?? "boy");
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride

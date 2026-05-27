@@ -890,6 +890,56 @@ export default function App() {
     });
   }, []);
 
+  const syncProgressFromStorage = useCallback(async () => {
+    try {
+      const vals = await AsyncStorage.multiGet([
+        K.STARS,
+        K.TOTAL_EVER,
+        K.COMPLETED_TODAY,
+        K.TOTAL_MISSIONS,
+        K.LAST_MISSION,
+        K.FIRST_REWARD,
+        K.SKIP_COUNT,
+        K.DONE_IDS_TODAY,
+        K.TINY_FACT_LAST_SHOWN,
+      ]);
+      const v: Record<string, string> = Object.fromEntries(
+        vals.map(([k, val]) => [k, val ?? ""]),
+      );
+      const st = v[K.STARS] ? parseInt(v[K.STARS], 10) : 0;
+      const tot = v[K.TOTAL_EVER] ? parseInt(v[K.TOTAL_EVER], 10) : st;
+      const tm = v[K.TOTAL_MISSIONS] ? parseInt(v[K.TOTAL_MISSIONS], 10) : 0;
+      const comp = v[K.COMPLETED_TODAY]
+        ? parseInt(v[K.COMPLETED_TODAY], 10)
+        : 0;
+      const sk = v[K.SKIP_COUNT] ? parseInt(v[K.SKIP_COUNT], 10) : 0;
+      let doneIds: number[] = [];
+      try {
+        const parsed = v[K.DONE_IDS_TODAY] ? JSON.parse(v[K.DONE_IDS_TODAY]) : [];
+        doneIds = Array.isArray(parsed)
+          ? parsed.filter((n: unknown) => typeof n === "number")
+          : [];
+      } catch {
+        doneIds = [];
+      }
+      setStars(st);
+      setTotalEver(tot);
+      setPrevTotalEver(tot);
+      setCompletedToday(comp);
+      setTotalMissions(tm);
+      setLastMission(getStoredMissionTitle(v[K.LAST_MISSION]));
+      setFirstReward(v[K.FIRST_REWARD] === "true");
+      setSkipCount(sk);
+      setDoneIdsToday(doneIds);
+      setFirstMission(tm === 0);
+      tinyFactLastShownRef.current = v[K.TINY_FACT_LAST_SHOWN]
+        ? parseInt(v[K.TINY_FACT_LAST_SHOWN], 10)
+        : 0;
+    } catch (e) {
+      console.log("syncProgressFromStorage error", e);
+    }
+  }, []);
+
   function openRewardsScreen() {
     incrementLocalUsage("rewardsViewed").catch(console.log);
     setScreen("rewards");
@@ -1270,13 +1320,30 @@ export default function App() {
 
       {screen === "settings" && (
         <SettingsScreen
-          onClose={() => setScreen("home")}
+          onClose={async () => {
+            await syncProgressFromStorage();
+            setScreen("home");
+          }}
           onSettingsChange={(s: AppSettings) => {
             setAppSettings(s);
             setChildName(s.childName);
             setParentPin(s.parentPin);
             setPinEnabled(s.pinEnabled);
             setTtsEnabled(s.ttsEnabled);
+          }}
+          onProgressReset={() => {
+            setStars(0);
+            setTotalEver(0);
+            setPrevTotalEver(0);
+            setCompletedToday(0);
+            setTotalMissions(0);
+            setLastMission(null);
+            setFirstReward(false);
+            setSkipCount(0);
+            setDoneIdsToday([]);
+            setFirstMission(true);
+            setIsVeryExcited(false);
+            syncProgressFromStorage().catch(console.log);
           }}
           currentPin={parentPin}
           pinEnabled={pinEnabled}
@@ -1364,6 +1431,7 @@ export default function App() {
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={20}
+            style={s.pinKeyboardWrap}
           >
             <View style={s.pinCard}>
               <Image
@@ -1570,14 +1638,18 @@ const s = StyleSheet.create({
     padding: 12,
     zIndex: 2000,
   },
+  pinKeyboardWrap: {
+    width: "100%",
+    alignItems: "center",
+  },
   pinCard: {
     backgroundColor: C.white,
     borderRadius: 20,
     paddingVertical: 28,
     paddingHorizontal: 22,
     alignItems: "center",
-    width: "96%",
-    maxWidth: 560,
+    width: "100%",
+    maxWidth: 640,
   },
   pinTitle: { fontSize: 20, fontWeight: "700", color: C.text, marginBottom: 4 },
   pinSub: {

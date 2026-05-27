@@ -239,6 +239,9 @@ const SK = {
   LAST_MISSION: "sb_last_mission",
   FIRST_REWARD: "sb_first_reward",
   MORNING_DONE: "sb_morning_done",
+  DONE_IDS_TODAY: "sb_done_ids_today",
+  SKIP_COUNT: "sb_skip_count",
+  TINY_FACT_LAST_SHOWN: "sb_tiny_fact_last_shown",
   DEMO_DONE: "sb_demo_done",
   ONBOARDING_DONE: "sb_onboarding_done",
   CHILD_NAME: "sb_child_name",
@@ -978,6 +981,7 @@ function PinSection({
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={20}
+            style={ss.pinKeyboardWrap}
           >
             <View style={ss.pinCard}>
               {showSetPin ? (
@@ -2910,6 +2914,8 @@ interface SettingsScreenProps {
   onClose: () => void;
   // Called whenever settings change so index.tsx can update its own state
   onSettingsChange: (settings: AppSettings) => void;
+  // Called after full progress reset so index.tsx can sync in-memory counters
+  onProgressReset?: () => void;
   // Optional: pass current PIN for protected reset
   currentPin?: string;
   pinEnabled?: boolean;
@@ -2952,6 +2958,7 @@ function LanguageToggle({
 export default function SettingsScreen({
   onClose,
   onSettingsChange,
+  onProgressReset,
   currentPin = "",
   pinEnabled = false,
 }: SettingsScreenProps) {
@@ -3045,13 +3052,15 @@ export default function SettingsScreen({
             onPress: async () => {
               await AsyncStorage.multiSet([
                 [SK.STARS, "0"],
-                ["sb_total_v2", "0"],
-                ["sb_total_missions", "0"],
-                ["sb_today_v2", "0"],
-                ["sb_last_mission", ""],
-                ["sb_first_reward", "false"],
+                [SK.TOTAL_EVER, "0"],
+                [SK.TOTAL_MISSIONS, "0"],
+                [SK.COMPLETED_TODAY, "0"],
+                [SK.LAST_MISSION, ""],
+                [SK.FIRST_REWARD, "false"],
                 [SK.MORNING_DONE, ""],
-                ["sb_skip_count", "0"],
+                [SK.DONE_IDS_TODAY, "[]"],
+                [SK.SKIP_COUNT, "0"],
+                [SK.TINY_FACT_LAST_SHOWN, "0"],
               ]);
               await resetLocalUsage();
               setProgress({
@@ -3064,6 +3073,7 @@ export default function SettingsScreen({
                 morningDoneDate: null,
                 usage: DEFAULT_LOCAL_USAGE,
               });
+              onProgressReset?.();
               Alert.alert(t("settings.reset_done"));
             },
           },
@@ -3305,6 +3315,7 @@ export default function SettingsScreen({
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={20}
+            style={ss.pinKeyboardWrap}
           >
             <View style={ss.pinCard}>
               <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
@@ -3454,14 +3465,18 @@ const ss = StyleSheet.create({
     alignItems: "center",
     padding: 12,
   },
+  pinKeyboardWrap: {
+    width: "100%",
+    alignItems: "center",
+  },
   pinCard: {
     backgroundColor: C.white,
     borderRadius: 20,
     paddingVertical: 28,
     paddingHorizontal: 22,
     alignItems: "center",
-    width: "96%",
-    maxWidth: 560,
+    width: "100%",
+    maxWidth: 640,
   },
   pinTitle: {
     fontSize: 18,
@@ -3937,16 +3952,4 @@ const u = StyleSheet.create({
     paddingTop: 4,
   },
 
-  // PIN
-  pinInput: {
-    fontSize: 32,
-    textAlign: "center",
-    letterSpacing: 12,
-    marginBottom: 20,
-    width: "100%",
-    borderBottomWidth: 2,
-    borderColor: C.border,
-    paddingBottom: 8,
-    color: C.text,
-  },
 });

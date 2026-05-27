@@ -92,7 +92,7 @@ const CUSTOM_ID_OFFSET = 10000;
 export type ControlLevel = "hands-on" | "balanced" | "independent";
 export type RotationFrequency = "daily" | "every3" | "weekly" | "manual";
 export type DayModeOverride = "auto" | "weekday" | "weekend";
-export type RtlChildGender = "boy" | "girl";
+export type RtlChildSex = "male" | "female";
 
 export interface RewardConfig {
   id: number;
@@ -108,7 +108,7 @@ export interface AppSettings {
   // Child
   childName: string;
   ageProfileOverride: "auto" | "little" | "middle" | "teen";
-  rtlChildGender: RtlChildGender;
+  rtlChildSex: RtlChildSex;
 
   // Security
   parentPin: string;
@@ -179,7 +179,7 @@ function buildDefaultSettings(): AppSettings {
     appLocale: getAppLocale(),
     childName: "",
     ageProfileOverride: "auto",
-    rtlChildGender: "boy",
+    rtlChildSex: "male",
     parentPin: "",
     pinEnabled: false,
     missionCompletionPinEnabled: false,
@@ -255,6 +255,15 @@ export async function loadSettings(): Promise<AppSettings> {
       merged.appLocale = parsed.appLocale
         ? normalizeAppLocale(parsed.appLocale)
         : DEFAULT_SETTINGS.appLocale;
+      // Migration: rename rtlChildGender -> rtlChildSex
+      const parsedAny = parsed as any;
+      if (
+        typeof parsedAny.rtlChildSex === "undefined" &&
+        parsedAny.rtlChildGender
+      ) {
+        merged.rtlChildSex =
+          parsedAny.rtlChildGender === "girl" ? "female" : "male";
+      }
       setAppLocale(merged.appLocale);
 
       // Upgrade: if stored missions array is smaller than the full pool,
@@ -1356,17 +1365,17 @@ function ChildSection({
         {showRtlGender && (
           <>
             <SettingRow
-              label={t("settings.rtl_gender_label")}
-              sublabel={t("settings.rtl_gender_sub")}
+              label={t("settings.rtl_sex_label")}
+              sublabel={t("settings.rtl_sex_sub")}
             >
               <PillSelector
                 compact
                 options={[
-                  { label: t("settings.rtl_gender_boy"), value: "boy" },
-                  { label: t("settings.rtl_gender_girl"), value: "girl" },
+                  { label: t("settings.rtl_sex_male"), value: "male" },
+                  { label: t("settings.rtl_sex_female"), value: "female" },
                 ]}
-                value={settings.rtlChildGender ?? "boy"}
-                onChange={(v) => onChange({ rtlChildGender: v as RtlChildGender })}
+                value={settings.rtlChildSex ?? "male"}
+                onChange={(v) => onChange({ rtlChildSex: v as RtlChildSex })}
               />
             </SettingRow>
             <Divider />

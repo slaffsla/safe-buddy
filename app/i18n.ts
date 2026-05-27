@@ -17,6 +17,7 @@ i18n.defaultLocale = "ru";
 i18n.enableFallback = true; // Missing keys fall back to ru.json
 
 export type AppLocale = "ru" | "en" | "he";
+export type RtlChildSex = "male" | "female";
 
 export function normalizeAppLocale(
   locale: string | null | undefined,
@@ -43,6 +44,25 @@ export function setAppLocale(locale: AppLocale) {
  */
 export const t = (key: string, params?: Record<string, unknown>): string =>
   i18n.t(key, params);
+
+/**
+ * Speech-specific localization with optional RTL sex-aware variant selection.
+ * If `sex` is "female" and locale is RTL, tries `${key}_female` first.
+ */
+export function tSpeak(
+  key: string,
+  params?: Record<string, unknown>,
+  sex: RtlChildSex = "male",
+): string {
+  const loc = i18n.locale ?? "ru";
+  const rtl = loc.startsWith("he") || loc.startsWith("ar");
+  if (rtl && sex === "female") {
+    const femaleKey = `${key}_female`;
+    const femaleText = i18n.t(femaleKey, params);
+    if (femaleText !== femaleKey) return femaleText;
+  }
+  return i18n.t(key, params);
+}
 
 /**
  * Returns the localized mission title, or the provided fallback (used for

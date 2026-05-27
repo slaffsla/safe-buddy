@@ -17,12 +17,13 @@ import {
   getMorningStepTitle,
 } from "./_constants";
 import { Confetti } from "./_SharedUI";
-import { t } from "./i18n";
+import { RtlChildSex, t, tSpeak } from "./i18n";
 
 interface Props {
   childName: string;
   steps: MorningStep[];
   stars: number; // star reward from settings (default 1)
+  rtlChildSex?: RtlChildSex;
   speak: (t: string) => void;
   onComplete: (starsEarned: number) => void;
   onSkip: () => void;
@@ -32,6 +33,7 @@ export default function MorningRoutineScreen({
   childName,
   steps = [],
   stars,
+  rtlChildSex = "male",
   speak,
   onComplete,
   onSkip,
@@ -62,7 +64,7 @@ export default function MorningRoutineScreen({
 
   function handleComplete() {
     setFinished(true);
-    speak(t("morning.ready_speak"));
+    speak(tSpeak("morning.ready_speak", undefined, rtlChildSex));
     setTimeout(() => onComplete(stars), 3500);
   }
 
@@ -89,7 +91,9 @@ export default function MorningRoutineScreen({
       <View style={{ height: BUDDY_FIXED_SPACER }} />
       <View style={s.headerText}>
         <Text style={s.greeting}>{greeting}</Text>
-        <TouchableOpacity onPress={() => speak(t("buddy.morning"))}>
+        <TouchableOpacity
+          onPress={() => speak(tSpeak("buddy.morning", undefined, rtlChildSex))}
+        >
           <Text style={s.subGreeting}>{t("morning.subgreeting")}</Text>
         </TouchableOpacity>
       </View>

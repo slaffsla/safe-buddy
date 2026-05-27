@@ -80,7 +80,7 @@ import SettingsScreen, {
   saveSettings,
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
-import { getTtsLanguage, t } from "./i18n";
+import { getTtsLanguage, t, tSpeak } from "./i18n";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -214,8 +214,12 @@ type SpeechCallOptions = {
   volume?: number;
 };
 
-function applyRtlGenderSpeech(text: string, language: string, gender: "boy" | "girl") {
-  if (gender !== "girl") return text;
+function applyRtlGenderSpeech(
+  text: string,
+  language: string,
+  sex: "male" | "female",
+) {
+  if (sex !== "female") return text;
   const prefix = ttsLanguagePrefix(language);
   if (prefix !== "he" && prefix !== "ar") return text;
 
@@ -228,7 +232,7 @@ function applyRtlGenderSpeech(text: string, language: string, gender: "boy" | "g
     .replace(/\bעצמאי\b/g, "עצמאית");
 }
 
-function useSpeech(enabled: boolean, rtlChildGender: "boy" | "girl" = "boy") {
+function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
   const voiceRef = useRef<any>(null);
   const languageRef = useRef(getTtsLanguage());
   const enabledRef = useRef(enabled);
@@ -271,7 +275,7 @@ function useSpeech(enabled: boolean, rtlChildGender: "boy" | "girl" = "boy") {
       Speech.stop();
     } catch {}
     const lang = getTtsLanguage();
-    const genderedText = applyRtlGenderSpeech(text, lang, rtlChildGender);
+    const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
     const cleanedText = genderedText
       .replace(
         /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
@@ -336,7 +340,7 @@ function useSpeech(enabled: boolean, rtlChildGender: "boy" | "girl" = "boy") {
       },
       Platform.OS === "ios" ? 120 : 0,
     );
-  }, [rtlChildGender]);
+  }, [rtlChildSex]);
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
@@ -393,7 +397,7 @@ export default function App() {
     null,
   );
 
-  const speak = useSpeech(ttsEnabled, appSettings.rtlChildGender ?? "boy");
+  const speak = useSpeech(ttsEnabled, appSettings.rtlChildSex ?? "male");
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride
@@ -595,7 +599,7 @@ export default function App() {
       ]);
       setChildName(name);
       setOnboardingDone(true);
-      speak(t("onboarding.welcome_greeting", { name }));
+      speak(tSpeak("onboarding.welcome_greeting", { name }, appSettings.rtlChildSex ?? "male"));
       // After onboarding go to demo if not done, else home
       setScreen("demo_intro");
     } catch {
@@ -1090,6 +1094,7 @@ export default function App() {
               : DEFAULT_MORNING_STEPS
           }
           stars={appSettings.morningStars ?? 1}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           speak={speak}
           onComplete={async (earned) => {
             const today = todayStr();
@@ -1176,7 +1181,7 @@ export default function App() {
           }
           showMorningNudge={showMorningNudge}
           onMorningNudge={() => {
-            speak(t("home.morning_nudge_speak"));
+            speak(tSpeak("home.morning_nudge_speak", undefined, appSettings.rtlChildSex ?? "male"));
             setScreen("pick");
           }}
         />

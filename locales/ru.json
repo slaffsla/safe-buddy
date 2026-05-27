@@ -419,6 +419,8 @@
     "morning_stars": "Звёзд за рутину",
     "morning_stars_sub": "За весь комплект шагов",
     "morning_steps_heading": "Шаги утренней рутины",
+    "morning_manage_title": "Редактировать шаги утренней рутины",
+    "morning_summary_steps": "Настроено шагов: {{count}}",
     "step_name_placeholder": "Название шага",
     "add_step": "+ Добавить шаг",
     "day_mode": "Режим дня",

@@ -426,6 +426,8 @@
     "morning_stars": "Stars for routine",
     "morning_stars_sub": "For completing all steps",
     "morning_steps_heading": "Morning routine steps",
+    "morning_manage_title": "Edit morning routine steps",
+    "morning_summary_steps": "{{count}} steps configured",
     "step_name_placeholder": "Step name",
     "add_step": "+ Add step",
     "day_mode": "Day mode",

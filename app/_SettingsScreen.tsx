@@ -1367,9 +1367,13 @@ function ChildSection({
 function DailyRoutineSection({
   settings,
   onChange,
+  showStepsEditor = true,
+  onOpenStepsManager,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
+  showStepsEditor?: boolean;
+  onOpenStepsManager?: () => void;
 }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [stepTitle, setStepTitle] = useState("");
@@ -1465,15 +1469,131 @@ function DailyRoutineSection({
               </View>
             </SettingRow>
 
-            <Divider />
-            <Text style={u.subheading}>
-              {t("settings.morning_steps_heading")}
-            </Text>
+            {showStepsEditor ? (
+              <>
+                <Divider />
+                <Text style={u.subheading}>
+                  {t("settings.morning_steps_heading")}
+                </Text>
 
-            {settings.morningSteps.map((step, idx) => (
-              <View key={step.id}>
-                {idx > 0 && <Divider />}
-                {editingId === step.id ? (
+                {settings.morningSteps.map((step, idx) => (
+                  <View key={step.id}>
+                    {idx > 0 && <Divider />}
+                    {editingId === step.id ? (
+                      <View style={u.editBlock}>
+                        <View style={{ flexDirection: "row", gap: 8 }}>
+                          <TextInput
+                            style={[u.editInput, { width: 52 }]}
+                            value={stepEmoji}
+                            onChangeText={setStepEmoji}
+                            placeholder="🌟"
+                            placeholderTextColor={C.muted}
+                          />
+                          <TextInput
+                            style={[u.editInput, { flex: 1 }]}
+                            value={stepTitle}
+                            onChangeText={setStepTitle}
+                            placeholder={t("settings.step_name_placeholder")}
+                            placeholderTextColor={C.muted}
+                            autoFocus
+                          />
+                        </View>
+                        <View style={u.rowBtns}>
+                          <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
+                            <Text style={u.btnPrimaryTxt}>
+                              {t("settings.save")}
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={u.btnCancel}
+                            onPress={() => {
+                              setEditingId(null);
+                              setStepTitle("");
+                              setStepEmoji("");
+                            }}
+                          >
+                            <Text style={u.btnCancelTxt}>
+                              {t("settings.cancel")}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={u.row}>
+                        <Text style={{ fontSize: 22, marginRight: 10 }}>
+                          {step.emoji}
+                        </Text>
+                        <Text style={[u.rowLabel, { flex: 1 }]}>
+                          {getMorningStepTitle(step.id, step.title)}
+                        </Text>
+                        <TouchableOpacity
+                          style={u.stepperBtn}
+                          onPress={() => moveStep(step.id, -1)}
+                          disabled={idx === 0}
+                        >
+                          <Text
+                            style={[u.stepperTxt, idx === 0 && { opacity: 0.25 }]}
+                          >
+                            ↑
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[u.stepperBtn, { marginLeft: 4 }]}
+                          onPress={() => moveStep(step.id, 1)}
+                          disabled={idx === settings.morningSteps.length - 1}
+                        >
+                          <Text
+                            style={[
+                              u.stepperTxt,
+                              idx === settings.morningSteps.length - 1 && {
+                                opacity: 0.25,
+                              },
+                            ]}
+                          >
+                            ↓
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[u.linkBtn, { marginLeft: 4 }]}
+                          onPress={() => {
+                            setEditingId(step.id);
+                            setStepTitle(getMorningStepTitle(step.id, step.title));
+                            setStepEmoji(step.emoji);
+                          }}
+                        >
+                          <Text style={u.linkBtnTxt}>
+                            {t("settings.edit_short")}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={u.dangerBtn}
+                          onPress={() => deleteStep(step.id)}
+                        >
+                          <Text style={u.dangerBtnTxt}>✕</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                ))}
+
+                {settings.morningSteps.length < 6 && editingId !== -1 && (
+                  <>
+                    <Divider />
+                    <TouchableOpacity
+                      style={u.inlineAction}
+                      onPress={() => {
+                        setEditingId(-1);
+                        setStepTitle("");
+                        setStepEmoji("");
+                      }}
+                    >
+                      <Text style={u.inlineActionTxt}>
+                        {t("settings.add_step")}
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+                {editingId === -1 && (
                   <View style={u.editBlock}>
                     <View style={{ flexDirection: "row", gap: 8 }}>
                       <TextInput
@@ -1494,9 +1614,7 @@ function DailyRoutineSection({
                     </View>
                     <View style={u.rowBtns}>
                       <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
-                        <Text style={u.btnPrimaryTxt}>
-                          {t("settings.save")}
-                        </Text>
+                        <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={u.btnCancel}
@@ -1506,122 +1624,33 @@ function DailyRoutineSection({
                           setStepEmoji("");
                         }}
                       >
-                        <Text style={u.btnCancelTxt}>
-                          {t("settings.cancel")}
-                        </Text>
+                        <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
-                ) : (
-                  <View style={u.row}>
-                    <Text style={{ fontSize: 22, marginRight: 10 }}>
-                      {step.emoji}
-                    </Text>
-                    <Text style={[u.rowLabel, { flex: 1 }]}>
-                      {getMorningStepTitle(step.id, step.title)}
-                    </Text>
-                    <TouchableOpacity
-                      style={u.stepperBtn}
-                      onPress={() => moveStep(step.id, -1)}
-                      disabled={idx === 0}
-                    >
-                      <Text
-                        style={[u.stepperTxt, idx === 0 && { opacity: 0.25 }]}
-                      >
-                        ↑
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[u.stepperBtn, { marginLeft: 4 }]}
-                      onPress={() => moveStep(step.id, 1)}
-                      disabled={idx === settings.morningSteps.length - 1}
-                    >
-                      <Text
-                        style={[
-                          u.stepperTxt,
-                          idx === settings.morningSteps.length - 1 && {
-                            opacity: 0.25,
-                          },
-                        ]}
-                      >
-                        ↓
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[u.linkBtn, { marginLeft: 4 }]}
-                      onPress={() => {
-                        setEditingId(step.id);
-                        setStepTitle(getMorningStepTitle(step.id, step.title));
-                        setStepEmoji(step.emoji);
-                      }}
-                    >
-                      <Text style={u.linkBtnTxt}>
-                        {t("settings.edit_short")}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={u.dangerBtn}
-                      onPress={() => deleteStep(step.id)}
-                    >
-                      <Text style={u.dangerBtnTxt}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
                 )}
-              </View>
-            ))}
-
-            {settings.morningSteps.length < 6 && editingId !== -1 && (
+              </>
+            ) : (
               <>
                 <Divider />
                 <TouchableOpacity
-                  style={u.inlineAction}
-                  onPress={() => {
-                    setEditingId(-1);
-                    setStepTitle("");
-                    setStepEmoji("");
-                  }}
+                  style={ss.scheduleManageBtn}
+                  onPress={onOpenStepsManager}
+                  activeOpacity={0.78}
                 >
-                  <Text style={u.inlineActionTxt}>
-                    {t("settings.add_step")}
-                  </Text>
+                  <View style={ss.subscreenRowLeft}>
+                    <Text style={ss.scheduleManageBtnTitle}>
+                      {t("settings.morning_manage_title")}
+                    </Text>
+                    <Text style={ss.scheduleManageBtnSub}>
+                      {t("settings.morning_summary_steps", {
+                        count: String(settings.morningSteps.length),
+                      })}
+                    </Text>
+                  </View>
+                  <Text style={ss.scheduleManageBtnArrow}>→</Text>
                 </TouchableOpacity>
               </>
-            )}
-            {editingId === -1 && (
-              <View style={u.editBlock}>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <TextInput
-                    style={[u.editInput, { width: 52 }]}
-                    value={stepEmoji}
-                    onChangeText={setStepEmoji}
-                    placeholder="🌟"
-                    placeholderTextColor={C.muted}
-                  />
-                  <TextInput
-                    style={[u.editInput, { flex: 1 }]}
-                    value={stepTitle}
-                    onChangeText={setStepTitle}
-                    placeholder={t("settings.step_name_placeholder")}
-                    placeholderTextColor={C.muted}
-                    autoFocus
-                  />
-                </View>
-                <View style={u.rowBtns}>
-                  <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
-                    <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={u.btnCancel}
-                    onPress={() => {
-                      setEditingId(null);
-                      setStepTitle("");
-                      setStepEmoji("");
-                    }}
-                  >
-                    <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
             )}
           </>
         )}
@@ -2748,9 +2777,9 @@ export default function SettingsScreen({
   const [showPin, setShowPin] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [parentZoneOpen, setParentZoneOpen] = useState(false);
-  const [activeSubscreen, setActiveSubscreen] = useState<"main" | "schedule">(
-    "main",
-  );
+  const [activeSubscreen, setActiveSubscreen] = useState<
+    "main" | "schedule" | "routine"
+  >("main");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load on mount
@@ -2894,6 +2923,37 @@ export default function SettingsScreen({
     );
   }
 
+  if (activeSubscreen === "routine") {
+    const stepsCount = settings.morningSteps.length;
+    return (
+      <SafeAreaView style={ss.root}>
+        <View pointerEvents="none" style={ss.bgBandTop} />
+        <View pointerEvents="none" style={ss.bgBandMid} />
+        <View style={ss.header}>
+          <TouchableOpacity
+            onPress={() => setActiveSubscreen("main")}
+            style={ss.backBtn}
+          >
+            <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+          </TouchableOpacity>
+          <Text style={ss.headerTitle}>{t("settings.routine_section")}</Text>
+          <View style={ss.headerRight}>
+            <Text style={ss.subHeaderMeta}>{stepsCount}</Text>
+          </View>
+        </View>
+        <ScrollView
+          key={`${settings.appLocale}-routine`}
+          style={ss.scroll}
+          contentContainerStyle={ss.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <DailyRoutineSection settings={settings} onChange={updateSettings} />
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={ss.root}>
       <View pointerEvents="none" style={ss.bgBandTop} />
@@ -2965,7 +3025,12 @@ export default function SettingsScreen({
         <View style={ss.spacer} />
 
         {/* Daily routine */}
-        <DailyRoutineSection settings={settings} onChange={updateSettings} />
+        <DailyRoutineSection
+          settings={settings}
+          onChange={updateSettings}
+          showStepsEditor={false}
+          onOpenStepsManager={() => setActiveSubscreen("routine")}
+        />
 
         <View style={ss.spacer} />
 

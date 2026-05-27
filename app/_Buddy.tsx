@@ -28,11 +28,6 @@ interface BuddyProps {
   onPettingChange?: (petting: boolean) => void;
   // Optional external phase scale (used by BreathingScreen to sync phases).
   phaseScale?: Animated.Value | Animated.AnimatedInterpolation<number>;
-  showName?: boolean;
-  scaleNameWithImage?: boolean;
-  wrapperTopMargin?: number;
-  nameTopMargin?: number;
-  nameOffsetX?: number;
   fixed?: boolean; // If true, Buddy stays fixed on screen (absolute positioning)
   fixedBottom?: number; // Distance from bottom when fixed (default: 180)
   fixedTop?: number; // Distance from top when fixed
@@ -46,11 +41,6 @@ export default function Buddy({
   pettable = false,
   onPettingChange,
   phaseScale,
-  showName = true,
-  scaleNameWithImage = false,
-  wrapperTopMargin = 20,
-  nameTopMargin = 4,
-  nameOffsetX = 0,
   fixed = false,
   fixedBottom,
   fixedTop = 90,
@@ -198,16 +188,6 @@ export default function Buddy({
   }
 
   const image = getBuddyImage(mood);
-  const nameLabel = (
-    <Text
-      style={[
-        s.buddyName,
-        { marginTop: nameTopMargin, transform: [{ translateX: nameOffsetX }] },
-      ]}
-    >
-      {t("buddy.name")}
-    </Text>
-  );
   const buddyContent = (
     <View>
       <TouchableOpacity
@@ -215,7 +195,7 @@ export default function Buddy({
         onPressIn={startPetting}
         onPressOut={endPetting}
         activeOpacity={1}
-        style={[s.buddyWrapper, { marginTop: wrapperTopMargin }]}
+        style={s.buddyWrapper}
       >
         <Animated.View
           style={[
@@ -241,11 +221,10 @@ export default function Buddy({
             }}
             resizeMode="contain"
           />
-          {showName && scaleNameWithImage && nameLabel}
         </Animated.View>
       </TouchableOpacity>
 
-      {showName && !scaleNameWithImage && nameLabel}
+      <Text style={s.buddyName}>{t("buddy.name")}</Text>
 
       {pettable && showHearts && (
         <View style={s.heartsContainer} pointerEvents="none">

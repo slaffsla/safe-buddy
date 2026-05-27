@@ -488,7 +488,6 @@ export default function BreathingScreen({
           speak={speak}
           size={BUDDY_BASE}
           phaseScale={buddyScale}
-          wrapperTopMargin={0}
           pettable={currentPhaseIndex !== 0}
           onPettingChange={(petting) => {
             setIsPetting(petting);

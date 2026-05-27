@@ -1368,11 +1368,13 @@ function DailyRoutineSection({
   settings,
   onChange,
   showStepsEditor = true,
+  showDayModeCard = true,
   onOpenStepsManager,
 }: {
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
   showStepsEditor?: boolean;
+  showDayModeCard?: boolean;
   onOpenStepsManager?: () => void;
 }) {
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -1580,14 +1582,14 @@ function DailyRoutineSection({
                   <>
                     <Divider />
                     <TouchableOpacity
-                      style={u.inlineAction}
+                      style={ss.scheduleManageBtn}
                       onPress={() => {
                         setEditingId(-1);
                         setStepTitle("");
                         setStepEmoji("");
                       }}
                     >
-                      <Text style={u.inlineActionTxt}>
+                      <Text style={ss.scheduleManageBtnTitle}>
                         {t("settings.add_step")}
                       </Text>
                     </TouchableOpacity>
@@ -1656,30 +1658,33 @@ function DailyRoutineSection({
         )}
       </Card>
 
-      {/* Day mode override */}
-      <Card>
-        <Text style={[u.rowLabel, { padding: 14, paddingBottom: 4 }]}>
-          {t("settings.day_mode")}
-        </Text>
-        <Text
-          style={[u.rowSublabel, { paddingHorizontal: 14, paddingBottom: 8 }]}
-        >
-          {(settings.dayModeOverride ?? "auto") === "auto"
-            ? t("settings.day_mode_auto")
-            : settings.dayModeOverride === "weekday"
-              ? t("settings.day_mode_weekday")
-              : t("settings.day_mode_weekend")}
-        </Text>
-        <PillSelector
-          options={[
-            { label: t("settings.day_pill_auto"), value: "auto" },
-            { label: t("settings.day_pill_weekday"), value: "weekday" },
-            { label: t("settings.day_pill_weekend"), value: "weekend" },
-          ]}
-          value={settings.dayModeOverride ?? "auto"}
-          onChange={(v) => onChange({ dayModeOverride: v as DayModeOverride })}
-        />
-      </Card>
+      {showDayModeCard && (
+        <Card>
+          <Text style={[u.rowLabel, { padding: 14, paddingBottom: 4 }]}>
+            {t("settings.day_mode")}
+          </Text>
+          <Text
+            style={[u.rowSublabel, { paddingHorizontal: 14, paddingBottom: 8 }]}
+          >
+            {(settings.dayModeOverride ?? "auto") === "auto"
+              ? t("settings.day_mode_auto")
+              : settings.dayModeOverride === "weekday"
+                ? t("settings.day_mode_weekday")
+                : t("settings.day_mode_weekend")}
+          </Text>
+          <PillSelector
+            options={[
+              { label: t("settings.day_pill_auto"), value: "auto" },
+              { label: t("settings.day_pill_weekday"), value: "weekday" },
+              { label: t("settings.day_pill_weekend"), value: "weekend" },
+            ]}
+            value={settings.dayModeOverride ?? "auto"}
+            onChange={(v) =>
+              onChange({ dayModeOverride: v as DayModeOverride })
+            }
+          />
+        </Card>
+      )}
     </View>
   );
 }
@@ -1978,8 +1983,8 @@ function ScheduleSection({
           {editingId !== -1 && blocks.length < SCHEDULE_MAX_BLOCKS && (
             <>
               <Divider />
-              <TouchableOpacity style={u.inlineAction} onPress={startAdd}>
-                <Text style={u.inlineActionTxt}>
+              <TouchableOpacity style={ss.scheduleManageBtn} onPress={startAdd}>
+                <Text style={ss.scheduleManageBtnTitle}>
                   {t("settings.add_schedule_item")}
                 </Text>
               </TouchableOpacity>
@@ -2572,7 +2577,7 @@ function ParentZoneView({
   }
 
   return (
-    <SafeAreaView style={ss.root}>
+    <SafeAreaView key={`pz-${settings.appLocale}`} style={ss.root}>
       <View style={ss.header}>
         <TouchableOpacity onPress={onBack} style={ss.backBtn}>
           <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
@@ -2581,6 +2586,7 @@ function ParentZoneView({
         <View style={{ width: 80 }} />
       </View>
       <ScrollView
+        key={`pz-scroll-${settings.appLocale}`}
         style={ss.scroll}
         contentContainerStyle={ss.content}
         keyboardShouldPersistTaps="handled"
@@ -2911,7 +2917,7 @@ export default function SettingsScreen({
   if (activeSubscreen === "schedule") {
     const scheduleCount = (settings.scheduleBlocks ?? []).length;
     return (
-      <SafeAreaView style={ss.root}>
+      <SafeAreaView key={`schedule-${settings.appLocale}`} style={ss.root}>
         <View pointerEvents="none" style={ss.bgBandTop} />
         <View pointerEvents="none" style={ss.bgBandMid} />
         <View style={ss.header}>
@@ -2942,7 +2948,7 @@ export default function SettingsScreen({
   if (activeSubscreen === "routine") {
     const stepsCount = settings.morningSteps.length;
     return (
-      <SafeAreaView style={ss.root}>
+      <SafeAreaView key={`routine-${settings.appLocale}`} style={ss.root}>
         <View pointerEvents="none" style={ss.bgBandTop} />
         <View pointerEvents="none" style={ss.bgBandMid} />
         <View style={ss.header}>
@@ -2963,7 +2969,11 @@ export default function SettingsScreen({
           contentContainerStyle={ss.content}
           keyboardShouldPersistTaps="handled"
         >
-          <DailyRoutineSection settings={settings} onChange={updateSettings} />
+          <DailyRoutineSection
+            settings={settings}
+            onChange={updateSettings}
+            showDayModeCard={false}
+          />
           <View style={{ height: 40 }} />
         </ScrollView>
       </SafeAreaView>
@@ -3045,6 +3055,7 @@ export default function SettingsScreen({
           settings={settings}
           onChange={updateSettings}
           showStepsEditor={false}
+          showDayModeCard={true}
           onOpenStepsManager={() => setActiveSubscreen("routine")}
         />
 

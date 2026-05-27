@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "icon": "./assets/Character/buddy-happy.png",
     "scheme": "realokids",
+    "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
@@ -17,6 +18,7 @@
     "ios": {
       "icon": "./assets/Character/buddy-happy.png",
       "supportsTablet": true,
+      "requireFullScreen": true,
       "bundleIdentifier": "com.slaff.realokids",
       "buildNumber": "1"
     },

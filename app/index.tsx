@@ -443,8 +443,15 @@ export default function App() {
         setLastMission(
           newDay ? getStoredMissionTitle(v[K.LAST_MISSION]) : null,
         );
+        const onboardingAlreadyComplete =
+          v[K.PARENT_ONBOARDING_DONE] === "true" &&
+          v[K.ONBOARDING_DONE] === "true";
         const morningDone = v[K.MORNING_DONE] ?? "";
-        if (s.morningEnabled && shouldShowMorning(morningDone)) {
+        if (
+          onboardingAlreadyComplete &&
+          s.morningEnabled &&
+          shouldShowMorning(morningDone)
+        ) {
           setShowMorning(true);
         }
 

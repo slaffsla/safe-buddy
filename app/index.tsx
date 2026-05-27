@@ -41,6 +41,7 @@ import {
   getRewardTitle,
   getStoredMissionTitle,
   getTinyFact,
+  getTinyJokes,
   isWeekend,
   MISSION_POOL,
   MISSIONS_EASY,
@@ -590,7 +591,8 @@ export default function App() {
     const allFacts = MISSION_POOL.map((m) => getTinyFact(m.id)).filter(
       (f): f is string => !!f,
     );
-    if (allFacts.length === 0) {
+    const allJokes = getTinyJokes();
+    if (allFacts.length === 0 && allJokes.length === 0) {
       return;
     }
 
@@ -598,9 +600,12 @@ export default function App() {
 
     function pickFact(): string {
       const missionFact = getTinyFact(mission.id);
+      // Mix jokes into the tiny-facts stream, but keep mission fact slightly
+      // preferred when one exists.
+      const mixed = [...allFacts, ...allJokes];
       const pool = missionFact
-        ? [missionFact, ...allFacts.filter((f) => f !== missionFact)]
-        : allFacts;
+        ? [missionFact, ...mixed.filter((f) => f !== missionFact)]
+        : mixed;
       const withoutLast = pool.filter((f) => f !== tinyFactLastTextRef.current);
       const source = withoutLast.length > 0 ? withoutLast : pool;
       return source[Math.floor(Math.random() * source.length)];

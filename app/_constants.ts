@@ -788,6 +788,16 @@ export function getTinyFact(missionId: number): string | null {
   return result ? result : null;
 }
 
+export function getTinyJokes(limit = 20): string[] {
+  const jokes: string[] = [];
+  for (let i = 1; i <= limit; i += 1) {
+    const key = `tiny_jokes.j${i}`;
+    const result = i18n.t(key, { defaultValue: "" });
+    if (result && result !== key) jokes.push(result);
+  }
+  return jokes;
+}
+
 export const SCHEDULE_MAX_BLOCKS = 30;
 
 function parseHM(t: string): number {

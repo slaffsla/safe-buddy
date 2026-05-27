@@ -12,7 +12,12 @@
 // "complete" state, BUDDY_FIXED_SPACER at the top so the global Buddy
 // overlay is visible, same speak prop usage.
 
-import { Audio } from "expo-av";
+import {
+  createAudioPlayer,
+  setIsAudioActiveAsync,
+  setAudioModeAsync,
+  type AudioPlayer,
+} from "expo-audio";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -43,6 +48,7 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
 const GUIDANCE_FULL_CYCLES = 3;
 const GUIDANCE_SOFT_CYCLES = 1;
 const GUIDANCE_SOFT_VOLUME = 0.65;
+const AUDIO_DEBUG = true;
 
 interface Props {
   speak: (t: string, options?: { volume?: number }) => void;
@@ -77,7 +83,8 @@ export default function BreathingScreen({
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionStart = useRef<number>(0);
-  const soundRef = useRef<any>(null);
+  const soundRef = useRef<AudioPlayer | null>(null);
+  const soundSubRef = useRef<{ remove: () => void } | null>(null);
   const firstInhaleRef = useRef(true);
   const guidanceStepRef = useRef(0);
   const guidanceEnabledRef = useRef(guidanceEnabled);
@@ -96,22 +103,59 @@ export default function BreathingScreen({
 
   async function loadAndPlayAudio() {
     if (!musicEnabled) return;
+    if (AUDIO_DEBUG) console.log("[breathing-audio] loadAndPlayAudio:start");
     try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
+      await setIsAudioActiveAsync(true);
+      if (AUDIO_DEBUG) console.log("[breathing-audio] setIsAudioActiveAsync(true):ok");
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        interruptionMode: "doNotMix",
+        allowsRecording: false,
+        shouldRouteThroughEarpiece: false,
+        shouldPlayInBackground: false,
       });
+      if (AUDIO_DEBUG) console.log("[breathing-audio] setAudioModeAsync:ok");
     } catch (e) {
       console.warn("setAudioModeAsync failed:", e);
     }
     try {
       const source = require("../assets/audio/breathing.mp3");
-      const { sound } = await Audio.Sound.createAsync(source, {
-        isLooping: true,
-        volume: 0.65,
+      if (AUDIO_DEBUG) console.log("[breathing-audio] source:", source);
+      const sound = createAudioPlayer(source, {
+        keepAudioSessionActive: true,
       });
+      if (AUDIO_DEBUG) console.log("[breathing-audio] player created");
+      try {
+        soundSubRef.current = sound.addListener(
+          "playbackStatusUpdate",
+          (status: any) => {
+            if (!AUDIO_DEBUG) return;
+            console.log("[breathing-audio] status:", {
+              playing: status?.playing,
+              muted: status?.muted,
+              currentTime: status?.currentTime,
+              duration: status?.duration,
+              reason: status?.reasonForWaitingToPlay,
+            });
+          },
+        );
+      } catch (e) {
+        if (AUDIO_DEBUG) {
+          console.log("[breathing-audio] addListener failed:", String(e));
+        }
+      }
+      sound.loop = true;
+      sound.volume = 0.65;
       soundRef.current = sound;
-      await sound.playAsync();
+      if (AUDIO_DEBUG) console.log("[breathing-audio] play()");
+      sound.play();
+      // iOS route/session quirk guard: retry once shortly after initial play.
+      setTimeout(() => {
+        try {
+          sound.play();
+          if (AUDIO_DEBUG) console.log("[breathing-audio] play() retry");
+        } catch {}
+      }, 250);
     } catch (e) {
       console.warn("Audio load/play failed:", e);
       soundRef.current = null;
@@ -119,14 +163,25 @@ export default function BreathingScreen({
   }
 
   async function stopAudio() {
+    if (AUDIO_DEBUG) console.log("[breathing-audio] stopAudio:start");
     if (!soundRef.current) return;
     try {
-      await soundRef.current.stopAsync();
+      soundSubRef.current?.remove();
+    } catch {}
+    soundSubRef.current = null;
+    try {
+      soundRef.current.pause();
+      if (AUDIO_DEBUG) console.log("[breathing-audio] pause:ok");
     } catch {}
     try {
-      await soundRef.current.unloadAsync();
+      soundRef.current.remove();
+      if (AUDIO_DEBUG) console.log("[breathing-audio] remove:ok");
     } catch {}
     soundRef.current = null;
+    try {
+      await setIsAudioActiveAsync(false);
+      if (AUDIO_DEBUG) console.log("[breathing-audio] setIsAudioActiveAsync(false):ok");
+    } catch {}
   }
 
   function runPhase(idx: number) {

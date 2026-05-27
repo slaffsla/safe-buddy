@@ -21,6 +21,7 @@ import {
   Alert,
   Image,
   Linking,
+  Modal,
   ScrollView,
   StyleSheet,
   Switch,
@@ -908,79 +909,93 @@ function PinSection({
         ) : null}
       </Card>
 
-      {showSetPin && (
-        <Card>
-          <Text style={u.subheading}>{t("settings.pin_new_heading")}</Text>
-          <TextInput
-            style={u.pinInput}
-            keyboardType="numeric"
-            maxLength={4}
-            secureTextEntry
-            placeholder="····"
-            placeholderTextColor={C.muted}
-            value={newPin}
-            onChangeText={setNewPin}
-          />
-          <Text style={u.subheading}>{t("settings.pin_confirm_heading")}</Text>
-          <TextInput
-            style={u.pinInput}
-            keyboardType="numeric"
-            maxLength={4}
-            secureTextEntry
-            placeholder="····"
-            placeholderTextColor={C.muted}
-            value={confirmPin}
-            onChangeText={setConfirmPin}
-          />
-          <View style={u.rowBtns}>
-            <TouchableOpacity style={u.btnPrimary} onPress={handleSetPin}>
-              <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={u.btnCancel}
-              onPress={() => {
-                setShowSetPin(false);
-                setNewPin("");
-                setConfirmPin("");
-              }}
-            >
-              <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
-            </TouchableOpacity>
+      <Modal
+        visible={showSetPin || showRemovePin}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowSetPin(false);
+          setShowRemovePin(false);
+        }}
+      >
+        <View style={ss.pinOverlay}>
+          <View style={ss.pinCard}>
+            {showSetPin ? (
+              <>
+                <Text style={ss.pinTitle}>{t("settings.pin_new_heading")}</Text>
+                <TextInput
+                  style={ss.pinInput}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  secureTextEntry
+                  placeholder="····"
+                  placeholderTextColor={C.muted}
+                  value={newPin}
+                  onChangeText={setNewPin}
+                  autoFocus
+                />
+                <Text style={ss.pinTitle}>
+                  {t("settings.pin_confirm_heading")}
+                </Text>
+                <TextInput
+                  style={ss.pinInput}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  secureTextEntry
+                  placeholder="····"
+                  placeholderTextColor={C.muted}
+                  value={confirmPin}
+                  onChangeText={setConfirmPin}
+                  onSubmitEditing={handleSetPin}
+                />
+                <TouchableOpacity style={ss.pinBtnPrimary} onPress={handleSetPin}>
+                  <Text style={ss.pinBtnPrimaryTxt}>{t("settings.save")}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={ss.pinBtnCancel}
+                  onPress={() => {
+                    setShowSetPin(false);
+                    setNewPin("");
+                    setConfirmPin("");
+                  }}
+                >
+                  <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
+                <TextInput
+                  style={ss.pinInput}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  secureTextEntry
+                  placeholder="····"
+                  placeholderTextColor={C.muted}
+                  value={removePinInput}
+                  onChangeText={setRemovePinInput}
+                  autoFocus
+                  onSubmitEditing={verifyRemovePin}
+                />
+                <TouchableOpacity style={ss.pinBtnPrimary} onPress={verifyRemovePin}>
+                  <Text style={ss.pinBtnPrimaryTxt}>
+                    {t("settings.confirm")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={ss.pinBtnCancel}
+                  onPress={() => {
+                    setShowRemovePin(false);
+                    setRemovePinInput("");
+                  }}
+                >
+                  <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
-        </Card>
-      )}
-
-      {showRemovePin && (
-        <Card>
-          <Text style={u.subheading}>{t("settings.pin_enter_title")}</Text>
-          <TextInput
-            style={u.pinInput}
-            keyboardType="numeric"
-            maxLength={4}
-            secureTextEntry
-            placeholder="····"
-            placeholderTextColor={C.muted}
-            value={removePinInput}
-            onChangeText={setRemovePinInput}
-            autoFocus
-            onSubmitEditing={verifyRemovePin}
-          />
-          <View style={u.rowBtns}>
-            <TouchableOpacity style={u.btnPrimary} onPress={verifyRemovePin}>
-              <Text style={u.btnPrimaryTxt}>{t("settings.confirm")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={u.btnCancel}
-              onPress={() => {
-                setShowRemovePin(false);
-                setRemovePinInput("");
-              }}
-            >
-              <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-      )}
+        </View>
+      </Modal>
 
       <Card>
         <Text

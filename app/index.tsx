@@ -129,6 +129,7 @@ const K = {
   DONE_IDS_TODAY: "sb_done_ids_today",
   CHILD_AGE: "sb_child_age",
   TINY_FACT_LAST_SHOWN: "sb_tiny_fact_last_shown",
+  BREATHING_INTRO_RUNS: "sb_breathing_intro_runs",
 };
 
 const TINY_FACT_IDLE_MIN_MS = 2000;
@@ -366,6 +367,7 @@ export default function App() {
   const [showMorning, setShowMorning] = useState(false);
   const [doneIdsToday, setDoneIdsToday] = useState<number[]>([]);
   const [showGlobalBuddy, setShowGlobalBuddy] = useState(true);
+  const [breathingIntroRuns, setBreathingIntroRuns] = useState(0);
 
   // Onboarding
   const [parentOnboardingDone, setParentOnboardingDone] = useState(false);
@@ -462,6 +464,7 @@ export default function App() {
           K.DONE_IDS_TODAY,
           K.CHILD_AGE,
           K.TINY_FACT_LAST_SHOWN,
+          K.BREATHING_INTRO_RUNS,
         ]);
         // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
         const v: Record<string, string> = Object.fromEntries(
@@ -501,6 +504,11 @@ export default function App() {
         tinyFactLastShownRef.current = v[K.TINY_FACT_LAST_SHOWN]
           ? parseInt(v[K.TINY_FACT_LAST_SHOWN], 10)
           : 0;
+        setBreathingIntroRuns(
+          v[K.BREATHING_INTRO_RUNS]
+            ? Math.max(0, parseInt(v[K.BREATHING_INTRO_RUNS], 10) || 0)
+            : 0,
+        );
 
         // Restore today's completed mission IDs (reset on new day)
         if (newDay) {
@@ -886,6 +894,18 @@ export default function App() {
     setAppSettings((prev) => {
       const next = { ...prev, breathingMusicEnabled: enabled };
       saveSettings(next).catch(console.log);
+      return next;
+    });
+  }, []);
+
+  const handleBreathingSessionStart = useCallback(() => {
+    setBreathingIntroRuns((prev) => {
+      const next = Math.min(10, prev + 1);
+      if (next !== prev) {
+        AsyncStorage.setItem(K.BREATHING_INTRO_RUNS, String(next)).catch(
+          console.log,
+        );
+      }
       return next;
     });
   }, []);
@@ -1369,6 +1389,8 @@ export default function App() {
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           musicEnabled={appSettings.breathingMusicEnabled}
           guidanceEnabled={appSettings.breathingGuidanceEnabled}
+          introEnabled={breathingIntroRuns < 10}
+          onSessionStart={handleBreathingSessionStart}
           onMusicChange={handleBreathingMusicChange}
           onGuidanceChange={handleBreathingGuidanceChange}
           onComplete={() => {

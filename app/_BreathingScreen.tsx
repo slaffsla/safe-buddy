@@ -66,6 +66,8 @@ interface Props {
   onShowOverlay: () => void; // ← new
   musicEnabled?: boolean;
   guidanceEnabled?: boolean;
+  introEnabled?: boolean;
+  onSessionStart?: () => void;
   onMusicChange?: (enabled: boolean) => void;
   onGuidanceChange?: (enabled: boolean) => void;
   rtlChildSex?: RtlChildSex;
@@ -81,6 +83,8 @@ export default function BreathingScreen({
   onShowOverlay,
   musicEnabled = true,
   guidanceEnabled = true,
+  introEnabled = true,
+  onSessionStart,
   onMusicChange,
   onGuidanceChange,
   rtlChildSex = "male",
@@ -300,7 +304,12 @@ export default function BreathingScreen({
   }
 
   function startSession() {
+    onSessionStart?.();
     clearTimers();
+    if (!introEnabled) {
+      startSessionCore();
+      return;
+    }
     setPrepRemainingMs(PREP_HINT_DURATION_MS);
     setState("priming");
     speak(petHintText);

@@ -34,7 +34,7 @@
           "image": "./assets/Character/buddy-happy.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#F7F6F2",
+          "backgroundColor": "#1D6B4F",
           "dark": {
             "backgroundColor": "#1D6B4F"
           }

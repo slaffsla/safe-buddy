@@ -1238,7 +1238,12 @@ export default function App() {
             <Text style={s.pinTitle}>{t("pinChild.title")}</Text>
             {pendingReward && (
               <Text style={s.pinSub}>
-                {t("pinChild.unlock_label", { title: pendingReward.title })}
+                {t("pinChild.unlock_label", {
+                  title: getRewardTitle(
+                    pendingReward.id,
+                    pendingReward.title,
+                  ),
+                })}
               </Text>
             )}
             <TextInput

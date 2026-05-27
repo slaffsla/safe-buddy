@@ -54,6 +54,7 @@ export default function Buddy({
   const petBounceAnim = useRef<Animated.CompositeAnimation | null>(null);
   const [isPetting, setIsPetting] = useState(false);
   const [showHearts, setShowHearts] = useState(false);
+  const [heartBurst, setHeartBurst] = useState(0);
   const heartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pettableRef = useRef(pettable);
   const onPettingChangeRef = useRef(onPettingChange);
@@ -160,6 +161,7 @@ export default function Buddy({
     if (!isPetting) setIsPetting(true);
     onPettingChangeRef.current?.(true);
     setShowHearts(true);
+    setHeartBurst((n) => n + 1);
     Animated.spring(pettingScale, {
       toValue: 1.1,
       friction: 7,
@@ -205,7 +207,7 @@ export default function Buddy({
       easing: Easing.out(Easing.sin),
       useNativeDriver: true,
     }).start();
-    heartTimeout.current = setTimeout(() => setShowHearts(false), 1200);
+    heartTimeout.current = setTimeout(() => setShowHearts(false), 220);
   }
 
   function handlePress() {
@@ -271,9 +273,9 @@ export default function Buddy({
 
       {pettable && showHearts && (
         <View style={s.heartsContainer} pointerEvents="none">
-          <FloatingHeart delay={0} driftX={-10} />
-          <FloatingHeart delay={220} driftX={0} />
-          <FloatingHeart delay={440} driftX={10} />
+          <FloatingHeart key={`hb-${heartBurst}-1`} delay={0} driftX={-10} />
+          <FloatingHeart key={`hb-${heartBurst}-2`} delay={110} driftX={0} />
+          <FloatingHeart key={`hb-${heartBurst}-3`} delay={220} driftX={10} />
         </View>
       )}
     </View>

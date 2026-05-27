@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Easing,
   Image,
   StyleSheet,
   Text,
@@ -48,7 +49,9 @@ export default function Buddy({
   const tapScale = useRef(new Animated.Value(1)).current;
   const breathScale = useRef(new Animated.Value(1)).current;
   const pettingScale = useRef(new Animated.Value(1)).current;
+  const petBounceY = useRef(new Animated.Value(0)).current;
   const breathAnim = useRef<Animated.CompositeAnimation | null>(null);
+  const petBounceAnim = useRef<Animated.CompositeAnimation | null>(null);
   const [isPetting, setIsPetting] = useState(false);
   const [showHearts, setShowHearts] = useState(false);
   const heartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -118,6 +121,7 @@ export default function Buddy({
   useEffect(() => {
     return () => {
       if (heartTimeout.current) clearTimeout(heartTimeout.current);
+      petBounceAnim.current?.stop();
     };
   }, []);
 
@@ -141,20 +145,46 @@ export default function Buddy({
       tension: 40,
       useNativeDriver: true,
     }).start();
-  }, [pettable, pettingScale]);
+    petBounceAnim.current?.stop();
+    petBounceAnim.current = null;
+    Animated.timing(petBounceY, {
+      toValue: 0,
+      duration: 140,
+      useNativeDriver: true,
+    }).start();
+  }, [pettable, petBounceY, pettingScale]);
 
   function startPetting() {
     if (!pettableRef.current) return;
     if (heartTimeout.current) clearTimeout(heartTimeout.current);
-    setIsPetting(true);
+    if (!isPetting) setIsPetting(true);
     onPettingChangeRef.current?.(true);
     setShowHearts(true);
     Animated.spring(pettingScale, {
-      toValue: 1.08,
-      friction: 8,
-      tension: 40,
+      toValue: 1.1,
+      friction: 7,
+      tension: 55,
       useNativeDriver: true,
     }).start();
+    if (!petBounceAnim.current) {
+      petBounceAnim.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(petBounceY, {
+            toValue: -2.5,
+            duration: 180,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(petBounceY, {
+            toValue: 0,
+            duration: 200,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      petBounceAnim.current.start();
+    }
   }
 
   function endPetting() {
@@ -165,6 +195,14 @@ export default function Buddy({
       toValue: 1,
       friction: 6,
       tension: 40,
+      useNativeDriver: true,
+    }).start();
+    petBounceAnim.current?.stop();
+    petBounceAnim.current = null;
+    Animated.timing(petBounceY, {
+      toValue: 0,
+      duration: 160,
+      easing: Easing.out(Easing.sin),
       useNativeDriver: true,
     }).start();
     heartTimeout.current = setTimeout(() => setShowHearts(false), 1200);
@@ -195,6 +233,10 @@ export default function Buddy({
         onPressIn={startPetting}
         onPressOut={endPetting}
         activeOpacity={1}
+        hitSlop={pettable ? { top: 24, right: 24, bottom: 24, left: 24 } : undefined}
+        pressRetentionOffset={
+          pettable ? { top: 40, right: 40, bottom: 40, left: 40 } : undefined
+        }
         style={s.buddyWrapper}
       >
         <Animated.View
@@ -208,6 +250,7 @@ export default function Buddy({
                     pettingScale,
                   ),
                 },
+                { translateY: petBounceY },
               ],
             },
           ]}

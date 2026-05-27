@@ -378,6 +378,11 @@ export default function BreathingScreen({
   }, [isPetting]);
 
   const petHintText = tSpeak("breathing.pet_hint", undefined, rtlChildSex);
+  const natureFactText = tSpeak(
+    "tiny_facts.breathing_nature",
+    undefined,
+    rtlChildSex,
+  );
   const prepCountdown =
     prepRemainingMs > 2000 ? 3 : prepRemainingMs > 1000 ? 2 : 1;
 
@@ -425,9 +430,13 @@ export default function BreathingScreen({
           </View>
         </View>
 
-        <View style={s.natureFact}>
+        <TouchableOpacity
+          style={s.natureFact}
+          onPress={() => speak(petHintText)}
+          activeOpacity={0.8}
+        >
           <Text style={s.natureFactText}>💡 {petHintText}</Text>
-        </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={s.btnSecondary}
@@ -531,12 +540,10 @@ export default function BreathingScreen({
       {showNatureFact && (
         <TouchableOpacity
           style={s.natureFact}
-          onPress={() => speak(t("tiny_facts.breathing_nature"))}
+          onPress={() => speak(natureFactText)}
           activeOpacity={0.8}
         >
-          <Text style={s.natureFactText}>
-            🌿 {t("tiny_facts.breathing_nature")}
-          </Text>
+          <Text style={s.natureFactText}>🌿 {natureFactText}</Text>
         </TouchableOpacity>
       )}
       <View style={s.progressTrack}>

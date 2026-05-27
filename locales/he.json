@@ -355,6 +355,8 @@
     "security_section": "אבטחה",
     "pin_label": "קוד לפרסים ולאזור הורה",
     "pin_sublabel": "מגן על פרסים ועל הגישה לאזור ההורה",
+    "pin_mission_label": "נעילת סיום משימה עם קוד",
+    "pin_mission_sublabel": "דורש קוד הורה לפני הוספת כוכבים",
     "pin_change_label": "שינוי קוד הורה",
     "pin_change_sublabel": "הקוד מוגדר לפרסים ולאזור ההורה",
     "pin_remove_label": "הסרת קוד",

@@ -111,6 +111,7 @@ export interface AppSettings {
   // Security
   parentPin: string;
   pinEnabled: boolean;
+  missionCompletionPinEnabled: boolean;
   controlLevel: ControlLevel;
 
   // Buddy behavior
@@ -178,6 +179,7 @@ function buildDefaultSettings(): AppSettings {
     ageProfileOverride: "auto",
     parentPin: "",
     pinEnabled: false,
+    missionCompletionPinEnabled: false,
     controlLevel: "balanced",
     nudgingEnabled: true,
     tinyFactsEnabled: false,
@@ -840,6 +842,19 @@ function PinSection({
             }}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
+          />
+        </SettingRow>
+        <Divider />
+        <SettingRow
+          label={t("settings.pin_mission_label")}
+          sublabel={t("settings.pin_mission_sublabel")}
+        >
+          <Switch
+            value={settings.missionCompletionPinEnabled}
+            onValueChange={(v) => onChange({ missionCompletionPinEnabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+            disabled={!settings.pinEnabled || !settings.parentPin}
           />
         </SettingRow>
 

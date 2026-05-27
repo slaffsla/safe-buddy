@@ -300,6 +300,7 @@ export default function App() {
   const [showPinScreen, setShowPinScreen] = useState(false);
   const [enteredPin, setEnteredPin] = useState("");
   const [pendingReward, setPendingReward] = useState<any>(null);
+  const [pendingMissionComplete, setPendingMissionComplete] = useState(false);
 
   // Settings
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -693,7 +694,7 @@ export default function App() {
     }, 5200);
   }
 
-  function completeMission() {
+  function completeMissionInternal() {
     if (!mission) return;
     const newEver = totalEver + mission.stars;
     const newTotal = totalMissions + 1;
@@ -728,6 +729,22 @@ export default function App() {
       triggerCelebrateConfetti(veryExcited ? "very-excited" : "excited");
     }
     setScreen("celebrate");
+  }
+
+  function completeMission() {
+    if (
+      appSettings.missionCompletionPinEnabled &&
+      pinEnabled &&
+      parentPin &&
+      mission
+    ) {
+      setPendingReward(null);
+      setPendingMissionComplete(true);
+      setEnteredPin("");
+      setShowPinScreen(true);
+      return;
+    }
+    completeMissionInternal();
   }
 
   function handleSuggestionAccept(suggestion: any) {
@@ -797,6 +814,9 @@ export default function App() {
       if (pendingReward) {
         redeemReward(pendingReward);
         setPendingReward(null);
+      } else if (pendingMissionComplete) {
+        setPendingMissionComplete(false);
+        completeMissionInternal();
       }
     } else {
       Alert.alert(t("pinChild.wrong_title"), t("pinChild.wrong_msg"));
@@ -1265,6 +1285,7 @@ export default function App() {
                 setShowPinScreen(false);
                 setEnteredPin("");
                 setPendingReward(null);
+                setPendingMissionComplete(false);
               }}
             >
               <Text style={s.pinCancelTxt}>{t("pinChild.cancel")}</Text>

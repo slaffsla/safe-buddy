@@ -349,6 +349,8 @@
     "security_section": "Безопасность",
     "pin_label": "PIN для наград и Родительской зоны",
     "pin_sublabel": "Защищает награды и доступ в Родительскую зону",
+    "pin_mission_label": "PIN для завершения миссии",
+    "pin_mission_sublabel": "Требовать PIN родителя перед начислением звёзд",
     "pin_change_label": "Изменить родительский PIN",
     "pin_change_sublabel": "PIN установлен для наград и Родительской зоны",
     "pin_remove_label": "Удалить PIN",

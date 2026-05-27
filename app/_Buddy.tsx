@@ -28,6 +28,7 @@ interface BuddyProps {
   onPettingChange?: (petting: boolean) => void;
   // Optional external phase scale (used by BreathingScreen to sync phases).
   phaseScale?: Animated.Value | Animated.AnimatedInterpolation<number>;
+  showName?: boolean;
   scaleNameWithImage?: boolean;
   wrapperTopMargin?: number;
   nameTopMargin?: number;
@@ -45,6 +46,7 @@ export default function Buddy({
   pettable = false,
   onPettingChange,
   phaseScale,
+  showName = true,
   scaleNameWithImage = false,
   wrapperTopMargin = 20,
   nameTopMargin = 4,
@@ -239,11 +241,11 @@ export default function Buddy({
             }}
             resizeMode="contain"
           />
-          {scaleNameWithImage && nameLabel}
+          {showName && scaleNameWithImage && nameLabel}
         </Animated.View>
       </TouchableOpacity>
 
-      {!scaleNameWithImage && nameLabel}
+      {showName && !scaleNameWithImage && nameLabel}
 
       {pettable && showHearts && (
         <View style={s.heartsContainer} pointerEvents="none">
@@ -334,7 +336,14 @@ const s = StyleSheet.create({
     padding: 4,
   },
   buddyAnimated: { alignItems: "center" },
-  buddyName: { fontSize: 12, color: C.muted, marginTop: 4, fontWeight: "500" },
+  buddyName: {
+    fontSize: 12,
+    color: C.muted,
+    marginTop: 4,
+    fontWeight: "500",
+    textAlign: "center",
+    alignSelf: "center",
+  },
   heartsContainer: {
     position: "absolute",
     top: 18,

@@ -2748,6 +2748,9 @@ export default function SettingsScreen({
   const [showPin, setShowPin] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [parentZoneOpen, setParentZoneOpen] = useState(false);
+  const [activeSubscreen, setActiveSubscreen] = useState<"main" | "schedule">(
+    "main",
+  );
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load on mount
@@ -2860,6 +2863,37 @@ export default function SettingsScreen({
     );
   }
 
+  if (activeSubscreen === "schedule") {
+    const scheduleCount = (settings.scheduleBlocks ?? []).length;
+    return (
+      <SafeAreaView style={ss.root}>
+        <View pointerEvents="none" style={ss.bgBandTop} />
+        <View pointerEvents="none" style={ss.bgBandMid} />
+        <View style={ss.header}>
+          <TouchableOpacity
+            onPress={() => setActiveSubscreen("main")}
+            style={ss.backBtn}
+          >
+            <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+          </TouchableOpacity>
+          <Text style={ss.headerTitle}>{t("settings.schedule_section")}</Text>
+          <View style={ss.headerRight}>
+            <Text style={ss.subHeaderMeta}>{scheduleCount}</Text>
+          </View>
+        </View>
+        <ScrollView
+          key={`${settings.appLocale}-schedule`}
+          style={ss.scroll}
+          contentContainerStyle={ss.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <ScheduleSection settings={settings} onChange={updateSettings} />
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={ss.root}>
       <View pointerEvents="none" style={ss.bgBandTop} />
@@ -2935,8 +2969,41 @@ export default function SettingsScreen({
 
         <View style={ss.spacer} />
 
-        {/* Day schedule — "what's now" card */}
-        <ScheduleSection settings={settings} onChange={updateSettings} />
+        {/* Day schedule */}
+        <SectionHeader title={t("settings.schedule_section")} icon="📅" />
+        <Card>
+          <SettingRow
+            label={t("settings.schedule_home_card_label")}
+            sublabel={t("settings.schedule_home_card_sub")}
+          >
+            <Switch
+              value={settings.scheduleEnabled}
+              onValueChange={(v) => updateSettings({ scheduleEnabled: v })}
+              trackColor={{ false: C.track, true: C.green }}
+              thumbColor={C.white}
+            />
+          </SettingRow>
+          <Divider />
+          <TouchableOpacity
+            style={ss.scheduleManageBtn}
+            onPress={() => setActiveSubscreen("schedule")}
+            activeOpacity={0.78}
+          >
+            <View style={ss.subscreenRowLeft}>
+              <Text style={ss.scheduleManageBtnTitle}>
+                {t("settings.schedule_manage_title")}
+              </Text>
+              <Text style={ss.scheduleManageBtnSub}>
+                {settings.scheduleEnabled
+                  ? t("settings.schedule_summary_on", {
+                      count: String((settings.scheduleBlocks ?? []).length),
+                    })
+                  : t("settings.schedule_summary_off")}
+              </Text>
+            </View>
+            <Text style={ss.scheduleManageBtnArrow}>→</Text>
+          </TouchableOpacity>
+        </Card>
 
         <View style={ss.spacer} />
 
@@ -3038,6 +3105,7 @@ const ss = StyleSheet.create({
   backBtn: { width: 114, paddingVertical: 4, paddingHorizontal: 8 },
   backBtnTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
   headerRight: { width: 114, alignItems: "flex-end" },
+  subHeaderMeta: { fontSize: 15, color: C.muted, fontWeight: "600" },
   langToggle: {
     flexDirection: "row",
     backgroundColor: C.bg,
@@ -3058,6 +3126,29 @@ const ss = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: 16 },
   spacer: { height: 24 },
+  subscreenRowLeft: { flex: 1, minWidth: 0 },
+  scheduleManageBtn: {
+    margin: 12,
+    marginTop: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CFE6DD",
+    backgroundColor: C.greenLt,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  scheduleManageBtnTitle: { fontSize: 14, fontWeight: "600", color: C.green },
+  scheduleManageBtnSub: {
+    fontSize: 12,
+    color: C.muted,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  scheduleManageBtnArrow: { fontSize: 18, color: C.green, fontWeight: "600" },
   pinOverlay: {
     position: "absolute",
     top: 0,
@@ -3352,30 +3443,30 @@ const u = StyleSheet.create({
   scheduleMainRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 10,
   },
   scheduleSubRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingTop: 0,
-    paddingBottom: 6,
-    gap: 8,
+    paddingBottom: 8,
+    gap: 10,
   },
-  scheduleEmoji: { fontSize: 18, marginRight: 2 },
-  scheduleLabel: { fontSize: 13, fontWeight: "500", color: C.text },
-  scheduleSublabel: { fontSize: 11, color: C.muted, marginTop: 1, lineHeight: 15 },
-  scheduleLinkBtn: { paddingVertical: 2, paddingHorizontal: 6 },
-  scheduleLinkBtnTxt: { fontSize: 12, color: C.green, fontWeight: "500" },
+  scheduleEmoji: { fontSize: 20, marginRight: 4 },
+  scheduleLabel: { fontSize: 14, fontWeight: "500", color: C.text },
+  scheduleSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 16 },
+  scheduleLinkBtn: { paddingVertical: 3, paddingHorizontal: 8 },
+  scheduleLinkBtnTxt: { fontSize: 13, color: C.green, fontWeight: "500" },
   scheduleDangerBtn: {
     backgroundColor: C.redLt,
-    borderRadius: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    borderRadius: 9,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
   },
-  scheduleDangerBtnTxt: { fontSize: 12, color: C.red, fontWeight: "600" },
+  scheduleDangerBtnTxt: { fontSize: 13, color: C.red, fontWeight: "600" },
 
   // Progress stats
   snapshotCard: {

@@ -95,9 +95,11 @@ export default function BreathingScreen({
   const [isPetting, setIsPetting] = useState(false);
   const [showNatureFact, setShowNatureFact] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [phaseElapsedMs, setPhaseElapsedMs] = useState(0);
   const [prepRemainingMs, setPrepRemainingMs] = useState(PREP_HINT_DURATION_MS);
 
   const buddyScale = useRef(new Animated.Value(0.2)).current;
+  const pulseOpacity = useRef(new Animated.Value(0)).current;
   const prepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prepTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -108,6 +110,8 @@ export default function BreathingScreen({
   );
   const natureFactShown = useRef(false);
   const isPettingRef = useRef(false);
+  const phaseStartedAtRef = useRef(0);
+  const phaseDurationRef = useRef(PHASES[0].duration);
   const sessionStart = useRef<number>(0);
   const stateRef = useRef<State>("idle");
   const soundRef = useRef<AudioPlayer | null>(null);
@@ -237,6 +241,9 @@ export default function BreathingScreen({
             phase.duration * (isPettingRef.current ? EXHALE_PET_MULTIPLIER : 1),
           )
         : phase.duration;
+    phaseStartedAtRef.current = Date.now();
+    phaseDurationRef.current = phaseDuration;
+    setPhaseElapsedMs(0);
     const spokenKey =
       idx === 0 && firstInhaleRef.current
         ? "breathing.phase_first_in"
@@ -286,6 +293,7 @@ export default function BreathingScreen({
     setPrepRemainingMs(0);
     setState("active");
     setElapsedMs(0);
+    setPhaseElapsedMs(0);
     setPhaseIdx(0);
     setCurrentPhaseIndex(0);
     setIsPetting(false);
@@ -318,13 +326,17 @@ export default function BreathingScreen({
     });
     // tick the progress bar
     tickRef.current = setInterval(() => {
-      const dt = Date.now() - sessionStart.current;
+      const now = Date.now();
+      const dt = now - sessionStart.current;
       if (dt >= BREATHING_DURATION_MS) {
         clearTimers();
         finishSession();
         return;
       }
       setElapsedMs(dt);
+      if (phaseStartedAtRef.current > 0) {
+        setPhaseElapsedMs(Math.max(0, now - phaseStartedAtRef.current));
+      }
     }, 200);
     natureFactTimerRef.current = setTimeout(() => {
       if (natureFactShown.current) return;
@@ -418,6 +430,36 @@ export default function BreathingScreen({
   useEffect(() => {
     isPettingRef.current = isPetting;
   }, [isPetting]);
+
+  const guideStep =
+    phaseIdx === 0
+      ? 1 + Math.min(2, Math.floor(phaseElapsedMs / 1000))
+      : phaseIdx === 1
+        ? 4
+        : 5 +
+          Math.min(
+            3,
+            Math.floor((phaseElapsedMs / Math.max(1, phaseDurationRef.current)) * 4),
+          );
+
+  useEffect(() => {
+    if (state !== "active") {
+      pulseOpacity.setValue(0);
+      return;
+    }
+    Animated.sequence([
+      Animated.timing(pulseOpacity, {
+        toValue: 0.65,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pulseOpacity, {
+        toValue: 0,
+        duration: 260,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [guideStep, pulseOpacity, state]);
 
   const petHintText = tSpeak("breathing.pet_hint", undefined, rtlChildSex);
   const natureFactText = tSpeak(
@@ -601,6 +643,26 @@ export default function BreathingScreen({
           <Text style={s.natureFactText}>🌿 {natureFactText}</Text>
         </TouchableOpacity>
       )}
+      <View style={s.cycleGuideWrap}>
+        <View style={s.cycleGuideRow}>
+          {[1, 2, 3, "|", 4, "|", 5, 6, 7, 8].map((item, idx) => {
+            if (item === "|") {
+              return (
+                <Text key={`sep-${idx}`} style={s.cycleSep}>
+                  |
+                </Text>
+              );
+            }
+            const active = guideStep === item;
+            return (
+              <Text key={`step-${item}`} style={[s.cycleStep, active && s.cycleStepActive]}>
+                {item}
+              </Text>
+            );
+          })}
+        </View>
+        <Animated.View style={[s.cyclePulse, { opacity: pulseOpacity }]} />
+      </View>
       <View style={s.progressTrack}>
         <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
       </View>
@@ -728,6 +790,46 @@ const s = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
+    backgroundColor: C.green,
+  },
+  cycleGuideWrap: {
+    width: "100%",
+    marginTop: 8,
+    alignItems: "center",
+  },
+  cycleGuideRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#FFFDF9",
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  cycleStep: {
+    minWidth: 14,
+    textAlign: "center",
+    fontSize: 12,
+    fontWeight: "600",
+    color: C.muted,
+  },
+  cycleStepActive: {
+    color: C.green,
+    fontWeight: "800",
+  },
+  cycleSep: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: C.border,
+    marginHorizontal: 2,
+  },
+  cyclePulse: {
+    width: 26,
+    height: 2,
+    borderRadius: 1,
+    marginTop: 4,
     backgroundColor: C.green,
   },
 

@@ -109,7 +109,11 @@ export default function BreathingScreen({
   const natureFactShown = useRef(false);
   const isPettingRef = useRef(false);
   const sessionStart = useRef<number>(0);
+  const stateRef = useRef<State>("idle");
   const soundRef = useRef<AudioPlayer | null>(null);
+  const audioLoadTokenRef = useRef(0);
+  const audioLoadingRef = useRef(false);
+  const lastCardSpeakAtRef = useRef(0);
   const firstInhaleRef = useRef(true);
   const guidanceStepRef = useRef(0);
   const guidanceEnabledRef = useRef(guidanceEnabled);
@@ -145,9 +149,16 @@ export default function BreathingScreen({
 
   const loadAndPlayAudio = useCallback(async () => {
     if (!musicEnabled) return;
+    if (stateRef.current !== "active") return;
     if (soundRef.current) return;
+    if (audioLoadingRef.current) return;
+    audioLoadingRef.current = true;
+    const token = ++audioLoadTokenRef.current;
     try {
       await setIsAudioActiveAsync(true);
+      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+        return;
+      }
       await setAudioModeAsync({
         playsInSilentMode: true,
         interruptionMode: "mixWithOthers",
@@ -155,6 +166,9 @@ export default function BreathingScreen({
         shouldRouteThroughEarpiece: false,
         shouldPlayInBackground: false,
       });
+      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+        return;
+      }
     } catch (e) {
       console.warn("setAudioModeAsync failed:", e);
     }
@@ -165,11 +179,19 @@ export default function BreathingScreen({
       });
       sound.loop = true;
       sound.volume = 0.65;
+      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+        try {
+          sound.remove();
+        } catch {}
+        return;
+      }
       soundRef.current = sound;
       sound.play();
       // iOS route/session quirk guard: retry once shortly after initial play.
       setTimeout(() => {
         try {
+          if (token !== audioLoadTokenRef.current) return;
+          if (stateRef.current !== "active") return;
           if (soundRef.current === sound && !sound.playing) sound.play();
         } catch {}
       }, 250);
@@ -185,18 +207,26 @@ export default function BreathingScreen({
       }
       console.warn("Audio load/play failed:", e);
       soundRef.current = null;
+    } finally {
+      if (token === audioLoadTokenRef.current) {
+        audioLoadingRef.current = false;
+      }
     }
   }, [musicEnabled]);
 
   const stopAudio = useCallback(() => {
-    if (!soundRef.current) return;
-    try {
-      soundRef.current.pause();
-    } catch {}
-    try {
-      soundRef.current.remove();
-    } catch {}
+    audioLoadTokenRef.current += 1;
+    audioLoadingRef.current = false;
+    const sound = soundRef.current;
     soundRef.current = null;
+    if (!sound) return;
+    try {
+      sound.pause();
+    } catch {}
+    try {
+      sound.remove();
+    } catch {}
+    setIsAudioActiveAsync(false).catch(() => {});
   }, []);
 
   function runPhase(idx: number) {
@@ -221,6 +251,7 @@ export default function BreathingScreen({
           : 0;
     if (
       guidanceEnabledRef.current &&
+      !showNatureFact &&
       Date.now() >= guidanceMuteUntilRef.current
     ) {
       if (guidanceVolume > 0) {
@@ -303,8 +334,6 @@ export default function BreathingScreen({
         setShowNatureFact(false);
       }, NATURE_FACT_VISIBLE_MS);
     }, NATURE_FACT_DELAY_MS);
-    // best-effort audio
-    if (musicEnabled) loadAndPlayAudio();
   }
 
   function startSession() {
@@ -369,6 +398,10 @@ export default function BreathingScreen({
   }, [guidanceEnabled]);
 
   useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
     if (state !== "active") return;
     if (musicEnabled) {
       loadAndPlayAudio();
@@ -376,6 +409,11 @@ export default function BreathingScreen({
     }
     stopAudio();
   }, [musicEnabled, state, loadAndPlayAudio, stopAudio]);
+
+  useEffect(() => {
+    if (state === "active") return;
+    stopAudio();
+  }, [state, stopAudio]);
 
   useEffect(() => {
     isPettingRef.current = isPetting;
@@ -389,9 +427,12 @@ export default function BreathingScreen({
   );
   const speakCardText = useCallback(
     (text: string) => {
-      // Prevent nearby phase prompts from immediately cutting off card TTS.
-      guidanceMuteUntilRef.current = Date.now() + 1800;
-      speak(text);
+      const now = Date.now();
+      if (now - lastCardSpeakAtRef.current < 350) return;
+      lastCardSpeakAtRef.current = now;
+      // Prevent phase prompts from cutting off the card text.
+      guidanceMuteUntilRef.current = Date.now() + 10000;
+      speak(text, { volume: 1 });
     },
     [speak],
   );
@@ -444,6 +485,7 @@ export default function BreathingScreen({
 
         <TouchableOpacity
           style={s.natureFact}
+          onPressIn={() => speakCardText(petHintText)}
           onPress={() => speakCardText(petHintText)}
           activeOpacity={0.8}
         >
@@ -552,6 +594,7 @@ export default function BreathingScreen({
       {showNatureFact && (
         <TouchableOpacity
           style={s.natureFact}
+          onPressIn={() => speakCardText(natureFactText)}
           onPress={() => speakCardText(natureFactText)}
           activeOpacity={0.8}
         >

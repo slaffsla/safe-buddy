@@ -37,7 +37,7 @@ const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
 
 // Hard-coded session length. Do not lift to settings.
-const BREATHING_DURATION_MS = 120_000;
+const BREATHING_DURATION_MS = 520_000;
 
 // Breathing rhythm: 3s inhale, 1s pause, 4s exhale.
 // Labels are resolved via i18n at render time so they follow the device locale.
@@ -46,7 +46,9 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
   { labelKey: "breathing.phase_hold", duration: 1000, target: 1.0 },
   { labelKey: "breathing.phase_out", duration: 4000, target: 0.74 },
 ];
-const EXHALE_PET_MULTIPLIER = 1.15;
+const EXHALE_PET_MULTIPLIER = 1.16;
+const PRE_TRANSITION_BOUNCE_MS = 100;
+const PRE_TRANSITION_BOUNCE_SCALE = 1.1;
 const GUIDANCE_FULL_CYCLES = 3;
 const GUIDANCE_SOFT_CYCLES = 1;
 const GUIDANCE_SOFT_VOLUME = 0.65;
@@ -99,10 +101,14 @@ export default function BreathingScreen({
   const [prepRemainingMs, setPrepRemainingMs] = useState(PREP_HINT_DURATION_MS);
 
   const buddyScale = useRef(new Animated.Value(0.2)).current;
+  const preTransitionScale = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(0)).current;
   const prepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prepTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const phaseBounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const natureFactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const natureFactHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -136,6 +142,10 @@ export default function BreathingScreen({
     if (phaseTimerRef.current) {
       clearTimeout(phaseTimerRef.current);
       phaseTimerRef.current = null;
+    }
+    if (phaseBounceTimerRef.current) {
+      clearTimeout(phaseBounceTimerRef.current);
+      phaseBounceTimerRef.current = null;
     }
     if (tickRef.current) {
       clearInterval(tickRef.current);
@@ -278,12 +288,29 @@ export default function BreathingScreen({
     }
     guidanceStepRef.current += 1;
     setCurrentPhaseIndex(idx);
+    const settleDuration = Math.max(
+      0,
+      phaseDuration - PRE_TRANSITION_BOUNCE_MS,
+    );
+    if (phaseBounceTimerRef.current) {
+      clearTimeout(phaseBounceTimerRef.current);
+      phaseBounceTimerRef.current = null;
+    }
+    preTransitionScale.setValue(1);
     Animated.timing(buddyScale, {
       toValue: phase.target,
-      duration: phaseDuration,
+      duration: settleDuration,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
     }).start();
+    phaseBounceTimerRef.current = setTimeout(() => {
+      Animated.timing(preTransitionScale, {
+        toValue: PRE_TRANSITION_BOUNCE_SCALE,
+        duration: PRE_TRANSITION_BOUNCE_MS,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    }, settleDuration);
     setPhaseIdx(idx);
     phaseTimerRef.current = setTimeout(() => {
       runPhase((idx + 1) % PHASES.length);
@@ -640,7 +667,7 @@ export default function BreathingScreen({
           mood="serene"
           speak={speak}
           size={BUDDY_BASE}
-          phaseScale={buddyScale}
+          phaseScale={Animated.multiply(buddyScale, preTransitionScale)}
           pettable={currentPhaseIndex !== 0}
           onPettingChange={(petting) => {
             setIsPetting(petting);

@@ -106,6 +106,7 @@ export default function BreathingScreen({
   const natureFactHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const tailStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const natureFactShown = useRef(false);
   const isPettingRef = useRef(false);
   const sessionStart = useRef<number>(0);
@@ -118,6 +119,7 @@ export default function BreathingScreen({
   const guidanceStepRef = useRef(0);
   const guidanceEnabledRef = useRef(guidanceEnabled);
   const guidanceMuteUntilRef = useRef(0);
+  const allowCompletionTailAudioRef = useRef(false);
 
   // ── Lifecycle helpers ───────────────────────────────────────────────────────
   function clearTimers() {
@@ -144,6 +146,10 @@ export default function BreathingScreen({
     if (natureFactHideTimerRef.current) {
       clearTimeout(natureFactHideTimerRef.current);
       natureFactHideTimerRef.current = null;
+    }
+    if (tailStopTimerRef.current) {
+      clearTimeout(tailStopTimerRef.current);
+      tailStopTimerRef.current = null;
     }
   }
 
@@ -215,6 +221,11 @@ export default function BreathingScreen({
   }, [musicEnabled]);
 
   const stopAudio = useCallback(() => {
+    allowCompletionTailAudioRef.current = false;
+    if (tailStopTimerRef.current) {
+      clearTimeout(tailStopTimerRef.current);
+      tailStopTimerRef.current = null;
+    }
     audioLoadTokenRef.current += 1;
     audioLoadingRef.current = false;
     const sound = soundRef.current;
@@ -228,6 +239,32 @@ export default function BreathingScreen({
     } catch {}
     setIsAudioActiveAsync(false).catch(() => {});
   }, []);
+
+  const allowAudioTailOnComplete = useCallback(() => {
+    const sound = soundRef.current;
+    if (!sound || !musicEnabled) {
+      stopAudio();
+      return;
+    }
+    allowCompletionTailAudioRef.current = true;
+    if (tailStopTimerRef.current) {
+      clearTimeout(tailStopTimerRef.current);
+      tailStopTimerRef.current = null;
+    }
+    try {
+      sound.loop = false;
+    } catch {}
+    try {
+      if (!sound.playing) sound.play();
+    } catch {}
+    const duration = Number(sound.duration || 0);
+    const current = Number(sound.currentTime || 0);
+    const remainingSec = Math.max(0, duration - current);
+    const tailMs = Math.min(9000, Math.max(1200, Math.ceil(remainingSec * 1000) + 150));
+    tailStopTimerRef.current = setTimeout(() => {
+      stopAudio();
+    }, tailMs);
+  }, [musicEnabled, stopAudio]);
 
   function runPhase(idx: number) {
     const phase = PHASES[idx];
@@ -359,7 +396,7 @@ export default function BreathingScreen({
 
   function finishSession() {
     clearTimers();
-    stopAudio();
+    allowAudioTailOnComplete();
     setIsPetting(false);
     isPettingRef.current = false;
     setShowNatureFact(false);
@@ -412,6 +449,7 @@ export default function BreathingScreen({
 
   useEffect(() => {
     if (state === "active") return;
+    if (state === "complete" && allowCompletionTailAudioRef.current) return;
     stopAudio();
   }, [state, stopAudio]);
 

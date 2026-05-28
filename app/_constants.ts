@@ -154,7 +154,7 @@ export const MISSION_POOL: PoolMission[] = [
   },
   {
     id: 2,
-    title: "Потянись к пальцам ног",
+    title: "Наклонись к пальцам ног",
     subtitle: "Медленно",
     stars: 1,
     emoji: "🙆",
@@ -287,8 +287,8 @@ export const MISSION_POOL: PoolMission[] = [
   },
   {
     id: 15,
-    title: "Потянись вверх",
-    subtitle: "Руки как можно выше",
+    title: "Подними руки вверх",
+    subtitle: "Как можно выше",
     stars: 1,
     emoji: "🙋",
     category: "movement",
@@ -335,7 +335,7 @@ export const MISSION_POOL: PoolMission[] = [
   // ── Tidy (new) ───────────────────────────────────────────────────────
   {
     id: 19,
-    title: "Застели кровать",
+    title: "Заправь кровать",
     subtitle: "Разгладь одеяло",
     stars: 2,
     emoji: "🛏️",
@@ -921,14 +921,14 @@ export const DEFAULT_REWARD_CONFIGS: RewardConfig[] = REWARDS.map((r) => ({
 export const DAILY_SUGGESTIONS: DailySuggestion[] = [
   { text: "Попробуй выпить воду", missionId: 4 },
   { text: "Скажи что-то хорошее кому-то", missionId: 10 },
-  { text: "Потянись немного", missionId: 2 },
+  { text: "Разомнись немного", missionId: 2 },
   { text: "Прыгни немного", missionId: 3 },
   { text: "Убери один уголок", missionId: 9 },
   { text: "Попробуй посидеть тихо минуту", missionId: 25 },
   { text: "Застели кровать — сразу лучше", missionId: 19 },
   { text: "Скажи кому-то спасибо сегодня", missionId: 22 },
   { text: "Сделай глубокий вдох", missionId: 17 },
-  { text: "Потянись вверх как можно выше", missionId: 15 },
+  { text: "Подними руки вверх как можно выше", missionId: 15 },
 ];
 
 export const MSG = {

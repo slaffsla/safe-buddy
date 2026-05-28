@@ -1,6 +1,6 @@
 // _HomeScreen.tsx — SafeBuddy home screen
 
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -70,12 +70,14 @@ export default function HomeScreen({
   rtlChildSex = "male",
 }: HomeScreenProps) {
   const threshold = Math.max(1, skipSensitivity ?? 2);
-  const [idleMsg] = useState(() =>
-    skipCount >= threshold
-      ? t("home.idle_calm")
-      : Math.random() > 0.7
-        ? t("buddy.idle_alt")
-        : t("buddy.idle"),
+  const idleMsg = useMemo(
+    () =>
+      skipCount >= threshold
+        ? t("home.idle_calm")
+        : Math.random() > 0.7
+          ? t("buddy.idle_alt")
+          : t("buddy.idle"),
+    [skipCount, threshold],
   );
 
   const greeting = childName

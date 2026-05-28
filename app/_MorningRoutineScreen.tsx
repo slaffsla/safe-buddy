@@ -2,7 +2,7 @@
 // Step-by-step checklist. Triggered once per day before noon.
 // Earns morningStars on full completion.
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -40,13 +40,40 @@ export default function MorningRoutineScreen({
 }: Props) {
   const [doneIds, setDoneIds] = useState<number[]>([]);
   const [finished, setFinished] = useState(false);
+  const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Defensive: handle empty or invalid steps
   const validSteps = steps.filter((s) => s && s.id != null);
-  if (validSteps.length === 0) {
+
+  useEffect(() => {
+    return () => {
+      if (skipTimerRef.current) {
+        clearTimeout(skipTimerRef.current);
+        skipTimerRef.current = null;
+      }
+      if (completeTimerRef.current) {
+        clearTimeout(completeTimerRef.current);
+        completeTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (validSteps.length > 0) return;
+    if (skipTimerRef.current) {
+      clearTimeout(skipTimerRef.current);
+    }
     // If no valid steps, skip directly to avoid soft lock
-    setTimeout(() => onSkip(), 100);
-    return null;
-  }
+    skipTimerRef.current = setTimeout(() => onSkip(), 100);
+    return () => {
+      if (skipTimerRef.current) {
+        clearTimeout(skipTimerRef.current);
+        skipTimerRef.current = null;
+      }
+    };
+  }, [onSkip, validSteps.length]);
+
+  if (validSteps.length === 0) return null;
 
   const allDone = doneIds.length === validSteps.length && validSteps.length > 0;
   const greeting = childName
@@ -65,7 +92,8 @@ export default function MorningRoutineScreen({
   function handleComplete() {
     setFinished(true);
     speak(tSpeak("morning.ready_speak", undefined, rtlChildSex));
-    setTimeout(() => onComplete(stars), 3500);
+    if (completeTimerRef.current) clearTimeout(completeTimerRef.current);
+    completeTimerRef.current = setTimeout(() => onComplete(stars), 3500);
   }
 
   // Celebrate state — shown briefly before onComplete fires

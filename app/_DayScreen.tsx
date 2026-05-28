@@ -81,19 +81,27 @@ function formatTimeForSpeech(time: string): string {
   if (!match) return time;
   const hour = parseInt(match[1], 10);
   const minute = parseInt(match[2], 10);
+  const locale = getAppLocale();
 
-  if (getAppLocale() === "en") {
+  if (locale === "en") {
     const hourText = englishHour(hour);
     if (minute === 0) return `${hourText} o'clock`;
     if (minute < 10) return `${hourText} oh ${minute}`;
     return `${hourText} ${minute}`;
   }
 
-  const hourText = russianHour(hour);
-  if (minute === 0) {
-    return hour % 12 === 1 ? `${hourText}` : `${hourText} часов`;
+  if (locale === "ru") {
+    const hourText = russianHour(hour);
+    if (minute === 0) {
+      return hour % 12 === 1 ? `${hourText}` : `${hourText} часов`;
+    }
+    return `${hourText} ${minute}`;
   }
-  return `${hourText} ${minute}`;
+
+  // For non-English / non-Russian locales, keep a neutral numeric wording
+  // instead of forcing Russian hour forms.
+  if (minute === 0) return `${hour}`;
+  return `${hour} ${minute}`;
 }
 
 export default function DayScreen({

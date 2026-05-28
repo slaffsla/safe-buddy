@@ -531,7 +531,7 @@ export default function App() {
         // Load full settings
         const s = await loadSettings();
         setLastMission(
-          newDay ? getStoredMissionTitle(v[K.LAST_MISSION]) : null,
+          newDay ? null : getStoredMissionTitle(v[K.LAST_MISSION]),
         );
         const onboardingAlreadyComplete =
           v[K.PARENT_ONBOARDING_DONE] === "true" &&

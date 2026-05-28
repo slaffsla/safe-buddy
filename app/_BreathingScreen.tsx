@@ -12,13 +12,13 @@
 // "complete" state, BUDDY_FIXED_SPACER at the top so the global Buddy
 // overlay is visible, same speak prop usage.
 
+import { FontAwesome5 } from "@expo/vector-icons";
 import {
   createAudioPlayer,
   setAudioModeAsync,
   setIsAudioActiveAsync,
   type AudioPlayer,
 } from "expo-audio";
-import { FontAwesome5 } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -37,7 +37,7 @@ const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
 
 // Hard-coded session length. Do not lift to settings.
-const BREATHING_DURATION_MS = 120_000;
+const BREATHING_DURATION_MS = 128_000;
 
 // Breathing rhythm: 3s inhale, 1s pause, 4s exhale.
 // Labels are resolved via i18n at render time so they follow the device locale.
@@ -162,7 +162,10 @@ export default function BreathingScreen({
     const token = ++audioLoadTokenRef.current;
     try {
       await setIsAudioActiveAsync(true);
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         return;
       }
       await setAudioModeAsync({
@@ -172,7 +175,10 @@ export default function BreathingScreen({
         shouldRouteThroughEarpiece: false,
         shouldPlayInBackground: false,
       });
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         return;
       }
     } catch (e) {
@@ -185,7 +191,10 @@ export default function BreathingScreen({
       });
       sound.loop = true;
       sound.volume = 0.65;
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         try {
           sound.remove();
         } catch {}
@@ -260,7 +269,10 @@ export default function BreathingScreen({
     const duration = Number(sound.duration || 0);
     const current = Number(sound.currentTime || 0);
     const remainingSec = Math.max(0, duration - current);
-    const tailMs = Math.min(9000, Math.max(1200, Math.ceil(remainingSec * 1000) + 150));
+    const tailMs = Math.min(
+      9000,
+      Math.max(1200, Math.ceil(remainingSec * 1000) + 150),
+    );
     tailStopTimerRef.current = setTimeout(() => {
       stopAudio();
     }, tailMs);
@@ -584,7 +596,9 @@ export default function BreathingScreen({
           accessibilityRole="switch"
           accessibilityState={{ checked: musicEnabled }}
           accessibilityLabel={t(
-            musicEnabled ? "breathing.music_off_a11y" : "breathing.music_on_a11y",
+            musicEnabled
+              ? "breathing.music_off_a11y"
+              : "breathing.music_on_a11y",
           )}
         >
           <FontAwesome5
@@ -605,7 +619,9 @@ export default function BreathingScreen({
               : "breathing.guidance_on_a11y",
           )}
         >
-          <Text style={s.guidanceToggleTxt}>{guidanceEnabled ? "🔊" : "🔇"}</Text>
+          <Text style={s.guidanceToggleTxt}>
+            {guidanceEnabled ? "🔊" : "🔇"}
+          </Text>
         </TouchableOpacity>
       </View>
 

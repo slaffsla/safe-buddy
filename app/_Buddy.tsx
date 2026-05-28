@@ -26,6 +26,7 @@ interface BuddyProps {
   size?: number;
   celebrate?: boolean;
   pettable?: boolean; // enabled only on breathing screen
+  pettingMood?: BuddyMood;
   onPettingChange?: (petting: boolean) => void;
   // Optional external phase scale (used by BreathingScreen to sync phases).
   phaseScale?: Animated.Value | Animated.AnimatedInterpolation<number>;
@@ -40,6 +41,7 @@ export default function Buddy({
   size = 130,
   celebrate = false,
   pettable = false,
+  pettingMood = "encouraging",
   onPettingChange,
   phaseScale,
   fixed = false,
@@ -227,7 +229,8 @@ export default function Buddy({
     speak(getBuddyLine(mood));
   }
 
-  const image = getBuddyImage(mood);
+  const visualMood = pettable && isPetting ? pettingMood : mood;
+  const image = getBuddyImage(visualMood);
   const buddyContent = (
     <View>
       <TouchableOpacity
@@ -273,9 +276,9 @@ export default function Buddy({
 
       {pettable && showHearts && (
         <View style={s.heartsContainer} pointerEvents="none">
-          <FloatingHeart key={`hb-${heartBurst}-1`} delay={0} driftX={-10} />
-          <FloatingHeart key={`hb-${heartBurst}-2`} delay={110} driftX={0} />
-          <FloatingHeart key={`hb-${heartBurst}-3`} delay={220} driftX={10} />
+          <FloatingHeart key={`hb-${heartBurst}-1`} delay={0} driftX={-16} />
+          <FloatingHeart key={`hb-${heartBurst}-2`} delay={90} driftX={0} />
+          <FloatingHeart key={`hb-${heartBurst}-3`} delay={180} driftX={16} />
         </View>
       )}
     </View>
@@ -309,12 +312,12 @@ function FloatingHeart({ delay, driftX }: { delay: number; driftX: number }) {
       Animated.parallel([
         Animated.timing(translateX, {
           toValue: driftX,
-          duration: 1000,
+          duration: 950,
           useNativeDriver: true,
         }),
         Animated.timing(translateY, {
-          toValue: -52,
-          duration: 1000,
+          toValue: -72,
+          duration: 950,
           useNativeDriver: true,
         }),
         Animated.sequence([
@@ -370,15 +373,15 @@ const s = StyleSheet.create({
   },
   heartsContainer: {
     position: "absolute",
-    top: 18,
-    right: -10,
-    width: 52,
+    top: 6,
+    right: -20,
+    width: 78,
     alignItems: "center",
     pointerEvents: "none",
   },
   heart: {
     position: "absolute",
-    fontSize: 21,
+    fontSize: 32,
     color: "#FF8FAB",
   },
 });

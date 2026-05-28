@@ -113,6 +113,7 @@ export default function BreathingScreen({
   const firstInhaleRef = useRef(true);
   const guidanceStepRef = useRef(0);
   const guidanceEnabledRef = useRef(guidanceEnabled);
+  const guidanceMuteUntilRef = useRef(0);
 
   // ── Lifecycle helpers ───────────────────────────────────────────────────────
   function clearTimers() {
@@ -218,7 +219,10 @@ export default function BreathingScreen({
         : guidanceCycle < GUIDANCE_FULL_CYCLES + GUIDANCE_SOFT_CYCLES
           ? GUIDANCE_SOFT_VOLUME
           : 0;
-    if (guidanceEnabledRef.current) {
+    if (
+      guidanceEnabledRef.current &&
+      Date.now() >= guidanceMuteUntilRef.current
+    ) {
       if (guidanceVolume > 0) {
         speak(tSpeak(spokenKey, undefined, rtlChildSex), {
           volume: guidanceVolume,
@@ -383,6 +387,14 @@ export default function BreathingScreen({
     undefined,
     rtlChildSex,
   );
+  const speakCardText = useCallback(
+    (text: string) => {
+      // Prevent nearby phase prompts from immediately cutting off card TTS.
+      guidanceMuteUntilRef.current = Date.now() + 1800;
+      speak(text);
+    },
+    [speak],
+  );
   const prepCountdown =
     prepRemainingMs > 2000 ? 3 : prepRemainingMs > 1000 ? 2 : 1;
 
@@ -432,7 +444,7 @@ export default function BreathingScreen({
 
         <TouchableOpacity
           style={s.natureFact}
-          onPress={() => speak(petHintText)}
+          onPress={() => speakCardText(petHintText)}
           activeOpacity={0.8}
         >
           <Text style={s.natureFactText}>💡 {petHintText}</Text>
@@ -540,7 +552,7 @@ export default function BreathingScreen({
       {showNatureFact && (
         <TouchableOpacity
           style={s.natureFact}
-          onPress={() => speak(natureFactText)}
+          onPress={() => speakCardText(natureFactText)}
           activeOpacity={0.8}
         >
           <Text style={s.natureFactText}>🌿 {natureFactText}</Text>

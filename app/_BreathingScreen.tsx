@@ -12,13 +12,13 @@
 // "complete" state, BUDDY_FIXED_SPACER at the top so the global Buddy
 // overlay is visible, same speak prop usage.
 
+import { FontAwesome5 } from "@expo/vector-icons";
 import {
   createAudioPlayer,
   setAudioModeAsync,
   setIsAudioActiveAsync,
   type AudioPlayer,
 } from "expo-audio";
-import { FontAwesome5 } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -160,7 +160,10 @@ export default function BreathingScreen({
     const token = ++audioLoadTokenRef.current;
     try {
       await setIsAudioActiveAsync(true);
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         return;
       }
       await setAudioModeAsync({
@@ -170,7 +173,10 @@ export default function BreathingScreen({
         shouldRouteThroughEarpiece: false,
         shouldPlayInBackground: false,
       });
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         return;
       }
     } catch (e) {
@@ -183,7 +189,10 @@ export default function BreathingScreen({
       });
       sound.loop = true;
       sound.volume = 0.65;
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         try {
           sound.remove();
         } catch {}
@@ -439,7 +448,9 @@ export default function BreathingScreen({
         : 5 +
           Math.min(
             3,
-            Math.floor((phaseElapsedMs / Math.max(1, phaseDurationRef.current)) * 4),
+            Math.floor(
+              (phaseElapsedMs / Math.max(1, phaseDurationRef.current)) * 4,
+            ),
           );
 
   useEffect(() => {
@@ -588,7 +599,9 @@ export default function BreathingScreen({
           accessibilityRole="switch"
           accessibilityState={{ checked: musicEnabled }}
           accessibilityLabel={t(
-            musicEnabled ? "breathing.music_off_a11y" : "breathing.music_on_a11y",
+            musicEnabled
+              ? "breathing.music_off_a11y"
+              : "breathing.music_on_a11y",
           )}
         >
           <FontAwesome5
@@ -609,7 +622,9 @@ export default function BreathingScreen({
               : "breathing.guidance_on_a11y",
           )}
         >
-          <Text style={s.guidanceToggleTxt}>{guidanceEnabled ? "🔊" : "🔇"}</Text>
+          <Text style={s.guidanceToggleTxt}>
+            {guidanceEnabled ? "🔊" : "🔇"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -655,7 +670,10 @@ export default function BreathingScreen({
             }
             const active = guideStep === item;
             return (
-              <Text key={`step-${item}`} style={[s.cycleStep, active && s.cycleStepActive]}>
+              <Text
+                key={`step-${item}`}
+                style={[s.cycleStep, active && s.cycleStepActive]}
+              >
                 {item}
               </Text>
             );
@@ -794,42 +812,43 @@ const s = StyleSheet.create({
   },
   cycleGuideWrap: {
     width: "100%",
-    marginTop: 8,
+    marginTop: 10,
     alignItems: "center",
   },
   cycleGuideRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
+    width: "98%",
     backgroundColor: "#FFFDF9",
-    borderRadius: 12,
-    borderWidth: 0.5,
+    borderRadius: 18,
+    borderWidth: 1,
     borderColor: "#DED8CE",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   cycleStep: {
-    minWidth: 14,
+    minWidth: 30,
     textAlign: "center",
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 58,
+    fontWeight: "800",
     color: C.muted,
   },
   cycleStepActive: {
     color: C.green,
-    fontWeight: "800",
+    fontWeight: "900",
   },
   cycleSep: {
-    fontSize: 12,
+    fontSize: 28,
     fontWeight: "700",
     color: C.border,
-    marginHorizontal: 2,
+    marginHorizontal: 4,
   },
   cyclePulse: {
-    width: 26,
-    height: 2,
-    borderRadius: 1,
-    marginTop: 4,
+    width: "92%",
+    height: 26,
+    borderRadius: 3,
+    marginTop: 8,
     backgroundColor: C.green,
   },
 

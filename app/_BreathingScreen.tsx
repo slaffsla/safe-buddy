@@ -37,7 +37,7 @@ const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
 
 // Hard-coded session length. Do not lift to settings.
-const BREATHING_DURATION_MS = 128_000;
+const BREATHING_DURATION_MS = 130_000;
 
 // Breathing rhythm: 3s inhale, 1s pause, 4s exhale.
 // Labels are resolved via i18n at render time so they follow the device locale.
@@ -48,7 +48,7 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
 ];
 const EXHALE_PET_MULTIPLIER = 1.15;
 const AUDIO_SYNC_INTERVAL_MS = 350;
-const AUDIO_SYNC_DRIFT_SEC = 0.14;
+const AUDIO_SYNC_DRIFT_SEC = 0.1;
 const GUIDANCE_FULL_CYCLES = 3;
 const GUIDANCE_SOFT_CYCLES = 1;
 const GUIDANCE_SOFT_VOLUME = 0.65;
@@ -298,12 +298,24 @@ export default function BreathingScreen({
     try {
       sound.loop = false;
     } catch {}
-    try {
-      if (!sound.playing) sound.play();
-    } catch {}
     const duration = Number(sound.duration || 0);
     const current = Number(sound.currentTime || 0);
-    const remainingSec = Math.max(0, duration - current);
+    const hasKnownDuration = Number.isFinite(duration) && duration > 0.05;
+    const remainingSec = hasKnownDuration ? Math.max(0, duration - current) : 0;
+
+    // If playback already ended (or is effectively at the end), do not restart it.
+    if (hasKnownDuration && remainingSec <= 0.08) {
+      stopAudio();
+      return;
+    }
+
+    // Resume only when there is still meaningful audio left.
+    try {
+      if (!sound.playing && (!hasKnownDuration || remainingSec > 0.08)) {
+        sound.play();
+      }
+    } catch {}
+
     const tailMs = Math.min(
       9000,
       Math.max(1200, Math.ceil(remainingSec * 1000) + 150),

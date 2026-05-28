@@ -33,6 +33,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ParentOnboarding from "./_ParentOnboarding";
 import {
   DEFAULT_MISSION_CONFIGS,
   DEFAULT_MORNING_STEPS,
@@ -2278,6 +2279,15 @@ function ParentZoneView({
   const [showAddReward, setShowAddReward] = useState(false);
   const [draftRewardEmoji, setDraftRewardEmoji] = useState("");
   const [draftRewardTitle, setDraftRewardTitle] = useState("");
+  const [aboutOpen, setAboutOpen] = useState(false);
+
+  if (aboutOpen) {
+    return (
+      <SafeAreaView key={`about-${settings.appLocale}`} style={ss.root}>
+        <ParentOnboarding onDone={() => setAboutOpen(false)} />
+      </SafeAreaView>
+    );
+  }
 
   function patchMission(id: number, patch: Partial<MissionOverride>) {
     const cur: MissionOverride = missionOverrides[id] ?? {
@@ -2834,6 +2844,22 @@ function ParentZoneView({
           )}
         </Card>
 
+        <View style={pz.sectionSpacer} />
+
+        <SectionHeader title={t("settings.about_section")} icon="ℹ️" />
+        <Card>
+          <View style={pz.aboutWrap}>
+            <Text style={u.rowSublabel}>{t("settings.about_realo_sub")}</Text>
+            <TouchableOpacity
+              style={pz.aboutBtn}
+              onPress={() => setAboutOpen(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={pz.aboutBtnTxt}>{t("settings.about_realo_btn")}</Text>
+            </TouchableOpacity>
+          </View>
+        </Card>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -2906,6 +2932,21 @@ const pz = StyleSheet.create({
     justifyContent: "center",
   },
   addActionTxt: { fontSize: 14, color: C.green, fontWeight: "700" },
+  aboutWrap: {
+    padding: 14,
+    gap: 10,
+  },
+  aboutBtn: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CFE6DD",
+    backgroundColor: C.greenLt,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aboutBtnTxt: { fontSize: 14, color: C.green, fontWeight: "700" },
 });
 
 // ── MAIN SETTINGS SCREEN ──────────────────────────────────────────────────────

@@ -37,7 +37,7 @@ const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
 
 // Hard-coded session length. Do not lift to settings.
-const BREATHING_DURATION_MS = 520_000;
+const BREATHING_DURATION_MS = 127_000;
 
 // Breathing rhythm: 3s inhale, 1s pause, 4s exhale.
 // Labels are resolved via i18n at render time so they follow the device locale.
@@ -49,6 +49,7 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
 const EXHALE_PET_MULTIPLIER = 1.16;
 const PRE_TRANSITION_BOUNCE_MS = 100;
 const PRE_TRANSITION_BOUNCE_SCALE = 1.1;
+const BREATHING_AID_BUDDY_SIZE_MULT = 2;
 const GUIDANCE_FULL_CYCLES = 3;
 const GUIDANCE_SOFT_CYCLES = 1;
 const GUIDANCE_SOFT_VOLUME = 0.65;
@@ -479,6 +480,14 @@ export default function BreathingScreen({
               (phaseElapsedMs / Math.max(1, phaseDurationRef.current)) * 4,
             ),
           );
+  const beatDurationMs =
+    phaseIdx === 0
+      ? 1000
+      : phaseIdx === 1
+        ? Math.max(1, phaseDurationRef.current)
+        : Math.max(1, phaseDurationRef.current / 4);
+  const elapsedInBeatMs = phaseElapsedMs % beatDurationMs;
+  const isHalfBeatRed = elapsedInBeatMs >= beatDurationMs / 2;
 
   useEffect(() => {
     if (state !== "active") {
@@ -610,6 +619,9 @@ export default function BreathingScreen({
 
   // ── ACTIVE ──────────────────────────────────────────────────────────────────
   const phaseLabel = t(PHASES[phaseIdx].labelKey);
+  const breathingBuddySize = Math.round(
+    BUDDY_BASE * BREATHING_AID_BUDDY_SIZE_MULT,
+  );
   const remainingMs = Math.max(0, BREATHING_DURATION_MS - elapsedMs);
   const remainingSec = Math.ceil(remainingMs / 1000);
   const mm = Math.floor(remainingSec / 60);
@@ -666,7 +678,7 @@ export default function BreathingScreen({
         <Buddy
           mood="serene"
           speak={speak}
-          size={BUDDY_BASE}
+          size={breathingBuddySize}
           phaseScale={Animated.multiply(buddyScale, preTransitionScale)}
           pettable={currentPhaseIndex !== 0}
           onPettingChange={(petting) => {
@@ -699,7 +711,11 @@ export default function BreathingScreen({
             return (
               <Text
                 key={`step-${item}`}
-                style={[s.cycleStep, active && s.cycleStepActive]}
+                style={[
+                  s.cycleStep,
+                  active && s.cycleStepActive,
+                  active && isHalfBeatRed && s.cycleStepActiveHalfBeat,
+                ]}
               >
                 {item}
               </Text>
@@ -865,6 +881,9 @@ const s = StyleSheet.create({
     color: C.green,
     fontWeight: "900",
   },
+  cycleStepActiveHalfBeat: {
+    color: "#D64545",
+  },
   cycleSep: {
     fontSize: 28,
     fontWeight: "700",
@@ -932,8 +951,8 @@ const s = StyleSheet.create({
   },
   celebSub: { fontSize: 17, color: C.text, marginTop: 6, textAlign: "center" },
   buddyContainer: {
-    width: BUDDY_BASE * 1.45,
-    height: BUDDY_BASE * 1.45,
+    width: BUDDY_BASE * BREATHING_AID_BUDDY_SIZE_MULT * 1.15,
+    height: BUDDY_BASE * BREATHING_AID_BUDDY_SIZE_MULT * 1.15,
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 12,

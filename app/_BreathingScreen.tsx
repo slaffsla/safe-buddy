@@ -1,7 +1,7 @@
 // _BreathingScreen.tsx — SafeBuddy 3-minute guided breathing
 //
 // Safety constraints (non-negotiable, see ticket):
-//   • Maximum session: 3 minutes. Hard-coded. Never derived from settings.
+//   • Maximum session: 130 seconds. Hard-coded. Never derived from settings.
 //   • Pattern is 3-1-4 (inhale, pause, exhale).
 //   • Breath holds never exceed 7s; here the pause is 1s.
 //   • The animated circle sets the pace; the child follows it.
@@ -36,7 +36,7 @@ import { RtlChildSex, t, tSpeak } from "./i18n";
 const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
 
-// Hard-coded session length. Do not lift to settings.
+// Hard-coded session length (2m10s). Do not lift to settings.
 const BREATHING_DURATION_MS = 130_000;
 
 // Breathing rhythm: 3s inhale, 1s pause, 4s exhale.

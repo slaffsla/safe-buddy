@@ -76,6 +76,7 @@ import {
 import {
   AppLocale,
   getAppLocale,
+  i18n,
   isRtl,
   normalizeAppLocale,
   setAppLocale,
@@ -2255,6 +2256,8 @@ function ParentZoneView({
   onChange: (patch: Partial<AppSettings>) => void;
   onBack: () => void;
 }) {
+  const tx = (key: string, params?: Record<string, unknown>) =>
+    i18n.t(key, { ...(params ?? {}), locale: settings.appLocale });
   const missionOverrides = settings.missionOverrides ?? {};
   const rewardOverrides = settings.rewardOverrides ?? {};
   const customMissions = settings.customMissions ?? [];
@@ -2757,9 +2760,9 @@ function ParentZoneView({
     <SafeAreaView key={`pz-${settings.appLocale}`} style={ss.root}>
       <View style={ss.header}>
         <TouchableOpacity onPress={onBack} style={ss.backBtn}>
-          <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+          <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
         </TouchableOpacity>
-        <Text style={ss.headerTitle}>{t("settings.parent_zone_header")}</Text>
+        <Text style={ss.headerTitle}>{tx("settings.parent_zone_header")}</Text>
         <View style={{ width: 80 }} />
       </View>
       <ScrollView
@@ -3003,6 +3006,8 @@ export default function SettingsScreen({
   currentPin = "",
   pinEnabled = false,
 }: SettingsScreenProps) {
+  const tx = (key: string, params?: Record<string, unknown>) =>
+    i18n.t(key, { ...(params ?? {}), locale: settings.appLocale });
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -3155,9 +3160,9 @@ export default function SettingsScreen({
             onPress={() => setActiveSubscreen("main")}
             style={ss.backBtn}
           >
-            <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+            <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
           </TouchableOpacity>
-          <Text style={ss.headerTitle}>{t("settings.schedule_section")}</Text>
+          <Text style={ss.headerTitle}>{tx("settings.schedule_section")}</Text>
           <View style={ss.headerRight}>
             <Text style={ss.subHeaderMeta}>{scheduleCount}</Text>
           </View>
@@ -3186,9 +3191,9 @@ export default function SettingsScreen({
             onPress={() => setActiveSubscreen("main")}
             style={ss.backBtn}
           >
-            <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+            <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
           </TouchableOpacity>
-          <Text style={ss.headerTitle}>{t("settings.routine_section")}</Text>
+          <Text style={ss.headerTitle}>{tx("settings.routine_section")}</Text>
           <View style={ss.headerRight}>
             <Text style={ss.subHeaderMeta}>{stepsCount}</Text>
           </View>
@@ -3217,9 +3222,9 @@ export default function SettingsScreen({
       {/* Header */}
       <View style={ss.header}>
         <TouchableOpacity onPress={onClose} style={ss.backBtn}>
-          <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+          <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
         </TouchableOpacity>
-        <Text style={ss.headerTitle}>{t("settings.title")}</Text>
+        <Text style={ss.headerTitle}>{tx("settings.title")}</Text>
         <View style={ss.headerRight}>
           <LanguageToggle
             value={settings.appLocale}

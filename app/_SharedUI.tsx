@@ -2,11 +2,11 @@
 // T, ProgressBar, ReflectiveBoost, DailySuggestion, Confetti
 
 import {
-    Dimensions,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { C, DAILY_SUGGESTIONS, getProgress } from "./_constants";

@@ -14,9 +14,7 @@
       },
       "package": "com.slaff.realokids",
       "versionCode": 1,
-      "permissions": [
-        "android.permission.MODIFY_AUDIO_SETTINGS"
-      ]
+      "permissions": ["android.permission.MODIFY_AUDIO_SETTINGS"]
     },
     "ios": {
       "icon": "./assets/Character/buddy-happy.png",
@@ -64,9 +62,7 @@
         "projectId": "d8ca8d09-35ff-4f03-a069-471bcba052f9"
       }
     },
-    "runtimeVersion": {
-      "policy": "sdkVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "owner": "slaff"
   }
 }

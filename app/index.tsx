@@ -882,7 +882,7 @@ export default function App() {
         getRewardTitle(reward.id, reward.title),
       );
     },
-    [firstReward, speak],
+    [firstReward, speak, appSettings.rtlChildSex],
   );
 
   const handleRewardRedeem = useCallback(

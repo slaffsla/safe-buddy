@@ -936,10 +936,7 @@ function PinSection({
               label={t("settings.pin_change_label")}
               sublabel={t("settings.pin_change_sublabel")}
             >
-              <TouchableOpacity
-                onPress={requestChangePin}
-                style={u.linkBtn}
-              >
+              <TouchableOpacity onPress={requestChangePin} style={u.linkBtn}>
                 <Text style={u.linkBtnTxt}>{t("settings.edit")}</Text>
               </TouchableOpacity>
             </SettingRow>
@@ -988,7 +985,9 @@ function PinSection({
             <View style={ss.pinCard}>
               {showSetPin ? (
                 <>
-                  <Text style={ss.pinTitle}>{t("settings.pin_new_heading")}</Text>
+                  <Text style={ss.pinTitle}>
+                    {t("settings.pin_new_heading")}
+                  </Text>
                   <TextInput
                     keyboardType="numeric"
                     maxLength={4}
@@ -1043,7 +1042,9 @@ function PinSection({
                     style={ss.pinBtnPrimary}
                     onPress={handleSetPin}
                   >
-                    <Text style={ss.pinBtnPrimaryTxt}>{t("settings.save")}</Text>
+                    <Text style={ss.pinBtnPrimaryTxt}>
+                      {t("settings.save")}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={ss.pinBtnCancel}
@@ -1055,12 +1056,16 @@ function PinSection({
                       setSetPinFocused(false);
                     }}
                   >
-                    <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+                    <Text style={ss.pinBtnCancelTxt}>
+                      {t("settings.cancel")}
+                    </Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
-                  <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
+                  <Text style={ss.pinTitle}>
+                    {t("settings.pin_enter_title")}
+                  </Text>
                   <TextInput
                     keyboardType="numeric"
                     maxLength={4}
@@ -1107,7 +1112,9 @@ function PinSection({
                       setRemovePinFocused(false);
                     }}
                   >
-                    <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+                    <Text style={ss.pinBtnCancelTxt}>
+                      {t("settings.cancel")}
+                    </Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -1249,10 +1256,7 @@ function BuddySection({
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
   function showTinyFactsHint() {
-    Alert.alert(
-      t("settings.facts_hint_title"),
-      t("settings.facts_hint_body"),
-    );
+    Alert.alert(t("settings.facts_hint_title"), t("settings.facts_hint_body"));
   }
 
   return (
@@ -1668,7 +1672,10 @@ function DailyRoutineSection({
                           />
                         </View>
                         <View style={u.rowBtns}>
-                          <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
+                          <TouchableOpacity
+                            style={u.btnPrimary}
+                            onPress={saveStep}
+                          >
                             <Text style={u.btnPrimaryTxt}>
                               {t("settings.save")}
                             </Text>
@@ -1701,7 +1708,10 @@ function DailyRoutineSection({
                           disabled={idx === 0}
                         >
                           <Text
-                            style={[u.stepperTxt, idx === 0 && { opacity: 0.25 }]}
+                            style={[
+                              u.stepperTxt,
+                              idx === 0 && { opacity: 0.25 },
+                            ]}
                           >
                             ↑
                           </Text>
@@ -1726,7 +1736,9 @@ function DailyRoutineSection({
                           style={[u.linkBtn, { marginLeft: 4 }]}
                           onPress={() => {
                             setEditingId(step.id);
-                            setStepTitle(getMorningStepTitle(step.id, step.title));
+                            setStepTitle(
+                              getMorningStepTitle(step.id, step.title),
+                            );
                             setStepEmoji(step.emoji);
                           }}
                         >
@@ -1793,7 +1805,9 @@ function DailyRoutineSection({
                           setStepEmoji("");
                         }}
                       >
-                        <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                        <Text style={u.btnCancelTxt}>
+                          {t("settings.cancel")}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -2043,9 +2057,7 @@ function ScheduleSection({
               ) : (
                 <View style={u.scheduleItemWrap}>
                   <View style={u.scheduleMainRow}>
-                    <Text style={u.scheduleEmoji}>
-                      {it.emoji}
-                    </Text>
+                    <Text style={u.scheduleEmoji}>{it.emoji}</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={u.scheduleLabel}>
                         {getScheduleTitle(it.id, it.title)}
@@ -2208,7 +2220,7 @@ function CreditsSection() {
 function FeedbackSection() {
   async function openFeedbackEmail() {
     incrementLocalUsage("feedbackTapped").catch(console.log);
-    const email = "buddy@realokids.com";
+    const email = "hello@realokids.com";
     const subject = encodeURIComponent(t("settings.feedback_email_subject"));
     const body = encodeURIComponent(t("settings.feedback_email_body"));
     const url = `mailto:${email}?subject=${subject}&body=${body}`;
@@ -2858,7 +2870,9 @@ function ParentZoneView({
               onPress={() => setAboutOpen(true)}
               activeOpacity={0.8}
             >
-              <Text style={pz.aboutBtnTxt}>{t("settings.about_realo_btn")}</Text>
+              <Text style={pz.aboutBtnTxt}>
+                {t("settings.about_realo_btn")}
+              </Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -3843,7 +3857,12 @@ const u = StyleSheet.create({
   },
   scheduleEmoji: { fontSize: 20, marginRight: 4 },
   scheduleLabel: { fontSize: 14, fontWeight: "500", color: C.text },
-  scheduleSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 16 },
+  scheduleSublabel: {
+    fontSize: 12,
+    color: C.muted,
+    marginTop: 2,
+    lineHeight: 16,
+  },
   scheduleLinkBtn: { paddingVertical: 3, paddingHorizontal: 8 },
   scheduleLinkBtnTxt: { fontSize: 13, color: C.green, fontWeight: "500" },
   scheduleDangerBtn: {
@@ -3997,5 +4016,4 @@ const u = StyleSheet.create({
     padding: 14,
     paddingTop: 4,
   },
-
 });

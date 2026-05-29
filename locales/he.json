@@ -35,9 +35,11 @@
     "morning_nudge_title": "התחלה רגועה לבוקר",
     "morning_nudge_sub": "התחלה קטנה יכולה לעזור ליום להרגיש יציב יותר",
     "morning_nudge_cta": "התחל",
+    "morning_nudge_cta_female": "התחילי",
     "morning_nudge_speak": "בדיקת בוקר. בוא נבחר משימה",
     "morning_nudge_speak_female": "בדיקת בוקר. בואי נבחר משימה",
     "btn_pick_mission": "🚀 בחר משימה",
+    "btn_pick_mission_female": "🚀 בחרי משימה",
     "btn_my_day": "📅 היום שלי",
     "btn_rewards": "🎁 הפרסים שלי",
     "btn_breathing": "🌬️ לנשום עם Buddy",
@@ -80,6 +82,7 @@
     "intro_start": "▶ להתחיל חימום",
     "step_done": "✅ עשיתי!",
     "step_tap_hint": "לחץ כדי לשמוע",
+    "step_tap_hint_female": "לחצי כדי לשמוע",
     "complete_title": "הצלחת! 🎉",
     "complete_msg": "רוצה לנסות משימה אמיתית?",
     "complete_yes": "🚀 כן, יאללה!",
@@ -95,6 +98,7 @@
   },
   "missionPick": {
     "title": "בחר משימה",
+    "title_female": "בחרי משימה",
     "encore_title": "עשית הכול להיום!",
     "encore_sub": "מחר Buddy יביא משימות חדשות",
     "encore_bonus": "רוצה עוד אחת? בונוס?",
@@ -109,8 +113,10 @@
   },
   "active": {
     "tap_hint": "לחץ כדי לשמוע שוב",
+    "tap_hint_female": "לחצי כדי לשמוע שוב",
     "btn_done": "✅ עשיתי!",
-    "btn_skip": "דלג"
+    "btn_skip": "דלג",
+    "btn_skip_female": "דלגי"
   },
   "celebrate": {
     "title": "המשימה הושלמה! 🎉",
@@ -178,6 +184,7 @@
     "earned_one": "הרווחת ⭐",
     "earned_many": "הרווחת {{stars}}",
     "reward_label": "סיים את כל השלבים וקבל {{stars}}",
+    "reward_label_female": "סיימי את כל השלבים וקבלי {{stars}}",
     "btn_done": "🌟 סיימתי!",
     "btn_remaining": "נשארו {{count}}",
     "btn_skip": "דלג על שגרת בוקר"
@@ -212,6 +219,7 @@
     "title": "היום שלי",
     "empty": "אין תכנון להיום",
     "start_mission_a11y": "התחל משימה {{title}}",
+    "start_mission_a11y_female": "התחילי משימה {{title}}",
     "close_a11y": "סגור",
     "back_a11y": "חזרה"
   },
@@ -262,6 +270,7 @@
     "cancel": "ביטול",
     "wrong_title": "קוד שגוי",
     "wrong_msg": "נסה שוב",
+    "wrong_msg_female": "נסי שוב",
     "empty_msg": "יש להזין קוד",
     "short_msg": "הקוד צריך לכלול 4 ספרות"
   },

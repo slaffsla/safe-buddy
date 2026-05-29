@@ -892,10 +892,16 @@ function PinSection({
     }
   }
 
-  function showStandardModeHint() {
+  function showControlLevelHint() {
+    const key =
+      settings.controlLevel === "hands-on"
+        ? "hands_on"
+        : settings.controlLevel === "balanced"
+          ? "standard"
+          : "independent";
     Alert.alert(
-      t("settings.control_standard_hint_title"),
-      t("settings.control_standard_hint_body"),
+      t(`settings.control_${key}_hint_title`),
+      t(`settings.control_${key}_hint_body`),
     );
   }
 
@@ -1152,15 +1158,13 @@ function PinSection({
                 ? t("settings.control_balanced")
                 : t("settings.control_independent")}
           </Text>
-          {settings.controlLevel === "balanced" ? (
-            <TouchableOpacity
-              style={u.infoDot}
-              onPress={showStandardModeHint}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={u.infoDotTxt}>i</Text>
-            </TouchableOpacity>
-          ) : null}
+          <TouchableOpacity
+            style={u.infoDot}
+            onPress={showControlLevelHint}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={u.infoDotTxt}>i</Text>
+          </TouchableOpacity>
         </View>
         <PillSelector
           options={[

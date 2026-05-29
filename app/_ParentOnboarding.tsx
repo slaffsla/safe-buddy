@@ -31,7 +31,7 @@ const PHASE_KEYS = [
 const PHASE_DURATIONS = [4000, 1000, 3000] as const;
 
 function MiniBreathingCircle() {
-  const scale = useRef(new Animated.Value(0.6)).current;
+  const [scale] = useState(() => new Animated.Value(0.6));
   const [phase, setPhase] = useState(0);
   const [active, setActive] = useState(false);
   const animRef = useRef<Animated.CompositeAnimation | null>(null);

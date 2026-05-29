@@ -162,7 +162,7 @@ export function Confetti({ trigger }: { trigger: boolean }) {
 
 const s = StyleSheet.create({
   confettiOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 2000,
     elevation: 2000,
   },

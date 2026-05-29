@@ -57,7 +57,10 @@ export default function Buddy({
   const [isPetting, setIsPetting] = useState(false);
   const [showHearts, setShowHearts] = useState(false);
   const [heartBurst, setHeartBurst] = useState(0);
+  const [showTapHearts, setShowTapHearts] = useState(false);
+  const [tapHeartBurst, setTapHeartBurst] = useState(0);
   const heartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tapHeartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pettableRef = useRef(pettable);
   const onPettingChangeRef = useRef(onPettingChange);
 
@@ -124,6 +127,7 @@ export default function Buddy({
   useEffect(() => {
     return () => {
       if (heartTimeout.current) clearTimeout(heartTimeout.current);
+      if (tapHeartTimeout.current) clearTimeout(tapHeartTimeout.current);
       petBounceAnim.current?.stop();
     };
   }, []);
@@ -226,6 +230,11 @@ export default function Buddy({
         useNativeDriver: true,
       }),
     ]).start();
+    // Fire subtle hearts on tap
+    if (tapHeartTimeout.current) clearTimeout(tapHeartTimeout.current);
+    setShowTapHearts(true);
+    setTapHeartBurst((n) => n + 1);
+    tapHeartTimeout.current = setTimeout(() => setShowTapHearts(false), 650);
     speak(getBuddyLine(mood));
   }
 
@@ -238,7 +247,9 @@ export default function Buddy({
         onPressIn={startPetting}
         onPressOut={endPetting}
         activeOpacity={1}
-        hitSlop={pettable ? { top: 24, right: 24, bottom: 24, left: 24 } : undefined}
+        hitSlop={
+          pettable ? { top: 24, right: 24, bottom: 24, left: 24 } : undefined
+        }
         pressRetentionOffset={
           pettable ? { top: 40, right: 40, bottom: 40, left: 40 } : undefined
         }
@@ -275,10 +286,25 @@ export default function Buddy({
       <Text style={s.buddyName}>{t("buddy.name")}</Text>
 
       {pettable && showHearts && (
-        <View style={s.heartsContainer} pointerEvents="none">
+        <View style={s.heartsContainer}>
           <FloatingHeart key={`hb-${heartBurst}-1`} delay={0} driftX={-16} />
           <FloatingHeart key={`hb-${heartBurst}-2`} delay={90} driftX={0} />
           <FloatingHeart key={`hb-${heartBurst}-3`} delay={180} driftX={16} />
+        </View>
+      )}
+
+      {showTapHearts && (
+        <View style={s.tapHeartsContainer}>
+          <SubtleFloatingHeart
+            key={`th-${tapHeartBurst}-1`}
+            delay={0}
+            driftX={-8}
+          />
+          <SubtleFloatingHeart
+            key={`th-${tapHeartBurst}-2`}
+            delay={70}
+            driftX={8}
+          />
         </View>
       )}
     </View>
@@ -299,6 +325,59 @@ export default function Buddy({
   }
 
   return buddyContent;
+}
+
+function SubtleFloatingHeart({
+  delay,
+  driftX,
+}: {
+  delay: number;
+  driftX: number;
+}) {
+  const translateY = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(translateX, {
+          toValue: driftX,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: -48,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]),
+    ]).start();
+  }, [delay, driftX, opacity, translateX, translateY]);
+
+  return (
+    <Animated.Text
+      style={[
+        s.subtleHeart,
+        { transform: [{ translateX }, { translateY }], opacity },
+      ]}
+    >
+      ♡
+    </Animated.Text>
+  );
 }
 
 function FloatingHeart({ delay, driftX }: { delay: number; driftX: number }) {
@@ -378,6 +457,19 @@ const s = StyleSheet.create({
     width: 78,
     alignItems: "center",
     pointerEvents: "none",
+  },
+  tapHeartsContainer: {
+    position: "absolute",
+    top: 16,
+    right: -14,
+    width: 50,
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  subtleHeart: {
+    position: "absolute",
+    fontSize: 18,
+    color: C.greenLt,
   },
   heart: {
     position: "absolute",

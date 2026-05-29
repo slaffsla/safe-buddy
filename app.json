@@ -14,7 +14,9 @@
       },
       "package": "com.slaff.realokids",
       "versionCode": 1,
-      "permissions": ["android.permission.MODIFY_AUDIO_SETTINGS"]
+      "permissions": [
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "ios": {
       "icon": "./assets/Character/buddy-happy.png",
@@ -46,7 +48,11 @@
         {
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "expo-font",
+      "expo-localization",
+      "expo-web-browser",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

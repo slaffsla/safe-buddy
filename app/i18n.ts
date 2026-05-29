@@ -49,18 +49,29 @@ export const t = (key: string, params?: Record<string, unknown>): string =>
  * Speech-specific localization with optional sex-aware variant selection.
  * If `sex` is "female", tries `${key}_female` first.
  */
+function hasTranslationForLocale(key: string, locale: string): boolean {
+  const parts = key.split(".");
+  let node: any = i18n.translations[locale];
+  for (const part of parts) {
+    if (!node || typeof node !== "object" || !(part in node)) {
+      return false;
+    }
+    node = node[part];
+  }
+  return typeof node !== "undefined";
+}
+
 export function tSpeak(
   key: string,
   params?: Record<string, unknown>,
   sex: RtlChildSex = "male",
 ): string {
+  const loc = i18n.locale ?? "ru";
   if (sex === "female") {
     const femaleKey = `${key}_female`;
-    const femaleText = i18n.t(femaleKey, {
-      ...(params ?? {}),
-      defaultValue: femaleKey,
-    });
-    if (femaleText !== femaleKey) return femaleText;
+    if (hasTranslationForLocale(femaleKey, loc)) {
+      return i18n.t(femaleKey, params);
+    }
   }
   return i18n.t(key, params);
 }

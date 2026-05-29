@@ -89,12 +89,14 @@ export function ProgressBar({
 export function ReflectiveBoost({
   lastMission,
   speak,
+  rtlChildSex = "male",
 }: {
   lastMission: string | null;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   if (!lastMission) return null;
-  const text = t("reflect.boost", { title: lastMission });
+  const text = tSpeak("reflect.boost", { title: lastMission }, rtlChildSex);
   return (
     <TouchableOpacity
       style={s.reflectCard}

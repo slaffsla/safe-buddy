@@ -94,7 +94,11 @@ export default function HomeScreen({
       <T style={s.greeting} speak={speak}>
         {greeting}
       </T>
-      <ReflectiveBoost lastMission={lastMission} speak={speak} />
+      <ReflectiveBoost
+        lastMission={lastMission}
+        speak={speak}
+        rtlChildSex={rtlChildSex}
+      />
       {progressMsg && (
         <T style={s.progressionMsg} speak={speak}>
           {progressMsg}

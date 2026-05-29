@@ -64,7 +64,7 @@ import {
   DemoStepScreen,
 } from "./_DemoScreens";
 import HomeScreen from "./_HomeScreen";
-import { incrementLocalUsage } from "./_localUsage";
+import { incrementLocalUsage } from "../localUsage";
 import {
   ActiveScreen,
   CelebrateScreen,

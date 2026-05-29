@@ -72,7 +72,7 @@ import {
   loadLocalUsage,
   LocalUsage,
   resetLocalUsage,
-} from "./_localUsage";
+} from "../localUsage";
 import {
   AppLocale,
   getAppLocale,

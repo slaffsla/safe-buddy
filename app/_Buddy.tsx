@@ -20,6 +20,8 @@ import {
 } from "./_constants";
 import { t } from "./i18n";
 
+const TAP_MOOD_DELAY_MS = 280;
+
 interface BuddyProps {
   mood?: BuddyMood;
   speak: (t: string) => void;
@@ -28,6 +30,7 @@ interface BuddyProps {
   pettable?: boolean; // enabled only on breathing screen
   pettingMood?: BuddyMood;
   onPettingChange?: (petting: boolean) => void;
+  onTap?: () => void;
   // Optional external phase scale (used by BreathingScreen to sync phases).
   phaseScale?: Animated.Value | Animated.AnimatedInterpolation<number>;
   fixed?: boolean; // If true, Buddy stays fixed on screen (absolute positioning)
@@ -43,15 +46,16 @@ export default function Buddy({
   pettable = false,
   pettingMood = "encouraging",
   onPettingChange,
+  onTap,
   phaseScale,
   fixed = false,
   fixedBottom,
   fixedTop = 90,
 }: BuddyProps) {
-  const tapScale = useRef(new Animated.Value(1)).current;
-  const breathScale = useRef(new Animated.Value(1)).current;
-  const pettingScale = useRef(new Animated.Value(1)).current;
-  const petBounceY = useRef(new Animated.Value(0)).current;
+  const [tapScale] = useState(() => new Animated.Value(1));
+  const [breathScale] = useState(() => new Animated.Value(1));
+  const [pettingScale] = useState(() => new Animated.Value(1));
+  const [petBounceY] = useState(() => new Animated.Value(0));
   const breathAnim = useRef<Animated.CompositeAnimation | null>(null);
   const petBounceAnim = useRef<Animated.CompositeAnimation | null>(null);
   const [isPetting, setIsPetting] = useState(false);
@@ -61,6 +65,7 @@ export default function Buddy({
   const [tapHeartBurst, setTapHeartBurst] = useState(0);
   const heartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapHeartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tapMoodTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pettableRef = useRef(pettable);
   const onPettingChangeRef = useRef(onPettingChange);
 
@@ -128,6 +133,7 @@ export default function Buddy({
     return () => {
       if (heartTimeout.current) clearTimeout(heartTimeout.current);
       if (tapHeartTimeout.current) clearTimeout(tapHeartTimeout.current);
+      if (tapMoodTimeout.current) clearTimeout(tapMoodTimeout.current);
       petBounceAnim.current?.stop();
     };
   }, []);
@@ -217,25 +223,33 @@ export default function Buddy({
   }
 
   function handlePress() {
-    if (pettable || isPetting) return;
-    Animated.sequence([
-      Animated.timing(tapScale, {
-        toValue: 1.12,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(tapScale, {
-        toValue: 1.0,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    // Fire subtle hearts on tap
-    if (tapHeartTimeout.current) clearTimeout(tapHeartTimeout.current);
-    setShowTapHearts(true);
-    setTapHeartBurst((n) => n + 1);
-    tapHeartTimeout.current = setTimeout(() => setShowTapHearts(false), 650);
-    speak(getBuddyLine(mood));
+    const isPettingMode = pettableRef.current;
+
+    if (!isPettingMode) {
+      Animated.sequence([
+        Animated.timing(tapScale, {
+          toValue: 1.12,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tapScale, {
+          toValue: 1.0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      if (tapHeartTimeout.current) clearTimeout(tapHeartTimeout.current);
+      setShowTapHearts(true);
+      setTapHeartBurst((n) => n + 1);
+      tapHeartTimeout.current = setTimeout(() => setShowTapHearts(false), 650);
+      speak(getBuddyLine(mood));
+    }
+
+    if (tapMoodTimeout.current) clearTimeout(tapMoodTimeout.current);
+    tapMoodTimeout.current = setTimeout(() => {
+      onTap?.();
+      tapMoodTimeout.current = null;
+    }, TAP_MOOD_DELAY_MS);
   }
 
   const visualMood = pettable && isPetting ? pettingMood : mood;
@@ -334,9 +348,9 @@ function SubtleFloatingHeart({
   delay: number;
   driftX: number;
 }) {
-  const translateY = useRef(new Animated.Value(0)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [translateY] = useState(() => new Animated.Value(0));
+  const [translateX] = useState(() => new Animated.Value(0));
+  const [opacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.sequence([
@@ -381,9 +395,9 @@ function SubtleFloatingHeart({
 }
 
 function FloatingHeart({ delay, driftX }: { delay: number; driftX: number }) {
-  const translateY = useRef(new Animated.Value(0)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [translateY] = useState(() => new Animated.Value(0));
+  const [translateX] = useState(() => new Animated.Value(0));
+  const [opacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.sequence([
@@ -469,7 +483,7 @@ const s = StyleSheet.create({
   subtleHeart: {
     position: "absolute",
     fontSize: 18,
-    color: C.greenLt,
+    color: "#69BFA6",
   },
   heart: {
     position: "absolute",

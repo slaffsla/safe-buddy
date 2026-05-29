@@ -1461,6 +1461,14 @@ export default function App() {
                   speak={speak}
                   size={overlayBuddySize}
                   celebrate={fixedOverlayCelebrate}
+                  onTap={() => {
+                    const elevatedMood: BuddyMood =
+                      fixedOverlayMood === "very-excited" ||
+                      fixedOverlayMood === "proud"
+                        ? "very-excited"
+                        : "happy";
+                    flashBuddyMood(elevatedMood, 1400);
+                  }}
                 />
                 {screen === "active" && tinyFactBubble && (
                   <View style={[s.tinyFactBubble, { top: tinyFactBubbleTop }]}>

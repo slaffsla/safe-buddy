@@ -30,7 +30,7 @@ import {
   View,
 } from "react-native";
 import Buddy from "./_Buddy";
-import { BUDDY_FIXED_SPACER, C } from "./_constants";
+import { BUDDY_FIXED_SPACER, C, type BuddyMood } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -95,6 +95,7 @@ export default function BreathingScreen({
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [isPetting, setIsPetting] = useState(false);
+  const [buddyTapMood, setBuddyTapMood] = useState<BuddyMood | null>(null);
   const [showNatureFact, setShowNatureFact] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [prepRemainingMs, setPrepRemainingMs] = useState(PREP_HINT_DURATION_MS);
@@ -110,6 +111,9 @@ export default function BreathingScreen({
     null,
   );
   const tailStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const buddyTapMoodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const natureFactShown = useRef(false);
   const isPettingRef = useRef(false);
   const sessionStart = useRef<number>(0);
@@ -157,6 +161,10 @@ export default function BreathingScreen({
     if (tailStopTimerRef.current) {
       clearTimeout(tailStopTimerRef.current);
       tailStopTimerRef.current = null;
+    }
+    if (buddyTapMoodTimerRef.current) {
+      clearTimeout(buddyTapMoodTimerRef.current);
+      buddyTapMoodTimerRef.current = null;
     }
   }
 
@@ -708,7 +716,7 @@ export default function BreathingScreen({
       {/* Buddy IS the breathing element — no separate circle */}
       <View style={s.buddyContainer}>
         <Buddy
-          mood="serene"
+          mood={buddyTapMood ?? "serene"}
           speak={speak}
           size={BUDDY_BASE}
           phaseScale={buddyScale}
@@ -716,6 +724,16 @@ export default function BreathingScreen({
           onPettingChange={(petting) => {
             setIsPetting(petting);
             isPettingRef.current = petting;
+          }}
+          onTap={() => {
+            setBuddyTapMood("happy");
+            if (buddyTapMoodTimerRef.current) {
+              clearTimeout(buddyTapMoodTimerRef.current);
+            }
+            buddyTapMoodTimerRef.current = setTimeout(() => {
+              setBuddyTapMood(null);
+              buddyTapMoodTimerRef.current = null;
+            }, 1200);
           }}
         />
       </View>

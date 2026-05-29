@@ -2,11 +2,11 @@
 // T, ProgressBar, ReflectiveBoost, DailySuggestion, Confetti
 
 import {
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { C, DAILY_SUGGESTIONS, getProgress } from "./_constants";
@@ -152,14 +152,7 @@ export function Confetti({ trigger }: { trigger: boolean }) {
         fadeOut={true}
         explosionSpeed={520}
         fallSpeed={3600}
-        colors={[
-          C.green,
-          C.greenLt,
-          C.gold,
-          C.border,
-          "#8FCFB8",
-          "#EEF2FF",
-        ]}
+        colors={[C.green, C.greenLt, C.gold, C.border, "#8FCFB8", "#EEF2FF"]}
       />
     </View>
   );

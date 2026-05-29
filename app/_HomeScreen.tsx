@@ -16,8 +16,8 @@ import {
   getProgressionMessage,
   getScheduleTitle,
 } from "./_constants";
-import { RtlChildSex, t, tSpeak } from "./i18n";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
+import { RtlChildSex, t, tSpeak, tGender } from "./i18n";
 
 interface HomeScreenProps {
   stars: number;
@@ -115,8 +115,12 @@ export default function HomeScreen({
         >
           <Text style={s.morningNudgeIcon}>🌅</Text>
           <View style={s.morningNudgeContent}>
-            <Text style={s.morningNudgeTitle}>{t("home.morning_nudge_title")}</Text>
-            <Text style={s.morningNudgeText}>{t("home.morning_nudge_sub")}</Text>
+            <Text style={s.morningNudgeTitle}>
+              {t("home.morning_nudge_title")}
+            </Text>
+            <Text style={s.morningNudgeText}>
+              {t("home.morning_nudge_sub")}
+            </Text>
           </View>
           <Text style={s.morningNudgeCta}>{t("home.morning_nudge_cta")}</Text>
         </TouchableOpacity>
@@ -137,12 +141,16 @@ export default function HomeScreen({
               style={s.scheduleNow}
               onPress={() =>
                 speak(
-                  tSpeak("home.schedule_now_speak", {
-                    title: getScheduleTitle(
-                      currentBlock.id,
-                      currentBlock.title,
-                    ),
-                  }, rtlChildSex),
+                  tSpeak(
+                    "home.schedule_now_speak",
+                    {
+                      title: getScheduleTitle(
+                        currentBlock.id,
+                        currentBlock.title,
+                      ),
+                    },
+                    rtlChildSex,
+                  ),
                 )
               }
               activeOpacity={0.8}
@@ -164,16 +172,22 @@ export default function HomeScreen({
               style={s.scheduleNext}
               onPress={() =>
                 speak(
-                  tSpeak("home.schedule_next_speak", {
-                    title: getScheduleTitle(nextBlock.id, nextBlock.title),
-                  }, rtlChildSex),
+                  tSpeak(
+                    "home.schedule_next_speak",
+                    {
+                      title: getScheduleTitle(nextBlock.id, nextBlock.title),
+                    },
+                    rtlChildSex,
+                  ),
                 )
               }
               activeOpacity={0.8}
             >
               <Text style={s.scheduleNextEmoji}>{nextBlock.emoji}</Text>
               <View style={s.scheduleInfo}>
-                <Text style={s.scheduleNextLabel}>{t("home.schedule_next")}</Text>
+                <Text style={s.scheduleNextLabel}>
+                  {t("home.schedule_next")}
+                </Text>
                 <Text style={s.scheduleNextTitle}>
                   {getScheduleTitle(nextBlock.id, nextBlock.title)}
                 </Text>
@@ -185,23 +199,23 @@ export default function HomeScreen({
       )}
 
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>{t("home.btn_pick_mission")}</Text>
+        <Text style={s.btnPrimaryTxt}>{tGender("home.btn_pick_mission", undefined, rtlChildSex)}</Text>
       </TouchableOpacity>
       {scheduleEnabled && onOpenDay && (
         <TouchableOpacity style={s.btnDay} onPress={onOpenDay}>
-          <Text style={s.btnDayTxt}>{t("home.btn_my_day")}</Text>
+          <Text style={s.btnDayTxt}>{tGender("home.btn_my_day", undefined, rtlChildSex)}</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>{t("home.btn_rewards")}</Text>
+        <Text style={s.btnSecondaryTxt}>{tGender("home.btn_rewards", undefined, rtlChildSex)}</Text>
       </TouchableOpacity>
       {onBreathing && (
         <TouchableOpacity style={s.btnBreathing} onPress={onBreathing}>
-          <Text style={s.btnBreathingTxt}>{t("home.btn_breathing")}</Text>
+          <Text style={s.btnBreathingTxt}>{tGender("home.btn_breathing", undefined, rtlChildSex)}</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={s.btnSettings} onPress={onSettings}>
-        <Text style={s.btnSettingsTxt}>{t("home.btn_settings")}</Text>
+        <Text style={s.btnSettingsTxt}>{tGender("home.btn_settings", undefined, rtlChildSex)}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

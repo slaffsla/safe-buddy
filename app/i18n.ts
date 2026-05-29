@@ -77,6 +77,25 @@ export function tSpeak(
 }
 
 /**
+ * Gender-aware UI translation for languages that provide sex-specific
+ * variants (e.g. Hebrew). Prefer `${key}_female` when `sex === 'female'`.
+ */
+export function tGender(
+  key: string,
+  params?: Record<string, unknown>,
+  sex: RtlChildSex = "male",
+): string {
+  const loc = i18n.locale ?? "ru";
+  if (sex === "female") {
+    const femaleKey = `${key}_female`;
+    if (hasTranslationForLocale(femaleKey, loc)) {
+      return i18n.t(femaleKey, params);
+    }
+  }
+  return i18n.t(key, params);
+}
+
+/**
  * Returns the localized mission title, or the provided fallback (used for
  * user-added custom missions whose ids don't appear in the locale files).
  */

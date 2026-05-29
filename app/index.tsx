@@ -81,7 +81,7 @@ import SettingsScreen, {
   saveSettings,
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
-import { getTtsLanguage, t, tSpeak } from "./i18n";
+import { getTtsLanguage, t, tSpeak, tGender } from "./i18n";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -1076,7 +1076,7 @@ export default function App() {
           maxLength={2}
         />
         <TouchableOpacity style={s.onboardingBtn} onPress={saveChildName}>
-          <Text style={s.onboardingBtnTxt}>{t("onboarding.start_btn")}</Text>
+          <Text style={s.onboardingBtnTxt}>{tGender("onboarding.start_btn", undefined, appSettings.rtlChildSex ?? "male")}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );

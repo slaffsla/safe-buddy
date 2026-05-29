@@ -26,7 +26,7 @@ import {
   PoolMission,
   REWARDS,
 } from "./_constants";
-import { RtlChildSex, t, tSpeak, tGender } from "./i18n";
+import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
 
@@ -278,7 +278,9 @@ export function ActiveScreen({
         onPress={() => speak(tSpeak("buddy.start", undefined, rtlChildSex))}
         activeOpacity={0.65}
       >
-        <Text style={s.msg}>{tGender("buddy.start", undefined, rtlChildSex)}</Text>
+        <Text style={s.msg}>
+          {tGender("buddy.start", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={s.activeCard}
@@ -305,13 +307,19 @@ export function ActiveScreen({
               </Text>
             ))}
         </View>
-        <Text style={s.tapHint}>{tGender("active.tap_hint", undefined, rtlChildSex)}</Text>
+        <Text style={s.tapHint}>
+          {tGender("active.tap_hint", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnPrimary} onPress={onDone}>
-        <Text style={s.btnPrimaryTxt}>{tGender("active.btn_done", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnPrimaryTxt}>
+          {tGender("active.btn_done", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-        <Text style={s.btnSkipTxt}>{tGender("active.btn_skip", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnSkipTxt}>
+          {tGender("active.btn_skip", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -375,10 +383,14 @@ export function CelebrateScreen({
         </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnPrimary} onPress={onContinue}>
-        <Text style={s.btnPrimaryTxt}>{tGender("celebrate.btn_next", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnPrimaryTxt}>
+          {tGender("celebrate.btn_next", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>{tGender("celebrate.btn_rewards", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnSecondaryTxt}>
+          {tGender("celebrate.btn_rewards", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnBack} onPress={onBack}>
         <Text style={s.btnBackTxt}>{t("common.back")}</Text>
@@ -457,7 +469,9 @@ function RewardCard({
             }}
             activeOpacity={0.75}
           >
-            <Text style={s.rReadyBtnTxt}>{tGender("rewards.ready", undefined, rtlChildSex)}</Text>
+            <Text style={s.rReadyBtnTxt}>
+              {tGender("rewards.ready", undefined, rtlChildSex)}
+            </Text>
           </TouchableOpacity>
         ) : (
           <Text style={s.rNeed}>{needText}</Text>

@@ -17,7 +17,7 @@ import {
   getMorningStepTitle,
 } from "./_constants";
 import { Confetti } from "./_SharedUI";
-import { RtlChildSex, t, tSpeak, tGender } from "./i18n";
+import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 interface Props {
   childName: string;
@@ -162,7 +162,11 @@ export default function MorningRoutineScreen({
       </View>
 
       <Text style={s.rewardLabel}>
-        {tGender("morning.reward_label", { stars: Array(stars).fill("⭐").join("") }, rtlChildSex)}
+        {tGender(
+          "morning.reward_label",
+          { stars: Array(stars).fill("⭐").join("") },
+          rtlChildSex,
+        )}
       </Text>
 
       {/* Complete — disabled until all steps done */}
@@ -174,12 +178,18 @@ export default function MorningRoutineScreen({
         <Text style={s.btnPrimaryTxt}>
           {allDone
             ? tGender("morning.btn_done", undefined, rtlChildSex)
-            : tGender("morning.btn_remaining", { count: validSteps.length - doneIds.length }, rtlChildSex)}
+            : tGender(
+                "morning.btn_remaining",
+                { count: validSteps.length - doneIds.length },
+                rtlChildSex,
+              )}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-        <Text style={s.btnSkipTxt}>{tGender("morning.btn_skip", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnSkipTxt}>
+          {tGender("morning.btn_skip", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );

@@ -17,7 +17,7 @@ import {
   getScheduleTitle,
 } from "./_constants";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
-import { RtlChildSex, t, tSpeak, tGender } from "./i18n";
+import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 interface HomeScreenProps {
   stars: number;
@@ -199,23 +199,33 @@ export default function HomeScreen({
       )}
 
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>{tGender("home.btn_pick_mission", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnPrimaryTxt}>
+          {tGender("home.btn_pick_mission", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       {scheduleEnabled && onOpenDay && (
         <TouchableOpacity style={s.btnDay} onPress={onOpenDay}>
-          <Text style={s.btnDayTxt}>{tGender("home.btn_my_day", undefined, rtlChildSex)}</Text>
+          <Text style={s.btnDayTxt}>
+            {tGender("home.btn_my_day", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>{tGender("home.btn_rewards", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnSecondaryTxt}>
+          {tGender("home.btn_rewards", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       {onBreathing && (
         <TouchableOpacity style={s.btnBreathing} onPress={onBreathing}>
-          <Text style={s.btnBreathingTxt}>{tGender("home.btn_breathing", undefined, rtlChildSex)}</Text>
+          <Text style={s.btnBreathingTxt}>
+            {tGender("home.btn_breathing", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={s.btnSettings} onPress={onSettings}>
-        <Text style={s.btnSettingsTxt}>{tGender("home.btn_settings", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnSettingsTxt}>
+          {tGender("home.btn_settings", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );

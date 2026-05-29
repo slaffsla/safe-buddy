@@ -31,7 +31,7 @@ import {
 } from "react-native";
 import Buddy from "./_Buddy";
 import { BUDDY_FIXED_SPACER, C } from "./_constants";
-import { RtlChildSex, t, tSpeak, tGender } from "./i18n";
+import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
@@ -572,14 +572,18 @@ export default function BreathingScreen({
           onPress={startSession}
           activeOpacity={0.85}
         >
-          <Text style={s.btnPrimaryTxt}>{tGender("breathing.btn_start", undefined, rtlChildSex)}</Text>
+          <Text style={s.btnPrimaryTxt}>
+            {tGender("breathing.btn_start", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={s.btnSecondary}
           onPress={onSkip}
           activeOpacity={0.78}
         >
-          <Text style={s.btnSecondaryTxt}>{tGender("breathing.btn_back", undefined, rtlChildSex)}</Text>
+          <Text style={s.btnSecondaryTxt}>
+            {tGender("breathing.btn_back", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -613,7 +617,9 @@ export default function BreathingScreen({
           onPress={handleExit}
           activeOpacity={0.78}
         >
-          <Text style={s.btnSecondaryTxt}>{tGender("breathing.btn_back", undefined, rtlChildSex)}</Text>
+          <Text style={s.btnSecondaryTxt}>
+            {tGender("breathing.btn_back", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -638,7 +644,9 @@ export default function BreathingScreen({
           onPress={onComplete}
           activeOpacity={0.85}
         >
-          <Text style={s.btnPrimaryTxt}>{tGender("breathing.btn_done", undefined, rtlChildSex)}</Text>
+          <Text style={s.btnPrimaryTxt}>
+            {tGender("breathing.btn_done", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -730,7 +738,9 @@ export default function BreathingScreen({
         onPress={handleExit}
         activeOpacity={0.7}
       >
-        <Text style={s.btnExitTxt}>{tGender("breathing.btn_finish", undefined, rtlChildSex)}</Text>
+        <Text style={s.btnExitTxt}>
+          {tGender("breathing.btn_finish", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
     </View>
   );

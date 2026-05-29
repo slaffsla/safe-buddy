@@ -1445,8 +1445,7 @@ function ChildSection({
 }) {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(settings.childName);
-  const showRtlGender =
-    settings.appLocale.startsWith("he") || settings.appLocale.startsWith("ar");
+  const showRtlGender = true;
 
   function saveName() {
     if (!nameInput.trim()) {

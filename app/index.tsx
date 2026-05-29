@@ -184,8 +184,11 @@ async function resolveVoiceForLanguage(language: string) {
     const byNameScore = (v: any) => {
       const name = String(v?.name ?? "").toLowerCase();
       const qualityBonus = v?.quality === enhanced ? 10 : 0;
-      const minusNovelty =
-        /compact|novelty|enhanced\(novelty\)|eloquence/.test(name) ? -4 : 0;
+      const minusNovelty = /compact|novelty|enhanced\(novelty\)|eloquence/.test(
+        name,
+      )
+        ? -4
+        : 0;
       const plusDefault = /default|siri|female|male/.test(name) ? 2 : 0;
       return qualityBonus + plusDefault + minusNovelty;
     };
@@ -200,7 +203,8 @@ async function resolveVoiceForLanguage(language: string) {
           v.quality === enhanced,
       ) ||
       voices.find(
-        (v) => v.language?.toLowerCase().replace("_", "-") === normalizedLanguage,
+        (v) =>
+          v.language?.toLowerCase().replace("_", "-") === normalizedLanguage,
       ) ||
       voices.find((v) =>
         v.language?.toLowerCase().replace("_", "-").startsWith(prefix),
@@ -267,82 +271,85 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
     };
   }, []);
 
-  return useCallback((text: string, options: SpeechCallOptions = {}) => {
-    if (!enabledRef.current || !text) return;
-    if (speakTimerRef.current) {
-      clearTimeout(speakTimerRef.current);
-      speakTimerRef.current = null;
-    }
-    try {
-      Speech.stop();
-    } catch {}
-    const lang = getTtsLanguage();
-    const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
-    const cleanedText = genderedText
-      .replace(
-        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
-        "",
-      )
-      .replace(/[⭐★☆•▪︎▶️→←]/g, " ")
-      .replace(/\s*[—–-]\s*/g, ", ")
-      .replace(/\s*\.\s*/g, ". ")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!cleanedText) return;
-    if (languageRef.current !== lang) {
-      languageRef.current = lang;
-      resolveVoiceForLanguage(lang).then((v) => {
-        voiceRef.current = v;
-      });
-    }
-    const opts: any = {
-      language: lang,
-      pitch: 1.05,
-      rate: Platform.OS === "ios" ? 0.52 : 0.65,
-    };
-    if (typeof options.volume === "number") {
-      opts.volume = Math.max(0, Math.min(1, options.volume));
-    }
-    if (
-      voiceMatchesLanguage(voiceRef.current, lang) &&
-      voiceRef.current?.identifier
-    ) {
-      opts.voice = voiceRef.current.identifier;
-    }
-    speakTimerRef.current = setTimeout(
-      () => {
+  return useCallback(
+    (text: string, options: SpeechCallOptions = {}) => {
+      if (!enabledRef.current || !text) return;
+      if (speakTimerRef.current) {
+        clearTimeout(speakTimerRef.current);
         speakTimerRef.current = null;
-        if (!enabledRef.current) return;
-        const fallbackOpts: any = { ...opts };
-        delete fallbackOpts.voice;
-        const speakWithFallback = () => {
+      }
+      try {
+        Speech.stop();
+      } catch {}
+      const lang = getTtsLanguage();
+      const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
+      const cleanedText = genderedText
+        .replace(
+          /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+          "",
+        )
+        .replace(/[⭐★☆•▪︎▶️→←]/g, " ")
+        .replace(/\s*[—–-]\s*/g, ", ")
+        .replace(/\s*\.\s*/g, ". ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!cleanedText) return;
+      if (languageRef.current !== lang) {
+        languageRef.current = lang;
+        resolveVoiceForLanguage(lang).then((v) => {
+          voiceRef.current = v;
+        });
+      }
+      const opts: any = {
+        language: lang,
+        pitch: 1.05,
+        rate: Platform.OS === "ios" ? 0.52 : 0.65,
+      };
+      if (typeof options.volume === "number") {
+        opts.volume = Math.max(0, Math.min(1, options.volume));
+      }
+      if (
+        voiceMatchesLanguage(voiceRef.current, lang) &&
+        voiceRef.current?.identifier
+      ) {
+        opts.voice = voiceRef.current.identifier;
+      }
+      speakTimerRef.current = setTimeout(
+        () => {
+          speakTimerRef.current = null;
+          if (!enabledRef.current) return;
+          const fallbackOpts: any = { ...opts };
+          delete fallbackOpts.voice;
+          const speakWithFallback = () => {
+            try {
+              Speech.speak(cleanedText, {
+                ...fallbackOpts,
+                onError: () => {
+                  // Last resort for Hebrew engines that reject selected voice.
+                  try {
+                    Speech.speak(cleanedText, fallbackOpts);
+                  } catch {}
+                },
+              });
+            } catch {}
+          };
           try {
             Speech.speak(cleanedText, {
-              ...fallbackOpts,
+              ...opts,
               onError: () => {
-                // Last resort for Hebrew engines that reject selected voice.
-                try {
-                  Speech.speak(cleanedText, fallbackOpts);
-                } catch {}
+                voiceRef.current = null;
+                speakWithFallback();
               },
             });
-          } catch {}
-        };
-        try {
-          Speech.speak(cleanedText, {
-            ...opts,
-            onError: () => {
-              voiceRef.current = null;
-              speakWithFallback();
-            },
-          });
-        } catch {
-          speakWithFallback();
-        }
-      },
-      Platform.OS === "ios" ? 120 : 0,
-    );
-  }, [rtlChildSex]);
+          } catch {
+            speakWithFallback();
+          }
+        },
+        Platform.OS === "ios" ? 120 : 0,
+      );
+    },
+    [rtlChildSex],
+  );
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
@@ -610,7 +617,13 @@ export default function App() {
       ]);
       setChildName(name);
       setOnboardingDone(true);
-      speak(tSpeak("onboarding.welcome_greeting", { name }, appSettings.rtlChildSex ?? "male"));
+      speak(
+        tSpeak(
+          "onboarding.welcome_greeting",
+          { name },
+          appSettings.rtlChildSex ?? "male",
+        ),
+      );
       // After onboarding go to demo if not done, else home
       setScreen("demo_intro");
     } catch {
@@ -857,7 +870,13 @@ export default function App() {
         AsyncStorage.setItem(K.FIRST_REWARD, "true").catch(console.log);
       }
       incrementLocalUsage("rewardsRedeemed").catch(console.log);
-      speak(t("rewards.redeemed_speak"));
+      speak(
+        tSpeak(
+          "rewards.redeemed_speak",
+          undefined,
+          appSettings.rtlChildSex ?? "male",
+        ),
+      );
       Alert.alert(
         t("rewards.redeemed_alert_title"),
         getRewardTitle(reward.id, reward.title),
@@ -935,7 +954,9 @@ export default function App() {
       const sk = v[K.SKIP_COUNT] ? parseInt(v[K.SKIP_COUNT], 10) : 0;
       let doneIds: number[] = [];
       try {
-        const parsed = v[K.DONE_IDS_TODAY] ? JSON.parse(v[K.DONE_IDS_TODAY]) : [];
+        const parsed = v[K.DONE_IDS_TODAY]
+          ? JSON.parse(v[K.DONE_IDS_TODAY])
+          : [];
         doneIds = Array.isArray(parsed)
           ? parsed.filter((n: unknown) => typeof n === "number")
           : [];
@@ -1278,7 +1299,13 @@ export default function App() {
           }
           showMorningNudge={showMorningNudge}
           onMorningNudge={() => {
-            speak(tSpeak("home.morning_nudge_speak", undefined, appSettings.rtlChildSex ?? "male"));
+            speak(
+              tSpeak(
+                "home.morning_nudge_speak",
+                undefined,
+                appSettings.rtlChildSex ?? "male",
+              ),
+            );
             setScreen("pick");
           }}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}

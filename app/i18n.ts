@@ -46,17 +46,15 @@ export const t = (key: string, params?: Record<string, unknown>): string =>
   i18n.t(key, params);
 
 /**
- * Speech-specific localization with optional RTL sex-aware variant selection.
- * If `sex` is "female" and locale is RTL, tries `${key}_female` first.
+ * Speech-specific localization with optional sex-aware variant selection.
+ * If `sex` is "female", tries `${key}_female` first.
  */
 export function tSpeak(
   key: string,
   params?: Record<string, unknown>,
   sex: RtlChildSex = "male",
 ): string {
-  const loc = i18n.locale ?? "ru";
-  const rtl = loc.startsWith("he") || loc.startsWith("ar");
-  if (rtl && sex === "female") {
+  if (sex === "female") {
     const femaleKey = `${key}_female`;
     const femaleText = i18n.t(femaleKey, {
       ...(params ?? {}),

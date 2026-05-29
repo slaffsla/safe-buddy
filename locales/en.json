@@ -2,7 +2,7 @@
   "buddy": {
     "name": "Buddy",
     "idle": "I'm here.",
-    "idle_alt": "Tap me.",
+    "idle_alt": "Tap me. You can pet me too.",
     "start": "Let's go together.",
     "done": "Nicely done.",
     "reward": "Look.",
@@ -57,7 +57,7 @@
     "screen1_sub": "RealoKids helps children build daily habits with calm guidance, simple choices, and rewards set by parents.",
     "screen1_note": "Designed by a father for his own neurodivergent child — simple enough for any family.",
     "screen2_heading": "Start together once.",
-    "screen2_body": "Sit with your child the first time. Tap Buddy together, then let your child choose the first mission.",
+    "screen2_body": "Sit with your child the first time. Pet Buddy together, then let your child choose the first mission.",
     "screen2_note": "A few calm minutes together at the start are usually enough.",
     "screen2_tip_label": "HOW IT WORKS",
     "screen2_tip_1": "Child picks a mission",
@@ -120,7 +120,7 @@
     "ready": "Get it!",
     "need_exact": "Need {{count}} more ⭐",
     "need_vague": "a little more",
-    "hint": "Tap a reward to get it",
+    "hint": "Tap a reward to hear",
     "redeemed_alert_title": "🎉 Reward unlocked!",
     "redeemed_speak": "Well done. You earned it.",
     "redeemed_speak_female": "I'm proud of you, sweetheart!"

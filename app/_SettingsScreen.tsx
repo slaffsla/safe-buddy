@@ -892,6 +892,13 @@ function PinSection({
     }
   }
 
+  function showStandardModeHint() {
+    Alert.alert(
+      t("settings.control_standard_hint_title"),
+      t("settings.control_standard_hint_body"),
+    );
+  }
+
   return (
     <View>
       <SectionHeader title={t("settings.security_section")} icon="🔒" />
@@ -1132,13 +1139,29 @@ function PinSection({
         >
           {t("settings.control_level")}
         </Text>
-        <Text style={[u.rowSublabel, { marginLeft: 10 }]}>
-          {settings.controlLevel === "hands-on"
-            ? t("settings.control_hands_on")
-            : settings.controlLevel === "balanced"
-              ? t("settings.control_balanced")
-              : t("settings.control_independent")}
-        </Text>
+        <View
+          style={[
+            u.rowLabelWithInfo,
+            { marginLeft: 10, marginTop: 2, marginBottom: 2 },
+          ]}
+        >
+          <Text style={u.rowSublabel}>
+            {settings.controlLevel === "hands-on"
+              ? t("settings.control_hands_on")
+              : settings.controlLevel === "balanced"
+                ? t("settings.control_balanced")
+                : t("settings.control_independent")}
+          </Text>
+          {settings.controlLevel === "balanced" ? (
+            <TouchableOpacity
+              style={u.infoDot}
+              onPress={showStandardModeHint}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={u.infoDotTxt}>i</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
         <PillSelector
           options={[
             { label: t("settings.control_pill_together"), value: "hands-on" },

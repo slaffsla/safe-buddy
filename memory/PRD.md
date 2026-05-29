@@ -72,6 +72,44 @@ Bear character "Buddy" provides emotional continuity. Validated by a real child.
 - **P2** Full rotation logic (weekly/every3/daily) wired to mission-count growth
 - **P2** Expand `MISSION_POOL` beyond 22 so Infinity Loop has more breathing room
 
+## Future roadmap
+
+### V2/V3 — Buddy Listens (local-only, constrained voice interaction)
+Goal: give the child the feeling that Buddy can listen and respond, without
+shipping open-ended cloud chat and without sending child data off-device.
+
+This is intentionally **not** a free-form LLM companion in V1. The safer target
+is a constrained "Buddy listens" mode:
+- Child taps and holds a microphone / Buddy-listen affordance.
+- Speech is processed locally where platform support allows.
+- App maps the utterance to a small set of safe intents:
+  - "I'm sad / upset"
+  - "I need help"
+  - "I don't want to"
+  - "I'm done"
+  - "Again"
+  - "Reward"
+  - "Breathe"
+  - "What now?"
+- Buddy answers with short, prewritten local responses and, when useful, offers
+  two large next actions (for example: "Breathe" / "Tiny mission").
+- Parent can disable the feature completely.
+- Any transcript or derived state stays local-only, if stored at all.
+
+Hard constraints:
+- No cloud STT, cloud LLM, analytics, or remote transcript storage.
+- No therapy claims, diagnosis, secrecy, or open-ended emotional dependency.
+- Buddy should not pretend to be a human, clinician, or parent replacement.
+- Responses must stay brief, calm, predictable, and aligned with the existing
+  mission / breathing / reward loop.
+
+Implementation note:
+- Prefer intent recognition + scripted responses first.
+- A small local model may later help with phrasing or intent classification, but
+  only behind the same safety envelope.
+- Multilingual child speech quality (English / Russian / Hebrew), app size,
+  battery, latency, and mobile memory are the main feasibility risks.
+
 ## Next tasks
 1. Verify Infinity Loop manually on device (user will test).
 2. Iterate on encore wording / Buddy mood for the "all done" state based on feedback.

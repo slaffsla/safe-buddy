@@ -384,6 +384,8 @@
     "control_pill_together": "Together",
     "control_pill_standard": "Standard",
     "control_pill_alone": "Solo",
+    "control_standard_hint_title": "Standard mode",
+    "control_standard_hint_body": "Buddy keeps the child flow mostly independent. Rewards and Parent zone can still use the parent PIN. Mission completion is only PIN-protected if you turn on Lock mission completion with PIN.",
     "missions_section": "Missions",
     "missions_parent_hint": "Manage missions in the Parent zone",
     "infinity_loop": "Daily loop",

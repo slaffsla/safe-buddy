@@ -21,6 +21,7 @@ import {
 import { t } from "./i18n";
 
 const TAP_MOOD_DELAY_MS = 280;
+const PETTING_HEART_INTERVAL_MS = 520;
 
 interface BuddyProps {
   mood?: BuddyMood;
@@ -64,6 +65,7 @@ export default function Buddy({
   const [showTapHearts, setShowTapHearts] = useState(false);
   const [tapHeartBurst, setTapHeartBurst] = useState(0);
   const heartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const tapHeartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapMoodTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pettableRef = useRef(pettable);
@@ -132,6 +134,7 @@ export default function Buddy({
   useEffect(() => {
     return () => {
       if (heartTimeout.current) clearTimeout(heartTimeout.current);
+      if (heartInterval.current) clearInterval(heartInterval.current);
       if (tapHeartTimeout.current) clearTimeout(tapHeartTimeout.current);
       if (tapMoodTimeout.current) clearTimeout(tapMoodTimeout.current);
       petBounceAnim.current?.stop();
@@ -152,6 +155,10 @@ export default function Buddy({
     setShowHearts(false);
     onPettingChangeRef.current?.(false);
     if (heartTimeout.current) clearTimeout(heartTimeout.current);
+    if (heartInterval.current) {
+      clearInterval(heartInterval.current);
+      heartInterval.current = null;
+    }
     Animated.spring(pettingScale, {
       toValue: 1,
       friction: 6,
@@ -174,6 +181,11 @@ export default function Buddy({
     onPettingChangeRef.current?.(true);
     setShowHearts(true);
     setHeartBurst((n) => n + 1);
+    if (!heartInterval.current) {
+      heartInterval.current = setInterval(() => {
+        setHeartBurst((n) => n + 1);
+      }, PETTING_HEART_INTERVAL_MS);
+    }
     Animated.spring(pettingScale, {
       toValue: 1.1,
       friction: 7,
@@ -205,6 +217,10 @@ export default function Buddy({
     if (!isPetting && !showHearts) return;
     setIsPetting(false);
     onPettingChangeRef.current?.(false);
+    if (heartInterval.current) {
+      clearInterval(heartInterval.current);
+      heartInterval.current = null;
+    }
     Animated.spring(pettingScale, {
       toValue: 1,
       friction: 6,

@@ -33,6 +33,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  DEFAULT_LOCAL_USAGE,
+  incrementLocalUsage,
+  loadLocalUsage,
+  LocalUsage,
+  resetLocalUsage,
+} from "../localUsage";
 import ParentOnboarding from "./_ParentOnboarding";
 import {
   DEFAULT_MISSION_CONFIGS,
@@ -66,13 +73,6 @@ import {
   SCHEDULE_MAX_BLOCKS,
   ScheduleBlock,
 } from "./_constants";
-import {
-  DEFAULT_LOCAL_USAGE,
-  incrementLocalUsage,
-  loadLocalUsage,
-  LocalUsage,
-  resetLocalUsage,
-} from "../localUsage";
 import {
   AppLocale,
   getAppLocale,

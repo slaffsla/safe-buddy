@@ -3,7 +3,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Speech from "expo-speech";
 import { StatusBar } from "expo-status-bar";
-import React, {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -23,6 +23,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
 import {
@@ -64,7 +65,6 @@ import {
   DemoStepScreen,
 } from "./_DemoScreens";
 import HomeScreen from "./_HomeScreen";
-import { incrementLocalUsage } from "../localUsage";
 import {
   ActiveScreen,
   CelebrateScreen,

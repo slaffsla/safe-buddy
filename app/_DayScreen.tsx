@@ -17,7 +17,7 @@ import {
   getScheduleTitle,
 } from "./_constants";
 import { getAppLocale, t } from "./i18n";
-import { useLayoutMetrics } from "./_layoutMetrics";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 interface DayScreenProps {
   blocks: ScheduleBlock[];

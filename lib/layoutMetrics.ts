@@ -1,5 +1,5 @@
 import { Dimensions, useWindowDimensions } from "react-native";
-import { BUDDY_FIXED_SPACER } from "./_constants";
+import { BUDDY_FIXED_SPACER } from "../app/_constants";
 
 type WindowSize = {
   width: number;

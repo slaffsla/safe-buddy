@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { T } from "./_SharedUI";
 import { C } from "./_constants";
 import { t, tDemoStepPraise, tDemoStepTitle } from "./i18n";
-import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
 
 // ── DemoIntroScreen ───────────────────────────────────────────────────────────
 

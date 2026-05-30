@@ -41,7 +41,7 @@ import {
   resetLocalUsage,
 } from "../localUsage";
 import ParentOnboarding from "./_ParentOnboarding";
-import { CONTENT_MAX_WIDTH } from "./_layoutMetrics";
+import { CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
 import {
   DEFAULT_MISSION_CONFIGS,
   DEFAULT_MORNING_STEPS,

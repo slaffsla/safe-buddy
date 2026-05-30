@@ -15,7 +15,7 @@ import {
   getProgressionMessage,
   getScheduleTitle,
 } from "./_constants";
-import { useLayoutMetrics } from "./_layoutMetrics";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 

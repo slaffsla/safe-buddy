@@ -26,7 +26,7 @@ import {
   REWARDS,
 } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
-import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "./_layoutMetrics";
+import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
 

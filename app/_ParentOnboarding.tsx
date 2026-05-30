@@ -15,7 +15,7 @@ import {
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { t } from "./i18n";
-import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "./_layoutMetrics";
+import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
 
 interface Props {
   onDone: () => void;

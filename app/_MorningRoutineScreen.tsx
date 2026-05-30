@@ -17,7 +17,7 @@ import {
 } from "./_constants";
 import { Confetti } from "./_SharedUI";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
-import { useLayoutMetrics } from "./_layoutMetrics";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 interface Props {
   childName: string;

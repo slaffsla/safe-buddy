@@ -84,7 +84,7 @@ import SettingsScreen, {
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
 import { getTtsLanguage, t, tGender, tSpeak } from "./i18n";
-import { FORM_MAX_WIDTH, useLayoutMetrics } from "./_layoutMetrics";
+import { FORM_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 

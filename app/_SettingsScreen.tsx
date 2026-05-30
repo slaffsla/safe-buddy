@@ -2761,7 +2761,7 @@ function ParentZoneView({
             </TouchableOpacity>
             <View style={pz.starStepperStars}>
               {Array.from({ length: clampedCost }).map((_, i) => (
-                <Text key={i} style={pz.starStepperStar}>
+                <Text key={`reward-cost-star-${id}-${i}`} style={pz.starStepperStar}>
                   ★
                 </Text>
               ))}
@@ -3271,8 +3271,8 @@ export default function SettingsScreen({
     const scheduleCount = (settings.scheduleBlocks ?? []).length;
     return (
       <SafeAreaView key={`schedule-${settings.appLocale}`} style={ss.root}>
-        <View pointerEvents="none" style={ss.bgBandTop} />
-        <View pointerEvents="none" style={ss.bgBandMid} />
+        <View style={[ss.bgBandTop, ss.noPointerEvents]} />
+        <View style={[ss.bgBandMid, ss.noPointerEvents]} />
         <View style={ss.header}>
           <TouchableOpacity
             onPress={() => setActiveSubscreen("main")}
@@ -3302,8 +3302,8 @@ export default function SettingsScreen({
     const stepsCount = settings.morningSteps.length;
     return (
       <SafeAreaView key={`routine-${settings.appLocale}`} style={ss.root}>
-        <View pointerEvents="none" style={ss.bgBandTop} />
-        <View pointerEvents="none" style={ss.bgBandMid} />
+        <View style={[ss.bgBandTop, ss.noPointerEvents]} />
+        <View style={[ss.bgBandMid, ss.noPointerEvents]} />
         <View style={ss.header}>
           <TouchableOpacity
             onPress={() => setActiveSubscreen("main")}
@@ -3335,8 +3335,8 @@ export default function SettingsScreen({
 
   return (
     <SafeAreaView style={ss.root}>
-      <View pointerEvents="none" style={ss.bgBandTop} />
-      <View pointerEvents="none" style={ss.bgBandMid} />
+      <View style={[ss.bgBandTop, ss.noPointerEvents]} />
+      <View style={[ss.bgBandMid, ss.noPointerEvents]} />
       {/* Header */}
       <View style={ss.header}>
         <TouchableOpacity onPress={onClose} style={ss.backBtn}>
@@ -3573,6 +3573,7 @@ const ss = StyleSheet.create({
     height: 180,
     backgroundColor: "rgba(255,248,231,0.42)",
   },
+  noPointerEvents: { pointerEvents: "none" },
   loadingCenter: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { fontSize: 16, color: C.muted },
   header: {

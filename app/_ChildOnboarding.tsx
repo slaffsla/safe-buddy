@@ -146,10 +146,15 @@ export default function ChildOnboarding({
                 pettingMood="happy"
                 pettingHeartMode="pronounced"
                 tapHeartsInPetting
+                pettingStartDelayMs={180}
                 onPettingChange={handlePettingChange}
                 onTap={() => {
                   markInteraction();
-                  speak(currentLine);
+                  speak(
+                    firstPetDone
+                      ? t("onboarding.meet_after_pet_sub")
+                      : currentLine,
+                  );
                 }}
                 speak={speak}
                 size={buddySize}

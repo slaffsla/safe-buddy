@@ -607,7 +607,7 @@ export default function BreathingScreen({
 
         <View style={s.circleStatic}>
           <Text style={s.circleEmoji}>🌬️</Text>
-          <View style={s.prepCountdownOverlay} pointerEvents="none">
+          <View style={[s.prepCountdownOverlay, s.noPointerEvents]}>
             <Text style={s.prepCountdownTxt}>{prepCountdown}</Text>
           </View>
         </View>
@@ -864,6 +864,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  noPointerEvents: { pointerEvents: "none" },
   prepCountdownTxt: {
     fontSize: 34,
     fontWeight: "800",

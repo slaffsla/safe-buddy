@@ -83,7 +83,7 @@ export function DemoStepScreen({
           .fill(0)
           .map((_: any, i: number) => (
             <View
-              key={i}
+              key={`demo-dot-${i}`}
               style={[s.stepDot, i <= stepIndex && s.stepDotActive]}
             />
           ))}

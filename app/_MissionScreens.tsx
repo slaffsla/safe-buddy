@@ -327,7 +327,7 @@ export function ActiveScreen({
           {Array(mission.stars)
             .fill("⭐")
             .map((_: any, i: number) => (
-              <Text key={i} style={s.starBig}>
+              <Text key={`active-star-${mission.id}-${i}`} style={s.starBig}>
                 ⭐
               </Text>
             ))}

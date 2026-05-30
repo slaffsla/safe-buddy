@@ -1469,8 +1469,8 @@ export default function App() {
             style={[
               s.topOverlay,
               isTabletWidth || isShortHeight ? s.topOverlayCompact : null,
+              s.boxNonePointerEvents,
             ]}
-            pointerEvents="box-none"
           >
             <View style={[s.topOverlayContent, { maxWidth: contentMaxWidth }]}>
               <View
@@ -1638,8 +1638,8 @@ const s = StyleSheet.create({
     backgroundColor: C.bg, // solid backing — content scrolls behind, not through
 
     paddingHorizontal: 16,
-    pointerEvents: "box-none",
   },
+  boxNonePointerEvents: { pointerEvents: "box-none" },
   topOverlayCompact: {
     paddingTop: 8,
   },

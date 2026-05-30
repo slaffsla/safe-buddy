@@ -33,6 +33,7 @@ interface BuddyProps {
   pettingMood?: BuddyMood;
   pettingHeartMode?: "normal" | "pronounced";
   tapHeartsInPetting?: boolean;
+  pettingStartDelayMs?: number;
   onPettingChange?: (petting: boolean) => void;
   onTap?: () => void;
   // Optional external phase scale (used by BreathingScreen to sync phases).
@@ -51,6 +52,7 @@ export default function Buddy({
   pettingMood = "encouraging",
   pettingHeartMode = "normal",
   tapHeartsInPetting = false,
+  pettingStartDelayMs = 0,
   onPettingChange,
   onTap,
   phaseScale,
@@ -71,6 +73,9 @@ export default function Buddy({
   const [tapHeartBurst, setTapHeartBurst] = useState(0);
   const heartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heartInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pettingStartTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const tapHeartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapMoodTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pettableRef = useRef(pettable);
@@ -140,6 +145,7 @@ export default function Buddy({
     return () => {
       if (heartTimeout.current) clearTimeout(heartTimeout.current);
       if (heartInterval.current) clearInterval(heartInterval.current);
+      if (pettingStartTimeout.current) clearTimeout(pettingStartTimeout.current);
       if (tapHeartTimeout.current) clearTimeout(tapHeartTimeout.current);
       if (tapMoodTimeout.current) clearTimeout(tapMoodTimeout.current);
       petBounceAnim.current?.stop();
@@ -162,6 +168,10 @@ export default function Buddy({
     }, 0);
     onPettingChangeRef.current?.(false);
     if (heartTimeout.current) clearTimeout(heartTimeout.current);
+    if (pettingStartTimeout.current) {
+      clearTimeout(pettingStartTimeout.current);
+      pettingStartTimeout.current = null;
+    }
     if (heartInterval.current) {
       clearInterval(heartInterval.current);
       heartInterval.current = null;
@@ -182,7 +192,7 @@ export default function Buddy({
     return () => clearTimeout(clearPettingState);
   }, [pettable, petBounceY, pettingScale]);
 
-  function startPetting() {
+  function beginPetting() {
     if (!pettableRef.current) return;
     if (heartTimeout.current) clearTimeout(heartTimeout.current);
     if (!isPetting) setIsPetting(true);
@@ -223,7 +233,24 @@ export default function Buddy({
     }
   }
 
+  function startPetting() {
+    if (!pettableRef.current) return;
+    if (pettingStartTimeout.current) clearTimeout(pettingStartTimeout.current);
+    if (pettingStartDelayMs > 0) {
+      pettingStartTimeout.current = setTimeout(() => {
+        pettingStartTimeout.current = null;
+        beginPetting();
+      }, pettingStartDelayMs);
+      return;
+    }
+    beginPetting();
+  }
+
   function endPetting() {
+    if (pettingStartTimeout.current) {
+      clearTimeout(pettingStartTimeout.current);
+      pettingStartTimeout.current = null;
+    }
     if (!isPetting && !showHearts) return;
     setIsPetting(false);
     onPettingChangeRef.current?.(false);

@@ -461,7 +461,7 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
           <View style={s.dots}>
             {SCREENS.map((_, i) => (
               <View
-                key={i}
+                key={`parent-onboarding-dot-${i}`}
                 style={[
                   s.dot,
                   isTabletWidth && s.dotTablet,

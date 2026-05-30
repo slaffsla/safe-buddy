@@ -144,7 +144,7 @@ export function Confetti({ trigger }: { trigger: boolean }) {
   if (!trigger) return null;
   const { width } = Dimensions.get("window");
   return (
-    <View pointerEvents="none" style={s.confettiOverlay}>
+    <View style={[s.confettiOverlay, s.noPointerEvents]}>
       <ConfettiCannon
         count={64}
         origin={{ x: width / 2, y: 0 }}
@@ -166,6 +166,7 @@ const s = StyleSheet.create({
     zIndex: 2000,
     elevation: 2000,
   },
+  noPointerEvents: { pointerEvents: "none" },
 
   // Progress bar
   pbWrap: {

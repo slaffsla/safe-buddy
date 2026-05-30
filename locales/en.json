@@ -111,6 +111,9 @@
   },
   "missionPick": {
     "title": "Pick a mission",
+    "first_title": "Choose your first tiny mission",
+    "first_sub": "Pick one. Buddy will stay with you.",
+    "first_hint": "Tap a card to begin. Hold it to hear it first.",
     "encore_title": "You did it all today!",
     "encore_sub": "Tomorrow Buddy will bring new missions.",
     "encore_bonus": "Want one more? A bonus?",

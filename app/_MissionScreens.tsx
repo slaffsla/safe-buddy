@@ -95,6 +95,107 @@ export function MissionPickScreen({
 
   const [expanded, setExpanded] = React.useState<MissionSlot>(active);
 
+  if (firstTime && pool.length > 0) {
+    return (
+      <ScrollView
+        contentContainerStyle={[
+          s.scroll,
+          s.firstMissionScroll,
+          isLargeTablet && s.scrollLarge,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+            paddingTop: buddyContentSpacer,
+          },
+        ]}
+      >
+        <View
+          style={[
+            s.firstMissionHero,
+            isLargeTablet && s.firstMissionHeroLarge,
+          ]}
+        >
+          <T style={[s.pageTitle, s.firstMissionTitle]} speak={speak}>
+            {tGender("missionPick.first_title", undefined, rtlChildSex)}
+          </T>
+          <T
+            style={[
+              s.firstMissionSub,
+              isLargeTablet && s.firstMissionSubLarge,
+            ]}
+            speak={speak}
+          >
+            {tGender("missionPick.first_sub", undefined, rtlChildSex)}
+          </T>
+        </View>
+
+        <View style={s.firstMissionList}>
+          {pool.slice(0, 3).map((m, index) => (
+            <TouchableOpacity
+              key={`first-mission-${m.id}`}
+              style={[
+                s.mCard,
+                s.firstMissionCard,
+                index === 0 && s.firstMissionCardPrimary,
+                isLargeTablet && s.firstMissionCardLarge,
+              ]}
+              onPress={() => onPick(m)}
+              onLongPress={() =>
+                speak(
+                  `${getMissionTitle(m.id, m.title)}. ${getMissionSubtitle(m.id, m.subtitle)}`,
+                )
+              }
+              activeOpacity={0.75}
+            >
+              <Text
+                style={[
+                  s.mEmoji,
+                  s.firstMissionEmoji,
+                  isLargeTablet && s.firstMissionEmojiLarge,
+                ]}
+              >
+                {m.emoji}
+              </Text>
+              <View style={s.mInfo}>
+                <Text
+                  style={[
+                    s.mTitle,
+                    s.firstMissionCardTitle,
+                    isLargeTablet && s.firstMissionCardTitleLarge,
+                  ]}
+                >
+                  {getMissionTitle(m.id, m.title)}
+                </Text>
+                <Text
+                  style={[
+                    s.mSub,
+                    s.firstMissionCardSub,
+                    isLargeTablet && s.firstMissionCardSubLarge,
+                  ]}
+                >
+                  {getMissionSubtitle(m.id, m.subtitle)}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  s.mStar,
+                  s.firstMissionStar,
+                  isLargeTablet && s.firstMissionStarLarge,
+                ]}
+              >
+                {Array(m.stars).fill("⭐").join("")}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <T style={s.hint} speak={speak}>
+          {tGender("missionPick.first_hint", undefined, rtlChildSex)}
+        </T>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView
       contentContainerStyle={[
@@ -635,6 +736,9 @@ const s = StyleSheet.create({
   activeScreenScrollLarge: {
     paddingBottom: 120,
   },
+  firstMissionScroll: {
+    justifyContent: "flex-start",
+  },
 
   msg: {
     fontSize: 17,
@@ -670,6 +774,85 @@ const s = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  firstMissionHero: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  firstMissionHeroLarge: {
+    marginBottom: 20,
+  },
+  firstMissionTitle: {
+    marginBottom: 8,
+  },
+  firstMissionSub: {
+    fontSize: 18,
+    lineHeight: 26,
+    color: C.green,
+    textAlign: "center",
+    fontWeight: "600",
+    maxWidth: 360,
+  },
+  firstMissionSubLarge: {
+    fontSize: 23,
+    lineHeight: 32,
+    maxWidth: 520,
+  },
+  firstMissionList: {
+    width: "100%",
+    gap: 10,
+    marginTop: 6,
+  },
+  firstMissionCard: {
+    minHeight: 92,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    marginBottom: 0,
+  },
+  firstMissionCardPrimary: {
+    backgroundColor: "#F4FAF7",
+    borderColor: "#CFE9DD",
+  },
+  firstMissionCardLarge: {
+    minHeight: 118,
+    borderRadius: 18,
+    paddingVertical: 24,
+    paddingHorizontal: 22,
+  },
+  firstMissionEmoji: {
+    fontSize: 38,
+    marginRight: 14,
+  },
+  firstMissionEmojiLarge: {
+    fontSize: 52,
+    marginRight: 20,
+  },
+  firstMissionCardTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  firstMissionCardTitleLarge: {
+    fontSize: 27,
+    lineHeight: 34,
+  },
+  firstMissionCardSub: {
+    fontSize: 15,
+    lineHeight: 21,
+    marginTop: 4,
+  },
+  firstMissionCardSubLarge: {
+    fontSize: 20,
+    lineHeight: 28,
+    marginTop: 6,
+  },
+  firstMissionStar: {
+    fontSize: 24,
+    marginLeft: 10,
+  },
+  firstMissionStarLarge: {
+    fontSize: 32,
+    marginLeft: 16,
   },
 
   // Slot grouping

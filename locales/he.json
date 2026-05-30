@@ -119,6 +119,11 @@
   "missionPick": {
     "title": "בחר משימה",
     "title_female": "בחרי משימה",
+    "first_title": "בחר משימה קטנה ראשונה",
+    "first_title_female": "בחרי משימה קטנה ראשונה",
+    "first_sub": "בחר אחת. Buddy יישאר איתך.",
+    "first_sub_female": "בחרי אחת. Buddy יישאר איתך.",
+    "first_hint": "לחצו על כרטיס כדי להתחיל. לחיצה ארוכה תשמיע אותו קודם.",
     "encore_title": "עשית הכול להיום!",
     "encore_sub": "מחר Buddy יביא משימות חדשות",
     "encore_bonus": "רוצה עוד אחת? בונוס?",

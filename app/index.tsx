@@ -138,6 +138,7 @@ const K = {
 const TINY_FACT_IDLE_MIN_MS = 2000;
 const TINY_FACT_IDLE_JITTER_MS = 3000;
 const TINY_FACT_VISIBLE_MS = 10000;
+const FIRST_EXPERIENCE_MISSION_IDS = [4, 15, 13, 17, 1, 3, 20, 2];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -1192,6 +1193,40 @@ export default function App() {
     dayMissions = [...permanent, ...rotated];
   }
 
+  const firstExperienceMissions: PoolMission[] = [];
+  const firstExperienceSeen = new Set<number>();
+  const firstExperienceSources: PoolMission[] = [
+    ...FIRST_EXPERIENCE_MISSION_IDS.map(
+      (id) =>
+        dayMissions.find((m) => m.id === id) ??
+        activePool.find((m) => m.id === id),
+    ).filter((m): m is PoolMission => !!m),
+    ...dayMissions,
+    ...activePool,
+    ...MISSIONS_EASY.filter(
+      (m) =>
+        effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
+        missionTypeById[m.id] !== "inactive",
+    ).map((m) => ({
+      ...m,
+      stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
+    })),
+  ];
+  for (const candidate of firstExperienceSources) {
+    if (firstExperienceSeen.has(candidate.id)) continue;
+    if (doneIdsToday.includes(candidate.id)) continue;
+    firstExperienceSeen.add(candidate.id);
+    if (candidate.stars !== 1) continue;
+    firstExperienceMissions.push(candidate);
+    if (firstExperienceMissions.length >= 3) break;
+  }
+  const missionPickMissions =
+    firstMission && firstExperienceMissions.length > 0
+      ? firstExperienceMissions
+      : dayMissions.length > 0
+        ? dayMissions
+        : null;
+
   // Effective rewards list (parent overrides applied; disabled rewards hidden).
   const effectiveRewards: Reward[] = allRewardPool
     .filter((r) => effectiveRewardEnabled(r.id, rewardOverrides))
@@ -1338,7 +1373,7 @@ export default function App() {
         <MissionPickScreen
           {...p}
           firstTime={firstMission}
-          missions={dayMissions.length > 0 ? dayMissions : null}
+          missions={missionPickMissions}
           missionTypeById={missionTypeById}
           doneIds={doneIdsToday}
           bonusMission={

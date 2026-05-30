@@ -83,7 +83,7 @@ import SettingsScreen, {
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
 import { getTtsLanguage, t, tGender, tSpeak } from "./i18n";
-import { CONTENT_MAX_WIDTH, FORM_MAX_WIDTH } from "./_layoutMetrics";
+import { FORM_MAX_WIDTH, useLayoutMetrics } from "./_layoutMetrics";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -413,6 +413,7 @@ export default function App() {
 
   const speak = useSpeech(ttsEnabled, appSettings.rtlChildSex ?? "male");
   const [useGentleHomeMood] = useState(() => Math.random() > 0.7);
+  const { contentMaxWidth, isTabletWidth, isShortHeight } = useLayoutMetrics();
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride
@@ -1225,7 +1226,14 @@ export default function App() {
     completedToday === 0 &&
     nowMinutes < 12 * 60 &&
     nowMinutes >= (reminderMinutes ?? 8 * 60);
-  const overlayBuddySize = PROFILE_CONFIGS[ageProfile].buddySize;
+  const baseOverlayBuddySize = PROFILE_CONFIGS[ageProfile].buddySize;
+  const overlayBuddySize = Math.max(
+    92,
+    Math.round(
+      baseOverlayBuddySize *
+        (isShortHeight ? 0.78 : isTabletWidth ? 0.84 : 1),
+    ),
+  );
   const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);
 
   if (showMorning) {
@@ -1466,8 +1474,14 @@ export default function App() {
         !showPinScreen &&
         screen !== "settings" &&
         showGlobalBuddy && (
-          <View style={s.topOverlay} pointerEvents="box-none">
-            <View style={s.topOverlayContent}>
+          <View
+            style={[
+              s.topOverlay,
+              isTabletWidth || isShortHeight ? s.topOverlayCompact : null,
+            ]}
+            pointerEvents="box-none"
+          >
+            <View style={[s.topOverlayContent, { maxWidth: contentMaxWidth }]}>
               <View
                 style={[
                   s.buddyBubbleWrap,
@@ -1635,13 +1649,15 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     pointerEvents: "box-none",
   },
+  topOverlayCompact: {
+    paddingTop: 8,
+  },
   topOverlayContent: {
     width: "100%",
-    maxWidth: CONTENT_MAX_WIDTH,
     alignItems: "center",
     backgroundColor: C.bg, // solid backing — content scrolls behind, not through
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: 8,
+    paddingBottom: 6,
     pointerEvents: "auto",
   },
   buddyBubbleWrap: {

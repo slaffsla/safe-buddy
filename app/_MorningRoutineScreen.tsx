@@ -17,7 +17,7 @@ import {
 } from "./_constants";
 import { Confetti } from "./_SharedUI";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
-import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
+import { useLayoutMetrics } from "./_layoutMetrics";
 
 interface Props {
   childName: string;
@@ -38,6 +38,8 @@ export default function MorningRoutineScreen({
   onComplete,
   onSkip,
 }: Props) {
+  const { contentMaxWidth, noOverlayTopPadding, screenPadding } =
+    useLayoutMetrics();
   const [doneIds, setDoneIds] = useState<number[]>([]);
   const [finished, setFinished] = useState(false);
   const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,9 +101,17 @@ export default function MorningRoutineScreen({
   // Celebrate state — shown briefly before onComplete fires
   if (finished) {
     return (
-      <View style={s.screen}>
+      <View
+        style={[
+          s.screen,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+            paddingTop: noOverlayTopPadding,
+          },
+        ]}
+      >
         <Confetti trigger />
-        <View style={{ height: BUDDY_CONTENT_SPACER }} />
         <Text style={s.celebTitle}>{t("morning.celeb_title")}</Text>
         <Text style={s.celebSub}>
           {stars === 1
@@ -115,8 +125,16 @@ export default function MorningRoutineScreen({
   }
 
   return (
-    <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{ height: BUDDY_CONTENT_SPACER }} />
+    <ScrollView
+      contentContainerStyle={[
+        s.scroll,
+        {
+          maxWidth: contentMaxWidth,
+          padding: screenPadding,
+          paddingTop: noOverlayTopPadding,
+        },
+      ]}
+    >
       <View style={s.headerText}>
         <Text style={s.greeting}>{greeting}</Text>
         <TouchableOpacity
@@ -199,19 +217,15 @@ const s = StyleSheet.create({
   screen: {
     flexGrow: 1,
     width: "100%",
-    maxWidth: CONTENT_MAX_WIDTH,
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
     backgroundColor: C.bg,
   },
   scroll: {
     width: "100%",
-    maxWidth: CONTENT_MAX_WIDTH,
     alignSelf: "center",
     alignItems: "center",
-    padding: 20,
     paddingBottom: 52,
     backgroundColor: C.bg,
   },
@@ -223,9 +237,19 @@ const s = StyleSheet.create({
     width: "100%",
     marginBottom: 24,
   },
-  headerText: { flex: 1 },
-  greeting: { fontSize: 22, fontWeight: "700", color: C.text },
-  subGreeting: { fontSize: 14, color: C.muted, marginTop: 4 },
+  headerText: { width: "100%", alignItems: "center", marginBottom: 10 },
+  greeting: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: C.text,
+    textAlign: "center",
+  },
+  subGreeting: {
+    fontSize: 14,
+    color: C.muted,
+    marginTop: 4,
+    textAlign: "center",
+  },
 
   card: {
     width: "100%",

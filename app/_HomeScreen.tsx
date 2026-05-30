@@ -15,7 +15,7 @@ import {
   getProgressionMessage,
   getScheduleTitle,
 } from "./_constants";
-import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
+import { useLayoutMetrics } from "./_layoutMetrics";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
@@ -69,6 +69,8 @@ export default function HomeScreen({
   onMorningNudge,
   rtlChildSex = "male",
 }: HomeScreenProps) {
+  const { buddyContentSpacer, contentMaxWidth, screenPadding } =
+    useLayoutMetrics();
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [useAltIdle] = React.useState(() => Math.random() > 0.7);
   const idleMsg = useMemo(
@@ -91,7 +93,16 @@ export default function HomeScreen({
       : null;
 
   return (
-    <ScrollView contentContainerStyle={s.homeScroll}>
+    <ScrollView
+      contentContainerStyle={[
+        s.homeScroll,
+        {
+          maxWidth: contentMaxWidth,
+          padding: screenPadding,
+          paddingTop: buddyContentSpacer,
+        },
+      ]}
+    >
       <T style={s.greeting} speak={speak}>
         {greeting}
       </T>
@@ -235,12 +246,9 @@ export default function HomeScreen({
 const s = StyleSheet.create({
   homeScroll: {
     width: "100%",
-    maxWidth: CONTENT_MAX_WIDTH,
     alignSelf: "center",
     alignItems: "center",
-    padding: 20,
     paddingBottom: 52,
-    paddingTop: BUDDY_CONTENT_SPACER,
     backgroundColor: C.bg,
   },
   greeting: {

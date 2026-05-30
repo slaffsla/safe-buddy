@@ -856,7 +856,7 @@ const s = StyleSheet.create({
   btnSkipTxt: { fontSize: 15, color: C.muted },
   btnBack: { marginTop: 18, padding: 12 },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
-  btnBackLarge: { marginTop: 26, padding: 18, marginBottom: 40 },
+  btnBackLarge: { marginTop: 22, padding: 16, marginBottom: 18 },
   btnBackTxtLarge: { fontSize: 20 },
 
   activeCard: {

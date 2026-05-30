@@ -420,8 +420,8 @@ export default function App() {
   const visibleScreen =
     parentOnboardingDone &&
     !onboardingDone &&
-    visibleScreen !== "settings" &&
-    visibleScreen !== "child_onboarding"
+    screen !== "settings" &&
+    screen !== "child_onboarding"
       ? "home"
       : screen;
   const ageProfile: AgeProfile =
@@ -803,7 +803,7 @@ export default function App() {
       if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
     };
   }, [
-    screen,
+    visibleScreen,
     mission,
     appSettings.tinyFactsEnabled,
     appSettings.tinyFactsMinMinutes,

@@ -1,6 +1,7 @@
 // npx expo install expo-speech @react-native-async-storage/async-storage react-native-confetti-cannon
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -543,9 +544,12 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
-        setLastMission(
-          newDay ? null : getStoredMissionTitle(v[K.LAST_MISSION]),
-        );
+        const storedLastMission =
+          !newDay && tm > 0 ? getStoredMissionTitle(v[K.LAST_MISSION]) : null;
+        setLastMission(storedLastMission);
+        if (!storedLastMission && v[K.LAST_MISSION]) {
+          AsyncStorage.setItem(K.LAST_MISSION, "").catch(console.log);
+        }
         const onboardingAlreadyComplete =
           v[K.PARENT_ONBOARDING_DONE] === "true" &&
           v[K.ONBOARDING_DONE] === "true";
@@ -799,6 +803,9 @@ export default function App() {
     if (celebrateConfettiTimer.current) {
       clearTimeout(celebrateConfettiTimer.current);
     }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+      () => {},
+    );
     // Ensure confetti is paired with a visible mood lift, then naturally
     // fall back through the existing transient mood cooldown path.
     flashBuddyMood(elevatedMood, 3950);
@@ -982,7 +989,7 @@ export default function App() {
       setPrevTotalEver(tot);
       setCompletedToday(comp);
       setTotalMissions(tm);
-      setLastMission(getStoredMissionTitle(v[K.LAST_MISSION]));
+      setLastMission(tm > 0 ? getStoredMissionTitle(v[K.LAST_MISSION]) : null);
       setFirstReward(v[K.FIRST_REWARD] === "true");
       setSkipCount(sk);
       setDoneIdsToday(doneIds);

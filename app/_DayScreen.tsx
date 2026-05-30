@@ -2,7 +2,7 @@
 // Vertical list of all schedule blocks. Past fades, current is prominent,
 // upcoming is normal. Never shows a "missed" state.
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 import {
   C,
   ScheduleBlock,
@@ -17,7 +18,6 @@ import {
   getScheduleTitle,
 } from "./_constants";
 import { getAppLocale, t } from "./i18n";
-import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 interface DayScreenProps {
   blocks: ScheduleBlock[];
@@ -124,7 +124,10 @@ export default function DayScreen({
   const visibleBlocks = blocks
     .filter((b) => (isWeekendDay ? b.weekends : b.weekdays))
     .slice()
-    .sort((a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime));
+    .sort(
+      (a, b) =>
+        parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime),
+    );
 
   // Scroll to current block on mount, or fall back to the next upcoming block.
   useEffect(() => {

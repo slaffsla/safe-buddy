@@ -41,6 +41,7 @@ import {
   resetLocalUsage,
 } from "../localUsage";
 import ParentOnboarding from "./_ParentOnboarding";
+import { CONTENT_MAX_WIDTH } from "./_layoutMetrics";
 import {
   DEFAULT_MISSION_CONFIGS,
   DEFAULT_MORNING_STEPS,
@@ -3515,7 +3516,12 @@ const ss = StyleSheet.create({
   langBtnTxt: { fontSize: 11, color: C.muted, fontWeight: "700" },
   langBtnTxtActive: { color: C.white },
   scroll: { flex: 1 },
-  content: { padding: 16 },
+  content: {
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
+    padding: 16,
+  },
   spacer: { height: 24 },
   subscreenRowLeft: { flex: 1, minWidth: 0 },
   scheduleManageBtn: {

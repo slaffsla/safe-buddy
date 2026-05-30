@@ -9,13 +9,13 @@ import {
   View,
 } from "react-native";
 import {
-  BUDDY_FIXED_SPACER,
   C,
   ScheduleBlock,
   getDailySuggestion,
   getProgressionMessage,
   getScheduleTitle,
 } from "./_constants";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
@@ -70,14 +70,15 @@ export default function HomeScreen({
   rtlChildSex = "male",
 }: HomeScreenProps) {
   const threshold = Math.max(1, skipSensitivity ?? 2);
+  const [useAltIdle] = React.useState(() => Math.random() > 0.7);
   const idleMsg = useMemo(
     () =>
       skipCount >= threshold
         ? t("home.idle_calm")
-        : Math.random() > 0.7
+        : useAltIdle
           ? t("buddy.idle_alt")
           : t("buddy.idle"),
-    [skipCount, threshold],
+    [skipCount, threshold, useAltIdle],
   );
 
   const greeting = childName
@@ -233,10 +234,13 @@ export default function HomeScreen({
 
 const s = StyleSheet.create({
   homeScroll: {
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     padding: 20,
     paddingBottom: 52,
-    paddingTop: BUDDY_FIXED_SPACER,
+    paddingTop: BUDDY_CONTENT_SPACER,
     backgroundColor: C.bg,
   },
   greeting: {

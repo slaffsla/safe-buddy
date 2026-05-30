@@ -16,6 +16,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -82,6 +83,7 @@ import SettingsScreen, {
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
 import { getTtsLanguage, t, tGender, tSpeak } from "./i18n";
+import { CONTENT_MAX_WIDTH, FORM_MAX_WIDTH } from "./_layoutMetrics";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -410,6 +412,7 @@ export default function App() {
   );
 
   const speak = useSpeech(ttsEnabled, appSettings.rtlChildSex ?? "male");
+  const [useGentleHomeMood] = useState(() => Math.random() > 0.7);
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride
@@ -421,7 +424,7 @@ export default function App() {
       const threshold = Math.max(1, appSettings.skipSensitivity ?? 2);
       return skipCount >= threshold
         ? "gentle-reminder"
-        : Math.random() > 0.7
+        : useGentleHomeMood
           ? "gentle-reminder"
           : "calm";
     }
@@ -444,6 +447,7 @@ export default function App() {
     appSettings.skipSensitivity,
     isVeryExcited,
     transientMood,
+    useGentleHomeMood,
   ]);
 
   const fixedOverlayCelebrate = screen === "celebrate";
@@ -692,10 +696,16 @@ export default function App() {
   useEffect(() => {
     if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
     if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
-    setTinyFactBubble(null);
+    let cancelled = false;
+    const clearBubbleTimer = setTimeout(() => {
+      if (!cancelled) setTinyFactBubble(null);
+    }, 0);
 
     if (screen !== "active" || !mission || !appSettings.tinyFactsEnabled) {
-      return;
+      return () => {
+        cancelled = true;
+        clearTimeout(clearBubbleTimer);
+      };
     }
 
     const allFacts = MISSION_POOL.map((m) => getTinyFact(m.id)).filter(
@@ -703,10 +713,11 @@ export default function App() {
     );
     const allJokes = getTinyJokes();
     if (allFacts.length === 0 && allJokes.length === 0) {
-      return;
+      return () => {
+        cancelled = true;
+        clearTimeout(clearBubbleTimer);
+      };
     }
-
-    let cancelled = false;
 
     function pickFact(): string {
       const missionFact = getTinyFact(mission.id);
@@ -768,6 +779,7 @@ export default function App() {
     scheduleFact();
     return () => {
       cancelled = true;
+      clearTimeout(clearBubbleTimer);
       if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
       if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
     };
@@ -1048,42 +1060,52 @@ export default function App() {
 
   if (!onboardingDone) {
     return (
-      <SafeAreaView style={[s.root, s.center]}>
+      <SafeAreaView style={s.root}>
         <StatusBar style="dark" />
-        <Image
-          source={BUDDY.calm}
-          style={{ width: 180, height: 180, backgroundColor: "transparent" }}
-          resizeMode="contain"
-        />
-        <Text style={s.onboardingTitle}>{t("onboarding.title")}</Text>
-        <TextInput
-          style={s.onboardingInput}
-          placeholder={t("onboarding.name_placeholder")}
-          placeholderTextColor={C.muted}
-          value={childName}
-          onChangeText={setChildName}
-          autoFocus
-          returnKeyType="done"
-          onSubmitEditing={saveChildName}
-        />
-        <TextInput
-          style={s.onboardingInput}
-          placeholder={t("onboarding.age_placeholder")}
-          placeholderTextColor={C.muted}
-          value={childAge > 0 ? String(childAge) : ""}
-          onChangeText={(t) => setChildAge(parseInt(t) || 7)}
-          keyboardType="numeric"
-          maxLength={2}
-        />
-        <TouchableOpacity style={s.onboardingBtn} onPress={saveChildName}>
-          <Text style={s.onboardingBtnTxt}>
-            {tGender(
-              "onboarding.start_btn",
-              undefined,
-              appSettings.rtlChildSex ?? "male",
-            )}
-          </Text>
-        </TouchableOpacity>
+        <KeyboardAvoidingView
+          style={s.onboardingKeyboard}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView
+            contentContainerStyle={s.onboardingScroll}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Image
+              source={BUDDY.calm}
+              style={s.onboardingBuddy}
+              resizeMode="contain"
+            />
+            <Text style={s.onboardingTitle}>{t("onboarding.title")}</Text>
+            <TextInput
+              style={s.onboardingInput}
+              placeholder={t("onboarding.name_placeholder")}
+              placeholderTextColor={C.muted}
+              value={childName}
+              onChangeText={setChildName}
+              returnKeyType="next"
+            />
+            <TextInput
+              style={s.onboardingInput}
+              placeholder={t("onboarding.age_placeholder")}
+              placeholderTextColor={C.muted}
+              value={childAge > 0 ? String(childAge) : ""}
+              onChangeText={(t) => setChildAge(parseInt(t) || 7)}
+              keyboardType="numeric"
+              maxLength={2}
+              returnKeyType="done"
+              onSubmitEditing={saveChildName}
+            />
+            <TouchableOpacity style={s.onboardingBtn} onPress={saveChildName}>
+              <Text style={s.onboardingBtnTxt}>
+                {tGender(
+                  "onboarding.start_btn",
+                  undefined,
+                  appSettings.rtlChildSex ?? "male",
+                )}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     );
   }
@@ -1610,11 +1632,12 @@ const s = StyleSheet.create({
     paddingTop: 18,
     backgroundColor: C.bg, // solid backing — content scrolls behind, not through
 
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     pointerEvents: "box-none",
   },
   topOverlayContent: {
     width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
     alignItems: "center",
     backgroundColor: C.bg, // solid backing — content scrolls behind, not through
     paddingTop: 12,
@@ -1661,31 +1684,51 @@ const s = StyleSheet.create({
   },
 
   // Onboarding
+  onboardingKeyboard: { flex: 1 },
+  onboardingScroll: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+  },
+  onboardingBuddy: {
+    width: 180,
+    height: 180,
+    maxWidth: "48%",
+    backgroundColor: "transparent",
+    marginBottom: 12,
+  },
   onboardingTitle: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: "700",
     textAlign: "center",
-    marginVertical: 24,
+    marginBottom: 18,
     color: C.text,
     paddingHorizontal: 20,
   },
   onboardingInput: {
-    width: "80%",
+    width: "100%",
+    maxWidth: FORM_MAX_WIDTH,
     borderWidth: 2,
     borderColor: "#a1d4b8",
     borderRadius: 16,
-    padding: 16,
-    fontSize: 24,
+    padding: 14,
+    fontSize: 22,
     textAlign: "center",
     backgroundColor: C.white,
     color: C.text,
+    marginBottom: 12,
   },
   onboardingBtn: {
-    marginTop: 32,
+    marginTop: 14,
     backgroundColor: C.green,
     paddingVertical: 16,
     paddingHorizontal: 48,
     borderRadius: 999,
+    maxWidth: FORM_MAX_WIDTH,
+    width: "100%",
+    alignItems: "center",
   },
   onboardingBtnTxt: { color: C.white, fontSize: 20, fontWeight: "600" },
 

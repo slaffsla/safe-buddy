@@ -17,6 +17,7 @@ import {
   getScheduleTitle,
 } from "./_constants";
 import { getAppLocale, t } from "./i18n";
+import { CONTENT_MAX_WIDTH } from "./_layoutMetrics";
 
 interface DayScreenProps {
   blocks: ScheduleBlock[];
@@ -270,7 +271,13 @@ const s = StyleSheet.create({
   },
   closeBtnTxt: { fontSize: 18, color: C.text },
 
-  scroll: { padding: 20, paddingTop: 6 },
+  scroll: {
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
+    padding: 20,
+    paddingTop: 6,
+  },
   empty: { textAlign: "center", color: C.muted, marginTop: 40, fontSize: 15 },
 
   row: { flexDirection: "row", alignItems: "stretch" },

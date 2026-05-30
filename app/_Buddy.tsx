@@ -151,8 +151,10 @@ export default function Buddy({
 
   useEffect(() => {
     if (pettable) return;
-    setIsPetting(false);
-    setShowHearts(false);
+    const clearPettingState = setTimeout(() => {
+      setIsPetting(false);
+      setShowHearts(false);
+    }, 0);
     onPettingChangeRef.current?.(false);
     if (heartTimeout.current) clearTimeout(heartTimeout.current);
     if (heartInterval.current) {
@@ -172,6 +174,7 @@ export default function Buddy({
       duration: 140,
       useNativeDriver: true,
     }).start();
+    return () => clearTimeout(clearPettingState);
   }, [pettable, petBounceY, pettingScale]);
 
   function startPetting() {

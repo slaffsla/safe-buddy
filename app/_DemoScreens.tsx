@@ -1,10 +1,11 @@
 // _DemoScreens.tsx — SafeBuddy demo / onboarding flow screens
 
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { T } from "./_SharedUI";
-import { BUDDY_FIXED_SPACER, C } from "./_constants";
+import { C } from "./_constants";
 import { t, tDemoStepPraise, tDemoStepTitle } from "./i18n";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
 
 // ── DemoIntroScreen ───────────────────────────────────────────────────────────
 
@@ -18,8 +19,8 @@ export function DemoIntroScreen({
   speak: (t: string) => void;
 }) {
   return (
-    <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+    <ScrollView contentContainerStyle={s.screen}>
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <T style={s.msg} speak={speak}>
         {t("demo.intro_title")}
       </T>
@@ -32,7 +33,7 @@ export function DemoIntroScreen({
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
         <Text style={s.btnSkipTxt}>{t("common.skip")}</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -75,8 +76,8 @@ export function DemoStepScreen({
   }
 
   return (
-    <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+    <ScrollView contentContainerStyle={s.screen}>
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <View style={s.stepCounter}>
         {Array(totalSteps)
           .fill(0)
@@ -105,7 +106,7 @@ export function DemoStepScreen({
           <Text style={s.praiseText}>{localizedPraise} 🎉</Text>
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -121,8 +122,8 @@ export function DemoCompleteScreen({
   speak: (t: string) => void;
 }) {
   return (
-    <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+    <ScrollView contentContainerStyle={s.screen}>
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <Text style={s.celebTitle}>{t("demo.complete_title")}</Text>
       <T style={s.msg} speak={speak}>
         {t("demo.complete_msg")}
@@ -135,7 +136,7 @@ export function DemoCompleteScreen({
           <Text style={s.btnSecondaryTxt}>{t("demo.complete_later")}</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -143,7 +144,10 @@ export function DemoCompleteScreen({
 
 const s = StyleSheet.create({
   screen: {
-    flex: 1,
+    flexGrow: 1,
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,

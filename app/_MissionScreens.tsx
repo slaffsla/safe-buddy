@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { T } from "./_SharedUI";
 import {
-  BUDDY_FIXED_SPACER,
   C,
   currentSlot,
   getMilestoneMessage,
@@ -27,6 +26,7 @@ import {
   REWARDS,
 } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
 
@@ -95,7 +95,7 @@ export function MissionPickScreen({
 
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <T style={s.pageTitle} speak={speak}>
         {tGender("missionPick.title", undefined, rtlChildSex)}
       </T>
@@ -272,8 +272,8 @@ export function ActiveScreen({
 }) {
   if (!mission) return null;
   return (
-    <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+    <ScrollView contentContainerStyle={[s.screen, s.activeScreenScroll]}>
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <TouchableOpacity
         onPress={() => speak(tSpeak("buddy.start", undefined, rtlChildSex))}
         activeOpacity={0.65}
@@ -321,7 +321,7 @@ export function ActiveScreen({
           {tGender("active.btn_skip", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -359,7 +359,7 @@ export function CelebrateScreen({
 
   return (
     <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
         {isVeryExcited ? t("celebrate.milestone_title") : t("celebrate.title")}
       </T>
@@ -416,7 +416,7 @@ function RewardCard({
   showExactStarCost: boolean;
   rtlChildSex?: RtlChildSex;
 }) {
-  const scale = React.useRef(new Animated.Value(1)).current;
+  const [scale] = React.useState(() => new Animated.Value(1));
   const animatingRef = React.useRef(false);
   const can = stars >= reward.cost;
   const title = getRewardTitle(reward.id, reward.title);
@@ -503,7 +503,7 @@ export function RewardsScreen({
   const list = rewards ?? REWARDS;
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <T style={s.pageTitle} speak={speak}>
         {t("rewards.title")}
       </T>
@@ -532,17 +532,27 @@ export function RewardsScreen({
 
 const s = StyleSheet.create({
   screen: {
-    flex: 1,
+    flexGrow: 1,
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
     backgroundColor: C.bg,
   },
   scroll: {
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     padding: 20,
     paddingBottom: 52,
     backgroundColor: C.bg,
+  },
+  activeScreenScroll: {
+    justifyContent: "flex-start",
+    paddingBottom: 34,
   },
 
   msg: {
@@ -556,11 +566,12 @@ const s = StyleSheet.create({
   tapHint: { fontSize: 11, color: C.muted, marginTop: 10, fontStyle: "italic" },
 
   pageTitle: {
-    fontSize: 21,
+    fontSize: 24,
     fontWeight: "700",
     color: C.text,
-    marginBottom: 14,
-    alignSelf: "flex-start",
+    marginBottom: 22,
+    alignSelf: "center",
+    textAlign: "center",
   },
   hint: {
     fontSize: 11,
@@ -754,12 +765,12 @@ const s = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 0.5,
     borderColor: "#DED8CE",
-    padding: 26,
+    padding: 24,
     alignItems: "center",
     width: "100%",
     marginVertical: 12,
   },
-  activeEmoji: { fontSize: 58, marginBottom: 10 },
+  activeEmoji: { fontSize: 54, marginBottom: 10 },
   activeTitle: {
     fontSize: 22,
     fontWeight: "700",

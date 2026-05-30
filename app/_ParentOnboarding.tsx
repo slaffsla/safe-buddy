@@ -15,6 +15,7 @@ import {
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { t } from "./i18n";
+import { CONTENT_MAX_WIDTH } from "./_layoutMetrics";
 
 interface Props {
   onDone: () => void;
@@ -89,11 +90,11 @@ function MiniBreathingCircle() {
 }
 
 const bc = StyleSheet.create({
-  wrapper: { alignItems: "center", marginVertical: 24 },
+  wrapper: { alignItems: "center", marginVertical: 16 },
   circle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     backgroundColor: C.greenLt,
     borderWidth: 2,
     borderColor: C.green,
@@ -245,9 +246,16 @@ const s = StyleSheet.create({
   skipTxt: { fontSize: 14, color: C.muted },
 
   content: { flex: 1 },
-  screenScroll: { alignItems: "center", padding: 24, paddingBottom: 16 },
+  screenScroll: {
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
+    alignItems: "center",
+    padding: 24,
+    paddingBottom: 44,
+  },
 
-  bigEmoji: { fontSize: 64, marginBottom: 16, marginTop: 8 },
+  bigEmoji: { fontSize: 58, marginBottom: 14, marginTop: 6 },
   heading: {
     fontSize: 24,
     fontWeight: "800",
@@ -261,7 +269,7 @@ const s = StyleSheet.create({
     color: C.muted,
     textAlign: "center",
     lineHeight: 24,
-    marginBottom: 20,
+    marginBottom: 16,
   },
 
   noteCard: {
@@ -337,7 +345,7 @@ const s = StyleSheet.create({
     borderColor: C.border,
     padding: 14,
     width: "100%",
-    marginTop: 8,
+    marginTop: 6,
   },
   scienceText: {
     fontSize: 12,
@@ -347,7 +355,14 @@ const s = StyleSheet.create({
     fontStyle: "italic",
   },
 
-  footer: { padding: 20, paddingBottom: 32 },
+  footer: {
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
+    padding: 20,
+    paddingTop: 10,
+    paddingBottom: 24,
+  },
   btnPrimary: {
     backgroundColor: C.green,
     borderRadius: 16,

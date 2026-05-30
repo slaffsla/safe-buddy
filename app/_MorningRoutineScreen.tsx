@@ -11,13 +11,13 @@ import {
   View,
 } from "react-native";
 import {
-  BUDDY_FIXED_SPACER,
   C,
   MorningStep,
   getMorningStepTitle,
 } from "./_constants";
 import { Confetti } from "./_SharedUI";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
 
 interface Props {
   childName: string;
@@ -101,7 +101,7 @@ export default function MorningRoutineScreen({
     return (
       <View style={s.screen}>
         <Confetti trigger />
-        <View style={{ height: BUDDY_FIXED_SPACER }} />
+        <View style={{ height: BUDDY_CONTENT_SPACER }} />
         <Text style={s.celebTitle}>{t("morning.celeb_title")}</Text>
         <Text style={s.celebSub}>
           {stars === 1
@@ -116,7 +116,7 @@ export default function MorningRoutineScreen({
 
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <View style={s.headerText}>
         <Text style={s.greeting}>{greeting}</Text>
         <TouchableOpacity
@@ -197,13 +197,19 @@ export default function MorningRoutineScreen({
 
 const s = StyleSheet.create({
   screen: {
-    flex: 1,
+    flexGrow: 1,
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
     backgroundColor: C.bg,
   },
   scroll: {
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     padding: 20,
     paddingBottom: 52,

@@ -30,8 +30,9 @@ import {
   View,
 } from "react-native";
 import Buddy from "./_Buddy";
-import { BUDDY_FIXED_SPACER, C, type BuddyMood } from "./_constants";
+import { C, type BuddyMood } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
@@ -567,7 +568,7 @@ export default function BreathingScreen({
   if (state === "idle") {
     return (
       <View style={s.screen}>
-        <View style={{ height: BUDDY_FIXED_SPACER }} />
+        <View style={{ height: BUDDY_CONTENT_SPACER }} />
         <Text style={s.title}>{t("breathing.title")}</Text>
         <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
@@ -600,7 +601,7 @@ export default function BreathingScreen({
   if (state === "priming") {
     return (
       <View style={s.screen}>
-        <View style={{ height: BUDDY_FIXED_SPACER }} />
+        <View style={{ height: BUDDY_CONTENT_SPACER }} />
         <Text style={s.title}>{t("breathing.title")}</Text>
         <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
@@ -637,7 +638,7 @@ export default function BreathingScreen({
   if (state === "complete") {
     return (
       <View style={s.screen}>
-        <View style={{ height: BUDDY_FIXED_SPACER }} />
+        <View style={{ height: BUDDY_CONTENT_SPACER }} />
         <Text style={s.celebTitle}>{t("breathing.celeb_title")}</Text>
         <Text style={s.celebSub}>{t("breathing.celeb_sub")}</Text>
 
@@ -768,6 +769,9 @@ const CIRCLE_BASE = 100;
 const s = StyleSheet.create({
   screen: {
     flex: 1,
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "flex-start",
     padding: 20,

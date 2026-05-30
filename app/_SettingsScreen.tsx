@@ -54,11 +54,7 @@ import {
   effectiveRewardCost,
   effectiveRewardEnabled,
   getBuddyImage,
-  getMissionSubtitle,
-  getMissionTitle,
   getMorningStepTitle,
-  getRewardTitle,
-  getScheduleTitle,
   getStoredMissionTitle,
   MISSION_POOL,
   MissionConfig,
@@ -1958,6 +1954,8 @@ function ScheduleSection({
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
+  const tx = (key: string, params?: Record<string, unknown>) =>
+    i18n.t(key, { ...(params ?? {}), locale: settings.appLocale });
   const blocks = settings.scheduleBlocks ?? DEFAULT_SCHEDULE;
   const sortedBlocks = sortScheduleBlocks(blocks);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -1968,7 +1966,7 @@ function ScheduleSection({
 
   function startEdit(it: ScheduleBlock) {
     setEditingId(it.id);
-    setDraftTitle(getScheduleTitle(it.id, it.title));
+    setDraftTitle(scheduleTitle(it));
     setDraftEmoji(it.emoji);
     setDraftStart(it.startTime);
     setDraftEnd(it.endTime);
@@ -1977,8 +1975,8 @@ function ScheduleSection({
   function startAdd() {
     if (blocks.length >= SCHEDULE_MAX_BLOCKS) {
       Alert.alert(
-        t("settings.schedule_limit_title"),
-        t("settings.schedule_limit_msg", { max: SCHEDULE_MAX_BLOCKS }),
+        tx("settings.schedule_limit_title"),
+        tx("settings.schedule_limit_msg", { max: SCHEDULE_MAX_BLOCKS }),
       );
       return;
     }
@@ -2005,8 +2003,8 @@ function ScheduleSection({
     const title = draftTitle.trim();
     if (!title || !isValidTime(draftStart) || !isValidTime(draftEnd)) {
       Alert.alert(
-        t("settings.schedule_invalid_title"),
-        t("settings.schedule_invalid_msg"),
+        tx("settings.schedule_invalid_title"),
+        tx("settings.schedule_invalid_msg"),
       );
       return;
     }
@@ -2060,13 +2058,19 @@ function ScheduleSection({
     });
   }
 
+  function scheduleTitle(block: ScheduleBlock) {
+    const defaultBlock = DEFAULT_SCHEDULE.find((b) => b.id === block.id);
+    if (!defaultBlock || block.title !== defaultBlock.title) return block.title;
+    return tx(`schedule_titles.s${block.id}`, { defaultValue: block.title });
+  }
+
   return (
     <View>
-      <SectionHeader title={t("settings.schedule_section")} icon="📅" />
+      <SectionHeader title={tx("settings.schedule_section")} icon="📅" />
       <Card>
         <SettingRow
-          label={t("settings.schedule_now_card")}
-          sublabel={t("settings.schedule_now_sub")}
+          label={tx("settings.schedule_now_card")}
+          sublabel={tx("settings.schedule_now_sub")}
         >
           <Switch
             value={settings.scheduleEnabled}
@@ -2096,7 +2100,7 @@ function ScheduleSection({
                       style={[u.editInput, { flex: 1 }]}
                       value={draftTitle}
                       onChangeText={setDraftTitle}
-                      placeholder={t("settings.schedule_name_placeholder")}
+                      placeholder={tx("settings.schedule_name_placeholder")}
                       placeholderTextColor={C.muted}
                       autoFocus
                     />
@@ -2106,7 +2110,7 @@ function ScheduleSection({
                       style={[u.editInput, { flex: 1 }]}
                       value={draftStart}
                       onChangeText={setDraftStart}
-                      placeholder={t("settings.schedule_time_start")}
+                      placeholder={tx("settings.schedule_time_start")}
                       placeholderTextColor={C.muted}
                       maxLength={5}
                     />
@@ -2114,20 +2118,24 @@ function ScheduleSection({
                       style={[u.editInput, { flex: 1 }]}
                       value={draftEnd}
                       onChangeText={setDraftEnd}
-                      placeholder={t("settings.schedule_time_end")}
+                      placeholder={tx("settings.schedule_time_end")}
                       placeholderTextColor={C.muted}
                       maxLength={5}
                     />
                   </View>
                   <View style={u.rowBtns}>
                     <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}>
-                      <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
+                      <Text style={u.btnPrimaryTxt}>
+                        {tx("settings.save")}
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={u.btnCancel}
                       onPress={() => setEditingId(null)}
                     >
-                      <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                      <Text style={u.btnCancelTxt}>
+                        {tx("settings.cancel")}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -2137,7 +2145,7 @@ function ScheduleSection({
                     <Text style={u.scheduleEmoji}>{it.emoji}</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={u.scheduleLabel}>
-                        {getScheduleTitle(it.id, it.title)}
+                        {scheduleTitle(it)}
                       </Text>
                       <Text style={u.scheduleSublabel}>
                         {it.startTime} — {it.endTime}
@@ -2148,7 +2156,7 @@ function ScheduleSection({
                       onPress={() => startEdit(it)}
                     >
                       <Text style={u.scheduleLinkBtnTxt}>
-                        {t("settings.edit_short")}
+                        {tx("settings.edit_short")}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -2160,7 +2168,7 @@ function ScheduleSection({
                   </View>
                   <View style={u.scheduleSubRow}>
                     <Text style={[u.scheduleSublabel, { flex: 1 }]}>
-                      {t("settings.schedule_weekdays")}
+                      {tx("settings.schedule_weekdays")}
                     </Text>
                     <Switch
                       value={it.weekdays}
@@ -2171,7 +2179,7 @@ function ScheduleSection({
                   </View>
                   <View style={u.scheduleSubRow}>
                     <Text style={[u.scheduleSublabel, { flex: 1 }]}>
-                      {t("settings.schedule_weekends")}
+                      {tx("settings.schedule_weekends")}
                     </Text>
                     <Switch
                       value={it.weekends}
@@ -2199,7 +2207,7 @@ function ScheduleSection({
                   style={[u.editInput, { flex: 1 }]}
                   value={draftTitle}
                   onChangeText={setDraftTitle}
-                  placeholder={t("settings.schedule_name_placeholder")}
+                  placeholder={tx("settings.schedule_name_placeholder")}
                   placeholderTextColor={C.muted}
                   autoFocus
                 />
@@ -2209,7 +2217,7 @@ function ScheduleSection({
                   style={[u.editInput, { flex: 1 }]}
                   value={draftStart}
                   onChangeText={setDraftStart}
-                  placeholder={t("settings.schedule_time_start")}
+                  placeholder={tx("settings.schedule_time_start")}
                   placeholderTextColor={C.muted}
                   maxLength={5}
                 />
@@ -2217,20 +2225,20 @@ function ScheduleSection({
                   style={[u.editInput, { flex: 1 }]}
                   value={draftEnd}
                   onChangeText={setDraftEnd}
-                  placeholder={t("settings.schedule_time_end")}
+                  placeholder={tx("settings.schedule_time_end")}
                   placeholderTextColor={C.muted}
                   maxLength={5}
                 />
               </View>
               <View style={u.rowBtns}>
                 <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}>
-                  <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
+                  <Text style={u.btnPrimaryTxt}>{tx("settings.add")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={u.btnCancel}
                   onPress={() => setEditingId(null)}
                 >
-                  <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                  <Text style={u.btnCancelTxt}>{tx("settings.cancel")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -2241,7 +2249,7 @@ function ScheduleSection({
               <Divider />
               <TouchableOpacity style={ss.scheduleManageBtn} onPress={startAdd}>
                 <Text style={ss.scheduleManageBtnTitle}>
-                  {t("settings.add_schedule_item")}
+                  {tx("settings.add_schedule_item")}
                 </Text>
               </TouchableOpacity>
             </>
@@ -2361,6 +2369,23 @@ function ParentZoneView({
   );
   const missionTypeOrder: MissionType[] = ["permanent", "rotating", "inactive"];
 
+  function missionTitle(mission: PoolMission) {
+    if (mission.id >= CUSTOM_ID_OFFSET) return mission.title;
+    return tx(`missions.${mission.id}.title`, { defaultValue: mission.title });
+  }
+
+  function missionSubtitle(mission: PoolMission) {
+    if (mission.id >= CUSTOM_ID_OFFSET) return mission.subtitle;
+    return tx(`missions.${mission.id}.subtitle`, {
+      defaultValue: mission.subtitle,
+    });
+  }
+
+  function rewardTitle(reward: Reward) {
+    if (reward.id >= CUSTOM_ID_OFFSET) return reward.title;
+    return tx(`reward_titles.r${reward.id}`, { defaultValue: reward.title });
+  }
+
   // Add-form state for custom missions (shared between weekday/weekend cards).
   const [showAddMission, setShowAddMission] = useState(false);
   const [draftMissionEmoji, setDraftMissionEmoji] = useState("");
@@ -2442,10 +2467,10 @@ function ParentZoneView({
           : pz.typePillInactive;
     const label =
       type === "permanent"
-        ? t("settings.type_permanent")
+        ? tx("settings.type_permanent")
         : type === "rotating"
-          ? t("settings.type_rotating")
-          : t("settings.type_inactive");
+          ? tx("settings.type_rotating")
+          : tx("settings.type_inactive");
 
     return (
       <TouchableOpacity
@@ -2472,15 +2497,15 @@ function ParentZoneView({
     const title = draftMissionTitle.trim();
     if (!title) {
       Alert.alert(
-        t("settings.mission_check_title"),
-        t("settings.mission_check_msg"),
+        tx("settings.mission_check_title"),
+        tx("settings.mission_check_msg"),
       );
       return;
     }
     if (customMissions.length >= CUSTOM_MISSIONS_MAX) {
       Alert.alert(
-        t("settings.schedule_limit_title"),
-        t("settings.mission_limit_msg", { max: CUSTOM_MISSIONS_MAX }),
+        tx("settings.schedule_limit_title"),
+        tx("settings.mission_limit_msg", { max: CUSTOM_MISSIONS_MAX }),
       );
       return;
     }
@@ -2488,7 +2513,7 @@ function ParentZoneView({
       id: nextCustomMissionId(),
       title,
       subtitle:
-        draftMissionSubtitle.trim() || t("settings.custom_mission_subtitle"),
+        draftMissionSubtitle.trim() || tx("settings.custom_mission_subtitle"),
       stars: 1,
       emoji: draftMissionEmoji || "✨",
       category: "movement",
@@ -2518,12 +2543,12 @@ function ParentZoneView({
 
   function deleteCustomMission(id: number) {
     Alert.alert(
-      t("settings.mission_delete_title"),
-      t("settings.mission_delete_msg"),
+      tx("settings.mission_delete_title"),
+      tx("settings.mission_delete_msg"),
       [
-        { text: t("settings.cancel"), style: "cancel" },
+        { text: tx("settings.cancel"), style: "cancel" },
         {
-          text: t("settings.delete"),
+          text: tx("settings.delete"),
           style: "destructive",
           onPress: () => {
             const nextOverrides = { ...missionOverrides };
@@ -2543,15 +2568,15 @@ function ParentZoneView({
     const title = draftRewardTitle.trim();
     if (!title) {
       Alert.alert(
-        t("settings.mission_check_title"),
-        t("settings.reward_check_msg"),
+        tx("settings.mission_check_title"),
+        tx("settings.reward_check_msg"),
       );
       return;
     }
     if (customRewards.length >= CUSTOM_REWARDS_MAX) {
       Alert.alert(
-        t("settings.schedule_limit_title"),
-        t("settings.reward_limit_msg", { max: CUSTOM_REWARDS_MAX }),
+        tx("settings.schedule_limit_title"),
+        tx("settings.reward_limit_msg", { max: CUSTOM_REWARDS_MAX }),
       );
       return;
     }
@@ -2579,12 +2604,12 @@ function ParentZoneView({
 
   function deleteCustomReward(id: number) {
     Alert.alert(
-      t("settings.reward_delete_title"),
-      t("settings.reward_delete_msg"),
+      tx("settings.reward_delete_title"),
+      tx("settings.reward_delete_msg"),
       [
-        { text: t("settings.cancel"), style: "cancel" },
+        { text: tx("settings.cancel"), style: "cancel" },
         {
-          text: t("settings.delete"),
+          text: tx("settings.delete"),
           style: "destructive",
           onPress: () => {
             const nextOverrides = { ...rewardOverrides };
@@ -2648,13 +2673,11 @@ function ParentZoneView({
         <View style={[u.row, pz.compactRow]}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{getMissionTitle(m.id, m.title)}</Text>
-            <Text style={u.rowSublabel}>
-              {getMissionSubtitle(m.id, m.subtitle)}
-            </Text>
+            <Text style={u.rowLabel}>{missionTitle(m)}</Text>
+            <Text style={u.rowSublabel}>{missionSubtitle(m)}</Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
-                <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>
+                <Text style={pz.typePillTxt}>{tx("settings.type_custom")}</Text>
               </View>
             )}
             <MissionTypePill mission={m} type={mType} />
@@ -2698,13 +2721,13 @@ function ParentZoneView({
         <View style={[u.row, pz.compactRow]}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{r.emoji}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{getRewardTitle(r.id, r.title)}</Text>
+            <Text style={u.rowLabel}>{rewardTitle(r)}</Text>
             <Text style={u.rowSublabel}>
               {Array(clampedCost).fill("⭐").join("")}
             </Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
-                <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>
+                <Text style={pz.typePillTxt}>{tx("settings.type_custom")}</Text>
               </View>
             )}
           </View>
@@ -2725,7 +2748,7 @@ function ParentZoneView({
         </View>
         <View style={[u.row, pz.compactSubRow]}>
           <Text style={[u.rowSublabel, { flex: 1 }]}>
-            {t("settings.cost_label")}
+            {tx("settings.cost_label")}
           </Text>
           <View style={pz.starStepperRow}>
             <TouchableOpacity
@@ -2774,7 +2797,7 @@ function ParentZoneView({
             style={[u.editInput, { flex: 1 }]}
             value={draftMissionTitle}
             onChangeText={setDraftMissionTitle}
-            placeholder={t("settings.mission_name_placeholder")}
+            placeholder={tx("settings.mission_name_placeholder")}
             placeholderTextColor={C.muted}
             autoFocus
           />
@@ -2783,12 +2806,12 @@ function ParentZoneView({
           style={u.editInput}
           value={draftMissionSubtitle}
           onChangeText={setDraftMissionSubtitle}
-          placeholder={t("settings.mission_hint_placeholder")}
+          placeholder={tx("settings.mission_hint_placeholder")}
           placeholderTextColor={C.muted}
         />
         <View style={u.rowBtns}>
           <TouchableOpacity style={u.btnPrimary} onPress={addCustomMission}>
-            <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
+            <Text style={u.btnPrimaryTxt}>{tx("settings.add")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={u.btnCancel}
@@ -2799,7 +2822,7 @@ function ParentZoneView({
               setDraftMissionSubtitle("");
             }}
           >
-            <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+            <Text style={u.btnCancelTxt}>{tx("settings.cancel")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2822,13 +2845,13 @@ function ParentZoneView({
             style={[u.editInput, { flex: 1 }]}
             value={draftRewardTitle}
             onChangeText={setDraftRewardTitle}
-            placeholder={t("settings.reward_name_placeholder")}
+            placeholder={tx("settings.reward_name_placeholder")}
             placeholderTextColor={C.muted}
           />
         </View>
         <View style={u.rowBtns}>
           <TouchableOpacity style={u.btnPrimary} onPress={addCustomReward}>
-            <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
+            <Text style={u.btnPrimaryTxt}>{tx("settings.add")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={u.btnCancel}
@@ -2838,7 +2861,7 @@ function ParentZoneView({
               setDraftRewardTitle("");
             }}
           >
-            <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+            <Text style={u.btnCancelTxt}>{tx("settings.cancel")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2860,7 +2883,7 @@ function ParentZoneView({
         contentContainerStyle={ss.content}
         keyboardShouldPersistTaps="handled"
       >
-        <SectionHeader title={t("settings.missions_weekday")} icon="📅" />
+        <SectionHeader title={tx("settings.missions_weekday")} icon="📅" />
         <Card>
           {missionPool.map((m, idx) => (
             <View key={m.id}>
@@ -2872,7 +2895,7 @@ function ParentZoneView({
 
         <View style={pz.sectionSpacer} />
 
-        <SectionHeader title={t("settings.missions_weekend")} icon="🌈" />
+        <SectionHeader title={tx("settings.missions_weekend")} icon="🌈" />
         <Card>
           {missionPool.map((m, idx) => (
             <View key={m.id}>
@@ -2895,7 +2918,7 @@ function ParentZoneView({
                   onPress={() => setShowAddMission(true)}
                 >
                   <Text style={pz.addActionTxt}>
-                    {t("settings.add_mission")}
+                    {tx("settings.add_mission")}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -2905,7 +2928,7 @@ function ParentZoneView({
 
         <View style={pz.sectionSpacer} />
 
-        <SectionHeader title={t("settings.rewards_section")} icon="🎁" />
+        <SectionHeader title={tx("settings.rewards_section")} icon="🎁" />
         <Card>
           {rewardPool.map((r, idx) => (
             <View key={r.id}>
@@ -2928,7 +2951,7 @@ function ParentZoneView({
                   onPress={() => setShowAddReward(true)}
                 >
                   <Text style={pz.addActionTxt}>
-                    {t("settings.add_reward")}
+                    {tx("settings.add_reward")}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -2938,17 +2961,17 @@ function ParentZoneView({
 
         <View style={pz.sectionSpacer} />
 
-        <SectionHeader title={t("settings.about_section")} icon="ℹ️" />
+        <SectionHeader title={tx("settings.about_section")} icon="ℹ️" />
         <Card>
           <View style={pz.aboutWrap}>
-            <Text style={u.rowSublabel}>{t("settings.about_realo_sub")}</Text>
+            <Text style={u.rowSublabel}>{tx("settings.about_realo_sub")}</Text>
             <TouchableOpacity
               style={pz.aboutBtn}
               onPress={() => setAboutOpen(true)}
               activeOpacity={0.8}
             >
               <Text style={pz.aboutBtnTxt}>
-                {t("settings.about_realo_btn")}
+                {tx("settings.about_realo_btn")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -3345,10 +3368,10 @@ export default function SettingsScreen({
             <Text style={ss.parentZoneIcon}>🔐</Text>
             <View style={{ flex: 1 }}>
               <Text style={ss.parentZoneTitle}>
-                {t("settings.parent_zone_title")}
+                {tx("settings.parent_zone_title")}
               </Text>
               <Text style={ss.parentZoneSub}>
-                {t("settings.parent_zone_sub")}
+                {tx("settings.parent_zone_sub")}
               </Text>
             </View>
           </View>
@@ -3388,11 +3411,11 @@ export default function SettingsScreen({
         <View style={ss.spacer} />
 
         {/* Day schedule */}
-        <SectionHeader title={t("settings.schedule_section")} icon="📅" />
+        <SectionHeader title={tx("settings.schedule_section")} icon="📅" />
         <Card>
           <SettingRow
-            label={t("settings.schedule_home_card_label")}
-            sublabel={t("settings.schedule_home_card_sub")}
+            label={tx("settings.schedule_home_card_label")}
+            sublabel={tx("settings.schedule_home_card_sub")}
           >
             <Switch
               value={settings.scheduleEnabled}
@@ -3409,14 +3432,14 @@ export default function SettingsScreen({
           >
             <View style={ss.subscreenRowLeft}>
               <Text style={ss.scheduleManageBtnTitle}>
-                {t("settings.schedule_manage_title")}
+                {tx("settings.schedule_manage_title")}
               </Text>
               <Text style={ss.scheduleManageBtnSub}>
                 {settings.scheduleEnabled
-                  ? t("settings.schedule_summary_on", {
+                  ? tx("settings.schedule_summary_on", {
                       count: String((settings.scheduleBlocks ?? []).length),
                     })
-                  : t("settings.schedule_summary_off")}
+                  : tx("settings.schedule_summary_off")}
               </Text>
             </View>
             <Text style={ss.scheduleManageBtnArrow}>→</Text>

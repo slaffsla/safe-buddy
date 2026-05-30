@@ -27,6 +27,11 @@ interface DayScreenProps {
   onStartMission: (missionId: number) => void;
 }
 
+function parseTimeToMinutes(time: string): number {
+  const [hour, minute] = time.split(":").map(Number);
+  return hour * 60 + minute;
+}
+
 function englishHour(hour: number): string {
   const h = hour % 12 || 12;
   const words = [
@@ -119,17 +124,21 @@ export default function DayScreen({
   const visibleBlocks = blocks
     .filter((b) => (isWeekendDay ? b.weekends : b.weekdays))
     .slice()
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    .sort((a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime));
 
-  // Scroll to current block on mount (if any).
+  // Scroll to current block on mount, or fall back to the next upcoming block.
   useEffect(() => {
     const t = setTimeout(() => {
       const current = visibleBlocks.find(
         (b) => getBlockStatus(b) === "current",
       );
-      if (current && blockYRef.current[current.id] != null) {
+      const nextUpcoming = visibleBlocks.find(
+        (b) => getBlockStatus(b) === "upcoming",
+      );
+      const focusBlock = current ?? nextUpcoming;
+      if (focusBlock && blockYRef.current[focusBlock.id] != null) {
         scrollRef.current?.scrollTo({
-          y: Math.max(0, blockYRef.current[current.id] - 40),
+          y: Math.max(0, blockYRef.current[focusBlock.id] - 40),
           animated: true,
         });
       }

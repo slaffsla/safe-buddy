@@ -2,8 +2,8 @@
 // Shown before child onboarding on very first launch.
 // Parent can skip at any time.
 
-import React, { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -13,10 +13,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { AppLocale, getAppLocale, setAppLocale, t } from "./i18n";
-import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 interface Props {
   onDone: () => void;
@@ -364,7 +364,9 @@ function Screen3() {
               />
             )}
             <View style={[s.featureRow, isLargeTablet && s.featureRowLarge]}>
-              <Text style={[s.featureIcon, isLargeTablet && s.featureIconLarge]}>
+              <Text
+                style={[s.featureIcon, isLargeTablet && s.featureIconLarge]}
+              >
                 {item.icon}
               </Text>
               <View style={s.featureTextWrap}>
@@ -373,7 +375,9 @@ function Screen3() {
                 >
                   {item.title}
                 </Text>
-                <Text style={[s.featureSub, isLargeTablet && s.featureSubLarge]}>
+                <Text
+                  style={[s.featureSub, isLargeTablet && s.featureSubLarge]}
+                >
                   {item.sub}
                 </Text>
               </View>
@@ -425,12 +429,8 @@ function Screen4() {
 const SCREENS = [Screen1, Screen2, Screen3, Screen4];
 
 export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
-  const {
-    onboardingMaxWidth,
-    screenPadding,
-    isTabletWidth,
-    isLargeTablet,
-  } = useOnboardingLayout();
+  const { onboardingMaxWidth, screenPadding, isTabletWidth, isLargeTablet } =
+    useOnboardingLayout();
   const [step, setStep] = useState(0);
   const [locale, setLocale] = useState<AppLocale>(() => getAppLocale());
   const isLast = step === SCREENS.length - 1;
@@ -504,7 +504,9 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
             style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
             onPress={onDone}
           >
-            <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
+            <Text
+              style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}
+            >
               {t("parent_onboarding.done")}
             </Text>
           </TouchableOpacity>
@@ -513,7 +515,9 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
             style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
             onPress={() => setStep((n) => n + 1)}
           >
-            <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
+            <Text
+              style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}
+            >
               {t("parent_onboarding.next")}
             </Text>
           </TouchableOpacity>

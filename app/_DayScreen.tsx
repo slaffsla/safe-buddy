@@ -117,7 +117,8 @@ export default function DayScreen({
   onClose,
   onStartMission,
 }: DayScreenProps) {
-  const { contentMaxWidth, screenPadding, isLargeTablet } = useLayoutMetrics();
+  const { contentMaxWidth, screenPadding, isLargeTablet, buddyContentSpacer } =
+    useLayoutMetrics();
   const scrollRef = useRef<ScrollView | null>(null);
   const blockYRef = useRef<Record<number, number>>({});
 
@@ -135,7 +136,8 @@ export default function DayScreen({
   const nextUpcomingBlock = visibleBlocks.find(
     (b) => getBlockStatus(b) === "upcoming",
   );
-  const focusBlock = currentBlock ?? nextUpcomingBlock;
+  const lastBlock = visibleBlocks[visibleBlocks.length - 1] ?? null;
+  const focusBlock = currentBlock ?? nextUpcomingBlock ?? lastBlock;
   const didScrollToFocus = useRef(false);
 
   useEffect(() => {
@@ -176,13 +178,16 @@ export default function DayScreen({
 
       <ScrollView
         ref={scrollRef}
+        style={s.scrollView}
         contentContainerStyle={[
           s.scroll,
           isLargeTablet && s.scrollLarge,
           {
+            flexGrow: 1,
             maxWidth: contentMaxWidth,
             padding: screenPadding,
-            paddingTop: isLargeTablet ? 14 : 6,
+            paddingTop: buddyContentSpacer,
+            paddingBottom: isLargeTablet ? 110 : 80,
           },
         ]}
       >
@@ -330,6 +335,9 @@ const s = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollLarge: {
     paddingBottom: 110,
   },
@@ -404,6 +412,11 @@ const s = StyleSheet.create({
   },
   startBtnTxt: { fontSize: 18, color: C.white, fontWeight: "700" },
 
-  btnBack: { marginTop: 18, padding: 12, alignSelf: "center" },
+  btnBack: {
+    marginTop: 20,
+    marginBottom: 12,
+    padding: 12,
+    alignSelf: "center",
+  },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
 });

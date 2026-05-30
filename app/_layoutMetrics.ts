@@ -11,6 +11,17 @@ export function getLayoutMetrics({ width, height }: WindowSize) {
   const isTabletWidth = shortestSide >= 600;
   const isLargeTablet = shortestSide >= 720;
   const isShortHeight = height < 760;
+  const buddyContentSpacer = isShortHeight
+    ? 200
+    : isLargeTablet
+      ? 300
+      : isTabletWidth
+        ? 228
+        : BUDDY_FIXED_SPACER;
+  const homeContentSpacer =
+    isTabletWidth && !isLargeTablet && !isShortHeight
+      ? buddyContentSpacer + 88
+      : buddyContentSpacer;
 
   return {
     isTabletWidth,
@@ -20,13 +31,8 @@ export function getLayoutMetrics({ width, height }: WindowSize) {
     formMaxWidth: isLargeTablet ? 560 : isTabletWidth ? 460 : 420,
     screenPadding: isLargeTablet ? 32 : isTabletWidth ? 24 : 20,
     uiScale: isLargeTablet ? 1.16 : isTabletWidth ? 1.04 : 1,
-    buddyContentSpacer: isShortHeight
-      ? 200
-      : isLargeTablet
-        ? 300
-        : isTabletWidth
-          ? 228
-        : BUDDY_FIXED_SPACER,
+    buddyContentSpacer,
+    homeContentSpacer,
     noOverlayTopPadding: isShortHeight
       ? 26
       : isLargeTablet
@@ -51,6 +57,7 @@ export const FORM_MAX_WIDTH = initialMetrics.formMaxWidth;
 export const SCREEN_PADDING = initialMetrics.screenPadding;
 export const UI_SCALE = initialMetrics.uiScale;
 export const BUDDY_CONTENT_SPACER = initialMetrics.buddyContentSpacer;
+export const HOME_CONTENT_SPACER = initialMetrics.homeContentSpacer;
 export const NO_OVERLAY_TOP_PADDING = initialMetrics.noOverlayTopPadding;
 
 export const createSpacer = (height = BUDDY_CONTENT_SPACER) => ({ height });

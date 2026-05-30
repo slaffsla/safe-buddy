@@ -157,7 +157,7 @@ export const MISSION_POOL: PoolMission[] = [
     title: "Попробуй дотянуться до пальцев ног",
     subtitle: "Медленно",
     stars: 1,
-    emoji: "🙆",
+    emoji: "🦶",
     category: "movement",
     slot: "morning",
     weekdayDefault: true,

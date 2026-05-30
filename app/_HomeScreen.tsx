@@ -69,7 +69,7 @@ export default function HomeScreen({
   onMorningNudge,
   rtlChildSex = "male",
 }: HomeScreenProps) {
-  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+  const { homeContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [useAltIdle] = React.useState(() => Math.random() > 0.7);
@@ -100,7 +100,7 @@ export default function HomeScreen({
         {
           maxWidth: contentMaxWidth,
           padding: screenPadding,
-          paddingTop: buddyContentSpacer,
+          paddingTop: homeContentSpacer,
         },
       ]}
     >

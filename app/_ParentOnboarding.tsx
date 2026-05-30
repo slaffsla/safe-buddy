@@ -15,7 +15,7 @@ import {
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { t } from "./i18n";
-import { CONTENT_MAX_WIDTH } from "./_layoutMetrics";
+import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "./_layoutMetrics";
 
 interface Props {
   onDone: () => void;
@@ -114,13 +114,25 @@ const bc = StyleSheet.create({
 // ── Screen 1 — Who is Buddy ───────────────────────────────────────────────────
 
 function Screen1({ speak }: { speak: (t: string) => void }) {
+  const { isLargeTablet } = useLayoutMetrics();
   return (
     <ScrollView contentContainerStyle={s.screenScroll}>
-      <Buddy mood="calm" speak={speak} celebrate={false} />
-      <Text style={s.heading}>{t("parent_onboarding.screen1_heading")}</Text>
-      <Text style={s.body}>{t("parent_onboarding.screen1_sub")}</Text>
-      <View style={s.noteCard}>
-        <Text style={s.noteText}>💬 {t("parent_onboarding.screen1_note")}</Text>
+      <Buddy
+        mood="calm"
+        speak={speak}
+        celebrate={false}
+        size={isLargeTablet ? 190 : undefined}
+      />
+      <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
+        {t("parent_onboarding.screen1_heading")}
+      </Text>
+      <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
+        {t("parent_onboarding.screen1_sub")}
+      </Text>
+      <View style={[s.noteCard, isLargeTablet && s.noteCardLarge]}>
+        <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
+          💬 {t("parent_onboarding.screen1_note")}
+        </Text>
       </View>
     </ScrollView>
   );
@@ -129,6 +141,7 @@ function Screen1({ speak }: { speak: (t: string) => void }) {
 // ── Screen 2 — How to use together ───────────────────────────────────────────
 
 function Screen2() {
+  const { isLargeTablet } = useLayoutMetrics();
   const tips = [
     t("parent_onboarding.screen2_tip_1"),
     t("parent_onboarding.screen2_tip_2"),
@@ -137,9 +150,13 @@ function Screen2() {
   ];
   return (
     <ScrollView contentContainerStyle={s.screenScroll}>
-      <Text style={s.bigEmoji}>🤝</Text>
-      <Text style={s.heading}>{t("parent_onboarding.screen2_heading")}</Text>
-      <Text style={s.body}>{t("parent_onboarding.screen2_body")}</Text>
+      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🤝</Text>
+      <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
+        {t("parent_onboarding.screen2_heading")}
+      </Text>
+      <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
+        {t("parent_onboarding.screen2_body")}
+      </Text>
       <View style={s.tipsCard}>
         <Text style={s.tipsLabel}>
           {t("parent_onboarding.screen2_tip_label")}
@@ -161,11 +178,16 @@ function Screen2() {
 // ── Screen 3 — Breathing ──────────────────────────────────────────────────────
 
 function Screen3() {
+  const { isLargeTablet } = useLayoutMetrics();
   return (
     <ScrollView contentContainerStyle={s.screenScroll}>
-      <Text style={s.bigEmoji}>🌬️</Text>
-      <Text style={s.heading}>{t("parent_onboarding.screen3_heading")}</Text>
-      <Text style={s.body}>{t("parent_onboarding.screen3_body")}</Text>
+      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🌬️</Text>
+      <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
+        {t("parent_onboarding.screen3_heading")}
+      </Text>
+      <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
+        {t("parent_onboarding.screen3_body")}
+      </Text>
       <View style={s.patternBadge}>
         <Text style={s.patternText}>
           {t("parent_onboarding.screen3_pattern")}
@@ -186,6 +208,7 @@ function Screen3() {
 const SCREENS = [Screen1, Screen2, Screen3];
 
 export default function ParentOnboarding({ onDone }: Props) {
+  const { contentMaxWidth, screenPadding, isLargeTablet } = useLayoutMetrics();
   const [step, setStep] = useState(0);
   const isLast = step === SCREENS.length - 1;
   const CurrentScreen = SCREENS[step];
@@ -205,21 +228,36 @@ export default function ParentOnboarding({ onDone }: Props) {
         </TouchableOpacity>
       </View>
 
-      <View style={s.content}>
+      <View style={[s.content, isLargeTablet && s.contentLarge]}>
         <CurrentScreen speak={speak} />
       </View>
 
-      <View style={s.footer}>
+      <View
+        style={[
+          s.footer,
+          {
+            maxWidth: contentMaxWidth,
+            paddingHorizontal: screenPadding,
+          },
+        ]}
+      >
         {isLast ? (
-          <TouchableOpacity style={s.btnPrimary} onPress={onDone}>
-            <Text style={s.btnPrimaryTxt}>{t("parent_onboarding.done")}</Text>
+          <TouchableOpacity
+            style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
+            onPress={onDone}
+          >
+            <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
+              {t("parent_onboarding.done")}
+            </Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={s.btnPrimary}
+            style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
             onPress={() => setStep((n) => n + 1)}
           >
-            <Text style={s.btnPrimaryTxt}>{t("parent_onboarding.next")}</Text>
+            <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
+              {t("parent_onboarding.next")}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -246,6 +284,9 @@ const s = StyleSheet.create({
   skipTxt: { fontSize: 14, color: C.muted },
 
   content: { flex: 1 },
+  contentLarge: {
+    justifyContent: "center",
+  },
   screenScroll: {
     width: "100%",
     maxWidth: CONTENT_MAX_WIDTH,
@@ -256,6 +297,7 @@ const s = StyleSheet.create({
   },
 
   bigEmoji: { fontSize: 58, marginBottom: 14, marginTop: 6 },
+  bigEmojiLarge: { fontSize: 78, marginBottom: 20 },
   heading: {
     fontSize: 24,
     fontWeight: "800",
@@ -264,6 +306,7 @@ const s = StyleSheet.create({
     marginBottom: 14,
     lineHeight: 30,
   },
+  headingLarge: { fontSize: 32, lineHeight: 40, marginBottom: 20 },
   body: {
     fontSize: 16,
     color: C.muted,
@@ -271,6 +314,7 @@ const s = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 16,
   },
+  bodyLarge: { fontSize: 21, lineHeight: 31, marginBottom: 24 },
 
   noteCard: {
     backgroundColor: C.greenLt,
@@ -280,6 +324,7 @@ const s = StyleSheet.create({
     padding: 14,
     width: "100%",
   },
+  noteCardLarge: { padding: 20, borderRadius: 16 },
   noteText: {
     fontSize: 13,
     color: C.green,
@@ -287,6 +332,7 @@ const s = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
   },
+  noteTextLarge: { fontSize: 18, lineHeight: 27 },
 
   tipsCard: {
     backgroundColor: C.white,
@@ -370,5 +416,10 @@ const s = StyleSheet.create({
     alignItems: "center",
     width: "100%",
   },
+  btnPrimaryLarge: {
+    borderRadius: 18,
+    paddingVertical: 22,
+  },
   btnPrimaryTxt: { fontSize: 17, color: C.white, fontWeight: "700" },
+  btnPrimaryTxtLarge: { fontSize: 22 },
 });

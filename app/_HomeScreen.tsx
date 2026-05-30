@@ -69,7 +69,7 @@ export default function HomeScreen({
   onMorningNudge,
   rtlChildSex = "male",
 }: HomeScreenProps) {
-  const { buddyContentSpacer, contentMaxWidth, screenPadding } =
+  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [useAltIdle] = React.useState(() => Math.random() > 0.7);
@@ -96,6 +96,7 @@ export default function HomeScreen({
     <ScrollView
       contentContainerStyle={[
         s.homeScroll,
+        isLargeTablet && s.homeScrollLarge,
         {
           maxWidth: contentMaxWidth,
           padding: screenPadding,
@@ -103,7 +104,7 @@ export default function HomeScreen({
         },
       ]}
     >
-      <T style={s.greeting} speak={speak}>
+      <T style={[s.greeting, isLargeTablet && s.greetingLarge]} speak={speak}>
         {greeting}
       </T>
       <ReflectiveBoost
@@ -112,11 +113,14 @@ export default function HomeScreen({
         rtlChildSex={rtlChildSex}
       />
       {progressMsg && (
-        <T style={s.progressionMsg} speak={speak}>
+        <T
+          style={[s.progressionMsg, isLargeTablet && s.progressionMsgLarge]}
+          speak={speak}
+        >
           {progressMsg}
         </T>
       )}
-      <T style={s.msg} speak={speak}>
+      <T style={[s.msg, isLargeTablet && s.msgLarge]} speak={speak}>
         {idleMsg}
       </T>
       {showMorningNudge && (
@@ -210,32 +214,47 @@ export default function HomeScreen({
         </View>
       )}
 
-      <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>
+      <TouchableOpacity
+        style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
+        onPress={onStart}
+      >
+        <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
           {tGender("home.btn_pick_mission", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
       {scheduleEnabled && onOpenDay && (
-        <TouchableOpacity style={s.btnDay} onPress={onOpenDay}>
-          <Text style={s.btnDayTxt}>
+        <TouchableOpacity
+          style={[s.btnDay, isLargeTablet && s.btnTallLarge]}
+          onPress={onOpenDay}
+        >
+          <Text style={[s.btnDayTxt, isLargeTablet && s.btnTextLarge]}>
             {tGender("home.btn_my_day", undefined, rtlChildSex)}
           </Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>
+      <TouchableOpacity
+        style={[s.btnSecondary, isLargeTablet && s.btnTallLarge]}
+        onPress={onRewards}
+      >
+        <Text style={[s.btnSecondaryTxt, isLargeTablet && s.btnTextLarge]}>
           {tGender("home.btn_rewards", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
       {onBreathing && (
-        <TouchableOpacity style={s.btnBreathing} onPress={onBreathing}>
-          <Text style={s.btnBreathingTxt}>
+        <TouchableOpacity
+          style={[s.btnBreathing, isLargeTablet && s.btnTallLarge]}
+          onPress={onBreathing}
+        >
+          <Text style={[s.btnBreathingTxt, isLargeTablet && s.btnTextLarge]}>
             {tGender("home.btn_breathing", undefined, rtlChildSex)}
           </Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity style={s.btnSettings} onPress={onSettings}>
-        <Text style={s.btnSettingsTxt}>
+      <TouchableOpacity
+        style={[s.btnSettings, isLargeTablet && s.btnSettingsLarge]}
+        onPress={onSettings}
+      >
+        <Text style={[s.btnSettingsTxt, isLargeTablet && s.btnSettingsTxtLarge]}>
           {tGender("home.btn_settings", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
@@ -251,6 +270,9 @@ const s = StyleSheet.create({
     paddingBottom: 52,
     backgroundColor: C.bg,
   },
+  homeScrollLarge: {
+    paddingBottom: 96,
+  },
   greeting: {
     fontSize: 22,
     fontWeight: "700",
@@ -258,6 +280,7 @@ const s = StyleSheet.create({
     textAlign: "center",
     marginBottom: 4,
   },
+  greetingLarge: { fontSize: 28, lineHeight: 34 },
   progressionMsg: {
     fontSize: 15,
     color: C.green,
@@ -266,6 +289,7 @@ const s = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 22,
   },
+  progressionMsgLarge: { fontSize: 18, lineHeight: 26 },
   msg: {
     fontSize: 17,
     color: C.text,
@@ -274,6 +298,7 @@ const s = StyleSheet.create({
     lineHeight: 25,
     paddingHorizontal: 8,
   },
+  msgLarge: { fontSize: 22, lineHeight: 32, marginVertical: 12 },
   morningNudgeCard: {
     width: "100%",
     backgroundColor: "#FFFDF9",
@@ -313,7 +338,13 @@ const s = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
+  btnPrimaryLarge: {
+    borderRadius: 18,
+    paddingVertical: 22,
+    marginTop: 18,
+  },
   btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
+  btnPrimaryTxtLarge: { fontSize: 24 },
   btnSecondary: {
     backgroundColor: "#FFF9EC",
     borderRadius: 16,
@@ -326,6 +357,8 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
   btnSecondaryTxt: { fontSize: 17, color: "#92400E", fontWeight: "600" },
+  btnTallLarge: { paddingVertical: 18, borderRadius: 18, marginTop: 12 },
+  btnTextLarge: { fontSize: 21 },
   btnDay: {
     backgroundColor: "#FFFDF9",
     borderRadius: 16,
@@ -352,6 +385,8 @@ const s = StyleSheet.create({
   btnBreathingTxt: { fontSize: 16, color: "#1E4E8C", fontWeight: "600" },
   btnSettings: { marginTop: 8, padding: 12, alignItems: "center" },
   btnSettingsTxt: { fontSize: 14, color: C.muted },
+  btnSettingsLarge: { marginTop: 14, padding: 16 },
+  btnSettingsTxtLarge: { fontSize: 18 },
 
   scheduleCard: { width: "100%", marginBottom: 12, gap: 6 },
   scheduleNow: {

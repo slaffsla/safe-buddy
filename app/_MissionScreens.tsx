@@ -26,7 +26,7 @@ import {
   REWARDS,
 } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
-import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "./_layoutMetrics";
+import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "./_layoutMetrics";
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
 
@@ -71,6 +71,8 @@ export function MissionPickScreen({
   missionTypeById,
   rtlChildSex = "male",
 }: MissionPickProps) {
+  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+    useLayoutMetrics();
   const pool = !missions || missions.length === 0 ? MISSION_POOL : missions;
 
   const done = new Set<number>(doneIds ?? []);
@@ -94,9 +96,18 @@ export function MissionPickScreen({
   const [expanded, setExpanded] = React.useState<MissionSlot>(active);
 
   return (
-    <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{ height: BUDDY_CONTENT_SPACER }} />
-      <T style={s.pageTitle} speak={speak}>
+    <ScrollView
+      contentContainerStyle={[
+        s.scroll,
+        isLargeTablet && s.scrollLarge,
+        {
+          maxWidth: contentMaxWidth,
+          padding: screenPadding,
+          paddingTop: buddyContentSpacer,
+        },
+      ]}
+    >
+      <T style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]} speak={speak}>
         {tGender("missionPick.title", undefined, rtlChildSex)}
       </T>
 
@@ -270,20 +281,32 @@ export function ActiveScreen({
   speak: (t: string) => void;
   rtlChildSex?: RtlChildSex;
 }) {
+  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+    useLayoutMetrics();
   if (!mission) return null;
   return (
-    <ScrollView contentContainerStyle={[s.screen, s.activeScreenScroll]}>
-      <View style={{ height: BUDDY_CONTENT_SPACER }} />
+    <ScrollView
+      contentContainerStyle={[
+        s.screen,
+        s.activeScreenScroll,
+        isLargeTablet && s.activeScreenScrollLarge,
+        {
+          maxWidth: contentMaxWidth,
+          padding: screenPadding,
+          paddingTop: buddyContentSpacer,
+        },
+      ]}
+    >
       <TouchableOpacity
         onPress={() => speak(tSpeak("buddy.start", undefined, rtlChildSex))}
         activeOpacity={0.65}
       >
-        <Text style={s.msg}>
+        <Text style={[s.msg, isLargeTablet && s.msgLarge]}>
           {tGender("buddy.start", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={s.activeCard}
+        style={[s.activeCard, isLargeTablet && s.activeCardLarge]}
         onPress={() =>
           speak(
             `${getMissionTitle(mission.id, mission.title)}. ${getMissionSubtitle(mission.id, mission.subtitle)}`,
@@ -291,11 +314,13 @@ export function ActiveScreen({
         }
         activeOpacity={0.85}
       >
-        <Text style={s.activeEmoji}>{mission.emoji}</Text>
-        <Text style={s.activeTitle}>
+        <Text style={[s.activeEmoji, isLargeTablet && s.activeEmojiLarge]}>
+          {mission.emoji}
+        </Text>
+        <Text style={[s.activeTitle, isLargeTablet && s.activeTitleLarge]}>
           {getMissionTitle(mission.id, mission.title)}
         </Text>
-        <Text style={s.activeSub}>
+        <Text style={[s.activeSub, isLargeTablet && s.activeSubLarge]}>
           {getMissionSubtitle(mission.id, mission.subtitle)}
         </Text>
         <View style={s.starsRow}>
@@ -311,8 +336,11 @@ export function ActiveScreen({
           {tGender("active.tap_hint", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={s.btnPrimary} onPress={onDone}>
-        <Text style={s.btnPrimaryTxt}>
+      <TouchableOpacity
+        style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
+        onPress={onDone}
+      >
+        <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
           {tGender("active.btn_done", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
@@ -352,14 +380,24 @@ export function CelebrateScreen({
   onBack: () => void;
   rtlChildSex?: RtlChildSex;
 }) {
+  const { buddyContentSpacer, contentMaxWidth, screenPadding } =
+    useLayoutMetrics();
   if (!mission) return null;
   const emotionalMsg = isVeryExcited
     ? getMilestoneMessage(totalEver)
     : getProgressionMessage(totalMissions, completedToday);
 
   return (
-    <View style={s.screen}>
-      <View style={{ height: BUDDY_CONTENT_SPACER }} />
+    <View
+      style={[
+        s.screen,
+        {
+          maxWidth: contentMaxWidth,
+          padding: screenPadding,
+          paddingTop: buddyContentSpacer,
+        },
+      ]}
+    >
       <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
         {isVeryExcited ? t("celebrate.milestone_title") : t("celebrate.title")}
       </T>
@@ -407,6 +445,7 @@ function RewardCard({
   speak,
   onRedeem,
   showExactStarCost,
+  large = false,
   rtlChildSex = "male",
 }: {
   reward: (typeof REWARDS)[number];
@@ -414,6 +453,7 @@ function RewardCard({
   speak: (t: string) => void;
   onRedeem: (r: any) => void;
   showExactStarCost: boolean;
+  large?: boolean;
   rtlChildSex?: RtlChildSex;
 }) {
   const [scale] = React.useState(() => new Animated.Value(1));
@@ -449,32 +489,40 @@ function RewardCard({
   }
 
   return (
-    <Animated.View style={[s.rAnimWrap, { transform: [{ scale }] }]}>
+    <Animated.View
+      style={[
+        s.rAnimWrap,
+        large && s.rAnimWrapLarge,
+        { transform: [{ scale }] },
+      ]}
+    >
       <TouchableOpacity
-        style={[s.rCard, !can && s.rLocked]}
+        style={[s.rCard, large && s.rCardLarge, !can && s.rLocked]}
         onPress={() => speak(`${title}. ${statusText}`)}
         activeOpacity={0.7}
       >
-        <Text style={s.rEmoji}>{reward.emoji}</Text>
+        <Text style={[s.rEmoji, large && s.rEmojiLarge]}>{reward.emoji}</Text>
         <View style={s.rInfo}>
-          <Text style={s.rTitle}>{title}</Text>
-          <Text style={s.rCost}>{Array(reward.cost).fill("⭐").join("")}</Text>
+          <Text style={[s.rTitle, large && s.rTitleLarge]}>{title}</Text>
+          <Text style={[s.rCost, large && s.rCostLarge]}>
+            {Array(reward.cost).fill("⭐").join("")}
+          </Text>
         </View>
         {can ? (
           <TouchableOpacity
-            style={s.rReadyBtn}
+            style={[s.rReadyBtn, large && s.rReadyBtnLarge]}
             onPress={(e) => {
               e.stopPropagation();
               handleRedeem();
             }}
             activeOpacity={0.75}
           >
-            <Text style={s.rReadyBtnTxt}>
+            <Text style={[s.rReadyBtnTxt, large && s.rReadyBtnTxtLarge]}>
               {tGender("rewards.ready", undefined, rtlChildSex)}
             </Text>
           </TouchableOpacity>
         ) : (
-          <Text style={s.rNeed}>{needText}</Text>
+          <Text style={[s.rNeed, large && s.rNeedLarge]}>{needText}</Text>
         )}
       </TouchableOpacity>
     </Animated.View>
@@ -500,11 +548,25 @@ export function RewardsScreen({
   rewards?: typeof REWARDS;
   rtlChildSex?: RtlChildSex;
 }) {
+  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+    useLayoutMetrics();
   const list = rewards ?? REWARDS;
   return (
-    <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{ height: BUDDY_CONTENT_SPACER }} />
-      <T style={s.pageTitle} speak={speak}>
+    <ScrollView
+      style={s.rewardsScrollView}
+      contentContainerStyle={[
+        s.scroll,
+        s.rewardsScroll,
+        isLargeTablet && s.scrollLarge,
+        {
+          maxWidth: contentMaxWidth,
+          padding: screenPadding,
+          paddingTop: buddyContentSpacer,
+        },
+      ]}
+      keyboardShouldPersistTaps="handled"
+    >
+      <T style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]} speak={speak}>
         {t("rewards.title")}
       </T>
       {list.map((r) => (
@@ -515,14 +577,20 @@ export function RewardsScreen({
           speak={speak}
           onRedeem={onRedeem}
           showExactStarCost={showExactStarCost}
+          large={isLargeTablet}
           rtlChildSex={rtlChildSex}
         />
       ))}
       <T style={s.hint} speak={speak}>
         {t("rewards.hint")}
       </T>
-      <TouchableOpacity style={s.btnBack} onPress={onBack}>
-        <Text style={s.btnBackTxt}>{t("common.back")}</Text>
+      <TouchableOpacity
+        style={[s.btnBack, isLargeTablet && s.btnBackLarge]}
+        onPress={onBack}
+      >
+        <Text style={[s.btnBackTxt, isLargeTablet && s.btnBackTxtLarge]}>
+          {t("common.back")}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -550,9 +618,22 @@ const s = StyleSheet.create({
     paddingBottom: 52,
     backgroundColor: C.bg,
   },
+  scrollLarge: {
+    paddingBottom: 120,
+  },
+  rewardsScrollView: {
+    flex: 1,
+    width: "100%",
+  },
+  rewardsScroll: {
+    flexGrow: 1,
+  },
   activeScreenScroll: {
     justifyContent: "flex-start",
     paddingBottom: 34,
+  },
+  activeScreenScrollLarge: {
+    paddingBottom: 120,
   },
 
   msg: {
@@ -563,6 +644,11 @@ const s = StyleSheet.create({
     lineHeight: 25,
     paddingHorizontal: 8,
   },
+  msgLarge: {
+    fontSize: 22,
+    lineHeight: 32,
+    marginVertical: 14,
+  },
   tapHint: { fontSize: 11, color: C.muted, marginTop: 10, fontStyle: "italic" },
 
   pageTitle: {
@@ -572,6 +658,11 @@ const s = StyleSheet.create({
     marginBottom: 22,
     alignSelf: "center",
     textAlign: "center",
+  },
+  pageTitleLarge: {
+    fontSize: 32,
+    lineHeight: 40,
+    marginBottom: 30,
   },
   hint: {
     fontSize: 11,
@@ -742,7 +833,13 @@ const s = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
+  btnPrimaryLarge: {
+    borderRadius: 18,
+    paddingVertical: 22,
+    marginTop: 18,
+  },
   btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
+  btnPrimaryTxtLarge: { fontSize: 24 },
   btnSecondary: {
     backgroundColor: "#FFF9EC",
     borderRadius: 16,
@@ -759,6 +856,8 @@ const s = StyleSheet.create({
   btnSkipTxt: { fontSize: 15, color: C.muted },
   btnBack: { marginTop: 18, padding: 12 },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
+  btnBackLarge: { marginTop: 26, padding: 18, marginBottom: 40 },
+  btnBackTxtLarge: { fontSize: 20 },
 
   activeCard: {
     backgroundColor: "#FFFDF9",
@@ -770,25 +869,37 @@ const s = StyleSheet.create({
     width: "100%",
     marginVertical: 12,
   },
+  activeCardLarge: {
+    borderRadius: 22,
+    paddingVertical: 38,
+    paddingHorizontal: 34,
+    marginVertical: 22,
+  },
   activeEmoji: { fontSize: 54, marginBottom: 10 },
+  activeEmojiLarge: { fontSize: 72, marginBottom: 16 },
   activeTitle: {
     fontSize: 22,
     fontWeight: "700",
     color: C.text,
     textAlign: "center",
   },
+  activeTitleLarge: { fontSize: 30, lineHeight: 38 },
   activeSub: {
     fontSize: 14,
     color: C.muted,
     marginTop: 5,
     textAlign: "center",
   },
+  activeSubLarge: { fontSize: 19, lineHeight: 26, marginTop: 8 },
   starsRow: { flexDirection: "row", marginTop: 12, gap: 4 },
   starBig: { fontSize: 24 },
 
   rAnimWrap: {
     width: "100%",
     marginBottom: 7,
+  },
+  rAnimWrapLarge: {
+    marginBottom: 12,
   },
   rCard: {
     flexDirection: "row",
@@ -800,11 +911,20 @@ const s = StyleSheet.create({
     padding: 13,
     width: "100%",
   },
+  rCardLarge: {
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    minHeight: 82,
+  },
   rLocked: { opacity: 0.42 },
   rEmoji: { fontSize: 29, marginRight: 11 },
+  rEmojiLarge: { fontSize: 38, marginRight: 18 },
   rInfo: { flex: 1 },
   rTitle: { fontSize: 15, fontWeight: "600", color: C.text },
+  rTitleLarge: { fontSize: 20, lineHeight: 26 },
   rCost: { fontSize: 12, color: C.muted, marginTop: 2 },
+  rCostLarge: { fontSize: 16, marginTop: 4 },
   rReadyBtn: {
     backgroundColor: C.greenLt,
     borderRadius: 12,
@@ -814,8 +934,16 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     marginLeft: 10,
   },
+  rReadyBtnLarge: {
+    borderRadius: 14,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    marginLeft: 16,
+  },
   rReadyBtnTxt: { fontSize: 13, color: C.green, fontWeight: "700" },
+  rReadyBtnTxtLarge: { fontSize: 17 },
   rNeed: { fontSize: 11, color: C.muted, textAlign: "right" },
+  rNeedLarge: { fontSize: 15 },
 });
 
 // Expo Router: suppress "missing default export" warning for non-route files

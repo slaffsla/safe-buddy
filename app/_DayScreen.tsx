@@ -17,7 +17,7 @@ import {
   getScheduleTitle,
 } from "./_constants";
 import { getAppLocale, t } from "./i18n";
-import { CONTENT_MAX_WIDTH } from "./_layoutMetrics";
+import { useLayoutMetrics } from "./_layoutMetrics";
 
 interface DayScreenProps {
   blocks: ScheduleBlock[];
@@ -112,6 +112,7 @@ export default function DayScreen({
   onClose,
   onStartMission,
 }: DayScreenProps) {
+  const { contentMaxWidth, screenPadding, isLargeTablet } = useLayoutMetrics();
   const scrollRef = useRef<ScrollView | null>(null);
   const blockYRef = useRef<Record<number, number>>({});
 
@@ -138,8 +139,16 @@ export default function DayScreen({
 
   return (
     <View style={s.root}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t("day.title")}</Text>
+      <View
+        style={[
+          s.header,
+          isLargeTablet && s.headerLarge,
+          { maxWidth: contentMaxWidth + screenPadding * 2 },
+        ]}
+      >
+        <Text style={[s.headerTitle, isLargeTablet && s.headerTitleLarge]}>
+          {t("day.title")}
+        </Text>
         <TouchableOpacity
           style={s.closeBtn}
           onPress={onClose}
@@ -149,7 +158,18 @@ export default function DayScreen({
         </TouchableOpacity>
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={s.scroll}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={[
+          s.scroll,
+          isLargeTablet && s.scrollLarge,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+            paddingTop: isLargeTablet ? 14 : 6,
+          },
+        ]}
+      >
         {visibleBlocks.length === 0 ? (
           <Text style={s.empty}>{t("day.empty")}</Text>
         ) : (
@@ -258,7 +278,15 @@ const s = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 10,
   },
+  headerLarge: {
+    width: "100%",
+    alignSelf: "center",
+    paddingHorizontal: 32,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
   headerTitle: { fontSize: 22, fontWeight: "700", color: C.text },
+  headerTitleLarge: { fontSize: 30 },
   closeBtn: {
     width: 40,
     height: 40,
@@ -273,10 +301,10 @@ const s = StyleSheet.create({
 
   scroll: {
     width: "100%",
-    maxWidth: CONTENT_MAX_WIDTH,
     alignSelf: "center",
-    padding: 20,
-    paddingTop: 6,
+  },
+  scrollLarge: {
+    paddingBottom: 110,
   },
   empty: { textAlign: "center", color: C.muted, marginTop: 40, fontSize: 15 },
 

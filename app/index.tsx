@@ -413,7 +413,8 @@ export default function App() {
 
   const speak = useSpeech(ttsEnabled, appSettings.rtlChildSex ?? "male");
   const [useGentleHomeMood] = useState(() => Math.random() > 0.7);
-  const { contentMaxWidth, isTabletWidth, isShortHeight } = useLayoutMetrics();
+  const { contentMaxWidth, isTabletWidth, isLargeTablet, isShortHeight } =
+    useLayoutMetrics();
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride
@@ -1231,7 +1232,7 @@ export default function App() {
     92,
     Math.round(
       baseOverlayBuddySize *
-        (isShortHeight ? 0.78 : isTabletWidth ? 0.84 : 1),
+        (isShortHeight ? 0.78 : isLargeTablet ? 1.18 : isTabletWidth ? 0.96 : 1),
     ),
   );
   const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);

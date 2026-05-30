@@ -117,12 +117,11 @@ function useOnboardingLayout() {
 // ── Breathing circle for screen 3 ─────────────────────────────────────────────
 // Self-contained preview: no audio and no session timer.
 
-const PHASE_KEYS = [
-  "breathing.phase_in",
-  "breathing.phase_hold",
-  "breathing.phase_out",
+const PHASES = [
+  { labelKey: "breathing.phase_in", duration: 3000, target: 1.0 },
+  { labelKey: "breathing.phase_hold", duration: 1000, target: 1.0 },
+  { labelKey: "breathing.phase_out", duration: 4000, target: 0.74 },
 ] as const;
-const PHASE_DURATIONS = [4000, 1000, 3000] as const;
 
 function MiniBreathingCircle() {
   const { isTabletWidth, isLargeTablet } = useOnboardingLayout();
@@ -147,15 +146,15 @@ function MiniBreathingCircle() {
     function runPhase(idx: number) {
       if (cancelled) return;
       setPhase(idx);
-      const toValue = idx === 2 ? 0.6 : 1.0;
+      const phase = PHASES[idx];
       animRef.current = Animated.timing(scale, {
-        toValue,
-        duration: PHASE_DURATIONS[idx],
+        toValue: phase.target,
+        duration: phase.duration,
         easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
       });
       animRef.current.start(({ finished }) => {
-        if (finished) runPhase((idx + 1) % PHASE_KEYS.length);
+        if (finished) runPhase((idx + 1) % PHASES.length);
       });
     }
 
@@ -181,7 +180,7 @@ function MiniBreathingCircle() {
           ]}
         >
           <Text style={[bc.phaseText, isLargeTablet && bc.phaseTextLarge]}>
-            {active ? t(PHASE_KEYS[phase]) : "▶"}
+            {active ? t(PHASES[phase].labelKey) : "▶"}
           </Text>
         </Animated.View>
       </TouchableOpacity>

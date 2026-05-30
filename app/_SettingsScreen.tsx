@@ -228,6 +228,54 @@ function buildDefaultSettings(): AppSettings {
 
 export const DEFAULT_SETTINGS = buildDefaultSettings();
 
+function normalizeMorningSteps(value: unknown): MorningStep[] {
+  const source = Array.isArray(value) ? value : DEFAULT_MORNING_STEPS;
+  const numericIds = source
+    .map((step) =>
+      typeof step?.id === "number" && Number.isFinite(step.id)
+        ? Math.trunc(step.id)
+        : 0,
+    )
+    .filter((id) => id > 0);
+  let nextId =
+    Math.max(0, ...DEFAULT_MORNING_STEPS.map((s) => s.id), ...numericIds) + 1;
+  const used = new Set<number>();
+
+  const normalized = source
+    .map((raw) => {
+      if (!raw || typeof raw !== "object") return null;
+      const step = raw as Partial<MorningStep>;
+      const title =
+        typeof step.title === "string" && step.title.trim()
+          ? step.title.trim()
+          : "";
+      if (!title) return null;
+
+      const emoji =
+        typeof step.emoji === "string" && step.emoji.trim()
+          ? step.emoji.trim()
+          : "✅";
+      let id =
+        typeof step.id === "number" && Number.isFinite(step.id)
+          ? Math.trunc(step.id)
+          : 0;
+
+      if (id <= 0 || used.has(id)) {
+        while (used.has(nextId)) nextId += 1;
+        id = nextId;
+        nextId += 1;
+      }
+      used.add(id);
+
+      return { id, title, emoji };
+    })
+    .filter((step): step is MorningStep => !!step);
+
+  return normalized.length > 0
+    ? normalized
+    : DEFAULT_MORNING_STEPS.map((step) => ({ ...step }));
+}
+
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 // All settings stored as one JSON blob for atomicity.
 // Child progress keys (sb_stars_v2 etc.) are read-only here — never written.
@@ -374,6 +422,7 @@ export async function loadSettings(): Promise<AppSettings> {
       ) {
         merged.tinyFactsMinMinutesManual = true;
       }
+      merged.morningSteps = normalizeMorningSteps(merged.morningSteps);
 
       return merged;
     }
@@ -390,6 +439,7 @@ export async function loadSettings(): Promise<AppSettings> {
       childName: legacy[0][1] ?? "",
       parentPin: legacy[1][1] ?? "",
       pinEnabled: legacy[2][1] === "true",
+      morningSteps: normalizeMorningSteps(DEFAULT_SETTINGS.morningSteps),
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -1677,7 +1727,7 @@ function DailyRoutineSection({
                 </Text>
 
                 {settings.morningSteps.map((step, idx) => (
-                  <View key={step.id}>
+                  <View key={`morning-step-setting-${step.id}-${idx}`}>
                     {idx > 0 && <Divider />}
                     {editingId === step.id ? (
                       <View style={u.editBlock}>

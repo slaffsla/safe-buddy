@@ -149,7 +149,7 @@ export default function MorningRoutineScreen({
         {validSteps.map((step, idx) => {
           const done = doneIds.includes(step.id);
           return (
-            <View key={step.id}>
+            <View key={`morning-step-${step.id}-${idx}`}>
               {idx > 0 && <View style={s.divider} />}
               <TouchableOpacity
                 style={s.stepRow}
@@ -171,9 +171,9 @@ export default function MorningRoutineScreen({
 
       {/* Progress dots */}
       <View style={s.dotsRow}>
-        {validSteps.map((step) => (
+        {validSteps.map((step, idx) => (
           <View
-            key={step.id}
+            key={`morning-dot-${step.id}-${idx}`}
             style={[s.dot, doneIds.includes(step.id) && s.dotDone]}
           />
         ))}

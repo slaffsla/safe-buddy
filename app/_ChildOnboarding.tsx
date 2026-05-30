@@ -1,6 +1,6 @@
 // _ChildOnboarding.tsx — first child-facing Buddy bonding flow.
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,10 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { RtlChildSex, t } from "./i18n";
-import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 type ChildOnboardingStep = "meet" | "name" | "age" | "ready";
 
@@ -27,6 +27,12 @@ interface ChildOnboardingProps {
 }
 
 const AGE_OPTIONS = [5, 6, 7, 8, 9, 10];
+const CHILD_BUDDY = {
+  hello: require("../assets/Character/Buddy2.png"),
+  calm: require("../assets/Character/Buddy1.png"),
+  gentle: require("../assets/Character/Buddy3.png"),
+  happy: require("../assets/Character/Buddy4.png"),
+};
 
 export default function ChildOnboarding({
   initialName,
@@ -35,8 +41,14 @@ export default function ChildOnboarding({
   speak,
   onComplete,
 }: ChildOnboardingProps) {
-  const { contentMaxWidth, formMaxWidth, screenPadding, isLargeTablet, isTabletWidth, isShortHeight } =
-    useLayoutMetrics();
+  const {
+    contentMaxWidth,
+    formMaxWidth,
+    screenPadding,
+    isLargeTablet,
+    isTabletWidth,
+    isShortHeight,
+  } = useLayoutMetrics();
   const [step, setStep] = useState<ChildOnboardingStep>("meet");
   const [firstPetDone, setFirstPetDone] = useState(false);
   const [factVisible, setFactVisible] = useState(false);
@@ -56,7 +68,9 @@ export default function ChildOnboarding({
       : isShortHeight
         ? 205
         : 250;
-  const maxWidth = isLargeTablet ? Math.min(contentMaxWidth + 120, 840) : contentMaxWidth;
+  const maxWidth = isLargeTablet
+    ? Math.min(contentMaxWidth + 120, 840)
+    : contentMaxWidth;
 
   const currentLine = useMemo(() => {
     if (step === "meet") {
@@ -142,6 +156,9 @@ export default function ChildOnboarding({
             <View style={s.buddyStage}>
               <Buddy
                 mood={firstPetDone ? "happy" : "calm"}
+                imageSource={
+                  firstPetDone ? CHILD_BUDDY.happy : CHILD_BUDDY.hello
+                }
                 pettable
                 pettingMood="happy"
                 pettingHeartMode="pronounced"
@@ -160,7 +177,9 @@ export default function ChildOnboarding({
                 size={buddySize}
               />
               {factVisible && !firstPetDone && (
-                <View style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}>
+                <View
+                  style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}
+                >
                   <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
                     {t("onboarding.tiny_fact_bear_sleep")}
                   </Text>
@@ -185,7 +204,10 @@ export default function ChildOnboarding({
                 activeOpacity={0.85}
               >
                 <Text
-                  style={[s.primaryBtnText, isLargeTablet && s.primaryBtnTextLarge]}
+                  style={[
+                    s.primaryBtnText,
+                    isLargeTablet && s.primaryBtnTextLarge,
+                  ]}
                 >
                   {t("onboarding.meet_next")}
                 </Text>
@@ -196,7 +218,12 @@ export default function ChildOnboarding({
 
         {step === "name" && (
           <>
-            <Buddy mood="happy" speak={speak} size={Math.round(buddySize * 0.7)} />
+            <Buddy
+              mood="happy"
+              imageSource={CHILD_BUDDY.calm}
+              speak={speak}
+              size={Math.round(buddySize * 0.7)}
+            />
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
               {t("onboarding.name_title")}
             </Text>
@@ -221,7 +248,9 @@ export default function ChildOnboarding({
             <TouchableOpacity
               style={[
                 s.primaryBtn,
-                (!name.trim() || isLargeTablet) && isLargeTablet && s.primaryBtnLarge,
+                (!name.trim() || isLargeTablet) &&
+                  isLargeTablet &&
+                  s.primaryBtnLarge,
                 !name.trim() && s.primaryBtnDisabled,
               ]}
               disabled={!name.trim()}
@@ -229,7 +258,10 @@ export default function ChildOnboarding({
               activeOpacity={0.85}
             >
               <Text
-                style={[s.primaryBtnText, isLargeTablet && s.primaryBtnTextLarge]}
+                style={[
+                  s.primaryBtnText,
+                  isLargeTablet && s.primaryBtnTextLarge,
+                ]}
               >
                 {t("onboarding.name_continue")}
               </Text>
@@ -239,7 +271,12 @@ export default function ChildOnboarding({
 
         {step === "age" && (
           <>
-            <Buddy mood="encouraging" speak={speak} size={Math.round(buddySize * 0.62)} />
+            <Buddy
+              mood="encouraging"
+              imageSource={CHILD_BUDDY.gentle}
+              speak={speak}
+              size={Math.round(buddySize * 0.62)}
+            />
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
               {t("onboarding.age_title")}
             </Text>
@@ -279,7 +316,10 @@ export default function ChildOnboarding({
               activeOpacity={0.85}
             >
               <Text
-                style={[s.primaryBtnText, isLargeTablet && s.primaryBtnTextLarge]}
+                style={[
+                  s.primaryBtnText,
+                  isLargeTablet && s.primaryBtnTextLarge,
+                ]}
               >
                 {t("onboarding.age_continue")}
               </Text>
@@ -291,7 +331,9 @@ export default function ChildOnboarding({
                 setStep("ready");
               }}
             >
-              <Text style={[s.textBtnText, isLargeTablet && s.textBtnTextLarge]}>
+              <Text
+                style={[s.textBtnText, isLargeTablet && s.textBtnTextLarge]}
+              >
                 {t("onboarding.age_skip")}
               </Text>
             </TouchableOpacity>
@@ -300,7 +342,13 @@ export default function ChildOnboarding({
 
         {step === "ready" && (
           <>
-            <Buddy mood="proud" celebrate speak={speak} size={Math.round(buddySize * 0.72)} />
+            <Buddy
+              mood="proud"
+              imageSource={CHILD_BUDDY.happy}
+              celebrate
+              speak={speak}
+              size={Math.round(buddySize * 0.72)}
+            />
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
               {name.trim()
                 ? t("onboarding.ready_title_named", { name: name.trim() })
@@ -315,7 +363,10 @@ export default function ChildOnboarding({
               activeOpacity={0.85}
             >
               <Text
-                style={[s.primaryBtnText, isLargeTablet && s.primaryBtnTextLarge]}
+                style={[
+                  s.primaryBtnText,
+                  isLargeTablet && s.primaryBtnTextLarge,
+                ]}
               >
                 {t("onboarding.ready_start")}
               </Text>

@@ -6,6 +6,7 @@ import {
   Animated,
   Easing,
   Image,
+  ImageSourcePropType,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -30,6 +31,7 @@ interface BuddyProps {
   size?: number;
   celebrate?: boolean;
   pettable?: boolean; // enabled only on breathing screen
+  imageSource?: ImageSourcePropType;
   pettingMood?: BuddyMood;
   pettingHeartMode?: "normal" | "pronounced";
   tapHeartsInPetting?: boolean;
@@ -49,6 +51,7 @@ export default function Buddy({
   size = 130,
   celebrate = false,
   pettable = false,
+  imageSource,
   pettingMood = "encouraging",
   pettingHeartMode = "normal",
   tapHeartsInPetting = false,
@@ -145,7 +148,8 @@ export default function Buddy({
     return () => {
       if (heartTimeout.current) clearTimeout(heartTimeout.current);
       if (heartInterval.current) clearInterval(heartInterval.current);
-      if (pettingStartTimeout.current) clearTimeout(pettingStartTimeout.current);
+      if (pettingStartTimeout.current)
+        clearTimeout(pettingStartTimeout.current);
       if (tapHeartTimeout.current) clearTimeout(tapHeartTimeout.current);
       if (tapMoodTimeout.current) clearTimeout(tapMoodTimeout.current);
       petBounceAnim.current?.stop();
@@ -200,11 +204,14 @@ export default function Buddy({
     setShowHearts(true);
     setHeartBurst((n) => n + 1);
     if (!heartInterval.current) {
-      heartInterval.current = setInterval(() => {
-        setHeartBurst((n) => n + 1);
-      }, pettingHeartMode === "pronounced"
-        ? PRONOUNCED_PETTING_HEART_INTERVAL_MS
-        : PETTING_HEART_INTERVAL_MS);
+      heartInterval.current = setInterval(
+        () => {
+          setHeartBurst((n) => n + 1);
+        },
+        pettingHeartMode === "pronounced"
+          ? PRONOUNCED_PETTING_HEART_INTERVAL_MS
+          : PETTING_HEART_INTERVAL_MS,
+      );
     }
     Animated.spring(pettingScale, {
       toValue: pettingHeartMode === "pronounced" ? 1.14 : 1.1,
@@ -308,7 +315,7 @@ export default function Buddy({
   }
 
   const visualMood = pettable && isPetting ? pettingMood : mood;
-  const image = getBuddyImage(visualMood);
+  const image = imageSource ?? getBuddyImage(visualMood);
   const buddyContent = (
     <View>
       <TouchableOpacity
@@ -389,9 +396,17 @@ export default function Buddy({
             </>
           ) : (
             <>
-              <FloatingHeart key={`hb-${heartBurst}-1`} delay={0} driftX={-16} />
+              <FloatingHeart
+                key={`hb-${heartBurst}-1`}
+                delay={0}
+                driftX={-16}
+              />
               <FloatingHeart key={`hb-${heartBurst}-2`} delay={90} driftX={0} />
-              <FloatingHeart key={`hb-${heartBurst}-3`} delay={180} driftX={16} />
+              <FloatingHeart
+                key={`hb-${heartBurst}-3`}
+                delay={180}
+                driftX={16}
+              />
             </>
           )}
         </View>

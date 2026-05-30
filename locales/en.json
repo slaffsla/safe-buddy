@@ -452,7 +452,7 @@
     "rtl_sex_male": "Male",
     "rtl_sex_female": "Female",
     "facts_soon": "Fun facts",
-    "facts_soon_sub": "Buddy shares small facts and tells bear jokes during missions",
+    "facts_soon_sub": "Buddy shares small facts and tries to tell jokes bearingly during missions",
     "facts_hint_title": "Where facts appear",
     "facts_hint_body": "Facts appear during an active mission screen after a mission is picked.",
     "facts_min_gap": "Facts minimum interval",
@@ -570,15 +570,23 @@
   "tiny_jokes": {
     "j1": "Why did the little bear sit in the shade? He didn't want to become a gummy bear.",
     "j2": "What do bears put on their toast? Honey — always honey.",
-    "j3": "What is a bear's favorite kind of story? One with a pawsitive ending.",
+    "j3": "What is a bear's favourite kind of story? One with a pawsitive ending.",
     "j4": "Why was the teddy bear never hungry? He was already stuffed.",
     "j5": "What do you call a bear who loves quiet time? A hiber-napper.",
     "j6": "Why did the bear bring a backpack? For his beary important things.",
     "j7": "What do bears do when they are happy? They give big bear hugs.",
-    "j8": "Why did the bear do so well in school? Because he knew all the bear-sics.",
+    "j8": "Why did the bear do so well in school? He knew all the bear-sics.",
     "j9": "What do you call a wet bear? A drizzly bear.",
-    "j10": "Why don't bears use phones? Because they always drop the call when they hibernate.",
-    "j11": "What do you call a clumsy bear? A fumble-bear.",
-    "j12": "Why did the bear bring an umbrella? Just in case of a little drizzle."
+    "j10": "Why do bears make terrible secret keepers? Everything comes out in the j11.",
+    "j11": "What did the bear say after a long nap? That was un-bear-lievably good.",
+    "j12": "Why did the bear bring a pencil to the forest? In case he wanted to draw a crowd.",
+    "j13": "What do bears wear in the rain? Drizzly bears need drizzly gear.",
+    "j14": "Why did the bear stop telling jokes? Everyone said they were un-bear-able.",
+    "j15": "What is a bear's favourite instrument? The growl-itar.",
+    "j16": "Why did the bear sit in the library? He was looking for bear-y good books.",
+    "j17": "What do you call a bear with no teeth? A gummy bear.",
+    "j18": "Why did the bear win the talent show? His act was im-paw-sible to beat.",
+    "j19": "What do bears do before a big day? They paws and take a breath.",
+    "j20": "Why did the small bear bring a blanket to school? For show and bear."
   }
 }

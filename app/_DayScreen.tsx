@@ -129,25 +129,29 @@ export default function DayScreen({
         parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime),
     );
 
-  // Scroll to current block on mount, or fall back to the next upcoming block.
+  const currentBlock = visibleBlocks.find(
+    (b) => getBlockStatus(b) === "current",
+  );
+  const nextUpcomingBlock = visibleBlocks.find(
+    (b) => getBlockStatus(b) === "upcoming",
+  );
+  const focusBlock = currentBlock ?? nextUpcomingBlock;
+  const didScrollToFocus = useRef(false);
+
   useEffect(() => {
+    if (!focusBlock || didScrollToFocus.current) return;
     const t = setTimeout(() => {
-      const current = visibleBlocks.find(
-        (b) => getBlockStatus(b) === "current",
-      );
-      const nextUpcoming = visibleBlocks.find(
-        (b) => getBlockStatus(b) === "upcoming",
-      );
-      const focusBlock = current ?? nextUpcoming;
-      if (focusBlock && blockYRef.current[focusBlock.id] != null) {
+      const targetY = blockYRef.current[focusBlock.id];
+      if (targetY != null) {
         scrollRef.current?.scrollTo({
-          y: Math.max(0, blockYRef.current[focusBlock.id] - 40),
+          y: Math.max(0, targetY - 40),
           animated: true,
         });
+        didScrollToFocus.current = true;
       }
     }, 150);
     return () => clearTimeout(t);
-  }, [visibleBlocks]);
+  }, [focusBlock]);
 
   return (
     <View style={s.root}>
@@ -201,7 +205,18 @@ export default function DayScreen({
                 key={block.id}
                 style={s.row}
                 onLayout={(e) => {
-                  blockYRef.current[block.id] = e.nativeEvent.layout.y;
+                  const y = e.nativeEvent.layout.y;
+                  blockYRef.current[block.id] = y;
+                  if (
+                    !didScrollToFocus.current &&
+                    focusBlock?.id === block.id
+                  ) {
+                    scrollRef.current?.scrollTo({
+                      y: Math.max(0, y - 40),
+                      animated: true,
+                    });
+                    didScrollToFocus.current = true;
+                  }
                 }}
               >
                 {/* Timeline spine */}

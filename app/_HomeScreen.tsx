@@ -44,7 +44,6 @@ interface HomeScreenProps {
   showMorningNudge?: boolean;
   onMorningNudge?: () => void;
   highlightSettings?: boolean;
-  childOnboardingPending?: boolean;
   rtlChildSex?: RtlChildSex;
 }
 
@@ -71,7 +70,6 @@ export default function HomeScreen({
   showMorningNudge,
   onMorningNudge,
   highlightSettings = false,
-  childOnboardingPending = false,
   rtlChildSex = "male",
 }: HomeScreenProps) {
   const { homeContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
@@ -98,7 +96,6 @@ export default function HomeScreen({
           useNativeDriver: false,
         }),
       ]),
-      { iterations: 3 },
     );
     anim.start();
     return () => anim.stop();
@@ -257,45 +254,41 @@ export default function HomeScreen({
         </View>
       )}
 
-      {!childOnboardingPending && (
-        <>
-          <TouchableOpacity
-            style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
-            onPress={onStart}
-          >
-            <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
-              {tGender("home.btn_pick_mission", undefined, rtlChildSex)}
-            </Text>
-          </TouchableOpacity>
-          {scheduleEnabled && onOpenDay && (
-            <TouchableOpacity
-              style={[s.btnDay, isLargeTablet && s.btnTallLarge]}
-              onPress={onOpenDay}
-            >
-              <Text style={[s.btnDayTxt, isLargeTablet && s.btnTextLarge]}>
-                {tGender("home.btn_my_day", undefined, rtlChildSex)}
-              </Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={[s.btnSecondary, isLargeTablet && s.btnTallLarge]}
-            onPress={onRewards}
-          >
-            <Text style={[s.btnSecondaryTxt, isLargeTablet && s.btnTextLarge]}>
-              {tGender("home.btn_rewards", undefined, rtlChildSex)}
-            </Text>
-          </TouchableOpacity>
-          {onBreathing && (
-            <TouchableOpacity
-              style={[s.btnBreathing, isLargeTablet && s.btnTallLarge]}
-              onPress={onBreathing}
-            >
-              <Text style={[s.btnBreathingTxt, isLargeTablet && s.btnTextLarge]}>
-                {tGender("home.btn_breathing", undefined, rtlChildSex)}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </>
+      <TouchableOpacity
+        style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
+        onPress={onStart}
+      >
+        <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
+          {tGender("home.btn_pick_mission", undefined, rtlChildSex)}
+        </Text>
+      </TouchableOpacity>
+      {scheduleEnabled && onOpenDay && (
+        <TouchableOpacity
+          style={[s.btnDay, isLargeTablet && s.btnTallLarge]}
+          onPress={onOpenDay}
+        >
+          <Text style={[s.btnDayTxt, isLargeTablet && s.btnTextLarge]}>
+            {tGender("home.btn_my_day", undefined, rtlChildSex)}
+          </Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        style={[s.btnSecondary, isLargeTablet && s.btnTallLarge]}
+        onPress={onRewards}
+      >
+        <Text style={[s.btnSecondaryTxt, isLargeTablet && s.btnTextLarge]}>
+          {tGender("home.btn_rewards", undefined, rtlChildSex)}
+        </Text>
+      </TouchableOpacity>
+      {onBreathing && (
+        <TouchableOpacity
+          style={[s.btnBreathing, isLargeTablet && s.btnTallLarge]}
+          onPress={onBreathing}
+        >
+          <Text style={[s.btnBreathingTxt, isLargeTablet && s.btnTextLarge]}>
+            {tGender("home.btn_breathing", undefined, rtlChildSex)}
+          </Text>
+        </TouchableOpacity>
       )}
       <Animated.View
         style={[

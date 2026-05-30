@@ -417,13 +417,7 @@ export default function App() {
   const [useGentleHomeMood] = useState(() => Math.random() > 0.7);
   const { contentMaxWidth, isTabletWidth, isLargeTablet, isShortHeight } =
     useLayoutMetrics();
-  const visibleScreen =
-    parentOnboardingDone &&
-    !onboardingDone &&
-    screen !== "settings" &&
-    screen !== "child_onboarding"
-      ? "home"
-      : screen;
+  const visibleScreen = screen;
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride
@@ -1309,9 +1303,7 @@ export default function App() {
           totalMissions={totalMissions}
           childName={childName}
           lastMission={lastMission}
-          showSuggestion={
-            onboardingDone && appSettings.nudgingEnabled ? showSuggestion : false
-          }
+          showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
           skipSensitivity={appSettings.skipSensitivity}
           onSettings={() => setScreen("settings")}
           skipCount={skipCount}
@@ -1319,16 +1311,15 @@ export default function App() {
           onRewards={openRewardsScreen}
           onSuggestionAccept={handleSuggestionAccept}
           onSuggestionSkip={() => setShowSuggestion(false)}
-          currentBlock={onboardingDone ? currentBlock : null}
-          nextBlock={onboardingDone ? nextBlock : null}
-          scheduleEnabled={onboardingDone && appSettings.scheduleEnabled}
+          currentBlock={currentBlock}
+          nextBlock={nextBlock}
+          scheduleEnabled={appSettings.scheduleEnabled}
           onOpenDay={() => setScreen("day")}
           highlightSettings={highlightSettings && !onboardingDone}
-          childOnboardingPending={!onboardingDone}
           onBreathing={
             appSettings.breathingEnabled ? openBreathingScreen : undefined
           }
-          showMorningNudge={onboardingDone && showMorningNudge}
+          showMorningNudge={showMorningNudge}
           onMorningNudge={() => {
             speak(
               tSpeak(

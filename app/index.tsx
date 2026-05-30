@@ -417,6 +417,13 @@ export default function App() {
   const [useGentleHomeMood] = useState(() => Math.random() > 0.7);
   const { contentMaxWidth, isTabletWidth, isLargeTablet, isShortHeight } =
     useLayoutMetrics();
+  const visibleScreen =
+    parentOnboardingDone &&
+    !onboardingDone &&
+    visibleScreen !== "settings" &&
+    visibleScreen !== "child_onboarding"
+      ? "home"
+      : screen;
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride
@@ -424,7 +431,7 @@ export default function App() {
 
   const fixedOverlayMood = useMemo(() => {
     if (transientMood) return transientMood;
-    if (screen === "home") {
+    if (visibleScreen === "home") {
       const threshold = Math.max(1, appSettings.skipSensitivity ?? 2);
       return skipCount >= threshold
         ? "gentle-reminder"
@@ -432,21 +439,21 @@ export default function App() {
           ? "gentle-reminder"
           : "calm";
     }
-    if (screen === "pick") return "encouraging";
-    if (screen === "active") {
+    if (visibleScreen === "pick") return "encouraging";
+    if (visibleScreen === "active") {
       return "encouraging";
     }
-    if (screen === "celebrate") {
+    if (visibleScreen === "celebrate") {
       return isVeryExcited ? "very-excited" : "proud";
     }
-    if (screen === "rewards") return "serene";
-    if (screen === "breathing") return "serene";
-    if (screen === "demo_intro") return "calm";
-    if (screen === "demo_step") return "excited";
-    if (screen === "demo_complete") return "proud";
+    if (visibleScreen === "rewards") return "serene";
+    if (visibleScreen === "breathing") return "serene";
+    if (visibleScreen === "demo_intro") return "calm";
+    if (visibleScreen === "demo_step") return "excited";
+    if (visibleScreen === "demo_complete") return "proud";
     return "calm";
   }, [
-    screen,
+    visibleScreen,
     skipCount,
     appSettings.skipSensitivity,
     isVeryExcited,
@@ -454,7 +461,7 @@ export default function App() {
     useGentleHomeMood,
   ]);
 
-  const fixedOverlayCelebrate = screen === "celebrate";
+  const fixedOverlayCelebrate = visibleScreen === "celebrate";
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -627,6 +634,7 @@ export default function App() {
         [K.CHILD_NAME, name],
         [K.CHILD_AGE, String(resolvedAge)],
         [K.ONBOARDING_DONE, "true"],
+        [K.DEMO_DONE, "true"],
       ]);
       await saveSettings(nextSettings);
       setAppSettings(nextSettings);
@@ -640,8 +648,7 @@ export default function App() {
           appSettings.rtlChildSex ?? "male",
         ),
       );
-      // After onboarding go to demo if not done, else home
-      setScreen("demo_intro");
+      setScreen("pick");
     } catch {
       Alert.alert(t("onboarding.save_error"));
     }
@@ -713,7 +720,7 @@ export default function App() {
       if (!cancelled) setTinyFactBubble(null);
     }, 0);
 
-    if (screen !== "active" || !mission || !appSettings.tinyFactsEnabled) {
+    if (visibleScreen !== "active" || !mission || !appSettings.tinyFactsEnabled) {
       return () => {
         cancelled = true;
         clearTimeout(clearBubbleTimer);
@@ -1256,7 +1263,7 @@ export default function App() {
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
 
-      {screen === "demo_intro" && (
+      {visibleScreen === "demo_intro" && (
         <DemoIntroScreen
           speak={speak}
           onStart={() => {
@@ -1270,7 +1277,7 @@ export default function App() {
         />
       )}
 
-      {screen === "demo_step" && (
+      {visibleScreen === "demo_step" && (
         <DemoStepScreen
           key={demoStep}
           speak={speak}
@@ -1281,7 +1288,7 @@ export default function App() {
         />
       )}
 
-      {screen === "demo_complete" && (
+      {visibleScreen === "demo_complete" && (
         <DemoCompleteScreen
           speak={speak}
           onGoToMissions={async () => {
@@ -1295,14 +1302,16 @@ export default function App() {
         />
       )}
 
-      {screen === "home" && (
+      {visibleScreen === "home" && (
         <HomeScreen
           {...p}
           completedToday={completedToday}
           totalMissions={totalMissions}
           childName={childName}
           lastMission={lastMission}
-          showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
+          showSuggestion={
+            onboardingDone && appSettings.nudgingEnabled ? showSuggestion : false
+          }
           skipSensitivity={appSettings.skipSensitivity}
           onSettings={() => setScreen("settings")}
           skipCount={skipCount}
@@ -1310,15 +1319,16 @@ export default function App() {
           onRewards={openRewardsScreen}
           onSuggestionAccept={handleSuggestionAccept}
           onSuggestionSkip={() => setShowSuggestion(false)}
-          currentBlock={currentBlock}
-          nextBlock={nextBlock}
-          scheduleEnabled={appSettings.scheduleEnabled}
+          currentBlock={onboardingDone ? currentBlock : null}
+          nextBlock={onboardingDone ? nextBlock : null}
+          scheduleEnabled={onboardingDone && appSettings.scheduleEnabled}
           onOpenDay={() => setScreen("day")}
           highlightSettings={highlightSettings && !onboardingDone}
+          childOnboardingPending={!onboardingDone}
           onBreathing={
             appSettings.breathingEnabled ? openBreathingScreen : undefined
           }
-          showMorningNudge={showMorningNudge}
+          showMorningNudge={onboardingDone && showMorningNudge}
           onMorningNudge={() => {
             speak(
               tSpeak(
@@ -1333,7 +1343,7 @@ export default function App() {
         />
       )}
 
-      {screen === "pick" && (
+      {visibleScreen === "pick" && (
         <MissionPickScreen
           {...p}
           firstTime={firstMission}
@@ -1351,7 +1361,7 @@ export default function App() {
         />
       )}
 
-      {screen === "active" && (
+      {visibleScreen === "active" && (
         <ActiveScreen
           {...p}
           mission={mission}
@@ -1361,7 +1371,7 @@ export default function App() {
         />
       )}
 
-      {screen === "celebrate" && (
+      {visibleScreen === "celebrate" && (
         <CelebrateScreen
           {...p}
           mission={mission}
@@ -1375,7 +1385,7 @@ export default function App() {
         />
       )}
 
-      {screen === "rewards" && (
+      {visibleScreen === "rewards" && (
         <RewardsScreen
           {...p}
           rewards={effectiveRewards}
@@ -1386,7 +1396,7 @@ export default function App() {
         />
       )}
 
-      {screen === "settings" && (
+      {visibleScreen === "settings" && (
         <SettingsScreen
           onClose={async () => {
             await syncProgressFromStorage();
@@ -1423,7 +1433,7 @@ export default function App() {
         />
       )}
 
-      {screen === "day" && (
+      {visibleScreen === "day" && (
         <DayScreen
           blocks={appSettings.scheduleBlocks}
           isWeekendDay={isWeekendDay}
@@ -1436,7 +1446,7 @@ export default function App() {
         />
       )}
 
-      {screen === "breathing" && (
+      {visibleScreen === "breathing" && (
         <BreathingScreen
           speak={speak}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
@@ -1462,8 +1472,8 @@ export default function App() {
       {/* ── FIXED BUDDY + PROGRESS BAR OVERLAY (all screens except Settings) ───────── */}
       {parentOnboardingDone &&
         !showPinScreen &&
-        screen !== "child_onboarding" &&
-        screen !== "settings" &&
+        visibleScreen !== "child_onboarding" &&
+        visibleScreen !== "settings" &&
         showGlobalBuddy && (
           <View
             style={[
@@ -1479,7 +1489,7 @@ export default function App() {
                   {
                     minHeight:
                       overlayBuddySize +
-                      (screen === "active" && tinyFactBubble ? 70 : 10),
+                      (visibleScreen === "active" && tinyFactBubble ? 70 : 10),
                   },
                 ]}
               >
@@ -1497,7 +1507,7 @@ export default function App() {
                     flashBuddyMood(elevatedMood, 1400);
                   }}
                 />
-                {screen === "active" && tinyFactBubble && (
+                {visibleScreen === "active" && tinyFactBubble && (
                   <View style={[s.tinyFactBubble, { top: tinyFactBubbleTop }]}>
                     <T style={s.tinyFactText} speak={speak}>
                       {`💡 ${tinyFactBubble}`}
@@ -1594,7 +1604,7 @@ export default function App() {
 
       <Confetti
         key={celebrateConfettiKey}
-        trigger={screen === "celebrate" && showCelebrateConfetti}
+        trigger={visibleScreen === "celebrate" && showCelebrateConfetti}
       />
     </SafeAreaView>
   );

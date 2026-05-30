@@ -3072,6 +3072,8 @@ interface SettingsScreenProps {
   onClose: () => void;
   // Called whenever settings change so index.tsx can update its own state
   onSettingsChange: (settings: AppSettings) => void;
+  onStartChildOnboarding?: () => void;
+  childOnboardingDone?: boolean;
   // Called after full progress reset so index.tsx can sync in-memory counters
   onProgressReset?: () => void;
   // Optional: pass current PIN for protected reset
@@ -3116,6 +3118,8 @@ function LanguageToggle({
 export default function SettingsScreen({
   onClose,
   onSettingsChange,
+  onStartChildOnboarding,
+  childOnboardingDone = false,
   onProgressReset,
   currentPin = "",
   pinEnabled = false,
@@ -3358,6 +3362,27 @@ export default function SettingsScreen({
 
         <View style={pz.sectionSpacer} />
 
+        {!childOnboardingDone && onStartChildOnboarding && (
+          <>
+            <TouchableOpacity
+              style={ss.childStartCard}
+              onPress={onStartChildOnboarding}
+              activeOpacity={0.85}
+            >
+              <Text style={ss.childStartIcon}>🐻</Text>
+              <View style={ss.childStartTextWrap}>
+                <Text style={ss.childStartTitle}>
+                  {tx("settings.child_start_title")}
+                </Text>
+                <Text style={ss.childStartSub}>
+                  {tx("settings.child_start_sub")}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <View style={ss.spacer} />
+          </>
+        )}
+
         {/* Parent zone — PIN-gated overrides */}
         <TouchableOpacity
           style={ss.parentZoneCard}
@@ -3596,6 +3621,32 @@ const ss = StyleSheet.create({
     padding: 16,
   },
   spacer: { height: 24 },
+  childStartCard: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: C.green,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: C.green,
+  },
+  childStartIcon: { fontSize: 30 },
+  childStartTextWrap: { flex: 1 },
+  childStartTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: C.white,
+    lineHeight: 22,
+  },
+  childStartSub: {
+    fontSize: 12,
+    color: C.greenLt,
+    lineHeight: 17,
+    marginTop: 4,
+  },
   subscreenRowLeft: { flex: 1, minWidth: 0 },
   scheduleManageBtn: {
     margin: 12,

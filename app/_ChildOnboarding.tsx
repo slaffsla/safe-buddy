@@ -1,0 +1,456 @@
+// _ChildOnboarding.tsx — first child-facing Buddy bonding flow.
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Buddy from "./_Buddy";
+import { C } from "./_constants";
+import { RtlChildSex, t } from "./i18n";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
+
+type ChildOnboardingStep = "meet" | "name" | "age" | "ready";
+
+interface ChildOnboardingProps {
+  initialName: string;
+  initialAge: number;
+  rtlChildSex: RtlChildSex;
+  speak: (text: string, options?: { volume?: number }) => void;
+  onComplete: (name: string, age: number | null) => void;
+}
+
+const AGE_OPTIONS = [5, 6, 7, 8, 9, 10];
+
+export default function ChildOnboarding({
+  initialName,
+  initialAge,
+  rtlChildSex,
+  speak,
+  onComplete,
+}: ChildOnboardingProps) {
+  const { contentMaxWidth, formMaxWidth, screenPadding, isLargeTablet, isTabletWidth, isShortHeight } =
+    useLayoutMetrics();
+  const [step, setStep] = useState<ChildOnboardingStep>("meet");
+  const [firstPetDone, setFirstPetDone] = useState(false);
+  const [factVisible, setFactVisible] = useState(false);
+  const [name, setName] = useState(initialName);
+  const [age, setAge] = useState<number | null>(
+    initialAge > 0 ? initialAge : null,
+  );
+  const firstPetSpokenRef = useRef(false);
+  const factSpokenRef = useRef(false);
+  const meetStartedAtRef = useRef(0);
+  const lastInteractionAtRef = useRef(0);
+
+  const buddySize = isLargeTablet
+    ? 340
+    : isTabletWidth
+      ? 290
+      : isShortHeight
+        ? 205
+        : 250;
+  const maxWidth = isLargeTablet ? Math.min(contentMaxWidth + 120, 840) : contentMaxWidth;
+
+  const currentLine = useMemo(() => {
+    if (step === "meet") {
+      return firstPetDone
+        ? t("onboarding.meet_after_pet_title")
+        : t("onboarding.meet_title");
+    }
+    if (step === "name") return t("onboarding.name_title");
+    if (step === "age") return t("onboarding.age_title");
+    const trimmed = name.trim();
+    return trimmed
+      ? t("onboarding.ready_title_named", { name: trimmed })
+      : t("onboarding.ready_title");
+  }, [firstPetDone, name, step]);
+
+  useEffect(() => {
+    speak(currentLine);
+  }, [currentLine, speak]);
+
+  useEffect(() => {
+    if (step !== "meet" || firstPetDone) return;
+    meetStartedAtRef.current = Date.now();
+    lastInteractionAtRef.current = Date.now();
+    factSpokenRef.current = false;
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const elapsed = now - meetStartedAtRef.current;
+      const idleFor = now - lastInteractionAtRef.current;
+      if ((elapsed >= 5500 && idleFor >= 1800) || elapsed >= 11000) {
+        setFactVisible(true);
+        if (!factSpokenRef.current) {
+          factSpokenRef.current = true;
+          speak(t("onboarding.tiny_fact_bear_sleep"), { volume: 0.85 });
+        }
+        clearInterval(timer);
+      }
+    }, 300);
+
+    return () => clearInterval(timer);
+  }, [firstPetDone, speak, step]);
+
+  function markInteraction() {
+    lastInteractionAtRef.current = Date.now();
+  }
+
+  function handlePettingChange(petting: boolean) {
+    if (!petting) return;
+    markInteraction();
+    if (firstPetDone) return;
+    setFirstPetDone(true);
+    setFactVisible(false);
+    if (!firstPetSpokenRef.current) {
+      firstPetSpokenRef.current = true;
+      setTimeout(() => speak(t("onboarding.meet_after_pet_title")), 260);
+    }
+  }
+
+  function complete() {
+    onComplete(name.trim(), age);
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={s.root}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={[
+          s.content,
+          isLargeTablet && s.contentLarge,
+          {
+            maxWidth,
+            paddingHorizontal: screenPadding,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        alwaysBounceVertical={false}
+      >
+        {step === "meet" && (
+          <>
+            <View style={s.buddyStage}>
+              <Buddy
+                mood={firstPetDone ? "happy" : "calm"}
+                pettable
+                pettingMood="happy"
+                pettingHeartMode="pronounced"
+                tapHeartsInPetting
+                onPettingChange={handlePettingChange}
+                onTap={() => {
+                  markInteraction();
+                  speak(currentLine);
+                }}
+                speak={speak}
+                size={buddySize}
+              />
+              {factVisible && !firstPetDone && (
+                <View style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}>
+                  <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
+                    {t("onboarding.tiny_fact_bear_sleep")}
+                  </Text>
+                  <View style={s.factTail} />
+                </View>
+              )}
+            </View>
+            <Text style={[s.title, isLargeTablet && s.titleLarge]}>
+              {firstPetDone
+                ? t("onboarding.meet_after_pet_title")
+                : t("onboarding.meet_title")}
+            </Text>
+            <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
+              {firstPetDone
+                ? t("onboarding.meet_after_pet_sub")
+                : t("onboarding.meet_prompt")}
+            </Text>
+            {firstPetDone && (
+              <TouchableOpacity
+                style={[s.primaryBtn, isLargeTablet && s.primaryBtnLarge]}
+                onPress={() => setStep("name")}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[s.primaryBtnText, isLargeTablet && s.primaryBtnTextLarge]}
+                >
+                  {t("onboarding.meet_next")}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+
+        {step === "name" && (
+          <>
+            <Buddy mood="happy" speak={speak} size={Math.round(buddySize * 0.7)} />
+            <Text style={[s.title, isLargeTablet && s.titleLarge]}>
+              {t("onboarding.name_title")}
+            </Text>
+            <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
+              {t("onboarding.name_sub")}
+            </Text>
+            <TextInput
+              style={[
+                s.input,
+                { maxWidth: formMaxWidth },
+                isLargeTablet && s.inputLarge,
+              ]}
+              placeholder={t("onboarding.name_placeholder")}
+              placeholderTextColor={C.muted}
+              value={name}
+              onChangeText={setName}
+              returnKeyType="next"
+              onSubmitEditing={() => {
+                if (name.trim()) setStep("age");
+              }}
+            />
+            <TouchableOpacity
+              style={[
+                s.primaryBtn,
+                (!name.trim() || isLargeTablet) && isLargeTablet && s.primaryBtnLarge,
+                !name.trim() && s.primaryBtnDisabled,
+              ]}
+              disabled={!name.trim()}
+              onPress={() => setStep("age")}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[s.primaryBtnText, isLargeTablet && s.primaryBtnTextLarge]}
+              >
+                {t("onboarding.name_continue")}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {step === "age" && (
+          <>
+            <Buddy mood="encouraging" speak={speak} size={Math.round(buddySize * 0.62)} />
+            <Text style={[s.title, isLargeTablet && s.titleLarge]}>
+              {t("onboarding.age_title")}
+            </Text>
+            <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
+              {t("onboarding.age_sub")}
+            </Text>
+            <View style={[s.ageGrid, { maxWidth: formMaxWidth }]}>
+              {AGE_OPTIONS.map((option) => {
+                const active = age === option;
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      s.agePill,
+                      isLargeTablet && s.agePillLarge,
+                      active && s.agePillActive,
+                    ]}
+                    onPress={() => setAge(option)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        s.agePillText,
+                        isLargeTablet && s.agePillTextLarge,
+                        active && s.agePillTextActive,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <TouchableOpacity
+              style={[s.primaryBtn, isLargeTablet && s.primaryBtnLarge]}
+              onPress={() => setStep("ready")}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[s.primaryBtnText, isLargeTablet && s.primaryBtnTextLarge]}
+              >
+                {t("onboarding.age_continue")}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.textBtn}
+              onPress={() => {
+                setAge(null);
+                setStep("ready");
+              }}
+            >
+              <Text style={[s.textBtnText, isLargeTablet && s.textBtnTextLarge]}>
+                {t("onboarding.age_skip")}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {step === "ready" && (
+          <>
+            <Buddy mood="proud" celebrate speak={speak} size={Math.round(buddySize * 0.72)} />
+            <Text style={[s.title, isLargeTablet && s.titleLarge]}>
+              {name.trim()
+                ? t("onboarding.ready_title_named", { name: name.trim() })
+                : t("onboarding.ready_title")}
+            </Text>
+            <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
+              {t("onboarding.ready_sub")}
+            </Text>
+            <TouchableOpacity
+              style={[s.primaryBtn, isLargeTablet && s.primaryBtnLarge]}
+              onPress={complete}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[s.primaryBtnText, isLargeTablet && s.primaryBtnTextLarge]}
+              >
+                {t("onboarding.ready_start")}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
+  scroll: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    width: "100%",
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 28,
+  },
+  contentLarge: { paddingVertical: 52 },
+  buddyStage: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    marginBottom: 10,
+  },
+  factBubble: {
+    position: "absolute",
+    top: 18,
+    right: 0,
+    width: "42%",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#D7E8DF",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  factBubbleLarge: {
+    top: 36,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    borderRadius: 22,
+  },
+  factText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: C.green,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  factTextLarge: { fontSize: 18, lineHeight: 26 },
+  factTail: {
+    position: "absolute",
+    left: -8,
+    bottom: 18,
+    width: 16,
+    height: 16,
+    backgroundColor: "#FFFDF9",
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#D7E8DF",
+    transform: [{ rotate: "45deg" }],
+  },
+  title: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: "800",
+    color: C.text,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  titleLarge: { fontSize: 42, lineHeight: 50, marginBottom: 16 },
+  subtitle: {
+    fontSize: 20,
+    lineHeight: 28,
+    color: C.muted,
+    textAlign: "center",
+    marginBottom: 22,
+  },
+  subtitleLarge: { fontSize: 27, lineHeight: 38, marginBottom: 34 },
+  input: {
+    width: "100%",
+    borderWidth: 2,
+    borderColor: "#A1D4B8",
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    fontSize: 24,
+    textAlign: "center",
+    backgroundColor: C.white,
+    color: C.text,
+    marginBottom: 18,
+  },
+  inputLarge: { fontSize: 30, paddingVertical: 20, borderRadius: 22 },
+  primaryBtn: {
+    width: "100%",
+    maxWidth: 520,
+    backgroundColor: C.green,
+    borderRadius: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    alignItems: "center",
+  },
+  primaryBtnLarge: {
+    maxWidth: 660,
+    borderRadius: 24,
+    paddingVertical: 24,
+  },
+  primaryBtnDisabled: { opacity: 0.45 },
+  primaryBtnText: { color: C.white, fontSize: 22, fontWeight: "800" },
+  primaryBtnTextLarge: { fontSize: 30 },
+  ageGrid: {
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 20,
+  },
+  agePill: {
+    width: 72,
+    height: 60,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#CFE9DD",
+    backgroundColor: C.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  agePillLarge: { width: 92, height: 74, borderRadius: 22 },
+  agePillActive: { backgroundColor: C.green, borderColor: C.green },
+  agePillText: { fontSize: 24, color: C.green, fontWeight: "800" },
+  agePillTextLarge: { fontSize: 32 },
+  agePillTextActive: { color: C.white },
+  textBtn: { marginTop: 18, padding: 12 },
+  textBtnText: { color: C.muted, fontSize: 18, fontWeight: "600" },
+  textBtnTextLarge: { fontSize: 24 },
+});

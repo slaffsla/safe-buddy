@@ -22,6 +22,7 @@ import { t } from "./i18n";
 
 const TAP_MOOD_DELAY_MS = 280;
 const PETTING_HEART_INTERVAL_MS = 520;
+const PRONOUNCED_PETTING_HEART_INTERVAL_MS = 360;
 
 interface BuddyProps {
   mood?: BuddyMood;
@@ -30,6 +31,8 @@ interface BuddyProps {
   celebrate?: boolean;
   pettable?: boolean; // enabled only on breathing screen
   pettingMood?: BuddyMood;
+  pettingHeartMode?: "normal" | "pronounced";
+  tapHeartsInPetting?: boolean;
   onPettingChange?: (petting: boolean) => void;
   onTap?: () => void;
   // Optional external phase scale (used by BreathingScreen to sync phases).
@@ -46,6 +49,8 @@ export default function Buddy({
   celebrate = false,
   pettable = false,
   pettingMood = "encouraging",
+  pettingHeartMode = "normal",
+  tapHeartsInPetting = false,
   onPettingChange,
   onTap,
   phaseScale,
@@ -187,10 +192,12 @@ export default function Buddy({
     if (!heartInterval.current) {
       heartInterval.current = setInterval(() => {
         setHeartBurst((n) => n + 1);
-      }, PETTING_HEART_INTERVAL_MS);
+      }, pettingHeartMode === "pronounced"
+        ? PRONOUNCED_PETTING_HEART_INTERVAL_MS
+        : PETTING_HEART_INTERVAL_MS);
     }
     Animated.spring(pettingScale, {
-      toValue: 1.1,
+      toValue: pettingHeartMode === "pronounced" ? 1.14 : 1.1,
       friction: 7,
       tension: 55,
       useNativeDriver: true,
@@ -244,7 +251,7 @@ export default function Buddy({
   function handlePress() {
     const isPettingMode = pettableRef.current;
 
-    if (!isPettingMode) {
+    if (!isPettingMode || tapHeartsInPetting) {
       Animated.sequence([
         Animated.timing(tapScale, {
           toValue: 1.12,
@@ -261,7 +268,9 @@ export default function Buddy({
       setShowTapHearts(true);
       setTapHeartBurst((n) => n + 1);
       tapHeartTimeout.current = setTimeout(() => setShowTapHearts(false), 650);
-      speak(getBuddyLine(mood));
+      if (!isPettingMode) {
+        speak(getBuddyLine(mood));
+      }
     }
 
     if (tapMoodTimeout.current) clearTimeout(tapMoodTimeout.current);
@@ -320,9 +329,44 @@ export default function Buddy({
 
       {pettable && showHearts && (
         <View style={s.heartsContainer}>
-          <FloatingHeart key={`hb-${heartBurst}-1`} delay={0} driftX={-16} />
-          <FloatingHeart key={`hb-${heartBurst}-2`} delay={90} driftX={0} />
-          <FloatingHeart key={`hb-${heartBurst}-3`} delay={180} driftX={16} />
+          {pettingHeartMode === "pronounced" ? (
+            <>
+              <FloatingHeart
+                key={`hb-${heartBurst}-1`}
+                delay={0}
+                driftX={-30}
+                fontSize={48}
+                travelY={-104}
+              />
+              <FloatingHeart
+                key={`hb-${heartBurst}-2`}
+                delay={60}
+                driftX={-12}
+                fontSize={42}
+                travelY={-94}
+              />
+              <FloatingHeart
+                key={`hb-${heartBurst}-3`}
+                delay={120}
+                driftX={10}
+                fontSize={50}
+                travelY={-112}
+              />
+              <FloatingHeart
+                key={`hb-${heartBurst}-4`}
+                delay={180}
+                driftX={30}
+                fontSize={40}
+                travelY={-92}
+              />
+            </>
+          ) : (
+            <>
+              <FloatingHeart key={`hb-${heartBurst}-1`} delay={0} driftX={-16} />
+              <FloatingHeart key={`hb-${heartBurst}-2`} delay={90} driftX={0} />
+              <FloatingHeart key={`hb-${heartBurst}-3`} delay={180} driftX={16} />
+            </>
+          )}
         </View>
       )}
 
@@ -413,7 +457,17 @@ function SubtleFloatingHeart({
   );
 }
 
-function FloatingHeart({ delay, driftX }: { delay: number; driftX: number }) {
+function FloatingHeart({
+  delay,
+  driftX,
+  fontSize = 32,
+  travelY = -72,
+}: {
+  delay: number;
+  driftX: number;
+  fontSize?: number;
+  travelY?: number;
+}) {
   const [translateY] = useState(() => new Animated.Value(0));
   const [translateX] = useState(() => new Animated.Value(0));
   const [opacity] = useState(() => new Animated.Value(0));
@@ -428,7 +482,7 @@ function FloatingHeart({ delay, driftX }: { delay: number; driftX: number }) {
           useNativeDriver: true,
         }),
         Animated.timing(translateY, {
-          toValue: -72,
+          toValue: travelY,
           duration: 950,
           useNativeDriver: true,
         }),
@@ -446,12 +500,13 @@ function FloatingHeart({ delay, driftX }: { delay: number; driftX: number }) {
         ]),
       ]),
     ]).start();
-  }, [delay, driftX, opacity, translateX, translateY]);
+  }, [delay, driftX, opacity, translateX, translateY, travelY]);
 
   return (
     <Animated.Text
       style={[
         s.heart,
+        { fontSize },
         { transform: [{ translateX }, { translateY }], opacity },
       ]}
     >

@@ -1,7 +1,8 @@
 // _HomeScreen.tsx — SafeBuddy home screen
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Animated,
   ScrollView,
   StyleSheet,
   Text,
@@ -42,6 +43,7 @@ interface HomeScreenProps {
   onBreathing?: () => void;
   showMorningNudge?: boolean;
   onMorningNudge?: () => void;
+  highlightSettings?: boolean;
   rtlChildSex?: RtlChildSex;
 }
 
@@ -67,12 +69,51 @@ export default function HomeScreen({
   onBreathing,
   showMorningNudge,
   onMorningNudge,
+  highlightSettings = false,
   rtlChildSex = "male",
 }: HomeScreenProps) {
   const { homeContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [useAltIdle] = React.useState(() => Math.random() > 0.7);
+  const [settingsPulse] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    if (!highlightSettings) {
+      settingsPulse.setValue(0);
+      return;
+    }
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(settingsPulse, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: false,
+        }),
+        Animated.timing(settingsPulse, {
+          toValue: 0,
+          duration: 900,
+          useNativeDriver: false,
+        }),
+      ]),
+      { iterations: 3 },
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [highlightSettings, settingsPulse]);
+
+  const settingsHighlightStyle = highlightSettings
+    ? {
+        backgroundColor: settingsPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: ["rgba(225,245,238,0)", "rgba(225,245,238,1)"],
+        }),
+        borderColor: settingsPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: ["rgba(29,107,79,0)", "rgba(29,107,79,0.55)"],
+        }),
+      }
+    : null;
   const idleMsg = useMemo(
     () =>
       skipCount >= threshold
@@ -250,14 +291,22 @@ export default function HomeScreen({
           </Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity
-        style={[s.btnSettings, isLargeTablet && s.btnSettingsLarge]}
-        onPress={onSettings}
+      <Animated.View
+        style={[
+          s.settingsHighlightWrap,
+          isLargeTablet && s.settingsHighlightWrapLarge,
+          settingsHighlightStyle,
+        ]}
       >
+      <TouchableOpacity
+          style={[s.btnSettings, isLargeTablet && s.btnSettingsLarge]}
+          onPress={onSettings}
+        >
         <Text style={[s.btnSettingsTxt, isLargeTablet && s.btnSettingsTxtLarge]}>
           {tGender("home.btn_settings", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -383,9 +432,17 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
   btnBreathingTxt: { fontSize: 16, color: "#1E4E8C", fontWeight: "600" },
-  btnSettings: { marginTop: 8, padding: 12, alignItems: "center" },
+  settingsHighlightWrap: {
+    width: "100%",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "transparent",
+    marginTop: 8,
+  },
+  settingsHighlightWrapLarge: { borderRadius: 18, marginTop: 14 },
+  btnSettings: { padding: 12, alignItems: "center" },
   btnSettingsTxt: { fontSize: 14, color: C.muted },
-  btnSettingsLarge: { marginTop: 14, padding: 16 },
+  btnSettingsLarge: { padding: 16 },
   btnSettingsTxtLarge: { fontSize: 18 },
 
   scheduleCard: { width: "100%", marginBottom: 12, gap: 6 },

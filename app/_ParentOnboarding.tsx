@@ -16,7 +16,7 @@ import {
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { AppLocale, getAppLocale, setAppLocale, t } from "./i18n";
-import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 interface Props {
   onDone: () => void;
@@ -73,6 +73,47 @@ function LanguageToggle({
   );
 }
 
+function useOnboardingLayout() {
+  const {
+    contentMaxWidth,
+    screenPadding,
+    isTabletWidth,
+    isLargeTablet,
+    isShortHeight,
+  } = useLayoutMetrics();
+  const onboardingMaxWidth = isLargeTablet
+    ? Math.min(contentMaxWidth + 160, 880)
+    : isTabletWidth
+      ? Math.min(contentMaxWidth + 72, 660)
+      : contentMaxWidth;
+  const verticalPadding = isShortHeight
+    ? 18
+    : isLargeTablet
+      ? 48
+      : isTabletWidth
+        ? 36
+        : 24;
+
+  return {
+    contentMaxWidth,
+    onboardingMaxWidth,
+    screenPadding,
+    isTabletWidth,
+    isLargeTablet,
+    screenScroll: [
+      s.screenScroll,
+      {
+        maxWidth: onboardingMaxWidth,
+        paddingHorizontal: screenPadding,
+        paddingTop: verticalPadding,
+        paddingBottom: verticalPadding + 24,
+      },
+      isTabletWidth && s.screenScrollTablet,
+      isLargeTablet && s.screenScrollLarge,
+    ],
+  };
+}
+
 // ── Breathing circle for screen 3 ─────────────────────────────────────────────
 // Self-contained preview: no audio and no session timer.
 
@@ -84,6 +125,7 @@ const PHASE_KEYS = [
 const PHASE_DURATIONS = [4000, 1000, 3000] as const;
 
 function MiniBreathingCircle() {
+  const { isTabletWidth, isLargeTablet } = useOnboardingLayout();
   const [scale] = useState(() => new Animated.Value(0.6));
   const [phase, setPhase] = useState(0);
   const [active, setActive] = useState(false);
@@ -125,24 +167,34 @@ function MiniBreathingCircle() {
   }, [active, scale]);
 
   return (
-    <View style={bc.wrapper}>
+    <View style={[bc.wrapper, isLargeTablet && bc.wrapperLarge]}>
       <TouchableOpacity
         onPress={() => setActive((a) => !a)}
         activeOpacity={0.9}
       >
-        <Animated.View style={[bc.circle, { transform: [{ scale }] }]}>
-          <Text style={bc.phaseText}>
+        <Animated.View
+          style={[
+            bc.circle,
+            isTabletWidth && bc.circleTablet,
+            isLargeTablet && bc.circleLarge,
+            { transform: [{ scale }] },
+          ]}
+        >
+          <Text style={[bc.phaseText, isLargeTablet && bc.phaseTextLarge]}>
             {active ? t(PHASE_KEYS[phase]) : "▶"}
           </Text>
         </Animated.View>
       </TouchableOpacity>
-      <Text style={bc.hint}>{t("parent_onboarding.screen4_try")}</Text>
+      <Text style={[bc.hint, isLargeTablet && bc.hintLarge]}>
+        {t("parent_onboarding.screen4_try")}
+      </Text>
     </View>
   );
 }
 
 const bc = StyleSheet.create({
   wrapper: { alignItems: "center", marginVertical: 16 },
+  wrapperLarge: { marginVertical: 28 },
   circle: {
     width: 108,
     height: 108,
@@ -153,7 +205,19 @@ const bc = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  circleTablet: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+  },
+  circleLarge: {
+    width: 168,
+    height: 168,
+    borderRadius: 84,
+    borderWidth: 3,
+  },
   phaseText: { fontSize: 18, fontWeight: "600", color: C.green },
+  phaseTextLarge: { fontSize: 24 },
   hint: {
     marginTop: 12,
     fontSize: 12,
@@ -161,19 +225,24 @@ const bc = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
   },
+  hintLarge: { marginTop: 18, fontSize: 16 },
 });
 
 // ── Screen 1 — Who is Buddy ───────────────────────────────────────────────────
 
 function Screen1({ speak }: { speak: (t: string) => void }) {
-  const { isLargeTablet } = useLayoutMetrics();
+  const { isTabletWidth, isLargeTablet, screenScroll } = useOnboardingLayout();
   return (
-    <ScrollView contentContainerStyle={s.screenScroll}>
+    <ScrollView
+      style={s.screenScroller}
+      contentContainerStyle={screenScroll}
+      alwaysBounceVertical={false}
+    >
       <Buddy
         mood="calm"
         speak={speak}
         celebrate={false}
-        size={isLargeTablet ? 190 : undefined}
+        size={isLargeTablet ? 240 : isTabletWidth ? 190 : undefined}
       />
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen1_heading")}
@@ -193,7 +262,7 @@ function Screen1({ speak }: { speak: (t: string) => void }) {
 // ── Screen 2 — How to use together ───────────────────────────────────────────
 
 function Screen2() {
-  const { isLargeTablet } = useLayoutMetrics();
+  const { isTabletWidth, isLargeTablet, screenScroll } = useOnboardingLayout();
   const tips = [
     t("parent_onboarding.screen2_tip_1"),
     t("parent_onboarding.screen2_tip_2"),
@@ -201,7 +270,11 @@ function Screen2() {
     t("parent_onboarding.screen2_tip_4"),
   ];
   return (
-    <ScrollView contentContainerStyle={s.screenScroll}>
+    <ScrollView
+      style={s.screenScroller}
+      contentContainerStyle={screenScroll}
+      alwaysBounceVertical={false}
+    >
       <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🤝</Text>
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen2_heading")}
@@ -209,20 +282,32 @@ function Screen2() {
       <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
         {t("parent_onboarding.screen2_body")}
       </Text>
-      <View style={s.tipsCard}>
-        <Text style={s.tipsLabel}>
+      <View
+        style={[
+          s.tipsCard,
+          isTabletWidth && s.tipsCardTablet,
+          isLargeTablet && s.tipsCardLarge,
+        ]}
+      >
+        <Text style={[s.tipsLabel, isLargeTablet && s.tipsLabelLarge]}>
           {t("parent_onboarding.screen2_tip_label")}
         </Text>
         {tips.map((tip, i) => (
-          <View key={tip} style={s.tipRow}>
-            <View style={s.tipDot}>
-              <Text style={s.tipNum}>{i + 1}</Text>
+          <View key={tip} style={[s.tipRow, isLargeTablet && s.tipRowLarge]}>
+            <View style={[s.tipDot, isLargeTablet && s.tipDotLarge]}>
+              <Text style={[s.tipNum, isLargeTablet && s.tipNumLarge]}>
+                {i + 1}
+              </Text>
             </View>
-            <Text style={s.tipText}>{tip}</Text>
+            <Text style={[s.tipText, isLargeTablet && s.tipTextLarge]}>
+              {tip}
+            </Text>
           </View>
         ))}
       </View>
-      <Text style={s.noteText}>✨ {t("parent_onboarding.screen2_note")}</Text>
+      <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
+        ✨ {t("parent_onboarding.screen2_note")}
+      </Text>
     </ScrollView>
   );
 }
@@ -230,7 +315,7 @@ function Screen2() {
 // ── Screen 3 — Breathing ──────────────────────────────────────────────────────
 
 function Screen3() {
-  const { isLargeTablet } = useLayoutMetrics();
+  const { isTabletWidth, isLargeTablet, screenScroll } = useOnboardingLayout();
   const items = [
     {
       icon: "🔐",
@@ -250,7 +335,11 @@ function Screen3() {
   ];
 
   return (
-    <ScrollView contentContainerStyle={s.screenScroll}>
+    <ScrollView
+      style={s.screenScroller}
+      contentContainerStyle={screenScroll}
+      alwaysBounceVertical={false}
+    >
       <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🛠️</Text>
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen3_heading")}
@@ -258,15 +347,36 @@ function Screen3() {
       <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
         {t("parent_onboarding.screen3_body")}
       </Text>
-      <View style={s.featureCard}>
+      <View
+        style={[
+          s.featureCard,
+          isTabletWidth && s.featureCardTablet,
+          isLargeTablet && s.featureCardLarge,
+        ]}
+      >
         {items.map((item, i) => (
           <View key={item.title}>
-            {i > 0 && <View style={s.featureDivider} />}
-            <View style={s.featureRow}>
-              <Text style={s.featureIcon}>{item.icon}</Text>
+            {i > 0 && (
+              <View
+                style={[
+                  s.featureDivider,
+                  isLargeTablet && s.featureDividerLarge,
+                ]}
+              />
+            )}
+            <View style={[s.featureRow, isLargeTablet && s.featureRowLarge]}>
+              <Text style={[s.featureIcon, isLargeTablet && s.featureIconLarge]}>
+                {item.icon}
+              </Text>
               <View style={s.featureTextWrap}>
-                <Text style={s.featureTitle}>{item.title}</Text>
-                <Text style={s.featureSub}>{item.sub}</Text>
+                <Text
+                  style={[s.featureTitle, isLargeTablet && s.featureTitleLarge]}
+                >
+                  {item.title}
+                </Text>
+                <Text style={[s.featureSub, isLargeTablet && s.featureSubLarge]}>
+                  {item.sub}
+                </Text>
               </View>
             </View>
           </View>
@@ -282,9 +392,13 @@ function Screen3() {
 // ── Screen 4 — Breathing ──────────────────────────────────────────────────────
 
 function Screen4() {
-  const { isLargeTablet } = useLayoutMetrics();
+  const { isLargeTablet, screenScroll } = useOnboardingLayout();
   return (
-    <ScrollView contentContainerStyle={s.screenScroll}>
+    <ScrollView
+      style={s.screenScroller}
+      contentContainerStyle={screenScroll}
+      alwaysBounceVertical={false}
+    >
       <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🌬️</Text>
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen4_heading")}
@@ -292,14 +406,14 @@ function Screen4() {
       <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
         {t("parent_onboarding.screen4_body")}
       </Text>
-      <View style={s.patternBadge}>
-        <Text style={s.patternText}>
+      <View style={[s.patternBadge, isLargeTablet && s.patternBadgeLarge]}>
+        <Text style={[s.patternText, isLargeTablet && s.patternTextLarge]}>
           {t("parent_onboarding.screen4_pattern")}
         </Text>
       </View>
       <MiniBreathingCircle />
-      <View style={s.scienceCard}>
-        <Text style={s.scienceText}>
+      <View style={[s.scienceCard, isLargeTablet && s.scienceCardLarge]}>
+        <Text style={[s.scienceText, isLargeTablet && s.scienceTextLarge]}>
           {t("parent_onboarding.screen4_science")}
         </Text>
       </View>
@@ -312,7 +426,12 @@ function Screen4() {
 const SCREENS = [Screen1, Screen2, Screen3, Screen4];
 
 export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
-  const { contentMaxWidth, screenPadding, isLargeTablet } = useLayoutMetrics();
+  const {
+    onboardingMaxWidth,
+    screenPadding,
+    isTabletWidth,
+    isLargeTablet,
+  } = useOnboardingLayout();
   const [step, setStep] = useState(0);
   const [locale, setLocale] = useState<AppLocale>(() => getAppLocale());
   const isLast = step === SCREENS.length - 1;
@@ -330,16 +449,36 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
   return (
     <View style={s.root}>
       <View style={s.topBar}>
-        <View style={s.dots}>
-          {SCREENS.map((_, i) => (
-            <View key={i} style={[s.dot, i === step && s.dotActive]} />
-          ))}
-        </View>
-        <View style={s.topActions}>
-          <LanguageToggle value={locale} onChange={handleLocaleChange} />
-          <TouchableOpacity onPress={onDone} style={s.skipBtn}>
-            <Text style={s.skipTxt}>{t("parent_onboarding.skip")}</Text>
-          </TouchableOpacity>
+        <View
+          style={[
+            s.topBarInner,
+            {
+              maxWidth: onboardingMaxWidth,
+              paddingHorizontal: screenPadding,
+            },
+          ]}
+        >
+          <View style={s.dots}>
+            {SCREENS.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  s.dot,
+                  isTabletWidth && s.dotTablet,
+                  i === step && s.dotActive,
+                  i === step && isTabletWidth && s.dotActiveTablet,
+                ]}
+              />
+            ))}
+          </View>
+          <View style={s.topActions}>
+            <LanguageToggle value={locale} onChange={handleLocaleChange} />
+            <TouchableOpacity onPress={onDone} style={s.skipBtn}>
+              <Text style={[s.skipTxt, isLargeTablet && s.skipTxtLarge]}>
+                {t("parent_onboarding.skip")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -354,9 +493,11 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
         style={[
           s.footer,
           {
-            maxWidth: contentMaxWidth,
+            maxWidth: onboardingMaxWidth,
             paddingHorizontal: screenPadding,
           },
+          isTabletWidth && s.footerTablet,
+          isLargeTablet && s.footerLarge,
         ]}
       >
         {isLast ? (
@@ -388,16 +529,22 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    width: "100%",
     alignItems: "center",
-    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
   },
+  topBarInner: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   dots: { flexDirection: "row", gap: 6 },
   dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.border },
+  dotTablet: { width: 9, height: 9, borderRadius: 4.5 },
   dotActive: { backgroundColor: C.green, width: 20 },
+  dotActiveTablet: { width: 28 },
   topActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   langToggle: {
     flexDirection: "row",
@@ -420,19 +567,22 @@ const s = StyleSheet.create({
   langBtnTxtActive: { color: C.white },
   skipBtn: { padding: 8 },
   skipTxt: { fontSize: 14, color: C.muted },
+  skipTxtLarge: { fontSize: 18 },
 
   content: { flex: 1 },
   contentLarge: {
     justifyContent: "center",
   },
+  screenScroller: { flex: 1 },
   screenScroll: {
+    flexGrow: 1,
     width: "100%",
-    maxWidth: CONTENT_MAX_WIDTH,
     alignSelf: "center",
     alignItems: "center",
-    padding: 24,
-    paddingBottom: 44,
+    justifyContent: "center",
   },
+  screenScrollTablet: { justifyContent: "center" },
+  screenScrollLarge: { justifyContent: "center" },
 
   bigEmoji: { fontSize: 58, marginBottom: 14, marginTop: 6 },
   bigEmojiLarge: { fontSize: 78, marginBottom: 20 },
@@ -462,7 +612,7 @@ const s = StyleSheet.create({
     padding: 14,
     width: "100%",
   },
-  noteCardLarge: { padding: 20, borderRadius: 16 },
+  noteCardLarge: { padding: 24, borderRadius: 16 },
   noteText: {
     fontSize: 13,
     color: C.green,
@@ -481,6 +631,8 @@ const s = StyleSheet.create({
     width: "100%",
     marginBottom: 16,
   },
+  tipsCardTablet: { padding: 20, borderRadius: 16 },
+  tipsCardLarge: { padding: 28, borderRadius: 18, marginBottom: 24 },
   tipsLabel: {
     fontSize: 10,
     fontWeight: "700",
@@ -489,12 +641,14 @@ const s = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 12,
   },
+  tipsLabelLarge: { fontSize: 13, marginBottom: 18 },
   tipRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
     gap: 12,
   },
+  tipRowLarge: { gap: 18, marginBottom: 16 },
   tipDot: {
     width: 24,
     height: 24,
@@ -504,8 +658,11 @@ const s = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
+  tipDotLarge: { width: 34, height: 34, borderRadius: 17 },
   tipNum: { fontSize: 12, fontWeight: "700", color: C.white },
+  tipNumLarge: { fontSize: 16 },
   tipText: { fontSize: 14, color: C.text, flex: 1, lineHeight: 20 },
+  tipTextLarge: { fontSize: 19, lineHeight: 28 },
 
   featureCard: {
     backgroundColor: C.white,
@@ -516,20 +673,27 @@ const s = StyleSheet.create({
     width: "100%",
     marginBottom: 16,
   },
+  featureCardTablet: { padding: 20, borderRadius: 16 },
+  featureCardLarge: { padding: 28, borderRadius: 18, marginBottom: 24 },
   featureDivider: {
     height: 1,
     backgroundColor: C.border,
     marginVertical: 12,
   },
+  featureDividerLarge: { marginVertical: 18 },
   featureRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
+  featureRowLarge: { gap: 20 },
   featureIcon: { fontSize: 24, width: 32, textAlign: "center" },
+  featureIconLarge: { fontSize: 34, width: 48 },
   featureTextWrap: { flex: 1 },
   featureTitle: { fontSize: 15, fontWeight: "700", color: C.text },
+  featureTitleLarge: { fontSize: 21, lineHeight: 28 },
   featureSub: { fontSize: 13, color: C.muted, lineHeight: 18, marginTop: 2 },
+  featureSubLarge: { fontSize: 17, lineHeight: 25, marginTop: 4 },
 
   patternBadge: {
     backgroundColor: C.greenLt,
@@ -538,6 +702,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 18,
     marginBottom: 4,
   },
+  patternBadgeLarge: {
+    borderRadius: 28,
+    paddingVertical: 12,
+    paddingHorizontal: 26,
+    marginBottom: 10,
+  },
   patternText: {
     fontSize: 13,
     fontWeight: "600",
@@ -545,6 +715,7 @@ const s = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 0.3,
   },
+  patternTextLarge: { fontSize: 18 },
 
   scienceCard: {
     backgroundColor: C.white,
@@ -555,6 +726,7 @@ const s = StyleSheet.create({
     width: "100%",
     marginTop: 6,
   },
+  scienceCardLarge: { padding: 22, borderRadius: 16, marginTop: 12 },
   scienceText: {
     fontSize: 12,
     color: C.muted,
@@ -562,15 +734,17 @@ const s = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
   },
+  scienceTextLarge: { fontSize: 17, lineHeight: 26 },
 
   footer: {
     width: "100%",
-    maxWidth: CONTENT_MAX_WIDTH,
     alignSelf: "center",
     padding: 20,
     paddingTop: 10,
     paddingBottom: 24,
   },
+  footerTablet: { paddingTop: 14, paddingBottom: 30 },
+  footerLarge: { paddingTop: 18, paddingBottom: 42 },
   btnPrimary: {
     backgroundColor: C.green,
     borderRadius: 16,

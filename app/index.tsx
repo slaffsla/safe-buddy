@@ -17,7 +17,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -28,6 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
+import ChildOnboarding from "./_ChildOnboarding";
 import {
   AgeProfile,
   BuddyMood,
@@ -83,8 +83,8 @@ import SettingsScreen, {
   saveSettings,
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
-import { AppLocale, getTtsLanguage, t, tGender, tSpeak } from "./i18n";
-import { FORM_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
+import { AppLocale, getTtsLanguage, t, tSpeak } from "./i18n";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -381,6 +381,7 @@ export default function App() {
 
   // Onboarding
   const [parentOnboardingDone, setParentOnboardingDone] = useState(false);
+  const [highlightSettings, setHighlightSettings] = useState(false);
   const [childName, setChildName] = useState("");
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [childAge, setChildAge] = useState(7);
@@ -613,19 +614,24 @@ export default function App() {
   }, [doneIdsToday, ready]);
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
-  async function saveChildName() {
-    const name = childName.trim();
+  async function completeChildOnboarding(nextName: string, nextAge: number | null) {
+    const name = nextName.trim();
     if (!name) {
       Alert.alert(t("onboarding.name_required"));
       return;
     }
+    const resolvedAge = nextAge ?? childAge ?? 7;
     try {
+      const nextSettings = { ...appSettings, childName: name };
       await AsyncStorage.multiSet([
         [K.CHILD_NAME, name],
-        [K.CHILD_AGE, String(childAge)],
+        [K.CHILD_AGE, String(resolvedAge)],
         [K.ONBOARDING_DONE, "true"],
       ]);
+      await saveSettings(nextSettings);
+      setAppSettings(nextSettings);
       setChildName(name);
+      setChildAge(resolvedAge);
       setOnboardingDone(true);
       speak(
         tSpeak(
@@ -1066,60 +1072,25 @@ export default function App() {
           onDone={async () => {
             await AsyncStorage.setItem(K.PARENT_ONBOARDING_DONE, "true");
             setParentOnboardingDone(true);
+            setHighlightSettings(true);
+            setScreen("home");
           }}
         />
       </SafeAreaView>
     );
   }
 
-  if (!onboardingDone) {
+  if (!onboardingDone && screen === "child_onboarding") {
     return (
       <SafeAreaView style={s.root}>
         <StatusBar style="dark" />
-        <KeyboardAvoidingView
-          style={s.onboardingKeyboard}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          <ScrollView
-            contentContainerStyle={s.onboardingScroll}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Image
-              source={BUDDY.calm}
-              style={s.onboardingBuddy}
-              resizeMode="contain"
-            />
-            <Text style={s.onboardingTitle}>{t("onboarding.title")}</Text>
-            <TextInput
-              style={s.onboardingInput}
-              placeholder={t("onboarding.name_placeholder")}
-              placeholderTextColor={C.muted}
-              value={childName}
-              onChangeText={setChildName}
-              returnKeyType="next"
-            />
-            <TextInput
-              style={s.onboardingInput}
-              placeholder={t("onboarding.age_placeholder")}
-              placeholderTextColor={C.muted}
-              value={childAge > 0 ? String(childAge) : ""}
-              onChangeText={(t) => setChildAge(parseInt(t) || 7)}
-              keyboardType="numeric"
-              maxLength={2}
-              returnKeyType="done"
-              onSubmitEditing={saveChildName}
-            />
-            <TouchableOpacity style={s.onboardingBtn} onPress={saveChildName}>
-              <Text style={s.onboardingBtnTxt}>
-                {tGender(
-                  "onboarding.start_btn",
-                  undefined,
-                  appSettings.rtlChildSex ?? "male",
-                )}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
+        <ChildOnboarding
+          initialName={childName}
+          initialAge={childAge}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
+          speak={speak}
+          onComplete={completeChildOnboarding}
+        />
       </SafeAreaView>
     );
   }
@@ -1343,6 +1314,7 @@ export default function App() {
           nextBlock={nextBlock}
           scheduleEnabled={appSettings.scheduleEnabled}
           onOpenDay={() => setScreen("day")}
+          highlightSettings={highlightSettings && !onboardingDone}
           onBreathing={
             appSettings.breathingEnabled ? openBreathingScreen : undefined
           }
@@ -1427,6 +1399,11 @@ export default function App() {
             setPinEnabled(s.pinEnabled);
             setTtsEnabled(s.ttsEnabled);
           }}
+          childOnboardingDone={onboardingDone}
+          onStartChildOnboarding={() => {
+            setHighlightSettings(false);
+            setScreen("child_onboarding");
+          }}
           onProgressReset={() => {
             setStars(0);
             setTotalEver(0);
@@ -1483,8 +1460,9 @@ export default function App() {
       )}
 
       {/* ── FIXED BUDDY + PROGRESS BAR OVERLAY (all screens except Settings) ───────── */}
-      {onboardingDone &&
+      {parentOnboardingDone &&
         !showPinScreen &&
+        screen !== "child_onboarding" &&
         screen !== "settings" &&
         showGlobalBuddy && (
           <View
@@ -1711,55 +1689,6 @@ const s = StyleSheet.create({
     borderColor: "#DED8CE",
     transform: [{ rotate: "45deg" }],
   },
-
-  // Onboarding
-  onboardingKeyboard: { flex: 1 },
-  onboardingScroll: {
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 28,
-  },
-  onboardingBuddy: {
-    width: 180,
-    height: 180,
-    maxWidth: "48%",
-    backgroundColor: "transparent",
-    marginBottom: 12,
-  },
-  onboardingTitle: {
-    fontSize: 23,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 18,
-    color: C.text,
-    paddingHorizontal: 20,
-  },
-  onboardingInput: {
-    width: "100%",
-    maxWidth: FORM_MAX_WIDTH,
-    borderWidth: 2,
-    borderColor: "#a1d4b8",
-    borderRadius: 16,
-    padding: 14,
-    fontSize: 22,
-    textAlign: "center",
-    backgroundColor: C.white,
-    color: C.text,
-    marginBottom: 12,
-  },
-  onboardingBtn: {
-    marginTop: 14,
-    backgroundColor: C.green,
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: 999,
-    maxWidth: FORM_MAX_WIDTH,
-    width: "100%",
-    alignItems: "center",
-  },
-  onboardingBtnTxt: { color: C.white, fontSize: 20, fontWeight: "600" },
 
   pinOverlay: {
     position: "absolute",

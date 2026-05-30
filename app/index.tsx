@@ -83,7 +83,7 @@ import SettingsScreen, {
   saveSettings,
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
-import { getTtsLanguage, t, tGender, tSpeak } from "./i18n";
+import { AppLocale, getTtsLanguage, t, tGender, tSpeak } from "./i18n";
 import { FORM_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
@@ -1041,6 +1041,10 @@ export default function App() {
     }
   }
 
+  function handleParentOnboardingLocaleChange(appLocale: AppLocale) {
+    setAppSettings((prev) => ({ ...prev, appLocale }));
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (!ready) {
@@ -1058,6 +1062,7 @@ export default function App() {
       <SafeAreaView style={s.root}>
         <StatusBar style="dark" />
         <ParentOnboarding
+          onLocaleChange={handleParentOnboardingLocaleChange}
           onDone={async () => {
             await AsyncStorage.setItem(K.PARENT_ONBOARDING_DONE, "true");
             setParentOnboardingDone(true);

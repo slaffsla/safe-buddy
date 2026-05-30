@@ -3,6 +3,7 @@
 // Parent can skip at any time.
 
 import React, { useEffect, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Animated,
   Easing,
@@ -14,11 +15,62 @@ import {
 } from "react-native";
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
-import { t } from "./i18n";
+import { AppLocale, getAppLocale, setAppLocale, t } from "./i18n";
 import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
 
 interface Props {
   onDone: () => void;
+  onLocaleChange?: (locale: AppLocale) => void;
+}
+
+const SETTINGS_KEY = "sb_settings_v1";
+const LANGUAGE_OPTIONS: { label: string; value: AppLocale }[] = [
+  { label: "RU", value: "ru" },
+  { label: "EN", value: "en" },
+  { label: "HE", value: "he" },
+];
+
+async function persistOnboardingLocale(appLocale: AppLocale) {
+  try {
+    const raw = await AsyncStorage.getItem(SETTINGS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    await AsyncStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify({ ...parsed, appLocale }),
+    );
+  } catch (error) {
+    console.log("Locale save error", error);
+  }
+}
+
+function LanguageToggle({
+  value,
+  onChange,
+}: {
+  value: AppLocale;
+  onChange: (locale: AppLocale) => void;
+}) {
+  return (
+    <View style={s.langToggle}>
+      {LANGUAGE_OPTIONS.map((option) => {
+        const active = option.value === value;
+        return (
+          <TouchableOpacity
+            key={option.value}
+            style={[s.langBtn, active && s.langBtnActive]}
+            onPress={() => onChange(option.value)}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+          >
+            <Text style={[s.langBtnTxt, active && s.langBtnTxtActive]}>
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
 }
 
 // ── Breathing circle for screen 3 ─────────────────────────────────────────────
@@ -259,13 +311,21 @@ function Screen4() {
 
 const SCREENS = [Screen1, Screen2, Screen3, Screen4];
 
-export default function ParentOnboarding({ onDone }: Props) {
+export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
   const { contentMaxWidth, screenPadding, isLargeTablet } = useLayoutMetrics();
   const [step, setStep] = useState(0);
+  const [locale, setLocale] = useState<AppLocale>(() => getAppLocale());
   const isLast = step === SCREENS.length - 1;
   const CurrentScreen = SCREENS[step];
 
   const speak = (_: string) => {};
+
+  function handleLocaleChange(nextLocale: AppLocale) {
+    setAppLocale(nextLocale);
+    setLocale(nextLocale);
+    onLocaleChange?.(nextLocale);
+    persistOnboardingLocale(nextLocale);
+  }
 
   return (
     <View style={s.root}>
@@ -275,12 +335,18 @@ export default function ParentOnboarding({ onDone }: Props) {
             <View key={i} style={[s.dot, i === step && s.dotActive]} />
           ))}
         </View>
-        <TouchableOpacity onPress={onDone} style={s.skipBtn}>
-          <Text style={s.skipTxt}>{t("parent_onboarding.skip")}</Text>
-        </TouchableOpacity>
+        <View style={s.topActions}>
+          <LanguageToggle value={locale} onChange={handleLocaleChange} />
+          <TouchableOpacity onPress={onDone} style={s.skipBtn}>
+            <Text style={s.skipTxt}>{t("parent_onboarding.skip")}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={[s.content, isLargeTablet && s.contentLarge]}>
+      <View
+        key={`parent-onboarding-${locale}`}
+        style={[s.content, isLargeTablet && s.contentLarge]}
+      >
         <CurrentScreen speak={speak} />
       </View>
 
@@ -332,6 +398,26 @@ const s = StyleSheet.create({
   dots: { flexDirection: "row", gap: 6 },
   dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.border },
   dotActive: { backgroundColor: C.green, width: 20 },
+  topActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  langToggle: {
+    flexDirection: "row",
+    backgroundColor: C.greenLt,
+    borderRadius: 999,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: C.green,
+  },
+  langBtn: {
+    minWidth: 34,
+    minHeight: 30,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+  },
+  langBtnActive: { backgroundColor: C.green },
+  langBtnTxt: { fontSize: 12, fontWeight: "800", color: C.green },
+  langBtnTxtActive: { color: C.white },
   skipBtn: { padding: 8 },
   skipTxt: { fontSize: 14, color: C.muted },
 

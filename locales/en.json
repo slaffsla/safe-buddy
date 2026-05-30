@@ -64,11 +64,14 @@
     "screen2_tip_2": "Completes it in real life",
     "screen2_tip_3": "Earns stars",
     "screen2_tip_4": "Redeems real rewards you set",
-    "screen3_heading": "Why breathing?",
-    "screen3_body": "Slow rhythmic breathing helps shift the body from stress mode to calm mode. This is physiology, not just a metaphor.",
-    "screen3_pattern": "4 seconds in · pause · 3 seconds out",
-    "screen3_try": "Try it now — follow the circle",
-    "screen3_science": "The longer exhale is the key signal that tells the nervous system to slow down. This pattern was adapted and tested with a real child."
+    "screen3_heading": "Make it fit your family.",
+    "screen3_body": "Before handing the app to your child, open settings and tune the real-life pieces. You can always change them later.",
+    "screen3_note": "Start with the defaults if you want. A few parent tweaks can make the app feel familiar right away.",
+    "screen4_heading": "Why breathing?",
+    "screen4_body": "Slow rhythmic breathing helps shift the body from stress mode to calm mode. This is physiology, not just a metaphor.",
+    "screen4_pattern": "4 seconds in · pause · 3 seconds out",
+    "screen4_try": "Try it now — follow the circle",
+    "screen4_science": "The longer exhale is the key signal that tells the nervous system to slow down. This pattern was adapted and tested with a real child."
   },
   "demo": {
     "intro_title": "Let's try together!",

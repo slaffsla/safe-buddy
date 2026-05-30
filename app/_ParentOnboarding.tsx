@@ -84,7 +84,7 @@ function MiniBreathingCircle() {
           </Text>
         </Animated.View>
       </TouchableOpacity>
-      <Text style={bc.hint}>{t("parent_onboarding.screen3_try")}</Text>
+      <Text style={bc.hint}>{t("parent_onboarding.screen4_try")}</Text>
     </View>
   );
 }
@@ -179,24 +179,76 @@ function Screen2() {
 
 function Screen3() {
   const { isLargeTablet } = useLayoutMetrics();
+  const items = [
+    {
+      icon: "🔐",
+      title: t("settings.parent_zone_title"),
+      sub: t("settings.parent_zone_sub"),
+    },
+    {
+      icon: "🌅",
+      title: t("settings.morning_manage_title"),
+      sub: t("settings.routine_section"),
+    },
+    {
+      icon: "📅",
+      title: t("settings.schedule_manage_title"),
+      sub: t("settings.schedule_section"),
+    },
+  ];
+
   return (
     <ScrollView contentContainerStyle={s.screenScroll}>
-      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🌬️</Text>
+      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🛠️</Text>
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen3_heading")}
       </Text>
       <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
         {t("parent_onboarding.screen3_body")}
       </Text>
+      <View style={s.featureCard}>
+        {items.map((item, i) => (
+          <View key={item.title}>
+            {i > 0 && <View style={s.featureDivider} />}
+            <View style={s.featureRow}>
+              <Text style={s.featureIcon}>{item.icon}</Text>
+              <View style={s.featureTextWrap}>
+                <Text style={s.featureTitle}>{item.title}</Text>
+                <Text style={s.featureSub}>{item.sub}</Text>
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+      <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
+        ✨ {t("parent_onboarding.screen3_note")}
+      </Text>
+    </ScrollView>
+  );
+}
+
+// ── Screen 4 — Breathing ──────────────────────────────────────────────────────
+
+function Screen4() {
+  const { isLargeTablet } = useLayoutMetrics();
+  return (
+    <ScrollView contentContainerStyle={s.screenScroll}>
+      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🌬️</Text>
+      <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
+        {t("parent_onboarding.screen4_heading")}
+      </Text>
+      <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
+        {t("parent_onboarding.screen4_body")}
+      </Text>
       <View style={s.patternBadge}>
         <Text style={s.patternText}>
-          {t("parent_onboarding.screen3_pattern")}
+          {t("parent_onboarding.screen4_pattern")}
         </Text>
       </View>
       <MiniBreathingCircle />
       <View style={s.scienceCard}>
         <Text style={s.scienceText}>
-          {t("parent_onboarding.screen3_science")}
+          {t("parent_onboarding.screen4_science")}
         </Text>
       </View>
     </ScrollView>
@@ -205,7 +257,7 @@ function Screen3() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const SCREENS = [Screen1, Screen2, Screen3];
+const SCREENS = [Screen1, Screen2, Screen3, Screen4];
 
 export default function ParentOnboarding({ onDone }: Props) {
   const { contentMaxWidth, screenPadding, isLargeTablet } = useLayoutMetrics();
@@ -368,6 +420,30 @@ const s = StyleSheet.create({
   },
   tipNum: { fontSize: 12, fontWeight: "700", color: C.white },
   tipText: { fontSize: 14, color: C.text, flex: 1, lineHeight: 20 },
+
+  featureCard: {
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 16,
+    width: "100%",
+    marginBottom: 16,
+  },
+  featureDivider: {
+    height: 1,
+    backgroundColor: C.border,
+    marginVertical: 12,
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  featureIcon: { fontSize: 24, width: 32, textAlign: "center" },
+  featureTextWrap: { flex: 1 },
+  featureTitle: { fontSize: 15, fontWeight: "700", color: C.text },
+  featureSub: { fontSize: 13, color: C.muted, lineHeight: 18, marginTop: 2 },
 
   patternBadge: {
     backgroundColor: C.greenLt,

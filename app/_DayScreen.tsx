@@ -136,19 +136,23 @@ export default function DayScreen({
   const nextUpcomingBlock = visibleBlocks.find(
     (b) => getBlockStatus(b) === "upcoming",
   );
-  const lastBlock = visibleBlocks[visibleBlocks.length - 1] ?? null;
-  const focusBlock = currentBlock ?? nextUpcomingBlock ?? lastBlock;
+  const focusBlock = currentBlock ?? nextUpcomingBlock;
   const didScrollToFocus = useRef(false);
 
   useEffect(() => {
-    if (!focusBlock || didScrollToFocus.current) return;
     const t = setTimeout(() => {
-      const targetY = blockYRef.current[focusBlock.id];
-      if (targetY != null) {
-        scrollRef.current?.scrollTo({
-          y: Math.max(0, targetY - 40),
-          animated: true,
-        });
+      if (didScrollToFocus.current) return;
+      if (focusBlock) {
+        const targetY = blockYRef.current[focusBlock.id];
+        if (targetY != null) {
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, targetY - 40),
+            animated: true,
+          });
+          didScrollToFocus.current = true;
+        }
+      } else {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
         didScrollToFocus.current = true;
       }
     }, 150);
@@ -190,6 +194,22 @@ export default function DayScreen({
             paddingBottom: isLargeTablet ? 110 : 80,
           },
         ]}
+        onContentSizeChange={() => {
+          if (didScrollToFocus.current) return;
+          if (focusBlock) {
+            const targetY = blockYRef.current[focusBlock.id];
+            if (targetY != null) {
+              scrollRef.current?.scrollTo({
+                y: Math.max(0, targetY - 40),
+                animated: true,
+              });
+              didScrollToFocus.current = true;
+            }
+          } else {
+            scrollRef.current?.scrollTo({ y: 0, animated: false });
+            didScrollToFocus.current = true;
+          }
+        }}
       >
         {visibleBlocks.length === 0 ? (
           <Text style={s.empty}>{t("day.empty")}</Text>
@@ -337,6 +357,7 @@ const s = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    width: "100%",
   },
   scrollLarge: {
     paddingBottom: 110,

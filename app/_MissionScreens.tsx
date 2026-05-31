@@ -197,17 +197,20 @@ export function MissionPickScreen({
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={[
-        s.scroll,
-        isLargeTablet && s.scrollLarge,
-        {
-          maxWidth: contentMaxWidth,
-          padding: screenPadding,
-          paddingTop: buddyContentSpacer,
-        },
-      ]}
-    >
+    <View style={s.screenRoot}>
+      <ScrollView
+        style={s.screenScroll}
+        contentContainerStyle={[
+          s.scroll,
+          isLargeTablet && s.scrollLarge,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+            paddingTop: buddyContentSpacer,
+            paddingBottom: isLargeTablet ? 128 : 96,
+          },
+        ]}
+      >
       <T style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]} speak={speak}>
         {tGender("missionPick.title", undefined, rtlChildSex)}
       </T>
@@ -360,10 +363,13 @@ export function MissionPickScreen({
       <T style={s.hint} speak={speak}>
         {tGender("missionPick.hint", undefined, rtlChildSex)}
       </T>
+    </ScrollView>
+    <View style={s.footer} pointerEvents="box-none">
       <TouchableOpacity style={s.btnBack} onPress={onBack}>
         <Text style={s.btnBackTxt}>{t("common.back")}</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
+  </View>
   );
 }
 
@@ -481,7 +487,7 @@ export function CelebrateScreen({
   onBack: () => void;
   rtlChildSex?: RtlChildSex;
 }) {
-  const { buddyContentSpacer, contentMaxWidth, screenPadding } =
+  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   if (!mission) return null;
   const emotionalMsg = isVeryExcited
@@ -496,6 +502,7 @@ export function CelebrateScreen({
           maxWidth: contentMaxWidth,
           padding: screenPadding,
           paddingTop: buddyContentSpacer,
+          paddingBottom: isLargeTablet ? 128 : 96,
         },
       ]}
     >
@@ -531,9 +538,11 @@ export function CelebrateScreen({
           {tGender("celebrate.btn_rewards", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={s.btnBack} onPress={onBack}>
-        <Text style={s.btnBackTxt}>{t("common.back")}</Text>
-      </TouchableOpacity>
+      <View style={s.footer} pointerEvents="box-none">
+        <TouchableOpacity style={s.btnBack} onPress={onBack}>
+          <Text style={s.btnBackTxt}>{t("common.back")}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -653,53 +662,63 @@ export function RewardsScreen({
     useLayoutMetrics();
   const list = rewards ?? REWARDS;
   return (
-    <ScrollView
-      style={s.rewardsScrollView}
-      contentContainerStyle={[
-        s.scroll,
-        s.rewardsScroll,
-        isLargeTablet && s.scrollLarge,
-        {
-          maxWidth: contentMaxWidth,
-          padding: screenPadding,
-          paddingTop: buddyContentSpacer,
-        },
-      ]}
-      keyboardShouldPersistTaps="handled"
-    >
-      <T style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]} speak={speak}>
-        {t("rewards.title")}
-      </T>
-      {list.map((r) => (
-        <RewardCard
-          key={r.id}
-          reward={r}
-          stars={stars}
-          speak={speak}
-          onRedeem={onRedeem}
-          showExactStarCost={showExactStarCost}
-          large={isLargeTablet}
-          rtlChildSex={rtlChildSex}
-        />
-      ))}
-      <T style={s.hint} speak={speak}>
-        {t("rewards.hint")}
-      </T>
-      <TouchableOpacity
-        style={[s.btnBack, isLargeTablet && s.btnBackLarge]}
-        onPress={onBack}
+    <View style={s.screenRoot}>
+      <ScrollView
+        style={s.rewardsScrollView}
+        contentContainerStyle={[
+          s.scroll,
+          s.rewardsScroll,
+          isLargeTablet && s.scrollLarge,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+            paddingTop: buddyContentSpacer,
+            paddingBottom: isLargeTablet ? 128 : 96,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={[s.btnBackTxt, isLargeTablet && s.btnBackTxtLarge]}>
-          {t("common.back")}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <T style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]} speak={speak}>
+          {t("rewards.title")}
+        </T>
+        {list.map((r) => (
+          <RewardCard
+            key={r.id}
+            reward={r}
+            stars={stars}
+            speak={speak}
+            onRedeem={onRedeem}
+            showExactStarCost={showExactStarCost}
+            large={isLargeTablet}
+            rtlChildSex={rtlChildSex}
+          />
+        ))}
+        <T style={s.hint} speak={speak}>
+          {t("rewards.hint")}
+        </T>
+      </ScrollView>
+      <View style={s.footer} pointerEvents="box-none">
+        <TouchableOpacity
+          style={[s.btnBack, isLargeTablet && s.btnBackLarge]}
+          onPress={onBack}
+        >
+          <Text style={[s.btnBackTxt, isLargeTablet && s.btnBackTxtLarge]}>
+            {t("common.back")}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 // ── STYLES ────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    width: "100%",
+  },
+  screenScroll: { flex: 1, width: "100%" },
   screen: {
     flexGrow: 1,
     width: "100%",
@@ -718,6 +737,15 @@ const s = StyleSheet.create({
     padding: 20,
     paddingBottom: 52,
     backgroundColor: C.bg,
+  },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 8,
+    alignItems: "center",
+    zIndex: 10,
+    pointerEvents: "box-none",
   },
   scrollLarge: {
     paddingBottom: 120,
@@ -1037,9 +1065,19 @@ const s = StyleSheet.create({
   btnSecondaryTxt: { fontSize: 17, color: "#92400E", fontWeight: "600" },
   btnSkip: { marginTop: 10, padding: 12 },
   btnSkipTxt: { fontSize: 15, color: C.muted },
-  btnBack: { marginTop: 18, padding: 12 },
+  btnBack: {
+    padding: 12,
+    alignSelf: "center",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+  },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
-  btnBackLarge: { marginTop: 22, padding: 16, marginBottom: 18 },
+  btnBackLarge: {
+    padding: 16,
+    alignSelf: "center",
+  },
   btnBackTxtLarge: { fontSize: 20 },
 
   activeCard: {

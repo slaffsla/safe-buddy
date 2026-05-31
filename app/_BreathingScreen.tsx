@@ -585,8 +585,9 @@ export default function BreathingScreen({
             {tGender("breathing.btn_start", undefined, rtlChildSex)}
           </Text>
         </TouchableOpacity>
+      <View style={s.footer} pointerEvents="box-none">
         <TouchableOpacity
-          style={s.btnSecondary}
+          style={[s.btnSecondary, s.btnSecondaryFooter]}
           onPress={onSkip}
           activeOpacity={0.78}
         >
@@ -595,6 +596,7 @@ export default function BreathingScreen({
           </Text>
         </TouchableOpacity>
       </View>
+    </View>
     );
   }
 
@@ -620,9 +622,9 @@ export default function BreathingScreen({
         >
           <Text style={s.natureFactText}>💡 {petHintText}</Text>
         </TouchableOpacity>
-
+      <View style={s.footer} pointerEvents="box-none">
         <TouchableOpacity
-          style={s.btnSecondary}
+          style={[s.btnSecondary, s.btnSecondaryFooter]}
           onPress={handleExit}
           activeOpacity={0.78}
         >
@@ -631,6 +633,7 @@ export default function BreathingScreen({
           </Text>
         </TouchableOpacity>
       </View>
+    </View>
     );
   }
 
@@ -775,6 +778,19 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     padding: 20,
+    paddingBottom: 96,
+  },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 8,
+    alignItems: "center",
+    zIndex: 10,
+    pointerEvents: "box-none",
+  },
+  btnSecondaryFooter: {
+    marginTop: 0,
   },
 
   title: {

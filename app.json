@@ -2,7 +2,7 @@
   "expo": {
     "name": "RealoKids",
     "slug": "realokids",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "icon": "./assets/Character/buddy-happy.png",
     "scheme": "realokids",
     "orientation": "portrait",
@@ -13,7 +13,6 @@
         "backgroundColor": "#F7F6F2"
       },
       "package": "com.slaff.realokids",
-      "versionCode": 1,
       "permissions": ["android.permission.MODIFY_AUDIO_SETTINGS"]
     },
     "ios": {
@@ -62,7 +61,7 @@
         "projectId": "d8ca8d09-35ff-4f03-a069-471bcba052f9"
       }
     },
-    "runtimeVersion": "1.0.0",
+    "runtimeVersion": "1.0.1",
     "owner": "slaff"
   }
 }

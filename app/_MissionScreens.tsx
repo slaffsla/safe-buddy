@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
 import { T } from "./_SharedUI";
 import {
   C,
@@ -26,7 +27,6 @@ import {
   REWARDS,
 } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
-import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
 
 // ── SLOT META ─────────────────────────────────────────────────────────────────
 
@@ -110,19 +110,13 @@ export function MissionPickScreen({
         ]}
       >
         <View
-          style={[
-            s.firstMissionHero,
-            isLargeTablet && s.firstMissionHeroLarge,
-          ]}
+          style={[s.firstMissionHero, isLargeTablet && s.firstMissionHeroLarge]}
         >
           <T style={[s.pageTitle, s.firstMissionTitle]} speak={speak}>
             {tGender("missionPick.first_title", undefined, rtlChildSex)}
           </T>
           <T
-            style={[
-              s.firstMissionSub,
-              isLargeTablet && s.firstMissionSubLarge,
-            ]}
+            style={[s.firstMissionSub, isLargeTablet && s.firstMissionSubLarge]}
             speak={speak}
           >
             {tGender("missionPick.first_sub", undefined, rtlChildSex)}
@@ -211,165 +205,171 @@ export function MissionPickScreen({
           },
         ]}
       >
-      <T style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]} speak={speak}>
-        {tGender("missionPick.title", undefined, rtlChildSex)}
-      </T>
+        <T
+          style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]}
+          speak={speak}
+        >
+          {tGender("missionPick.title", undefined, rtlChildSex)}
+        </T>
 
-      {allDone && (
-        <View style={s.encoreCard}>
-          <Text style={s.encoreEmoji}>🌙</Text>
-          <T style={s.encoreTitle} speak={speak}>
-            {tGender("missionPick.encore_title", undefined, rtlChildSex)}
-          </T>
-          <T style={s.encoreSub} speak={speak}>
-            {tGender("missionPick.encore_sub", undefined, rtlChildSex)}
-          </T>
-          {showBonus && bonusMission && (
-            <>
-              <T style={s.encoreBonusLabel} speak={speak}>
-                {tGender("missionPick.encore_bonus", undefined, rtlChildSex)}
-              </T>
-              <TouchableOpacity
-                style={[s.mCard, s.bonusCard]}
-                onPress={() => onPick(bonusMission)}
-                onLongPress={() =>
-                  speak(
-                    `${getMissionTitle(bonusMission.id, bonusMission.title)}. ${getMissionSubtitle(bonusMission.id, bonusMission.subtitle)}`,
-                  )
-                }
-              >
-                <Text style={s.mEmoji}>{bonusMission.emoji}</Text>
-                <View style={s.mInfo}>
-                  <Text style={s.mTitle}>
-                    {getMissionTitle(bonusMission.id, bonusMission.title)}
-                  </Text>
-                  <Text style={s.mSub}>
-                    {getMissionSubtitle(bonusMission.id, bonusMission.subtitle)}
-                  </Text>
-                </View>
-                <Text style={s.mStar}>
-                  {Array(bonusMission.stars).fill("⭐").join("")}
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      )}
-
-      {orderedSlots.map((slot) => {
-        const items = grouped[slot];
-        if (items.length === 0) return null;
-        const isOpen = expanded === slot;
-        const colors = SLOT_COLORS[slot];
-        const slotDone = items.filter((m) => done.has(m.id)).length;
-
-        return (
-          <View key={slot} style={s.slotSection}>
-            <TouchableOpacity
-              style={[
-                s.slotHeader,
-                { backgroundColor: colors.bg, borderColor: colors.border },
-              ]}
-              onPress={() => setExpanded(isOpen ? "any" : slot)}
-              activeOpacity={0.7}
-            >
-              <Text style={s.slotLabel}>{t(SLOT_LABEL_KEYS[slot])}</Text>
-              <View style={s.slotMeta}>
-                <Text style={s.slotCount}>
-                  {slotDone}/{items.length}
-                </Text>
-                <Text style={s.slotChevron}>{isOpen ? "▲" : "▼"}</Text>
-              </View>
-            </TouchableOpacity>
-
-            {isOpen &&
-              items.map((m) => {
-                const isDone = done.has(m.id);
-                const mType = missionTypeById?.[m.id];
-                const tintStyle =
-                  mType === "permanent"
-                    ? s.mCardPermanent
-                    : mType === "rotating"
-                      ? s.mCardRotating
-                      : null;
-                return (
-                  <TouchableOpacity
-                    key={m.id}
-                    style={[
-                      s.mCard,
-                      tintStyle,
-                      m.stars >= 2 && s.mCardBig,
-                      isDone && s.mCardDone,
-                    ]}
-                    onPress={() => {
-                      if (!isDone) onPick(m);
-                      else
-                        speak(
-                          tSpeak(
-                            "missionPick.already_done",
-                            {
-                              title: getMissionTitle(m.id, m.title),
-                            },
-                            rtlChildSex,
-                          ),
-                        );
-                    }}
-                    onLongPress={() =>
-                      speak(
-                        `${getMissionTitle(m.id, m.title)}. ${getMissionSubtitle(m.id, m.subtitle)}`,
-                      )
-                    }
-                    activeOpacity={isDone ? 1 : 0.7}
-                  >
-                    <Text style={[s.mEmoji, isDone && s.mEmojiDone]}>
-                      {m.emoji}
+        {allDone && (
+          <View style={s.encoreCard}>
+            <Text style={s.encoreEmoji}>🌙</Text>
+            <T style={s.encoreTitle} speak={speak}>
+              {tGender("missionPick.encore_title", undefined, rtlChildSex)}
+            </T>
+            <T style={s.encoreSub} speak={speak}>
+              {tGender("missionPick.encore_sub", undefined, rtlChildSex)}
+            </T>
+            {showBonus && bonusMission && (
+              <>
+                <T style={s.encoreBonusLabel} speak={speak}>
+                  {tGender("missionPick.encore_bonus", undefined, rtlChildSex)}
+                </T>
+                <TouchableOpacity
+                  style={[s.mCard, s.bonusCard]}
+                  onPress={() => onPick(bonusMission)}
+                  onLongPress={() =>
+                    speak(
+                      `${getMissionTitle(bonusMission.id, bonusMission.title)}. ${getMissionSubtitle(bonusMission.id, bonusMission.subtitle)}`,
+                    )
+                  }
+                >
+                  <Text style={s.mEmoji}>{bonusMission.emoji}</Text>
+                  <View style={s.mInfo}>
+                    <Text style={s.mTitle}>
+                      {getMissionTitle(bonusMission.id, bonusMission.title)}
                     </Text>
-                    <View style={s.mInfo}>
-                      <Text style={[s.mTitle, isDone && s.mTxtDone]}>
-                        {getMissionTitle(m.id, m.title)}
-                      </Text>
-                      <Text style={[s.mSub, isDone && s.mTxtDone]}>
-                        {getMissionSubtitle(m.id, m.subtitle)}
-                      </Text>
-                      {!isDone && mType === "permanent" && (
-                        <View style={[s.typePill, s.typePillPermanent]}>
-                          <Text style={s.typePillTxtPermanent}>
-                            {t("missionPick.type_permanent")}
-                          </Text>
-                        </View>
+                    <Text style={s.mSub}>
+                      {getMissionSubtitle(
+                        bonusMission.id,
+                        bonusMission.subtitle,
                       )}
-                      {!isDone && mType === "rotating" && (
-                        <View style={[s.typePill, s.typePillRotating]}>
-                          <Text style={s.typePillTxtRotating}>
-                            {t("missionPick.type_rotating")}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                    {isDone ? (
-                      <Text style={s.mDoneBadge}>✓</Text>
-                    ) : (
-                      <Text style={s.mStar}>
-                        {Array(m.stars).fill("⭐").join("")}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+                    </Text>
+                  </View>
+                  <Text style={s.mStar}>
+                    {Array(bonusMission.stars).fill("⭐").join("")}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
-        );
-      })}
+        )}
 
-      <T style={s.hint} speak={speak}>
-        {tGender("missionPick.hint", undefined, rtlChildSex)}
-      </T>
-    </ScrollView>
-    <View style={s.footer} pointerEvents="box-none">
-      <TouchableOpacity style={s.btnBack} onPress={onBack}>
-        <Text style={s.btnBackTxt}>{t("common.back")}</Text>
-      </TouchableOpacity>
+        {orderedSlots.map((slot) => {
+          const items = grouped[slot];
+          if (items.length === 0) return null;
+          const isOpen = expanded === slot;
+          const colors = SLOT_COLORS[slot];
+          const slotDone = items.filter((m) => done.has(m.id)).length;
+
+          return (
+            <View key={slot} style={s.slotSection}>
+              <TouchableOpacity
+                style={[
+                  s.slotHeader,
+                  { backgroundColor: colors.bg, borderColor: colors.border },
+                ]}
+                onPress={() => setExpanded(isOpen ? "any" : slot)}
+                activeOpacity={0.7}
+              >
+                <Text style={s.slotLabel}>{t(SLOT_LABEL_KEYS[slot])}</Text>
+                <View style={s.slotMeta}>
+                  <Text style={s.slotCount}>
+                    {slotDone}/{items.length}
+                  </Text>
+                  <Text style={s.slotChevron}>{isOpen ? "▲" : "▼"}</Text>
+                </View>
+              </TouchableOpacity>
+
+              {isOpen &&
+                items.map((m) => {
+                  const isDone = done.has(m.id);
+                  const mType = missionTypeById?.[m.id];
+                  const tintStyle =
+                    mType === "permanent"
+                      ? s.mCardPermanent
+                      : mType === "rotating"
+                        ? s.mCardRotating
+                        : null;
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[
+                        s.mCard,
+                        tintStyle,
+                        m.stars >= 2 && s.mCardBig,
+                        isDone && s.mCardDone,
+                      ]}
+                      onPress={() => {
+                        if (!isDone) onPick(m);
+                        else
+                          speak(
+                            tSpeak(
+                              "missionPick.already_done",
+                              {
+                                title: getMissionTitle(m.id, m.title),
+                              },
+                              rtlChildSex,
+                            ),
+                          );
+                      }}
+                      onLongPress={() =>
+                        speak(
+                          `${getMissionTitle(m.id, m.title)}. ${getMissionSubtitle(m.id, m.subtitle)}`,
+                        )
+                      }
+                      activeOpacity={isDone ? 1 : 0.7}
+                    >
+                      <Text style={[s.mEmoji, isDone && s.mEmojiDone]}>
+                        {m.emoji}
+                      </Text>
+                      <View style={s.mInfo}>
+                        <Text style={[s.mTitle, isDone && s.mTxtDone]}>
+                          {getMissionTitle(m.id, m.title)}
+                        </Text>
+                        <Text style={[s.mSub, isDone && s.mTxtDone]}>
+                          {getMissionSubtitle(m.id, m.subtitle)}
+                        </Text>
+                        {!isDone && mType === "permanent" && (
+                          <View style={[s.typePill, s.typePillPermanent]}>
+                            <Text style={s.typePillTxtPermanent}>
+                              {t("missionPick.type_permanent")}
+                            </Text>
+                          </View>
+                        )}
+                        {!isDone && mType === "rotating" && (
+                          <View style={[s.typePill, s.typePillRotating]}>
+                            <Text style={s.typePillTxtRotating}>
+                              {t("missionPick.type_rotating")}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      {isDone ? (
+                        <Text style={s.mDoneBadge}>✓</Text>
+                      ) : (
+                        <Text style={s.mStar}>
+                          {Array(m.stars).fill("⭐").join("")}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+            </View>
+          );
+        })}
+
+        <T style={s.hint} speak={speak}>
+          {tGender("missionPick.hint", undefined, rtlChildSex)}
+        </T>
+      </ScrollView>
+      <View style={s.footer} pointerEvents="box-none">
+        <TouchableOpacity style={s.btnBack} onPress={onBack}>
+          <Text style={s.btnBackTxt}>{t("common.back")}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
-  </View>
   );
 }
 
@@ -678,7 +678,10 @@ export function RewardsScreen({
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <T style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]} speak={speak}>
+        <T
+          style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]}
+          speak={speak}
+        >
           {t("rewards.title")}
         </T>
         {list.map((r) => (

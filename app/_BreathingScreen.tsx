@@ -19,7 +19,7 @@ import {
   setIsAudioActiveAsync,
   type AudioPlayer,
 } from "expo-audio";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -29,10 +29,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
 import Buddy from "./_Buddy";
 import { C, type BuddyMood } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
-import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
@@ -585,18 +585,18 @@ export default function BreathingScreen({
             {tGender("breathing.btn_start", undefined, rtlChildSex)}
           </Text>
         </TouchableOpacity>
-      <View style={s.footer} pointerEvents="box-none">
-        <TouchableOpacity
-          style={[s.btnSecondary, s.btnSecondaryFooter]}
-          onPress={onSkip}
-          activeOpacity={0.78}
-        >
-          <Text style={s.btnSecondaryTxt}>
-            {tGender("breathing.btn_back", undefined, rtlChildSex)}
-          </Text>
-        </TouchableOpacity>
+        <View style={s.footer} pointerEvents="box-none">
+          <TouchableOpacity
+            style={[s.btnSecondary, s.btnSecondaryFooter]}
+            onPress={onSkip}
+            activeOpacity={0.78}
+          >
+            <Text style={s.btnSecondaryTxt}>
+              {tGender("breathing.btn_back", undefined, rtlChildSex)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
     );
   }
 
@@ -622,18 +622,18 @@ export default function BreathingScreen({
         >
           <Text style={s.natureFactText}>💡 {petHintText}</Text>
         </TouchableOpacity>
-      <View style={s.footer} pointerEvents="box-none">
-        <TouchableOpacity
-          style={[s.btnSecondary, s.btnSecondaryFooter]}
-          onPress={handleExit}
-          activeOpacity={0.78}
-        >
-          <Text style={s.btnSecondaryTxt}>
-            {tGender("breathing.btn_back", undefined, rtlChildSex)}
-          </Text>
-        </TouchableOpacity>
+        <View style={s.footer} pointerEvents="box-none">
+          <TouchableOpacity
+            style={[s.btnSecondary, s.btnSecondaryFooter]}
+            onPress={handleExit}
+            activeOpacity={0.78}
+          >
+            <Text style={s.btnSecondaryTxt}>
+              {tGender("breathing.btn_back", undefined, rtlChildSex)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
     );
   }
 

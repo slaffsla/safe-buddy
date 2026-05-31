@@ -278,7 +278,10 @@
     "3": { "title": "Jump three times", "subtitle": "Calmly" },
     "4": { "title": "Drink some water", "subtitle": "Slowly" },
     "5": { "title": "Phone-free time", "subtitle": "One minute" },
-    "7": { "title": "Make a fist. Open it.", "subtitle": "Three seconds" },
+    "7": {
+      "title": "Make a strong fist for three seconds",
+      "subtitle": "Then release"
+    },
     "8": { "title": "Phone-free time", "subtitle": "Two minutes" },
     "9": { "title": "Tidy your toys", "subtitle": "One corner" },
     "10": { "title": "Give a hug", "subtitle": "Quietly" },

@@ -255,8 +255,8 @@
     "label_lt10": "עשית כבר הרבה",
     "label_lt20": "אתה מתחזק כל יום",
     "label_lt20_female": "את מתחזקת כל יום",
-    "label_lt50": "Buddy רואה איך אתה גדל",
-    "label_lt50_female": "Buddy רואה איך את גדלה",
+    "label_lt50": "\u200FBuddy רואה איך אתה גדל",
+    "label_lt50_female": "\u200FBuddy רואה איך את גדלה",
     "label_max": "אתה כוכב אמיתי",
     "label_max_female": "את כוכבת אמיתית",
     "stars_speak": "{{label}}. כוכבים: {{count}}"

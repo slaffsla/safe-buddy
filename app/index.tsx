@@ -10,6 +10,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -19,6 +20,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
+
+const YESTERDAY = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+})();
 import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
@@ -116,6 +123,7 @@ const K = {
   TOTAL_MISSIONS: "sb_total_missions",
   CHILD_NAME: "sb_child_name",
   LAST_MISSION: "sb_last_mission",
+  LAST_MISSION_DATE: "sb_last_mission_date",
   SKIP_COUNT: "sb_skip_count",
   FIRST_REWARD: "sb_first_reward",
   PARENT_PIN: "sb_parent_pin",
@@ -365,6 +373,7 @@ export default function App() {
   const [mission, setMission] = useState<any>(null);
   const [firstMission, setFirstMission] = useState(true);
   const [lastMission, setLastMission] = useState<string | null>(null);
+  const [lastMissionDate, setLastMissionDate] = useState<string | null>(null);
   const [skipCount, setSkipCount] = useState(0);
   const [isVeryExcited, setIsVeryExcited] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(true);
@@ -416,6 +425,7 @@ export default function App() {
   const { contentMaxWidth, isTabletWidth, isLargeTablet, isShortHeight } =
     useLayoutMetrics();
   const visibleScreen = screen;
+  const [yesterday, setYesterday] = useState("");
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride
@@ -544,11 +554,20 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
+        const yesterday = new Date(Date.now() - 86400000)
+          .toISOString()
+          .split("T")[0];
         const storedLastMission =
-          !newDay && tm > 0 ? getStoredMissionTitle(v[K.LAST_MISSION]) : null;
+          tm > 0 && v[K.LAST_MISSION_DATE] === yesterday
+            ? getStoredMissionTitle(v[K.LAST_MISSION])
+            : null;
         setLastMission(storedLastMission);
+        setLastMissionDate(v[K.LAST_MISSION_DATE] || null);
         if (!storedLastMission && v[K.LAST_MISSION]) {
-          AsyncStorage.setItem(K.LAST_MISSION, "").catch(console.log);
+          AsyncStorage.multiSet([
+            [K.LAST_MISSION, ""],
+            [K.LAST_MISSION_DATE, ""],
+          ]).catch(console.log);
         }
         const onboardingAlreadyComplete =
           v[K.PARENT_ONBOARDING_DONE] === "true" &&
@@ -585,6 +604,10 @@ export default function App() {
         setReady(true);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    setYesterday(new Date(Date.now() - 86400000).toISOString().split("T")[0]);
   }, []);
 
   // Persist stars / missions / skips
@@ -855,10 +878,11 @@ export default function App() {
       );
     }
     setLastMission(getMissionTitle(mission.id, mission.title));
-    AsyncStorage.setItem(
-      K.LAST_MISSION,
-      JSON.stringify({ id: mission.id, title: mission.title }),
-    ).catch(console.log);
+    const completedToday = todayStr();
+    AsyncStorage.multiSet([
+      [K.LAST_MISSION, JSON.stringify({ id: mission.id, title: mission.title })],
+      [K.LAST_MISSION_DATE, completedToday],
+    ]).catch(console.log);
     flashBuddyMood(completionMood);
     if (shouldShowConfetti(newTotal) || veryExcited) {
       triggerCelebrateConfetti(veryExcited ? "very-excited" : "excited");
@@ -971,6 +995,7 @@ export default function App() {
         K.COMPLETED_TODAY,
         K.TOTAL_MISSIONS,
         K.LAST_MISSION,
+        K.LAST_MISSION_DATE,
         K.FIRST_REWARD,
         K.SKIP_COUNT,
         K.DONE_IDS_TODAY,
@@ -1002,7 +1027,15 @@ export default function App() {
       setPrevTotalEver(tot);
       setCompletedToday(comp);
       setTotalMissions(tm);
-      setLastMission(tm > 0 ? getStoredMissionTitle(v[K.LAST_MISSION]) : null);
+      const yesterday = new Date(Date.now() - 86400000)
+        .toISOString()
+        .split("T")[0];
+      setLastMission(
+        tm > 0 && v[K.LAST_MISSION_DATE] === yesterday
+          ? getStoredMissionTitle(v[K.LAST_MISSION])
+          : null,
+      );
+      setLastMissionDate(v[K.LAST_MISSION_DATE] || null);
       setFirstReward(v[K.FIRST_REWARD] === "true");
       setSkipCount(sk);
       setDoneIdsToday(doneIds);
@@ -1348,7 +1381,7 @@ export default function App() {
           completedToday={completedToday}
           totalMissions={totalMissions}
           childName={childName}
-          lastMission={lastMission}
+          lastMission={lastMissionDate === yesterday ? lastMission : null}
           showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
           skipSensitivity={appSettings.skipSensitivity}
           onSettings={() => setScreen("settings")}
@@ -1462,6 +1495,7 @@ export default function App() {
             setSkipCount(0);
             setDoneIdsToday([]);
             setFirstMission(true);
+            setLastMissionDate(null);
             setIsVeryExcited(false);
             syncProgressFromStorage().catch(console.log);
           }}

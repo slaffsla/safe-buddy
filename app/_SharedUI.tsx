@@ -45,7 +45,7 @@ export function ProgressBar({
   speak: (t: string) => void;
   rtlChildSex?: RtlChildSex;
 }) {
-  const { pct } = getProgress(total);
+  const { pct, prev } = getProgress(total);
   const emotionalLabel =
     total === 0
       ? tSpeak("progress.label_first", undefined, rtlChildSex)
@@ -77,7 +77,7 @@ export function ProgressBar({
         <Text style={s.pbEmotion}>{emotionalLabel}</Text>
         <Text style={s.pbStars}>⭐ {total}</Text>
       </View>
-      <View style={s.pbTrack}>
+      <View style={[s.pbTrack, { backgroundColor: prev >= 35 ? C.greenLt : C.track }]}>
         <View style={[s.pbFill, { width: `${Math.round(pct * 100)}%` }]} />
       </View>
     </TouchableOpacity>

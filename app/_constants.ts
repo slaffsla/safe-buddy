@@ -984,7 +984,7 @@ export function getProgress(total: number) {
     else break;
   }
   const pct = next === prev ? 1 : Math.min((total - prev) / (next - prev), 1);
-  return { next, pct };
+  return { next, prev, pct };
 }
 
 export const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);

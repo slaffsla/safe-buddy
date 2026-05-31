@@ -470,7 +470,7 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
               />
             ))}
           </View>
-          <View style={s.topActions}>
+          <View style={s.topActions} key={locale}>
             <LanguageToggle value={locale} onChange={handleLocaleChange} />
             <TouchableOpacity onPress={onDone} style={s.skipBtn}>
               <Text style={[s.skipTxt, isLargeTablet && s.skipTxtLarge]}>

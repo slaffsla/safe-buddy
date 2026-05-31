@@ -77,7 +77,12 @@ export function ProgressBar({
         <Text style={s.pbEmotion}>{emotionalLabel}</Text>
         <Text style={s.pbStars}>⭐ {total}</Text>
       </View>
-      <View style={[s.pbTrack, { backgroundColor: prev >= 35 ? C.greenLt : C.track }]}>
+      <View
+        style={[
+          s.pbTrack,
+          { backgroundColor: prev >= 35 ? C.greenLt : C.track },
+        ]}
+      >
         <View style={[s.pbFill, { width: `${Math.round(pct * 100)}%` }]} />
       </View>
     </TouchableOpacity>

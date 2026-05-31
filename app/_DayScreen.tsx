@@ -191,7 +191,7 @@ export default function DayScreen({
             maxWidth: contentMaxWidth,
             padding: screenPadding,
             paddingTop: buddyContentSpacer,
-            paddingBottom: isLargeTablet ? 110 : 80,
+            paddingBottom: isLargeTablet ? 70 : 50,
           },
         ]}
         onContentSizeChange={() => {
@@ -307,6 +307,8 @@ export default function DayScreen({
             );
           })
         )}
+      </ScrollView>
+      <View style={s.footer} pointerEvents="box-none">
         <TouchableOpacity
           style={s.btnBack}
           onPress={onClose}
@@ -314,8 +316,7 @@ export default function DayScreen({
         >
           <Text style={s.btnBackTxt}>{t("common.back")}</Text>
         </TouchableOpacity>
-        <View style={{ height: 60 }} />
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -433,11 +434,22 @@ const s = StyleSheet.create({
   },
   startBtnTxt: { fontSize: 18, color: C.white, fontWeight: "700" },
 
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 8,
+    alignItems: "center",
+    zIndex: 10,
+    pointerEvents: "box-none",
+  },
   btnBack: {
-    marginTop: 20,
-    marginBottom: 12,
     padding: 12,
     alignSelf: "center",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
   },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
 });

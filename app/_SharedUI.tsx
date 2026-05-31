@@ -146,7 +146,7 @@ export function Confetti({ trigger }: { trigger: boolean }) {
   return (
     <View style={[s.confettiOverlay, s.noPointerEvents]}>
       <ConfettiCannon
-        count={64}
+        count={128}
         origin={{ x: width / 2, y: 0 }}
         autoStart={true}
         fadeOut={true}

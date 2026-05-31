@@ -553,11 +553,8 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
-        const yesterday = new Date(Date.now() - 86400000)
-          .toISOString()
-          .split("T")[0];
         const storedLastMission =
-          tm > 0 && v[K.LAST_MISSION_DATE] === yesterday
+          tm > 0 && v[K.LAST_MISSION_DATE] === YESTERDAY
             ? getStoredMissionTitle(v[K.LAST_MISSION])
             : null;
         setLastMission(storedLastMission);
@@ -603,10 +600,6 @@ export default function App() {
         setReady(true);
       }
     })();
-  }, []);
-
-  useEffect(() => {
-    setYesterday(new Date(Date.now() - 86400000).toISOString().split("T")[0]);
   }, []);
 
   // Persist stars / missions / skips
@@ -1383,7 +1376,7 @@ export default function App() {
           completedToday={completedToday}
           totalMissions={totalMissions}
           childName={childName}
-          lastMission={lastMissionDate === yesterday ? lastMission : null}
+          lastMission={lastMissionDate === YESTERDAY ? lastMission : null}
           showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
           skipSensitivity={appSettings.skipSensitivity}
           onSettings={() => setScreen("settings")}

@@ -20,12 +20,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
-
-const YESTERDAY = (() => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split("T")[0];
-})();
 import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
@@ -86,6 +80,12 @@ import SettingsScreen, {
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
 import { AppLocale, getTtsLanguage, t, tSpeak } from "./i18n";
+
+const YESTERDAY = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+})();
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -880,7 +880,10 @@ export default function App() {
     setLastMission(getMissionTitle(mission.id, mission.title));
     const completedToday = todayStr();
     AsyncStorage.multiSet([
-      [K.LAST_MISSION, JSON.stringify({ id: mission.id, title: mission.title })],
+      [
+        K.LAST_MISSION,
+        JSON.stringify({ id: mission.id, title: mission.title }),
+      ],
       [K.LAST_MISSION_DATE, completedToday],
     ]).catch(console.log);
     flashBuddyMood(completionMood);

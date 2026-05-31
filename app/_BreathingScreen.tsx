@@ -640,26 +640,29 @@ export default function BreathingScreen({
   // ── COMPLETE ───────────────────────────────────────────────────────────────
   if (state === "complete") {
     return (
-      <View style={s.screen}>
-        <View style={{ height: BUDDY_CONTENT_SPACER }} />
-        <Text style={s.celebTitle}>{t("breathing.celeb_title")}</Text>
-        <Text style={s.celebSub}>{t("breathing.celeb_sub")}</Text>
+      <View style={s.screenRoot}>
+        <View style={s.screen}>
+          <View style={{ height: BUDDY_CONTENT_SPACER }} />
+          <Text style={s.celebTitle}>{t("breathing.celeb_title")}</Text>
+          <Text style={s.celebSub}>{t("breathing.celeb_sub")}</Text>
 
-        <Animated.View
-          style={[s.circleActive, { transform: [{ scale: buddyScale }] }]}
-        >
-          <Text style={s.circleEmoji}>🌱</Text>
-        </Animated.View>
-
-        <TouchableOpacity
-          style={s.btnPrimary}
-          onPress={onComplete}
-          activeOpacity={0.85}
-        >
-          <Text style={s.btnPrimaryTxt}>
-            {tGender("breathing.btn_done", undefined, rtlChildSex)}
-          </Text>
-        </TouchableOpacity>
+          <Animated.View
+            style={[s.circleActive, { transform: [{ scale: buddyScale }] }]}
+          >
+            <Text style={s.circleEmoji}>🌱</Text>
+          </Animated.View>
+        </View>
+        <View style={s.footer} pointerEvents="box-none">
+          <TouchableOpacity
+            style={s.btnPrimaryFooter}
+            onPress={onComplete}
+            activeOpacity={0.85}
+          >
+            <Text style={s.btnPrimaryTxt}>
+              {tGender("breathing.btn_done", undefined, rtlChildSex)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -673,103 +676,111 @@ export default function BreathingScreen({
   const progress = Math.min(1, elapsedMs / BREATHING_DURATION_MS);
 
   return (
-    <View style={s.screen}>
-      <View style={s.topRightControls}>
-        <TouchableOpacity
-          style={[s.controlToggle, musicEnabled && s.controlToggleEnabled]}
-          onPress={() => onMusicChange?.(!musicEnabled)}
-          activeOpacity={0.75}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: musicEnabled }}
-          accessibilityLabel={t(
-            musicEnabled
-              ? "breathing.music_off_a11y"
-              : "breathing.music_on_a11y",
-          )}
-        >
-          <FontAwesome5
-            name="music"
-            size={18}
-            color={musicEnabled ? C.green : C.muted}
+    <View style={s.screenRoot}>
+      <View style={s.screen}>
+        <View style={s.topRightControls}>
+          <TouchableOpacity
+            style={[s.controlToggle, musicEnabled && s.controlToggleEnabled]}
+            onPress={() => onMusicChange?.(!musicEnabled)}
+            activeOpacity={0.75}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: musicEnabled }}
+            accessibilityLabel={t(
+              musicEnabled
+                ? "breathing.music_off_a11y"
+                : "breathing.music_on_a11y",
+            )}
+          >
+            <FontAwesome5
+              name="music"
+              size={18}
+              color={musicEnabled ? C.green : C.muted}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.controlToggle, guidanceEnabled && s.controlToggleEnabled]}
+            onPress={() => onGuidanceChange?.(!guidanceEnabled)}
+            activeOpacity={0.75}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: guidanceEnabled }}
+            accessibilityLabel={t(
+              guidanceEnabled
+                ? "breathing.guidance_off_a11y"
+                : "breathing.guidance_on_a11y",
+            )}
+          >
+            <Text style={s.guidanceToggleTxt}>
+              {guidanceEnabled ? "🔊" : "🔇"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Phase label + timer sit above Buddy */}
+        <Text style={s.phaseLabel}>{phaseLabel}</Text>
+        <Text style={s.timeLeft}>
+          {mm}:{ss}
+        </Text>
+
+        {/* Buddy IS the breathing element — no separate circle */}
+        <View style={s.buddyContainer}>
+          <Buddy
+            mood={buddyTapMood ?? "serene"}
+            speak={speak}
+            size={BUDDY_BASE}
+            phaseScale={buddyScale}
+            pettable={currentPhaseIndex !== 0}
+            onPettingChange={(petting) => {
+              setIsPetting(petting);
+              isPettingRef.current = petting;
+            }}
+            onTap={() => {
+              setBuddyTapMood("happy");
+              if (buddyTapMoodTimerRef.current) {
+                clearTimeout(buddyTapMoodTimerRef.current);
+              }
+              buddyTapMoodTimerRef.current = setTimeout(() => {
+                setBuddyTapMood(null);
+                buddyTapMoodTimerRef.current = null;
+              }, 1200);
+            }}
           />
-        </TouchableOpacity>
+        </View>
+        {showNatureFact && (
+          <TouchableOpacity
+            style={s.natureFact}
+            onPressIn={() => speakCardText(natureFactText)}
+            onPress={() => speakCardText(natureFactText)}
+            activeOpacity={0.8}
+          >
+            <Text style={s.natureFactText}>🌿 {natureFactText}</Text>
+          </TouchableOpacity>
+        )}
+        <View style={s.progressTrack}>
+          <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
+        </View>
+      </View>
+
+      <View style={s.footer} pointerEvents="box-none">
         <TouchableOpacity
-          style={[s.controlToggle, guidanceEnabled && s.controlToggleEnabled]}
-          onPress={() => onGuidanceChange?.(!guidanceEnabled)}
-          activeOpacity={0.75}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: guidanceEnabled }}
-          accessibilityLabel={t(
-            guidanceEnabled
-              ? "breathing.guidance_off_a11y"
-              : "breathing.guidance_on_a11y",
-          )}
+          style={s.btnExitFooter}
+          onPress={handleExit}
+          activeOpacity={0.7}
         >
-          <Text style={s.guidanceToggleTxt}>
-            {guidanceEnabled ? "🔊" : "🔇"}
+          <Text style={s.btnExitTxt}>
+            {tGender("breathing.btn_finish", undefined, rtlChildSex)}
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Phase label + timer sit above Buddy */}
-      <Text style={s.phaseLabel}>{phaseLabel}</Text>
-      <Text style={s.timeLeft}>
-        {mm}:{ss}
-      </Text>
-
-      {/* Buddy IS the breathing element — no separate circle */}
-      <View style={s.buddyContainer}>
-        <Buddy
-          mood={buddyTapMood ?? "serene"}
-          speak={speak}
-          size={BUDDY_BASE}
-          phaseScale={buddyScale}
-          pettable={currentPhaseIndex !== 0}
-          onPettingChange={(petting) => {
-            setIsPetting(petting);
-            isPettingRef.current = petting;
-          }}
-          onTap={() => {
-            setBuddyTapMood("happy");
-            if (buddyTapMoodTimerRef.current) {
-              clearTimeout(buddyTapMoodTimerRef.current);
-            }
-            buddyTapMoodTimerRef.current = setTimeout(() => {
-              setBuddyTapMood(null);
-              buddyTapMoodTimerRef.current = null;
-            }, 1200);
-          }}
-        />
-      </View>
-      {showNatureFact && (
-        <TouchableOpacity
-          style={s.natureFact}
-          onPressIn={() => speakCardText(natureFactText)}
-          onPress={() => speakCardText(natureFactText)}
-          activeOpacity={0.8}
-        >
-          <Text style={s.natureFactText}>🌿 {natureFactText}</Text>
-        </TouchableOpacity>
-      )}
-      <View style={s.progressTrack}>
-        <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
-      </View>
-
-      <TouchableOpacity
-        style={s.btnExit}
-        onPress={handleExit}
-        activeOpacity={0.7}
-      >
-        <Text style={s.btnExitTxt}>
-          {tGender("breathing.btn_finish", undefined, rtlChildSex)}
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 }
 const CIRCLE_BASE = 100;
 
 const s = StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    width: "100%",
+  },
   screen: {
     flex: 1,
     width: "100%",
@@ -778,7 +789,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     padding: 20,
-    paddingBottom: 96,
+    paddingBottom: 0,
   },
   footer: {
     position: "absolute",
@@ -791,6 +802,24 @@ const s = StyleSheet.create({
   },
   btnSecondaryFooter: {
     marginTop: 0,
+  },
+  btnPrimaryFooter: {
+    backgroundColor: C.green,
+    borderRadius: 16,
+    paddingVertical: 17,
+    paddingHorizontal: 48,
+    minWidth: 220,
+    alignItems: "center",
+  },
+  btnExitFooter: {
+    backgroundColor: "#FFFDF9",
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    minWidth: 180,
+    alignItems: "center",
   },
 
   title: {

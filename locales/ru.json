@@ -150,7 +150,8 @@
     "hint": "Нажми на награду, чтобы услышать",
     "redeemed_alert_title": "🎉 Награда получена!",
     "redeemed_speak": "Молодец! Ты заслужил награду",
-    "redeemed_speak_female": "Молодец! Ты заслужила награду"
+    "redeemed_speak_female": "Молодец! Ты заслужила награду",
+    "redeemed_alert_close": "ОК"
   },
   "reward_titles": {
     "r1": "Дополнительный мультик или видео",

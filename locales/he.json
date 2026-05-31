@@ -158,7 +158,8 @@
     "need_vague": "עוד קצת",
     "hint": "לחצו על פרס כדי לשמוע",
     "redeemed_alert_title": "🎉 פרס נפתח!",
-    "redeemed_speak": " כל הכבוד!"
+    "redeemed_speak": " כל הכבוד!",
+    "redeemed_alert_close": "בסדר"
   },
   "reward_titles": {
     "r1": "עוד פרק/סרטון",

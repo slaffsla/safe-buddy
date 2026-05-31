@@ -4,13 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import { StatusBar } from "expo-status-bar";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
@@ -84,7 +79,6 @@ import SettingsScreen, {
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
 import { AppLocale, getTtsLanguage, t, tSpeak } from "./i18n";
-import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -396,6 +390,9 @@ export default function App() {
   const [pendingMissionComplete, setPendingMissionComplete] = useState(false);
   const [pinError, setPinError] = useState("");
   const [pinFocused, setPinFocused] = useState(false);
+  const [showRedeemedAlert, setShowRedeemedAlert] = useState(false);
+  const [redeemedAlertTitle, setRedeemedAlertTitle] = useState("");
+  const [redeemedAlertMessage, setRedeemedAlertMessage] = useState("");
 
   // Settings
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -616,7 +613,10 @@ export default function App() {
   }, [doneIdsToday, ready]);
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
-  async function completeChildOnboarding(nextName: string, nextAge: number | null) {
+  async function completeChildOnboarding(
+    nextName: string,
+    nextAge: number | null,
+  ) {
     const name = nextName.trim();
     if (!name) {
       Alert.alert(t("onboarding.name_required"));
@@ -715,7 +715,11 @@ export default function App() {
       if (!cancelled) setTinyFactBubble(null);
     }, 0);
 
-    if (visibleScreen !== "active" || !mission || !appSettings.tinyFactsEnabled) {
+    if (
+      visibleScreen !== "active" ||
+      !mission ||
+      !appSettings.tinyFactsEnabled
+    ) {
       return () => {
         cancelled = true;
         clearTimeout(clearBubbleTimer);
@@ -899,6 +903,8 @@ export default function App() {
         AsyncStorage.setItem(K.FIRST_REWARD, "true").catch(console.log);
       }
       incrementLocalUsage("rewardsRedeemed").catch(console.log);
+      const title = t("rewards.redeemed_alert_title");
+      const message = getRewardTitle(reward.id, reward.title);
       speak(
         tSpeak(
           "rewards.redeemed_speak",
@@ -906,10 +912,9 @@ export default function App() {
           appSettings.rtlChildSex ?? "male",
         ),
       );
-      Alert.alert(
-        t("rewards.redeemed_alert_title"),
-        getRewardTitle(reward.id, reward.title),
-      );
+      setRedeemedAlertTitle(title);
+      setRedeemedAlertMessage(message);
+      setShowRedeemedAlert(true);
     },
     [firstReward, speak, appSettings.rtlChildSex],
   );
@@ -1251,7 +1256,13 @@ export default function App() {
     92,
     Math.round(
       baseOverlayBuddySize *
-        (isShortHeight ? 0.78 : isLargeTablet ? 1.18 : isTabletWidth ? 0.96 : 1),
+        (isShortHeight
+          ? 0.78
+          : isLargeTablet
+            ? 1.18
+            : isTabletWidth
+              ? 0.96
+              : 1),
     ),
   );
   const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);
@@ -1552,6 +1563,41 @@ export default function App() {
         )}
 
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
+      {showRedeemedAlert && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowRedeemedAlert(false)}
+        >
+          <View style={s.rewardAlertOverlay}>
+            <View style={s.rewardAlertCard}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => speak(redeemedAlertTitle)}
+              >
+                <Text style={s.rewardAlertTitle}>{redeemedAlertTitle}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => speak(redeemedAlertMessage)}
+                style={s.rewardAlertMessageWrap}
+              >
+                <Text style={s.rewardAlertMessage}>{redeemedAlertMessage}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={s.rewardAlertButton}
+                onPress={() => setShowRedeemedAlert(false)}
+              >
+                <Text style={s.rewardAlertButtonTxt}>
+                  {t("rewards.redeemed_alert_close")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       {showPinScreen && (
         <View style={s.pinOverlay}>
           <KeyboardAvoidingView
@@ -1737,6 +1783,55 @@ const s = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     zIndex: 2000,
+  },
+  rewardAlertOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.72)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+    zIndex: 2100,
+  },
+  rewardAlertCard: {
+    width: "100%",
+    maxWidth: 520,
+    backgroundColor: C.white,
+    borderRadius: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
+    alignItems: "center",
+  },
+  rewardAlertTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: C.text,
+    textAlign: "center",
+    marginBottom: 14,
+  },
+  rewardAlertMessageWrap: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  rewardAlertMessage: {
+    fontSize: 17,
+    lineHeight: 24,
+    color: C.muted,
+    textAlign: "center",
+  },
+  rewardAlertButton: {
+    backgroundColor: C.green,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  rewardAlertButtonTxt: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: C.white,
   },
   pinKeyboardWrap: {
     width: "100%",

@@ -26,7 +26,7 @@ interface ChildOnboardingProps {
   onComplete: (name: string, age: number | null) => void;
 }
 
-const AGE_OPTIONS = [5, 6, 7, 8, 9, 10];
+const AGE_OPTIONS = [4, 5, 6, 7, 8, 9, 10, 11, 12];
 const CHILD_BUDDY = {
   hello: require("../assets/Character/Buddy2.png"),
   calm: require("../assets/Character/Buddy1.png"),

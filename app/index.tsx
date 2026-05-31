@@ -425,7 +425,6 @@ export default function App() {
   const { contentMaxWidth, isTabletWidth, isLargeTablet, isShortHeight } =
     useLayoutMetrics();
   const visibleScreen = screen;
-  const [yesterday, setYesterday] = useState("");
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride

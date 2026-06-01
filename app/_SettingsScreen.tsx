@@ -3135,6 +3135,7 @@ export default function SettingsScreen({
   const [showPin, setShowPin] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [parentZoneOpen, setParentZoneOpen] = useState(false);
+  const [handoffCardDismissed, setHandoffCardDismissed] = useState(false);
   const [activeSubscreen, setActiveSubscreen] = useState<
     "main" | "schedule" | "routine"
   >("main");
@@ -3357,12 +3358,66 @@ export default function SettingsScreen({
         contentContainerStyle={ss.content}
         keyboardShouldPersistTaps="handled"
       >
+        {!childOnboardingDone &&
+          onStartChildOnboarding &&
+          !handoffCardDismissed && (
+            <>
+              <View style={ss.handoffCard}>
+                <View style={ss.handoffHeader}>
+                  <Text style={ss.handoffIcon}>🐻</Text>
+                  <View style={ss.handoffTextWrap}>
+                    <Text style={ss.handoffTitle}>
+                      {tx("settings.child_handoff_title")}
+                    </Text>
+                    <Text style={ss.handoffSub}>
+                      {tx("settings.child_handoff_body")}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={ss.handoffSteps}>
+                  <Text style={ss.handoffStep}>
+                    1. {tx("settings.child_handoff_step_look")}
+                  </Text>
+                  <Text style={ss.handoffStep}>
+                    2. {tx("settings.child_handoff_step_adjust")}
+                  </Text>
+                  <Text style={ss.handoffStep}>
+                    3. {tx("settings.child_handoff_step_start")}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={ss.handoffPrimary}
+                  onPress={onStartChildOnboarding}
+                  activeOpacity={0.85}
+                >
+                  <Text style={ss.handoffPrimaryTxt}>
+                    {tx("settings.child_handoff_start")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={ss.handoffSecondary}
+                  onPress={() => setHandoffCardDismissed(true)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={ss.handoffSecondaryTxt}>
+                    {tx("settings.child_handoff_adjust_first")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={ss.spacer} />
+            </>
+          )}
+
         {/* Progress report — high priority, first */}
         {progress && <ProgressSection progress={progress} />}
 
         <View style={pz.sectionSpacer} />
 
-        {!childOnboardingDone && onStartChildOnboarding && (
+        {!childOnboardingDone &&
+          onStartChildOnboarding &&
+          handoffCardDismissed && (
           <>
             <TouchableOpacity
               style={ss.childStartCard}
@@ -3622,6 +3677,78 @@ const ss = StyleSheet.create({
     padding: 16,
   },
   spacer: { height: 24 },
+  handoffCard: {
+    width: "100%",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#CFE9DD",
+    padding: 18,
+    shadowColor: "#104C39",
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
+  },
+  handoffHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+  },
+  handoffIcon: { fontSize: 34, marginTop: 1 },
+  handoffTextWrap: { flex: 1, minWidth: 0 },
+  handoffTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: C.text,
+    lineHeight: 25,
+  },
+  handoffSub: {
+    fontSize: 13,
+    color: C.muted,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  handoffSteps: {
+    backgroundColor: "#F4FAF7",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D8EFE6",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: 16,
+    gap: 7,
+  },
+  handoffStep: {
+    fontSize: 13,
+    color: C.green,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  handoffPrimary: {
+    backgroundColor: C.green,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  handoffPrimaryTxt: {
+    fontSize: 15,
+    color: C.white,
+    fontWeight: "800",
+  },
+  handoffSecondary: {
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: 4,
+  },
+  handoffSecondaryTxt: {
+    fontSize: 14,
+    color: C.green,
+    fontWeight: "700",
+  },
   childStartCard: {
     width: "100%",
     flexDirection: "row",

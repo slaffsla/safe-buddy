@@ -595,9 +595,13 @@ export const DEFAULT_MORNING_STEPS: MorningStep[] = [
 
 // Returns localized morning step title, falling back to pool / custom step title
 export function getMorningStepTitle(id: number, fallback?: string): string {
+  const defaultStep = DEFAULT_MORNING_STEPS.find((s) => s.id === id);
   const poolFallback =
-    fallback ?? DEFAULT_MORNING_STEPS.find((s) => s.id === id)?.title ?? "";
-  if (!DEFAULT_MORNING_STEPS.some((s) => s.id === id)) return poolFallback;
+    fallback ?? defaultStep?.title ?? "";
+  if (!defaultStep) return poolFallback;
+  if (fallback?.trim() && fallback.trim() !== defaultStep.title) {
+    return fallback.trim();
+  }
   return localizedOrFallback(`morning_step_titles.ms${id}`, poolFallback);
 }
 

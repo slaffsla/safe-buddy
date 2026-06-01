@@ -24,6 +24,7 @@ import { t } from "./i18n";
 const TAP_MOOD_DELAY_MS = 280;
 const PETTING_HEART_INTERVAL_MS = 520;
 const PRONOUNCED_PETTING_HEART_INTERVAL_MS = 360;
+const PETTABLE_TAP_SPEECH_GUARD_MS = 2200;
 
 interface BuddyProps {
   mood?: BuddyMood;
@@ -83,6 +84,8 @@ export default function Buddy({
   const tapMoodTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pettableRef = useRef(pettable);
   const onPettingChangeRef = useRef(onPettingChange);
+  const pettingHappenedDuringPressRef = useRef(false);
+  const lastPettableTapSpeechAtRef = useRef(0);
 
   const isAmbient = isAmbientMood(mood);
   const activePhaseScale = phaseScale ?? breathScale;
@@ -198,6 +201,11 @@ export default function Buddy({
 
   function beginPetting() {
     if (!pettableRef.current) return;
+    pettingHappenedDuringPressRef.current = true;
+    if (tapMoodTimeout.current) {
+      clearTimeout(tapMoodTimeout.current);
+      tapMoodTimeout.current = null;
+    }
     if (heartTimeout.current) clearTimeout(heartTimeout.current);
     if (!isPetting) setIsPetting(true);
     onPettingChangeRef.current?.(true);
@@ -284,6 +292,9 @@ export default function Buddy({
 
   function handlePress() {
     const isPettingMode = pettableRef.current;
+    const wasPettingGesture =
+      isPettingMode && pettingHappenedDuringPressRef.current;
+    pettingHappenedDuringPressRef.current = false;
 
     if (!isPettingMode || tapHeartsInPetting) {
       Animated.sequence([
@@ -305,6 +316,18 @@ export default function Buddy({
       if (!isPettingMode) {
         speak(getBuddyLine(mood));
       }
+    }
+
+    if (wasPettingGesture) return;
+    if (isPettingMode) {
+      const now = Date.now();
+      if (
+        now - lastPettableTapSpeechAtRef.current <
+        PETTABLE_TAP_SPEECH_GUARD_MS
+      ) {
+        return;
+      }
+      lastPettableTapSpeechAtRef.current = now;
     }
 
     if (tapMoodTimeout.current) clearTimeout(tapMoodTimeout.current);

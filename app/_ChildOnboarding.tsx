@@ -205,19 +205,19 @@ export default function ChildOnboarding({
                 speak={speak}
                 size={buddySize}
               />
-              {factVisible && !firstPetDone && (
-                <ImageBackground
-                  source={visualAssets.graphics.buddyBubble}
-                  style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}
-                  imageStyle={s.factBubbleImage}
-                  resizeMode="contain"
-                >
-                  <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
-                    {t("onboarding.tiny_fact_bear_sleep")}
-                  </Text>
-                </ImageBackground>
-              )}
             </View>
+            {factVisible && !firstPetDone && (
+              <ImageBackground
+                source={visualAssets.graphics.buddyBubble}
+                style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}
+                imageStyle={s.factBubbleImage}
+                resizeMode="contain"
+              >
+                <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
+                  {t("onboarding.tiny_fact_bear_sleep")}
+                </Text>
+              </ImageBackground>
+            )}
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
               {firstPetDone
                 ? t("onboarding.meet_after_pet_title")
@@ -426,15 +426,14 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    marginBottom: 6,
-    paddingBottom: 38,
+    marginBottom: 0,
   },
   factBubble: {
-    position: "absolute",
-    right: 10,
-    bottom: 0,
     width: 216,
     height: 156,
+    alignSelf: "center",
+    marginTop: -36,
+    marginBottom: 6,
     paddingTop: 40,
     paddingRight: 30,
     paddingBottom: 34,
@@ -442,10 +441,10 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   factBubbleLarge: {
-    right: 42,
-    bottom: 4,
     width: 280,
     height: 202,
+    marginTop: -54,
+    marginBottom: 10,
     paddingTop: 56,
     paddingRight: 40,
     paddingBottom: 46,

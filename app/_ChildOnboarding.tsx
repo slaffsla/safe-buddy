@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
+import { visualAssets } from "../lib/visualAssets";
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { RtlChildSex, t } from "./i18n";
@@ -177,14 +179,19 @@ export default function ChildOnboarding({
                 size={buddySize}
               />
               {factVisible && !firstPetDone && (
-                <View
-                  style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}
+                <ImageBackground
+                  source={visualAssets.graphics.buddyBubble}
+                  style={[
+                    s.factBubble,
+                    isLargeTablet && s.factBubbleLarge,
+                  ]}
+                  imageStyle={s.factBubbleImage}
+                  resizeMode="stretch"
                 >
                   <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
                     {t("onboarding.tiny_fact_bear_sleep")}
                   </Text>
-                  <View style={s.factTail} />
-                </View>
+                </ImageBackground>
               )}
             </View>
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
@@ -399,21 +406,26 @@ const s = StyleSheet.create({
   },
   factBubble: {
     position: "absolute",
-    top: 18,
-    right: 0,
-    width: "42%",
-    backgroundColor: "#FFFDF9",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#D7E8DF",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    top: 10,
+    right: -4,
+    width: "46%",
+    minHeight: 112,
+    paddingTop: 30,
+    paddingRight: 22,
+    paddingBottom: 24,
+    paddingLeft: 28,
+    justifyContent: "center",
   },
   factBubbleLarge: {
-    top: 36,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    borderRadius: 22,
+    top: 28,
+    minHeight: 152,
+    paddingTop: 42,
+    paddingRight: 32,
+    paddingBottom: 34,
+    paddingLeft: 42,
+  },
+  factBubbleImage: {
+    opacity: 0.96,
   },
   factText: {
     fontSize: 13,
@@ -423,18 +435,6 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   factTextLarge: { fontSize: 18, lineHeight: 26 },
-  factTail: {
-    position: "absolute",
-    left: -8,
-    bottom: 18,
-    width: 16,
-    height: 16,
-    backgroundColor: "#FFFDF9",
-    borderLeftWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "#D7E8DF",
-    transform: [{ rotate: "45deg" }],
-  },
   title: {
     fontSize: 30,
     lineHeight: 36,

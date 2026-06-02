@@ -8,7 +8,6 @@ import {
   Animated,
   Easing,
   Image,
-  ImageSourcePropType,
   ImageStyle,
   ScrollView,
   StyleProp,
@@ -19,6 +18,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
+import { visualAssets, VisualAssetSource } from "../lib/visualAssets";
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { AppLocale, getAppLocale, setAppLocale, t } from "./i18n";
@@ -49,14 +49,26 @@ type SoftAccentAsset =
   | "magic"
   | "settings";
 
-const SOFT_ACCENT_IMAGES: Record<SoftAccentAsset, ImageSourcePropType> = {
-  sprigLean: require("../assets/elements/Graphics Element1.png"),
-  sprigUpright: require("../assets/elements/Graphics Element2.png"),
-  hearts: require("../assets/elements/Graphics Element3.png"),
-  stars: require("../assets/elements/Graphics Element4.png"),
-  magic: require("../assets/elements/Graphics Element5.png"),
-  settings: require("../assets/elements/Graphics Element6.png"),
+const SOFT_ACCENT_IMAGES: Record<SoftAccentAsset, VisualAssetSource> = {
+  sprigLean: visualAssets.accents.sprigLean,
+  sprigUpright: visualAssets.accents.sprigUpright,
+  hearts: visualAssets.accents.hearts,
+  stars: visualAssets.accents.stars,
+  magic: visualAssets.accents.magic,
+  settings: visualAssets.accents.settingsLeaf,
 };
+
+const ONBOARDING_GRAPHICS = {
+  parentZone: visualAssets.graphics.parentZone,
+  morning: visualAssets.graphics.sunrise,
+  schedule: visualAssets.graphics.schedule,
+  settings: visualAssets.graphics.settings,
+  mission: visualAssets.graphics.missionRocket,
+  complete: visualAssets.graphics.completeBadge,
+  stars: visualAssets.graphics.star,
+  rewards: visualAssets.graphics.rewardGift,
+  breathing: visualAssets.graphics.breathingBuddy,
+} satisfies Record<string, VisualAssetSource>;
 
 function SoftAccent({
   asset,
@@ -314,10 +326,22 @@ function Screen1({ speak }: { speak: (t: string) => void }) {
 function Screen2({ speak }: { speak: (t: string) => void }) {
   const { isTabletWidth, isLargeTablet, screenScroll } = useOnboardingLayout();
   const tips = [
-    t("parent_onboarding.screen2_tip_1"),
-    t("parent_onboarding.screen2_tip_2"),
-    t("parent_onboarding.screen2_tip_3"),
-    t("parent_onboarding.screen2_tip_4"),
+    {
+      text: t("parent_onboarding.screen2_tip_1"),
+      image: ONBOARDING_GRAPHICS.mission,
+    },
+    {
+      text: t("parent_onboarding.screen2_tip_2"),
+      image: ONBOARDING_GRAPHICS.complete,
+    },
+    {
+      text: t("parent_onboarding.screen2_tip_3"),
+      image: ONBOARDING_GRAPHICS.stars,
+    },
+    {
+      text: t("parent_onboarding.screen2_tip_4"),
+      image: ONBOARDING_GRAPHICS.rewards,
+    },
   ];
   return (
     <ScrollView
@@ -385,8 +409,13 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
                   {i + 1}
                 </Text>
               </View>
+              <Image
+                source={tip.image}
+                style={[s.tipGraphic, isLargeTablet && s.tipGraphicLarge]}
+                resizeMode="contain"
+              />
               <Text style={[s.tipText, isLargeTablet && s.tipTextLarge]}>
-                {tip}
+                {tip.text}
               </Text>
             </View>
           ))}
@@ -403,19 +432,24 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
 
 function Screen3() {
   const { isTabletWidth, isLargeTablet, screenScroll } = useOnboardingLayout();
-  const items = [
+  const items: {
+    image?: VisualAssetSource;
+    icon?: string;
+    title: string;
+    sub: string;
+  }[] = [
     {
-      icon: "🔐",
+      image: ONBOARDING_GRAPHICS.parentZone,
       title: t("settings.parent_zone_title"),
       sub: t("settings.parent_zone_sub"),
     },
     {
-      icon: "🌅",
+      image: ONBOARDING_GRAPHICS.morning,
       title: t("settings.morning_manage_title"),
       sub: t("settings.routine_section"),
     },
     {
-      icon: "📅",
+      image: ONBOARDING_GRAPHICS.schedule,
       title: t("settings.schedule_manage_title"),
       sub: t("settings.schedule_section"),
     },
@@ -427,7 +461,11 @@ function Screen3() {
       contentContainerStyle={screenScroll}
       alwaysBounceVertical={false}
     >
-      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>⚙️</Text>
+      <Image
+        source={ONBOARDING_GRAPHICS.settings}
+        style={[s.bigGraphic, isLargeTablet && s.bigGraphicLarge]}
+        resizeMode="contain"
+      />
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen3_heading")}
       </Text>
@@ -441,7 +479,6 @@ function Screen3() {
           isLargeTablet && s.featureCardLarge,
         ]}
       >
-        <SoftAccent asset="settings" style={s.featureAccent} mirror />
         {items.map((item, i) => (
           <View key={item.title}>
             {i > 0 && (
@@ -453,11 +490,22 @@ function Screen3() {
               />
             )}
             <View style={[s.featureRow, isLargeTablet && s.featureRowLarge]}>
-              <Text
-                style={[s.featureIcon, isLargeTablet && s.featureIconLarge]}
-              >
-                {item.icon}
-              </Text>
+              {item.image ? (
+                <Image
+                  source={item.image}
+                  style={[
+                    s.featureGraphic,
+                    isLargeTablet && s.featureGraphicLarge,
+                  ]}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text
+                  style={[s.featureIcon, isLargeTablet && s.featureIconLarge]}
+                >
+                  {item.icon}
+                </Text>
+              )}
               <View style={s.featureTextWrap}>
                 <Text
                   style={[s.featureTitle, isLargeTablet && s.featureTitleLarge]}
@@ -491,7 +539,11 @@ function Screen4() {
       contentContainerStyle={screenScroll}
       alwaysBounceVertical={false}
     >
-      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🌬️</Text>
+      <Image
+        source={ONBOARDING_GRAPHICS.breathing}
+        style={[s.bigGraphic, isLargeTablet && s.bigGraphicLarge]}
+        resizeMode="contain"
+      />
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen4_heading")}
       </Text>
@@ -688,8 +740,17 @@ const s = StyleSheet.create({
   screenScrollTablet: { justifyContent: "center" },
   screenScrollLarge: { justifyContent: "center" },
 
-  bigEmoji: { fontSize: 58, marginBottom: 14, marginTop: 6 },
-  bigEmojiLarge: { fontSize: 78, marginBottom: 20 },
+  bigGraphic: {
+    width: 86,
+    height: 86,
+    marginBottom: 12,
+    marginTop: 2,
+  },
+  bigGraphicLarge: {
+    width: 120,
+    height: 120,
+    marginBottom: 18,
+  },
   handoffStage: {
     width: "100%",
     minHeight: 188,
@@ -859,6 +920,8 @@ const s = StyleSheet.create({
   tipDotLarge: { width: 38, height: 38, borderRadius: 19 },
   tipNum: { fontSize: 12, fontWeight: "800", color: C.green },
   tipNumLarge: { fontSize: 16 },
+  tipGraphic: { width: 34, height: 34, flexShrink: 0 },
+  tipGraphicLarge: { width: 48, height: 48 },
   tipText: {
     fontSize: 14,
     color: C.text,
@@ -880,13 +943,6 @@ const s = StyleSheet.create({
   },
   featureCardTablet: { padding: 20, borderRadius: 16 },
   featureCardLarge: { padding: 28, borderRadius: 18, marginBottom: 24 },
-  featureAccent: {
-    right: -8,
-    top: -8,
-    width: 72,
-    height: 72,
-    opacity: 0.72,
-  },
   featureDivider: {
     height: 1,
     backgroundColor: C.border,
@@ -901,6 +957,8 @@ const s = StyleSheet.create({
   featureRowLarge: { gap: 20 },
   featureIcon: { fontSize: 24, width: 32, textAlign: "center" },
   featureIconLarge: { fontSize: 34, width: 48 },
+  featureGraphic: { width: 42, height: 42, flexShrink: 0 },
+  featureGraphicLarge: { width: 58, height: 58 },
   featureTextWrap: { flex: 1 },
   featureTitle: { fontSize: 15, fontWeight: "700", color: C.text },
   featureTitleLarge: { fontSize: 21, lineHeight: 28 },

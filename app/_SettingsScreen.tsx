@@ -42,6 +42,7 @@ import {
 } from "../localUsage";
 import ParentOnboarding from "./_ParentOnboarding";
 import { CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
+import { visualAssets } from "../lib/visualAssets";
 import {
   DEFAULT_MISSION_CONFIGS,
   DEFAULT_MORNING_STEPS,
@@ -3364,7 +3365,11 @@ export default function SettingsScreen({
             <>
               <View style={ss.handoffCard}>
                 <View style={ss.handoffHeader}>
-                  <Text style={ss.handoffIcon}>🐻</Text>
+                  <Image
+                    source={visualAssets.graphics.buddyBubble}
+                    style={ss.handoffGraphic}
+                    resizeMode="contain"
+                  />
                   <View style={ss.handoffTextWrap}>
                     <Text style={ss.handoffTitle}>
                       {tx("settings.child_handoff_title")}
@@ -3424,7 +3429,11 @@ export default function SettingsScreen({
               onPress={onStartChildOnboarding}
               activeOpacity={0.85}
             >
-              <Text style={ss.childStartIcon}>🐻</Text>
+              <Image
+                source={visualAssets.graphics.buddyBubble}
+                style={ss.childStartGraphic}
+                resizeMode="contain"
+              />
               <View style={ss.childStartTextWrap}>
                 <Text style={ss.childStartTitle}>
                   {tx("settings.child_start_title")}
@@ -3445,7 +3454,11 @@ export default function SettingsScreen({
           activeOpacity={0.75}
         >
           <View style={ss.parentZoneLeft}>
-            <Text style={ss.parentZoneIcon}>🔐</Text>
+            <Image
+              source={visualAssets.graphics.parentZone}
+              style={ss.parentZoneGraphic}
+              resizeMode="contain"
+            />
             <View style={{ flex: 1 }}>
               <Text style={ss.parentZoneTitle}>
                 {tx("settings.parent_zone_title")}
@@ -3695,7 +3708,7 @@ const ss = StyleSheet.create({
     alignItems: "flex-start",
     gap: 14,
   },
-  handoffIcon: { fontSize: 34, marginTop: 1 },
+  handoffGraphic: { width: 48, height: 48, marginTop: -2, flexShrink: 0 },
   handoffTextWrap: { flex: 1, minWidth: 0 },
   handoffTitle: {
     fontSize: 19,
@@ -3761,7 +3774,7 @@ const ss = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.green,
   },
-  childStartIcon: { fontSize: 30 },
+  childStartGraphic: { width: 44, height: 44, flexShrink: 0 },
   childStartTextWrap: { flex: 1 },
   childStartTitle: {
     fontSize: 17,
@@ -3899,7 +3912,7 @@ const ss = StyleSheet.create({
     gap: 14,
     flex: 1,
   },
-  parentZoneIcon: { fontSize: 28 },
+  parentZoneGraphic: { width: 44, height: 44, flexShrink: 0 },
   parentZoneTitle: { fontSize: 16, fontWeight: "700", color: C.white },
   parentZoneSub: {
     fontSize: 12,

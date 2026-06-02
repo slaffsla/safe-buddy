@@ -289,9 +289,6 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
       >
         <View style={[s.handoffGlow, s.handoffGlowLeft]} />
         <View style={[s.handoffGlow, s.handoffGlowRight]} />
-        <View style={[s.handoffChip, s.handoffChipLeft]}>
-          <Text style={s.handoffChipText}>⚙️</Text>
-        </View>
         <View style={[s.handoffChip, s.handoffChipRight]}>
           <Text style={s.handoffChipText}>⭐</Text>
         </View>
@@ -383,7 +380,7 @@ function Screen3() {
       contentContainerStyle={screenScroll}
       alwaysBounceVertical={false}
     >
-      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🛠️</Text>
+      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>⚙️</Text>
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen3_heading")}
       </Text>
@@ -683,11 +680,6 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.78)",
     borderWidth: 1,
     borderColor: "rgba(29,107,79,0.16)",
-  },
-  handoffChipLeft: {
-    left: 26,
-    top: 26,
-    transform: [{ rotate: "-8deg" }],
   },
   handoffChipRight: {
     right: 28,

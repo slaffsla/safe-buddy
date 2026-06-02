@@ -186,7 +186,7 @@ export default function ChildOnboarding({
                     isLargeTablet && s.factBubbleLarge,
                   ]}
                   imageStyle={s.factBubbleImage}
-                  resizeMode="stretch"
+                  resizeMode="contain"
                 >
                   <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
                     {t("onboarding.tiny_fact_bear_sleep")}
@@ -406,26 +406,28 @@ const s = StyleSheet.create({
   },
   factBubble: {
     position: "absolute",
-    top: 10,
-    right: -4,
-    width: "46%",
-    minHeight: 112,
-    paddingTop: 30,
-    paddingRight: 22,
-    paddingBottom: 24,
-    paddingLeft: 28,
+    top: 0,
+    right: -8,
+    width: 190,
+    height: 160,
+    paddingTop: 46,
+    paddingRight: 28,
+    paddingBottom: 34,
+    paddingLeft: 36,
     justifyContent: "center",
   },
   factBubbleLarge: {
-    top: 28,
-    minHeight: 152,
-    paddingTop: 42,
-    paddingRight: 32,
-    paddingBottom: 34,
-    paddingLeft: 42,
+    top: 20,
+    right: 8,
+    width: 248,
+    height: 208,
+    paddingTop: 60,
+    paddingRight: 38,
+    paddingBottom: 44,
+    paddingLeft: 48,
   },
   factBubbleImage: {
-    opacity: 0.96,
+    opacity: 0.98,
   },
   factText: {
     fontSize: 13,

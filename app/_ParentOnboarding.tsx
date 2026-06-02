@@ -7,6 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
+  Image,
+  ImageSourcePropType,
+  ImageStyle,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -38,35 +41,41 @@ const HOW_IT_WORKS_COLORS = [
   { bg: "#F0F8F4", border: "#BFE5D5", badge: "#D8F1E7" },
 ];
 
-type SoftAccentKind = "sprig" | "heart" | "star";
+type SoftAccentAsset =
+  | "sprigLean"
+  | "sprigUpright"
+  | "hearts"
+  | "stars"
+  | "magic"
+  | "settings";
+
+const SOFT_ACCENT_IMAGES: Record<SoftAccentAsset, ImageSourcePropType> = {
+  sprigLean: require("../assets/elements/Graphics Element1.png"),
+  sprigUpright: require("../assets/elements/Graphics Element2.png"),
+  hearts: require("../assets/elements/Graphics Element3.png"),
+  stars: require("../assets/elements/Graphics Element4.png"),
+  magic: require("../assets/elements/Graphics Element5.png"),
+  settings: require("../assets/elements/Graphics Element6.png"),
+};
 
 function SoftAccent({
-  kind,
+  asset,
   style,
+  imageStyle,
   mirror = false,
 }: {
-  kind: SoftAccentKind;
+  asset: SoftAccentAsset;
   style?: StyleProp<ViewStyle>;
+  imageStyle?: StyleProp<ImageStyle>;
   mirror?: boolean;
 }) {
-  const mirrorStyle = mirror ? { transform: [{ scaleX: -1 }] } : undefined;
-
-  if (kind === "sprig") {
-    return (
-      <View style={[s.accent, style, mirrorStyle]}>
-        <View style={s.sprigStem} />
-        <View style={[s.sprigLeaf, s.sprigLeafA]} />
-        <View style={[s.sprigLeaf, s.sprigLeafB]} />
-        <View style={[s.sprigLeaf, s.sprigLeafC]} />
-      </View>
-    );
-  }
-
   return (
-    <View style={[s.accent, style, mirrorStyle]}>
-      <Text style={kind === "heart" ? s.accentHeart : s.accentStar}>
-        {kind === "heart" ? "♥" : "✦"}
-      </Text>
+    <View style={[s.accent, style]}>
+      <Image
+        source={SOFT_ACCENT_IMAGES[asset]}
+        style={[s.accentImage, mirror && s.accentImageMirror, imageStyle]}
+        resizeMode="contain"
+      />
     </View>
   );
 }
@@ -291,7 +300,7 @@ function Screen1({ speak }: { speak: (t: string) => void }) {
         {t("parent_onboarding.screen1_sub")}
       </Text>
       <View style={[s.noteCard, isLargeTablet && s.noteCardLarge]}>
-        <SoftAccent kind="sprig" style={s.noteAccent} mirror />
+        <SoftAccent asset="sprigLean" style={s.noteAccent} mirror />
         <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
           💬 {t("parent_onboarding.screen1_note")}
         </Text>
@@ -325,9 +334,8 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
       >
         <View style={[s.handoffGlow, s.handoffGlowLeft]} />
         <View style={[s.handoffGlow, s.handoffGlowRight]} />
-        <SoftAccent kind="sprig" style={s.handoffSprigLeft} />
-        <SoftAccent kind="heart" style={s.handoffHeart} />
-        <SoftAccent kind="star" style={s.handoffStar} />
+        <SoftAccent asset="sprigLean" style={s.handoffSprigLeft} />
+        <SoftAccent asset="magic" style={s.handoffMagic} />
         <View style={[s.handoffChip, s.handoffChipRight]}>
           <Text style={s.handoffChipText}>⭐</Text>
         </View>
@@ -433,7 +441,7 @@ function Screen3() {
           isLargeTablet && s.featureCardLarge,
         ]}
       >
-        <SoftAccent kind="sprig" style={s.featureAccent} mirror />
+        <SoftAccent asset="settings" style={s.featureAccent} mirror />
         {items.map((item, i) => (
           <View key={item.title}>
             {i > 0 && (
@@ -657,45 +665,12 @@ const s = StyleSheet.create({
     position: "absolute",
     pointerEvents: "none",
   },
-  sprigStem: {
-    position: "absolute",
-    width: 2,
-    height: 44,
-    borderRadius: 2,
-    backgroundColor: "rgba(90, 139, 100, 0.42)",
-    transform: [{ rotate: "28deg" }],
+  accentImage: {
+    width: "100%",
+    height: "100%",
   },
-  sprigLeaf: {
-    position: "absolute",
-    width: 16,
-    height: 9,
-    borderRadius: 10,
-    backgroundColor: "rgba(109, 158, 116, 0.34)",
-  },
-  sprigLeafA: {
-    left: 4,
-    top: 8,
-    transform: [{ rotate: "-24deg" }],
-  },
-  sprigLeafB: {
-    left: -12,
-    top: 19,
-    transform: [{ rotate: "34deg" }],
-  },
-  sprigLeafC: {
-    left: 9,
-    top: 31,
-    transform: [{ rotate: "-28deg" }],
-  },
-  accentHeart: {
-    color: "rgba(244, 142, 137, 0.46)",
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  accentStar: {
-    color: "rgba(236, 184, 68, 0.48)",
-    fontSize: 28,
-    fontWeight: "800",
+  accentImageMirror: {
+    transform: [{ scaleX: -1 }],
   },
 
   content: { flex: 1 },
@@ -757,19 +732,17 @@ const s = StyleSheet.create({
   },
   handoffSprigLeft: {
     left: 28,
-    bottom: 36,
-    opacity: 0.72,
+    bottom: 24,
+    width: 88,
+    height: 88,
+    opacity: 0.82,
   },
-  handoffHeart: {
-    left: 44,
-    top: 34,
-    opacity: 0.72,
-    transform: [{ rotate: "-12deg" }],
-  },
-  handoffStar: {
-    right: 76,
-    top: 38,
-    opacity: 0.76,
+  handoffMagic: {
+    right: 56,
+    top: 28,
+    width: 74,
+    height: 74,
+    opacity: 0.88,
     transform: [{ rotate: "10deg" }],
   },
   handoffChip: {
@@ -818,9 +791,11 @@ const s = StyleSheet.create({
   },
   noteCardLarge: { padding: 24, borderRadius: 16 },
   noteAccent: {
-    right: 20,
-    top: 8,
-    opacity: 0.7,
+    right: -6,
+    top: -6,
+    width: 72,
+    height: 72,
+    opacity: 0.62,
   },
   noteText: {
     fontSize: 13,
@@ -906,9 +881,11 @@ const s = StyleSheet.create({
   featureCardTablet: { padding: 20, borderRadius: 16 },
   featureCardLarge: { padding: 28, borderRadius: 18, marginBottom: 24 },
   featureAccent: {
-    right: 24,
-    top: 16,
-    opacity: 0.62,
+    right: -8,
+    top: -8,
+    width: 72,
+    height: 72,
+    opacity: 0.72,
   },
   featureDivider: {
     height: 1,

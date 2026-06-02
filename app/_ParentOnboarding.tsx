@@ -260,7 +260,7 @@ function Screen1({ speak }: { speak: (t: string) => void }) {
 
 // ── Screen 2 — How to use together ───────────────────────────────────────────
 
-function Screen2() {
+function Screen2({ speak }: { speak: (t: string) => void }) {
   const { isTabletWidth, isLargeTablet, screenScroll } = useOnboardingLayout();
   const tips = [
     t("parent_onboarding.screen2_tip_1"),
@@ -274,7 +274,27 @@ function Screen2() {
       contentContainerStyle={screenScroll}
       alwaysBounceVertical={false}
     >
-      <Text style={[s.bigEmoji, isLargeTablet && s.bigEmojiLarge]}>🤝</Text>
+      <View
+        style={[
+          s.handoffStage,
+          isTabletWidth && s.handoffStageTablet,
+          isLargeTablet && s.handoffStageLarge,
+        ]}
+      >
+        <View style={[s.handoffGlow, s.handoffGlowLeft]} />
+        <View style={[s.handoffGlow, s.handoffGlowRight]} />
+        <View style={[s.handoffChip, s.handoffChipLeft]}>
+          <Text style={s.handoffChipText}>⚙️</Text>
+        </View>
+        <View style={[s.handoffChip, s.handoffChipRight]}>
+          <Text style={s.handoffChipText}>⭐</Text>
+        </View>
+        <Buddy
+          mood="happy"
+          speak={speak}
+          size={isLargeTablet ? 230 : isTabletWidth ? 188 : 158}
+        />
+      </View>
       <Text style={[s.heading, isLargeTablet && s.headingLarge]}>
         {t("parent_onboarding.screen2_heading")}
       </Text>
@@ -589,6 +609,68 @@ const s = StyleSheet.create({
 
   bigEmoji: { fontSize: 58, marginBottom: 14, marginTop: 6 },
   bigEmojiLarge: { fontSize: 78, marginBottom: 20 },
+  handoffStage: {
+    width: "100%",
+    minHeight: 188,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+    marginBottom: 20,
+    backgroundColor: "#FFF3DE",
+    borderWidth: 1,
+    borderColor: "#F6D8A8",
+    overflow: "hidden",
+  },
+  handoffStageTablet: {
+    minHeight: 224,
+    borderRadius: 32,
+    marginBottom: 24,
+  },
+  handoffStageLarge: {
+    minHeight: 286,
+    borderRadius: 38,
+    marginBottom: 30,
+  },
+  handoffGlow: {
+    position: "absolute",
+    width: 126,
+    height: 126,
+    borderRadius: 63,
+    opacity: 0.8,
+  },
+  handoffGlowLeft: {
+    left: -38,
+    bottom: -34,
+    backgroundColor: "#DFF5EC",
+  },
+  handoffGlowRight: {
+    right: -42,
+    top: -36,
+    backgroundColor: "#FFE1D6",
+  },
+  handoffChip: {
+    position: "absolute",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.78)",
+    borderWidth: 1,
+    borderColor: "rgba(29,107,79,0.16)",
+  },
+  handoffChipLeft: {
+    left: 26,
+    top: 26,
+    transform: [{ rotate: "-8deg" }],
+  },
+  handoffChipRight: {
+    right: 28,
+    bottom: 30,
+    transform: [{ rotate: "9deg" }],
+  },
+  handoffChipText: { fontSize: 22 },
   heading: {
     fontSize: 24,
     fontWeight: "800",

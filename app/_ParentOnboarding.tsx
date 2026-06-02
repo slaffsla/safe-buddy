@@ -29,6 +29,12 @@ const LANGUAGE_OPTIONS: { label: string; value: AppLocale }[] = [
   { label: "EN", value: "en" },
   { label: "HE", value: "he" },
 ];
+const HOW_IT_WORKS_COLORS = [
+  { bg: "#F4FAF7", border: "#CFE9DD", badge: "#DFF5EC" },
+  { bg: "#FFF8E7", border: "#F1D58E", badge: "#FFE7B8" },
+  { bg: "#FFF1E9", border: "#F5C7B5", badge: "#FFD9CB" },
+  { bg: "#F0F8F4", border: "#BFE5D5", badge: "#D8F1E7" },
+];
 
 async function persistOnboardingLocale(appLocale: AppLocale) {
   try {
@@ -311,18 +317,36 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
         <Text style={[s.tipsLabel, isLargeTablet && s.tipsLabelLarge]}>
           {t("parent_onboarding.screen2_tip_label")}
         </Text>
-        {tips.map((tip, i) => (
-          <View key={tip} style={[s.tipRow, isLargeTablet && s.tipRowLarge]}>
-            <View style={[s.tipDot, isLargeTablet && s.tipDotLarge]}>
-              <Text style={[s.tipNum, isLargeTablet && s.tipNumLarge]}>
-                {i + 1}
+        <View style={s.tipSequence}>
+          {tips.map((tip, i) => (
+            <View
+              key={tip}
+              style={[
+                s.tipCard,
+                {
+                  backgroundColor: HOW_IT_WORKS_COLORS[i].bg,
+                  borderColor: HOW_IT_WORKS_COLORS[i].border,
+                },
+                isLargeTablet && s.tipCardLarge,
+              ]}
+            >
+              <View
+                style={[
+                  s.tipDot,
+                  { backgroundColor: HOW_IT_WORKS_COLORS[i].badge },
+                  isLargeTablet && s.tipDotLarge,
+                ]}
+              >
+                <Text style={[s.tipNum, isLargeTablet && s.tipNumLarge]}>
+                  {i + 1}
+                </Text>
+              </View>
+              <Text style={[s.tipText, isLargeTablet && s.tipTextLarge]}>
+                {tip}
               </Text>
             </View>
-            <Text style={[s.tipText, isLargeTablet && s.tipTextLarge]}>
-              {tip}
-            </Text>
-          </View>
-        ))}
+          ))}
+        </View>
       </View>
       <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
         ✨ {t("parent_onboarding.screen2_note")}
@@ -708,11 +732,11 @@ const s = StyleSheet.create({
   noteTextLarge: { fontSize: 18, lineHeight: 27 },
 
   tipsCard: {
-    backgroundColor: C.white,
-    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.66)",
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: C.border,
-    padding: 16,
+    borderColor: "#EBDDC7",
+    padding: 12,
     width: "100%",
     marginBottom: 16,
   },
@@ -724,29 +748,49 @@ const s = StyleSheet.create({
     color: C.muted,
     letterSpacing: 0.8,
     textTransform: "uppercase",
-    marginBottom: 12,
+    marginBottom: 10,
+    paddingHorizontal: 4,
   },
   tipsLabelLarge: { fontSize: 13, marginBottom: 18 },
-  tipRow: {
+  tipSequence: {
+    width: "100%",
+    gap: 8,
+  },
+  tipCard: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
     gap: 12,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
   },
-  tipRowLarge: { gap: 18, marginBottom: 16 },
+  tipCardLarge: {
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    gap: 18,
+  },
   tipDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: C.green,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    borderWidth: 1,
+    borderColor: "rgba(29,107,79,0.18)",
   },
-  tipDotLarge: { width: 34, height: 34, borderRadius: 17 },
-  tipNum: { fontSize: 12, fontWeight: "700", color: C.white },
+  tipDotLarge: { width: 38, height: 38, borderRadius: 19 },
+  tipNum: { fontSize: 12, fontWeight: "800", color: C.green },
   tipNumLarge: { fontSize: 16 },
-  tipText: { fontSize: 14, color: C.text, flex: 1, lineHeight: 20 },
+  tipText: {
+    fontSize: 14,
+    color: C.text,
+    flex: 1,
+    lineHeight: 20,
+    fontWeight: "600",
+  },
   tipTextLarge: { fontSize: 19, lineHeight: 28 },
 
   featureCard: {

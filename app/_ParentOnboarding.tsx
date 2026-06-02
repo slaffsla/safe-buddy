@@ -1,4 +1,4 @@
-// _ParentOnboarding.tsx — One-time parent onboarding, 3 screens.
+// _ParentOnboarding.tsx — One-time parent onboarding, 4 screens.
 // Shown before child onboarding on very first launch.
 // Parent can skip at any time.
 
@@ -8,10 +8,12 @@ import {
   Animated,
   Easing,
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from "react-native";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
 import Buddy from "./_Buddy";
@@ -35,6 +37,39 @@ const HOW_IT_WORKS_COLORS = [
   { bg: "#FFF1E9", border: "#F5C7B5", badge: "#FFD9CB" },
   { bg: "#F0F8F4", border: "#BFE5D5", badge: "#D8F1E7" },
 ];
+
+type SoftAccentKind = "sprig" | "heart" | "star";
+
+function SoftAccent({
+  kind,
+  style,
+  mirror = false,
+}: {
+  kind: SoftAccentKind;
+  style?: StyleProp<ViewStyle>;
+  mirror?: boolean;
+}) {
+  const mirrorStyle = mirror ? { transform: [{ scaleX: -1 }] } : undefined;
+
+  if (kind === "sprig") {
+    return (
+      <View style={[s.accent, style, mirrorStyle]}>
+        <View style={s.sprigStem} />
+        <View style={[s.sprigLeaf, s.sprigLeafA]} />
+        <View style={[s.sprigLeaf, s.sprigLeafB]} />
+        <View style={[s.sprigLeaf, s.sprigLeafC]} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={[s.accent, style, mirrorStyle]}>
+      <Text style={kind === "heart" ? s.accentHeart : s.accentStar}>
+        {kind === "heart" ? "♥" : "✦"}
+      </Text>
+    </View>
+  );
+}
 
 async function persistOnboardingLocale(appLocale: AppLocale) {
   try {
@@ -256,6 +291,7 @@ function Screen1({ speak }: { speak: (t: string) => void }) {
         {t("parent_onboarding.screen1_sub")}
       </Text>
       <View style={[s.noteCard, isLargeTablet && s.noteCardLarge]}>
+        <SoftAccent kind="sprig" style={s.noteAccent} mirror />
         <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
           💬 {t("parent_onboarding.screen1_note")}
         </Text>
@@ -289,6 +325,9 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
       >
         <View style={[s.handoffGlow, s.handoffGlowLeft]} />
         <View style={[s.handoffGlow, s.handoffGlowRight]} />
+        <SoftAccent kind="sprig" style={s.handoffSprigLeft} />
+        <SoftAccent kind="heart" style={s.handoffHeart} />
+        <SoftAccent kind="star" style={s.handoffStar} />
         <View style={[s.handoffChip, s.handoffChipRight]}>
           <Text style={s.handoffChipText}>⭐</Text>
         </View>
@@ -317,7 +356,7 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
         <View style={s.tipSequence}>
           {tips.map((tip, i) => (
             <View
-              key={tip}
+              key={`parent-tip-${i}`}
               style={[
                 s.tipCard,
                 {
@@ -394,6 +433,7 @@ function Screen3() {
           isLargeTablet && s.featureCardLarge,
         ]}
       >
+        <SoftAccent kind="sprig" style={s.featureAccent} mirror />
         {items.map((item, i) => (
           <View key={item.title}>
             {i > 0 && (
@@ -613,6 +653,51 @@ const s = StyleSheet.create({
   skipTxt: { fontSize: 14, color: C.muted },
   skipTxtLarge: { fontSize: 18 },
 
+  accent: {
+    position: "absolute",
+    pointerEvents: "none",
+  },
+  sprigStem: {
+    position: "absolute",
+    width: 2,
+    height: 44,
+    borderRadius: 2,
+    backgroundColor: "rgba(90, 139, 100, 0.42)",
+    transform: [{ rotate: "28deg" }],
+  },
+  sprigLeaf: {
+    position: "absolute",
+    width: 16,
+    height: 9,
+    borderRadius: 10,
+    backgroundColor: "rgba(109, 158, 116, 0.34)",
+  },
+  sprigLeafA: {
+    left: 4,
+    top: 8,
+    transform: [{ rotate: "-24deg" }],
+  },
+  sprigLeafB: {
+    left: -12,
+    top: 19,
+    transform: [{ rotate: "34deg" }],
+  },
+  sprigLeafC: {
+    left: 9,
+    top: 31,
+    transform: [{ rotate: "-28deg" }],
+  },
+  accentHeart: {
+    color: "rgba(244, 142, 137, 0.46)",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  accentStar: {
+    color: "rgba(236, 184, 68, 0.48)",
+    fontSize: 28,
+    fontWeight: "800",
+  },
+
   content: { flex: 1 },
   contentLarge: {
     justifyContent: "center",
@@ -670,6 +755,23 @@ const s = StyleSheet.create({
     top: -36,
     backgroundColor: "#FFE1D6",
   },
+  handoffSprigLeft: {
+    left: 28,
+    bottom: 36,
+    opacity: 0.72,
+  },
+  handoffHeart: {
+    left: 44,
+    top: 34,
+    opacity: 0.72,
+    transform: [{ rotate: "-12deg" }],
+  },
+  handoffStar: {
+    right: 76,
+    top: 38,
+    opacity: 0.76,
+    transform: [{ rotate: "10deg" }],
+  },
   handoffChip: {
     position: "absolute",
     width: 48,
@@ -712,8 +814,14 @@ const s = StyleSheet.create({
     borderColor: C.green,
     padding: 14,
     width: "100%",
+    overflow: "hidden",
   },
   noteCardLarge: { padding: 24, borderRadius: 16 },
+  noteAccent: {
+    right: 20,
+    top: 8,
+    opacity: 0.7,
+  },
   noteText: {
     fontSize: 13,
     color: C.green,
@@ -793,9 +901,15 @@ const s = StyleSheet.create({
     padding: 16,
     width: "100%",
     marginBottom: 16,
+    overflow: "hidden",
   },
   featureCardTablet: { padding: 20, borderRadius: 16 },
   featureCardLarge: { padding: 28, borderRadius: 18, marginBottom: 24 },
+  featureAccent: {
+    right: 24,
+    top: 16,
+    opacity: 0.62,
+  },
   featureDivider: {
     height: 1,
     backgroundColor: C.border,

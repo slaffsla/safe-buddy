@@ -62,6 +62,7 @@ export default function ChildOnboarding({
   const factSpokenRef = useRef(false);
   const meetStartedAtRef = useRef(0);
   const lastInteractionAtRef = useRef(0);
+  const speakRef = useRef(speak);
 
   const buddySize = isLargeTablet
     ? 340
@@ -89,6 +90,10 @@ export default function ChildOnboarding({
   }, [firstPetDone, name, step]);
 
   useEffect(() => {
+    speakRef.current = speak;
+  }, [speak]);
+
+  useEffect(() => {
     speak(currentLine);
   }, [currentLine, speak]);
 
@@ -98,22 +103,44 @@ export default function ChildOnboarding({
     lastInteractionAtRef.current = Date.now();
     factSpokenRef.current = false;
 
-    const timer = setInterval(() => {
-      const now = Date.now();
-      const elapsed = now - meetStartedAtRef.current;
-      const idleFor = now - lastInteractionAtRef.current;
-      if ((elapsed >= 5500 && idleFor >= 1800) || elapsed >= 11000) {
-        setFactVisible(true);
-        if (!factSpokenRef.current) {
-          factSpokenRef.current = true;
-          speak(t("onboarding.tiny_fact_bear_sleep"), { volume: 0.85 });
-        }
-        clearInterval(timer);
+    const showFact = () => {
+      setFactVisible(true);
+      if (!factSpokenRef.current) {
+        factSpokenRef.current = true;
+        speakRef.current(t("onboarding.tiny_fact_bear_sleep"), {
+          volume: 0.85,
+        });
       }
-    }, 300);
+    };
 
-    return () => clearInterval(timer);
-  }, [firstPetDone, speak, step]);
+    let idlePoll: ReturnType<typeof setInterval> | null = null;
+    const idleGate = setTimeout(() => {
+      idlePoll = setInterval(() => {
+        const idleFor = Date.now() - lastInteractionAtRef.current;
+        if (idleFor >= 1250) {
+          showFact();
+          if (idlePoll) {
+            clearInterval(idlePoll);
+            idlePoll = null;
+          }
+        }
+      }, 250);
+    }, 3500);
+
+    const hardShow = setTimeout(() => {
+      showFact();
+      if (idlePoll) {
+        clearInterval(idlePoll);
+        idlePoll = null;
+      }
+    }, 8000);
+
+    return () => {
+      clearTimeout(idleGate);
+      clearTimeout(hardShow);
+      if (idlePoll) clearInterval(idlePoll);
+    };
+  }, [firstPetDone, step]);
 
   function markInteraction() {
     lastInteractionAtRef.current = Date.now();
@@ -181,10 +208,7 @@ export default function ChildOnboarding({
               {factVisible && !firstPetDone && (
                 <ImageBackground
                   source={visualAssets.graphics.buddyBubble}
-                  style={[
-                    s.factBubble,
-                    isLargeTablet && s.factBubbleLarge,
-                  ]}
+                  style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}
                   imageStyle={s.factBubbleImage}
                   resizeMode="contain"
                 >
@@ -402,29 +426,30 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    marginBottom: 10,
+    marginBottom: 6,
+    paddingBottom: 38,
   },
   factBubble: {
     position: "absolute",
-    top: 0,
-    right: -8,
-    width: 190,
-    height: 160,
-    paddingTop: 46,
-    paddingRight: 28,
+    right: 10,
+    bottom: 0,
+    width: 216,
+    height: 156,
+    paddingTop: 40,
+    paddingRight: 30,
     paddingBottom: 34,
     paddingLeft: 36,
     justifyContent: "center",
   },
   factBubbleLarge: {
-    top: 20,
-    right: 8,
-    width: 248,
-    height: 208,
-    paddingTop: 60,
-    paddingRight: 38,
-    paddingBottom: 44,
-    paddingLeft: 48,
+    right: 42,
+    bottom: 4,
+    width: 280,
+    height: 202,
+    paddingTop: 56,
+    paddingRight: 40,
+    paddingBottom: 46,
+    paddingLeft: 50,
   },
   factBubbleImage: {
     opacity: 0.98,

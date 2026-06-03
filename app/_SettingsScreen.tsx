@@ -1351,7 +1351,18 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
-          label={t("settings.breathing_music_label")}
+          label={
+            <View style={u.rowLabelWithIcon}>
+              <Image
+                source={visualAssets.graphics.handpan}
+                style={u.handpanRowIcon}
+                resizeMode="contain"
+              />
+              <Text style={u.rowLabel}>
+                {t("settings.breathing_music_label")}
+              </Text>
+            </View>
+          }
           sublabel={t("settings.breathing_music_sub")}
         >
           <Switch
@@ -3366,7 +3377,7 @@ export default function SettingsScreen({
               <View style={ss.handoffCard}>
                 <View style={ss.handoffHeader}>
                   <Image
-                    source={visualAssets.graphics.buddyBubble}
+                    source={visualAssets.graphics.buddyBubbleSoft}
                     style={ss.handoffGraphic}
                     resizeMode="contain"
                   />
@@ -3430,7 +3441,7 @@ export default function SettingsScreen({
               activeOpacity={0.85}
             >
               <Image
-                source={visualAssets.graphics.buddyBubble}
+                source={visualAssets.graphics.buddyBubbleSoft}
                 style={ss.childStartGraphic}
                 resizeMode="contain"
               />
@@ -3956,6 +3967,8 @@ const u = StyleSheet.create({
   rowLabel: { fontSize: 14, fontWeight: "500", color: C.text },
   rowSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 17 },
   rowLabelWithInfo: { flexDirection: "row", alignItems: "center", gap: 6 },
+  rowLabelWithIcon: { flexDirection: "row", alignItems: "center", gap: 8 },
+  handpanRowIcon: { width: 26, height: 22, marginLeft: -2 },
   infoDot: {
     width: 16,
     height: 16,

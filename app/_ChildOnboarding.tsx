@@ -205,19 +205,19 @@ export default function ChildOnboarding({
                 speak={speak}
                 size={buddySize}
               />
+              {factVisible && !firstPetDone && (
+                <ImageBackground
+                  source={visualAssets.graphics.buddyBubble}
+                  style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}
+                  imageStyle={s.factBubbleImage}
+                  resizeMode="contain"
+                >
+                  <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
+                    {t("onboarding.tiny_fact_bear_sleep")}
+                  </Text>
+                </ImageBackground>
+              )}
             </View>
-            {factVisible && !firstPetDone && (
-              <ImageBackground
-                source={visualAssets.graphics.buddyBubble}
-                style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}
-                imageStyle={s.factBubbleImage}
-                resizeMode="contain"
-              >
-                <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
-                  {t("onboarding.tiny_fact_bear_sleep")}
-                </Text>
-              </ImageBackground>
-            )}
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
               {firstPetDone
                 ? t("onboarding.meet_after_pet_title")
@@ -426,41 +426,43 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    marginBottom: 0,
+    marginBottom: 8,
+    minHeight: 330,
   },
   factBubble: {
-    width: 216,
-    height: 156,
-    alignSelf: "center",
-    marginTop: -36,
-    marginBottom: 6,
-    paddingTop: 40,
-    paddingRight: 30,
-    paddingBottom: 34,
-    paddingLeft: 36,
+    position: "absolute",
+    right: -10,
+    top: 126,
+    width: 292,
+    height: 112,
+    paddingTop: 20,
+    paddingRight: 26,
+    paddingBottom: 18,
+    paddingLeft: 54,
     justifyContent: "center",
+    pointerEvents: "none",
   },
   factBubbleLarge: {
-    width: 280,
-    height: 202,
-    marginTop: -54,
-    marginBottom: 10,
-    paddingTop: 56,
-    paddingRight: 40,
-    paddingBottom: 46,
-    paddingLeft: 50,
+    right: -2,
+    top: 154,
+    width: 376,
+    height: 144,
+    paddingTop: 26,
+    paddingRight: 38,
+    paddingBottom: 22,
+    paddingLeft: 70,
   },
   factBubbleImage: {
     opacity: 0.98,
   },
   factText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 10,
+    lineHeight: 14,
     color: C.green,
     fontWeight: "600",
     textAlign: "center",
   },
-  factTextLarge: { fontSize: 18, lineHeight: 26 },
+  factTextLarge: { fontSize: 13, lineHeight: 18 },
   title: {
     fontSize: 30,
     lineHeight: 36,

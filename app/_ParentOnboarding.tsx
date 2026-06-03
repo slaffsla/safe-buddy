@@ -68,6 +68,7 @@ const ONBOARDING_GRAPHICS = {
   stars: visualAssets.graphics.star,
   rewards: visualAssets.graphics.rewardGift,
   breathing: visualAssets.graphics.breathingBuddy,
+  handpan: visualAssets.graphics.handpan,
 } satisfies Record<string, VisualAssetSource>;
 
 function SoftAccent({
@@ -551,10 +552,18 @@ function Screen4() {
         {t("parent_onboarding.screen4_body")}
       </Text>
       <View style={[s.patternBadge, isLargeTablet && s.patternBadgeLarge]}>
+        <Image
+          source={ONBOARDING_GRAPHICS.handpan}
+          style={[s.patternHandpan, isLargeTablet && s.patternHandpanLarge]}
+          resizeMode="contain"
+        />
         <Text style={[s.patternText, isLargeTablet && s.patternTextLarge]}>
           {t("parent_onboarding.screen4_pattern")}
         </Text>
       </View>
+      <Text style={[s.handpanNote, isLargeTablet && s.handpanNoteLarge]}>
+        {t("parent_onboarding.screen4_handpan")}
+      </Text>
       <MiniBreathingCircle />
       <View style={[s.scienceCard, isLargeTablet && s.scienceCardLarge]}>
         <Text style={[s.scienceText, isLargeTablet && s.scienceTextLarge]}>
@@ -971,6 +980,10 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 18,
     marginBottom: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   patternBadgeLarge: {
     borderRadius: 28,
@@ -986,6 +999,16 @@ const s = StyleSheet.create({
     letterSpacing: 0.3,
   },
   patternTextLarge: { fontSize: 18 },
+  patternHandpan: { width: 30, height: 24 },
+  patternHandpanLarge: { width: 42, height: 34 },
+  handpanNote: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: C.muted,
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  handpanNoteLarge: { fontSize: 16, lineHeight: 23, marginBottom: 8 },
 
   scienceCard: {
     backgroundColor: C.white,

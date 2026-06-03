@@ -21,12 +21,14 @@ export const visualAssets = {
     breathingBuddy: require("../assets/Graphics/Graphics9.png"),
     missionRocket: require("../assets/Graphics/Graphics10.png"),
     rewardGiftAlt: require("../assets/Graphics/Graphics11.png"),
-    breathSwirl: require("../assets/Graphics/Graphics12.png"),
-    settingsSliders: require("../assets/Graphics/Graphics13.png"),
-    completeBadge: require("../assets/Graphics/Graphics14.png"),
-    buddyBubble: require("../assets/Graphics/Graphics15.png"),
-  },
-} satisfies {
+      breathSwirl: require("../assets/Graphics/Graphics12.png"),
+      settingsSliders: require("../assets/Graphics/Graphics13.png"),
+      completeBadge: require("../assets/Graphics/Graphics14.png"),
+      buddyBubble: require("../assets/Graphics/BubbleTL4.png"),
+      buddyBubbleSoft: require("../assets/Graphics/Graphics15.bubble0.png"),
+      handpan: require("../assets/Graphics/Handpan.png"),
+    },
+  } satisfies {
   accents: Record<string, ImageSourcePropType>;
   graphics: Record<string, ImageSourcePropType>;
 };

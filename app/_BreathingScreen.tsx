@@ -12,7 +12,6 @@
 // "complete" state, BUDDY_FIXED_SPACER at the top so the global Buddy
 // overlay is visible, same speak prop usage.
 
-import { FontAwesome5 } from "@expo/vector-icons";
 import {
   createAudioPlayer,
   setAudioModeAsync,
@@ -24,12 +23,14 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
+import { visualAssets } from "../lib/visualAssets";
 import Buddy from "./_Buddy";
 import { C, type BuddyMood } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
@@ -691,10 +692,13 @@ export default function BreathingScreen({
                 : "breathing.music_on_a11y",
             )}
           >
-            <FontAwesome5
-              name="music"
-              size={18}
-              color={musicEnabled ? C.green : C.muted}
+            <Image
+              source={visualAssets.graphics.handpan}
+              style={[
+                s.controlHandpanIcon,
+                !musicEnabled && s.controlHandpanIconMuted,
+              ]}
+              resizeMode="contain"
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -872,6 +876,13 @@ const s = StyleSheet.create({
   controlToggleEnabled: {
     backgroundColor: C.greenLt,
     borderColor: "#CFE9DD",
+  },
+  controlHandpanIcon: {
+    width: 26,
+    height: 22,
+  },
+  controlHandpanIconMuted: {
+    opacity: 0.45,
   },
   guidanceToggleTxt: { fontSize: 20 },
 

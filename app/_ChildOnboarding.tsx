@@ -75,8 +75,8 @@ export default function ChildOnboarding({
     ? Math.min(contentMaxWidth + 120, 840)
     : contentMaxWidth;
   const stageWidth = maxWidth - screenPadding * 2;
-  const factBubbleWidth = isLargeTablet ? 392 : isTabletWidth ? 350 : 300;
-  const factBubbleHeight = isLargeTablet ? 132 : isTabletWidth ? 116 : 104;
+  const factBubbleWidth = isLargeTablet ? 560 : isTabletWidth ? 500 : 390;
+  const factBubbleHeight = isLargeTablet ? 178 : isTabletWidth ? 160 : 132;
   const factBubbleTailX = factBubbleWidth * 0.055;
   const factBubbleTailY = factBubbleHeight * 0.13;
   const buddyBodyRightAtMouth = stageWidth / 2 + buddySize * 0.32;
@@ -92,10 +92,10 @@ export default function ChildOnboarding({
     top: Math.max(24, Math.round(buddySize / 3 - factBubbleTailY)),
     width: factBubbleWidth,
     height: factBubbleHeight,
-    paddingTop: isLargeTablet ? 22 : 18,
-    paddingRight: isLargeTablet ? 34 : 26,
-    paddingBottom: isLargeTablet ? 20 : 16,
-    paddingLeft: isLargeTablet ? 72 : 58,
+    paddingTop: isLargeTablet ? 42 : 32,
+    paddingRight: isLargeTablet ? 54 : 38,
+    paddingBottom: isLargeTablet ? 34 : 26,
+    paddingLeft: isLargeTablet ? 100 : 74,
   };
 
   const currentLine = useMemo(() => {
@@ -233,7 +233,7 @@ export default function ChildOnboarding({
                   source={visualAssets.graphics.buddyBubble}
                   style={[s.factBubble, factBubbleStyle]}
                   imageStyle={s.factBubbleImage}
-                  resizeMode="contain"
+                  resizeMode="stretch"
                 >
                   <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
                     {t("onboarding.tiny_fact_bear_sleep")}
@@ -461,13 +461,13 @@ const s = StyleSheet.create({
     opacity: 0.98,
   },
   factText: {
-    fontSize: 10,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 17,
     color: C.green,
     fontWeight: "600",
     textAlign: "center",
   },
-  factTextLarge: { fontSize: 13, lineHeight: 18 },
+  factTextLarge: { fontSize: 16, lineHeight: 22 },
   title: {
     fontSize: 30,
     lineHeight: 36,

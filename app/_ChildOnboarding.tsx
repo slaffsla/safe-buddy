@@ -60,8 +60,10 @@ export default function ChildOnboarding({
   );
   const firstPetSpokenRef = useRef(false);
   const factSpokenRef = useRef(false);
+  const factAllowedRef = useRef(false);
   const meetStartedAtRef = useRef(0);
   const lastInteractionAtRef = useRef(0);
+  const postPetSequenceTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const speakRef = useRef(speak);
 
   const buddySize = isLargeTablet
@@ -124,50 +126,62 @@ export default function ChildOnboarding({
     speak(currentLine);
   }, [currentLine, speak]);
 
+  function clearPostPetSequenceTimers() {
+    postPetSequenceTimersRef.current.forEach(clearTimeout);
+    postPetSequenceTimersRef.current = [];
+  }
+
+  function estimateSpeechMs(text: string) {
+    return Math.max(1100, Math.min(4200, text.length * 55 + 650));
+  }
+
+  function showTinyFact() {
+    if (!factAllowedRef.current) return;
+    setFactVisible(true);
+    if (!factSpokenRef.current) {
+      factSpokenRef.current = true;
+      speakRef.current(t("onboarding.tiny_fact_bear_sleep"), {
+        volume: 0.85,
+      });
+    }
+  }
+
   useEffect(() => {
-    if (step !== "meet" || firstPetDone) return;
+    if (step !== "meet") return;
     meetStartedAtRef.current = Date.now();
     lastInteractionAtRef.current = Date.now();
     factSpokenRef.current = false;
-
-    const showFact = () => {
-      setFactVisible(true);
-      if (!factSpokenRef.current) {
-        factSpokenRef.current = true;
-        speakRef.current(t("onboarding.tiny_fact_bear_sleep"), {
-          volume: 0.85,
-        });
-      }
-    };
+    factAllowedRef.current = false;
 
     let idlePoll: ReturnType<typeof setInterval> | null = null;
     const idleGate = setTimeout(() => {
       idlePoll = setInterval(() => {
         const idleFor = Date.now() - lastInteractionAtRef.current;
-        if (idleFor >= 1250) {
-          showFact();
+        if (idleFor >= 850) {
+          showTinyFact();
           if (idlePoll) {
             clearInterval(idlePoll);
             idlePoll = null;
           }
         }
-      }, 250);
-    }, 3500);
+      }, 200);
+    }, 2600);
 
     const hardShow = setTimeout(() => {
-      showFact();
+      showTinyFact();
       if (idlePoll) {
         clearInterval(idlePoll);
         idlePoll = null;
       }
-    }, 8000);
+    }, 5200);
 
     return () => {
       clearTimeout(idleGate);
       clearTimeout(hardShow);
       if (idlePoll) clearInterval(idlePoll);
+      clearPostPetSequenceTimers();
     };
-  }, [firstPetDone, step]);
+  }, [step]);
 
   function markInteraction() {
     lastInteractionAtRef.current = Date.now();
@@ -181,7 +195,22 @@ export default function ChildOnboarding({
     setFactVisible(false);
     if (!firstPetSpokenRef.current) {
       firstPetSpokenRef.current = true;
-      setTimeout(() => speak(t("onboarding.meet_after_pet_title")), 260);
+      clearPostPetSequenceTimers();
+      const afterPetTitle = t("onboarding.meet_after_pet_title");
+      const companionLine = t("onboarding.meet_after_pet_sub");
+      const firstStarLine = t("onboarding.ready_sub");
+      const companionDelay = estimateSpeechMs(afterPetTitle) + 220;
+      const firstStarDelay =
+        companionDelay + estimateSpeechMs(companionLine) + 180;
+      const factDelay = firstStarDelay + estimateSpeechMs(firstStarLine) + 320;
+      postPetSequenceTimersRef.current = [
+        setTimeout(() => speakRef.current(companionLine), companionDelay),
+        setTimeout(() => speakRef.current(firstStarLine), firstStarDelay),
+        setTimeout(() => {
+          factAllowedRef.current = true;
+          showTinyFact();
+        }, factDelay),
+      ];
     }
   }
 
@@ -232,7 +261,7 @@ export default function ChildOnboarding({
                 speak={speak}
                 size={buddySize}
               />
-              {factVisible && !firstPetDone && (
+              {factVisible && (
                 <ImageBackground
                   source={visualAssets.graphics.buddyBubble}
                   style={[s.factBubble, factBubbleStyle]}

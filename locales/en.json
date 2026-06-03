@@ -63,7 +63,7 @@
     "age_skip": "Not now",
     "ready_title": "Nice to meet you.",
     "ready_title_named": "Nice to meet you, {{name}}.",
-    "ready_sub": "Let's win your first star.",
+    "ready_sub": "Let's win your first star!",
     "ready_start": "Start"
   },
   "parent_onboarding": {

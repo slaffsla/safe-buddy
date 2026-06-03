@@ -84,12 +84,12 @@ export default function ChildOnboarding({
     0,
     Math.min(
       stageWidth - factBubbleWidth * 0.34,
-      buddyBodyRightAtMouth + 12 - factBubbleTailX,
+      buddyBodyRightAtMouth + 8 - factBubbleTailX,
     ),
   );
   const factBubbleStyle = {
     left: factBubbleLeft,
-    top: Math.max(24, Math.round(buddySize / 3 - factBubbleTailY + 22)),
+    top: Math.max(24, Math.round(buddySize / 3 - factBubbleTailY + 28)),
     width: factBubbleWidth,
     height: factBubbleHeight,
     paddingTop: isLargeTablet ? 82 : isTabletWidth ? 68 : 54,

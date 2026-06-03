@@ -59,6 +59,7 @@ export default function ChildOnboarding({
     initialAge > 0 ? initialAge : null,
   );
   const firstPetSpokenRef = useRef(false);
+  const readySubSpokenRef = useRef(false);
   const factSpokenRef = useRef(false);
   const factAllowedRef = useRef(false);
   const meetStartedAtRef = useRef(0);
@@ -152,6 +153,14 @@ export default function ChildOnboarding({
     lastInteractionAtRef.current = Date.now();
     factSpokenRef.current = false;
     factAllowedRef.current = false;
+    const initialFactDelay =
+      estimateSpeechMs(t("onboarding.meet_title")) + 1000;
+    postPetSequenceTimersRef.current = [
+      setTimeout(() => {
+        factAllowedRef.current = true;
+        showTinyFact();
+      }, initialFactDelay),
+    ];
 
     let idlePoll: ReturnType<typeof setInterval> | null = null;
     const idleGate = setTimeout(() => {
@@ -183,6 +192,16 @@ export default function ChildOnboarding({
     };
   }, [step]);
 
+  useEffect(() => {
+    if (step !== "ready") return;
+    if (readySubSpokenRef.current) return;
+    readySubSpokenRef.current = true;
+    const readySubTimer = setTimeout(() => {
+      speakRef.current(t("onboarding.ready_sub"));
+    }, estimateSpeechMs(currentLine) + 220);
+    return () => clearTimeout(readySubTimer);
+  }, [currentLine, step]);
+
   function markInteraction() {
     lastInteractionAtRef.current = Date.now();
   }
@@ -198,14 +217,10 @@ export default function ChildOnboarding({
       clearPostPetSequenceTimers();
       const afterPetTitle = t("onboarding.meet_after_pet_title");
       const companionLine = t("onboarding.meet_after_pet_sub");
-      const firstStarLine = t("onboarding.ready_sub");
       const companionDelay = estimateSpeechMs(afterPetTitle) + 220;
-      const firstStarDelay =
-        companionDelay + estimateSpeechMs(companionLine) + 180;
-      const factDelay = firstStarDelay + estimateSpeechMs(firstStarLine) + 320;
+      const factDelay = companionDelay + estimateSpeechMs(companionLine) + 1000;
       postPetSequenceTimersRef.current = [
         setTimeout(() => speakRef.current(companionLine), companionDelay),
-        setTimeout(() => speakRef.current(firstStarLine), firstStarDelay),
         setTimeout(() => {
           factAllowedRef.current = true;
           showTinyFact();

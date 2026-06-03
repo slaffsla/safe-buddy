@@ -24,7 +24,7 @@ export const visualAssets = {
     breathSwirl: require("../assets/Graphics/Graphics12.png"),
     settingsSliders: require("../assets/Graphics/Graphics13.png"),
     completeBadge: require("../assets/Graphics/Graphics14.png"),
-    buddyBubble: require("../assets/Graphics/BubbleTL4.png"),
+    buddyBubble: require("../assets/Graphics/BubbleTL1.png"),
     buddyBubbleSoft: require("../assets/Graphics/Graphics15.bubble0.png"),
     handpan: require("../assets/Graphics/Handpan.png"),
   },

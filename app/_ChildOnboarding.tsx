@@ -75,16 +75,16 @@ export default function ChildOnboarding({
     ? Math.min(contentMaxWidth + 120, 840)
     : contentMaxWidth;
   const stageWidth = maxWidth - screenPadding * 2;
-  const factBubbleWidth = isLargeTablet ? 560 : isTabletWidth ? 500 : 390;
-  const factBubbleHeight = isLargeTablet ? 178 : isTabletWidth ? 160 : 132;
+  const factBubbleWidth = isLargeTablet ? 460 : isTabletWidth ? 410 : 340;
+  const factBubbleHeight = isLargeTablet ? 300 : isTabletWidth ? 260 : 214;
   const factBubbleTailX = factBubbleWidth * 0.055;
-  const factBubbleTailY = factBubbleHeight * 0.13;
+  const factBubbleTailY = factBubbleHeight * 0.23;
   const buddyBodyRightAtMouth = stageWidth / 2 + buddySize * 0.32;
   const factBubbleLeft = Math.max(
     0,
     Math.min(
-      stageWidth - factBubbleWidth + 8,
-      buddyBodyRightAtMouth + 16 - factBubbleTailX,
+      stageWidth - factBubbleWidth * 0.34,
+      buddyBodyRightAtMouth + 28 - factBubbleTailX,
     ),
   );
   const factBubbleStyle = {
@@ -92,11 +92,15 @@ export default function ChildOnboarding({
     top: Math.max(24, Math.round(buddySize / 3 - factBubbleTailY)),
     width: factBubbleWidth,
     height: factBubbleHeight,
-    paddingTop: isLargeTablet ? 42 : 32,
-    paddingRight: isLargeTablet ? 54 : 38,
-    paddingBottom: isLargeTablet ? 34 : 26,
-    paddingLeft: isLargeTablet ? 100 : 74,
+    paddingTop: isLargeTablet ? 82 : isTabletWidth ? 68 : 54,
+    paddingRight: isLargeTablet ? 58 : isTabletWidth ? 50 : 40,
+    paddingBottom: isLargeTablet ? 70 : isTabletWidth ? 58 : 46,
+    paddingLeft: isLargeTablet ? 90 : isTabletWidth ? 82 : 66,
   };
+  const tinyFactText = t("onboarding.tiny_fact_bear_sleep")
+    .replace(" can sleep ", " can sleep\n")
+    .replace("могут спать ", "могут спать\n")
+    .replace("יכולים לישון ", "יכולים לישון\n");
 
   const currentLine = useMemo(() => {
     if (step === "meet") {
@@ -236,7 +240,7 @@ export default function ChildOnboarding({
                   resizeMode="stretch"
                 >
                   <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
-                    {t("onboarding.tiny_fact_bear_sleep")}
+                    {tinyFactText}
                   </Text>
                 </ImageBackground>
               )}

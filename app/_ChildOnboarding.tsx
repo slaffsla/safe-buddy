@@ -74,6 +74,29 @@ export default function ChildOnboarding({
   const maxWidth = isLargeTablet
     ? Math.min(contentMaxWidth + 120, 840)
     : contentMaxWidth;
+  const stageWidth = maxWidth - screenPadding * 2;
+  const factBubbleWidth = isLargeTablet ? 392 : isTabletWidth ? 350 : 300;
+  const factBubbleHeight = isLargeTablet ? 132 : isTabletWidth ? 116 : 104;
+  const factBubbleTailX = factBubbleWidth * 0.055;
+  const factBubbleTailY = factBubbleHeight * 0.13;
+  const buddyBodyRightAtMouth = stageWidth / 2 + buddySize * 0.32;
+  const factBubbleLeft = Math.max(
+    0,
+    Math.min(
+      stageWidth - factBubbleWidth + 8,
+      buddyBodyRightAtMouth + 16 - factBubbleTailX,
+    ),
+  );
+  const factBubbleStyle = {
+    left: factBubbleLeft,
+    top: Math.max(24, Math.round(buddySize / 3 - factBubbleTailY)),
+    width: factBubbleWidth,
+    height: factBubbleHeight,
+    paddingTop: isLargeTablet ? 22 : 18,
+    paddingRight: isLargeTablet ? 34 : 26,
+    paddingBottom: isLargeTablet ? 20 : 16,
+    paddingLeft: isLargeTablet ? 72 : 58,
+  };
 
   const currentLine = useMemo(() => {
     if (step === "meet") {
@@ -208,7 +231,7 @@ export default function ChildOnboarding({
               {factVisible && !firstPetDone && (
                 <ImageBackground
                   source={visualAssets.graphics.buddyBubble}
-                  style={[s.factBubble, isLargeTablet && s.factBubbleLarge]}
+                  style={[s.factBubble, factBubbleStyle]}
                   imageStyle={s.factBubbleImage}
                   resizeMode="contain"
                 >
@@ -431,26 +454,8 @@ const s = StyleSheet.create({
   },
   factBubble: {
     position: "absolute",
-    right: -10,
-    top: 126,
-    width: 292,
-    height: 112,
-    paddingTop: 20,
-    paddingRight: 26,
-    paddingBottom: 18,
-    paddingLeft: 54,
     justifyContent: "center",
     pointerEvents: "none",
-  },
-  factBubbleLarge: {
-    right: -2,
-    top: 154,
-    width: 376,
-    height: 144,
-    paddingTop: 26,
-    paddingRight: 38,
-    paddingBottom: 22,
-    paddingLeft: 70,
   },
   factBubbleImage: {
     opacity: 0.98,

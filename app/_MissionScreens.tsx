@@ -188,15 +188,15 @@ export function MissionPickScreen({
                   {getMissionSubtitle(m.id, m.subtitle)}
                 </Text>
               </View>
-              <Text
+              <View
                 style={[
-                  s.mStar,
+                  s.mStarBadge,
                   s.firstMissionStar,
                   isLargeTablet && s.firstMissionStarLarge,
                 ]}
               >
-                {Array(m.stars).fill("⭐").join("")}
-              </Text>
+                <Text style={s.mStar}>{Array(m.stars).fill("⭐").join("")}</Text>
+              </View>
             </TouchableOpacity>
           ))}
         </View>
@@ -271,9 +271,11 @@ export function MissionPickScreen({
                       )}
                     </Text>
                   </View>
-                  <Text style={s.mStar}>
-                    {Array(bonusMission.stars).fill("⭐").join("")}
-                  </Text>
+                  <View style={s.mStarBadge}>
+                    <Text style={s.mStar}>
+                      {Array(bonusMission.stars).fill("⭐").join("")}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </>
             )}
@@ -347,14 +349,16 @@ export function MissionPickScreen({
                       }
                       activeOpacity={isDone ? 1 : 0.7}
                     >
-                      <View style={[s.mEmojiWell, isDone && s.mEmojiDone]}>
+                      <View
+                        style={[s.mEmojiWell, isDone && s.mEmojiWellDone]}
+                      >
                         <Text style={s.mEmoji}>{m.emoji}</Text>
                       </View>
                       <View style={s.mInfo}>
-                        <Text style={[s.mTitle, isDone && s.mTxtDone]}>
+                        <Text style={[s.mTitle, isDone && s.mTitleDone]}>
                           {getMissionTitle(m.id, m.title)}
                         </Text>
-                        <Text style={[s.mSub, isDone && s.mTxtDone]}>
+                        <Text style={[s.mSub, isDone && s.mSubDone]}>
                           {getMissionSubtitle(m.id, m.subtitle)}
                         </Text>
                         {!isDone && mType === "permanent" && (
@@ -375,9 +379,11 @@ export function MissionPickScreen({
                       {isDone ? (
                         <Text style={s.mDoneBadge}>✓</Text>
                       ) : (
-                        <Text style={s.mStar}>
-                          {Array(m.stars).fill("⭐").join("")}
-                        </Text>
+                        <View style={s.mStarBadge}>
+                          <Text style={s.mStar}>
+                            {Array(m.stars).fill("⭐").join("")}
+                          </Text>
+                        </View>
                       )}
                     </TouchableOpacity>
                   );
@@ -966,12 +972,12 @@ const s = StyleSheet.create({
     marginTop: 6,
   },
   firstMissionStar: {
-    fontSize: 24,
     marginLeft: 10,
   },
   firstMissionStarLarge: {
-    fontSize: 32,
     marginLeft: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
 
   // Slot grouping
@@ -1015,9 +1021,8 @@ const s = StyleSheet.create({
   },
   mCardBig: { backgroundColor: "#FFF9EC", borderColor: "#E8D7A9" },
   mCardDone: {
-    backgroundColor: "#F1FAF6",
-    borderColor: "#CFE9DD",
-    opacity: 0.75,
+    backgroundColor: "#F7F7F4",
+    borderColor: "#E2DED6",
   },
   mCardPermanent: { backgroundColor: "#F1FAF6", borderColor: "#CDE7DA" },
   mCardRotating: { backgroundColor: "#FFF8E7", borderColor: "#F1D58E" },
@@ -1034,17 +1039,39 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   mEmoji: { fontSize: 26 },
-  mEmojiDone: { opacity: 0.55 },
+  mEmojiWellDone: {
+    backgroundColor: "#F0F0EC",
+    borderColor: "#DDD8CF",
+    opacity: 0.72,
+  },
   mInfo: { flex: 1 },
   mTitle: { fontSize: 15, fontWeight: "600", color: C.text },
   mSub: { fontSize: 12, color: C.muted, marginTop: 2 },
-  mStar: { fontSize: 17 },
-  mTxtDone: { textDecorationLine: "line-through", color: C.muted },
+  mStarBadge: {
+    backgroundColor: "#FFF8E7",
+    borderWidth: 0.5,
+    borderColor: "#F1D58E",
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    marginLeft: 8,
+    flexShrink: 0,
+  },
+  mStar: { fontSize: 15 },
+  mTitleDone: { color: "#77756F", fontWeight: "600" },
+  mSubDone: { color: "#99968F" },
   mDoneBadge: {
-    fontSize: 20,
-    color: C.green,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: C.green,
+    color: C.white,
+    textAlign: "center",
+    lineHeight: 30,
+    fontSize: 18,
     fontWeight: "800",
-    marginLeft: 4,
+    marginLeft: 8,
+    overflow: "hidden",
   },
 
   // Type pills (mission cards)

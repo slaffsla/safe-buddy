@@ -151,15 +151,23 @@ export function MissionPickScreen({
               }
               activeOpacity={0.75}
             >
-              <Text
+              <View
                 style={[
-                  s.mEmoji,
-                  s.firstMissionEmoji,
-                  isLargeTablet && s.firstMissionEmojiLarge,
+                  s.mEmojiWell,
+                  s.firstMissionEmojiWell,
+                  isLargeTablet && s.firstMissionEmojiWellLarge,
                 ]}
               >
-                {m.emoji}
-              </Text>
+                <Text
+                  style={[
+                    s.mEmoji,
+                    s.firstMissionEmoji,
+                    isLargeTablet && s.firstMissionEmojiLarge,
+                  ]}
+                >
+                  {m.emoji}
+                </Text>
+              </View>
               <View style={s.mInfo}>
                 <Text
                   style={[
@@ -249,7 +257,9 @@ export function MissionPickScreen({
                     )
                   }
                 >
-                  <Text style={s.mEmoji}>{bonusMission.emoji}</Text>
+                  <View style={s.mEmojiWell}>
+                    <Text style={s.mEmoji}>{bonusMission.emoji}</Text>
+                  </View>
                   <View style={s.mInfo}>
                     <Text style={s.mTitle}>
                       {getMissionTitle(bonusMission.id, bonusMission.title)}
@@ -335,9 +345,9 @@ export function MissionPickScreen({
                       }
                       activeOpacity={isDone ? 1 : 0.7}
                     >
-                      <Text style={[s.mEmoji, isDone && s.mEmojiDone]}>
-                        {m.emoji}
-                      </Text>
+                      <View style={[s.mEmojiWell, isDone && s.mEmojiDone]}>
+                        <Text style={s.mEmoji}>{m.emoji}</Text>
+                      </View>
                       <View style={s.mInfo}>
                         <Text style={[s.mTitle, isDone && s.mTxtDone]}>
                           {getMissionTitle(m.id, m.title)}
@@ -630,7 +640,11 @@ function RewardCard({
         onPress={() => speak(`${title}. ${statusText}`)}
         activeOpacity={0.7}
       >
-        <Text style={[s.rEmoji, large && s.rEmojiLarge]}>{reward.emoji}</Text>
+        <View style={[s.rEmojiWell, large && s.rEmojiWellLarge]}>
+          <Text style={[s.rEmoji, large && s.rEmojiLarge]}>
+            {reward.emoji}
+          </Text>
+        </View>
         <View style={s.rInfo}>
           <Text style={[s.rTitle, large && s.rTitleLarge]}>{title}</Text>
           <Text style={[s.rCost, large && s.rCostLarge]}>
@@ -899,13 +913,23 @@ const s = StyleSheet.create({
     paddingVertical: 24,
     paddingHorizontal: 22,
   },
-  firstMissionEmoji: {
-    fontSize: 38,
+  firstMissionEmojiWell: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
     marginRight: 14,
   },
-  firstMissionEmojiLarge: {
-    fontSize: 52,
+  firstMissionEmoji: {
+    fontSize: 34,
+  },
+  firstMissionEmojiWellLarge: {
+    width: 76,
+    height: 76,
+    borderRadius: 24,
     marginRight: 20,
+  },
+  firstMissionEmojiLarge: {
+    fontSize: 46,
   },
   firstMissionCardTitle: {
     fontSize: 20,
@@ -971,7 +995,19 @@ const s = StyleSheet.create({
   },
   mCardPermanent: { backgroundColor: "#F1FAF6", borderColor: "#CDE7DA" },
   mCardRotating: { backgroundColor: "#FFF8E7", borderColor: "#F1D58E" },
-  mEmoji: { fontSize: 30, marginRight: 11 },
+  mEmojiWell: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "#F4FAF7",
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    flexShrink: 0,
+  },
+  mEmoji: { fontSize: 26 },
   mEmojiDone: { opacity: 0.55 },
   mInfo: { flex: 1 },
   mTitle: { fontSize: 15, fontWeight: "600", color: C.text },
@@ -1191,8 +1227,26 @@ const s = StyleSheet.create({
     minHeight: 82,
   },
   rLocked: { opacity: 0.42 },
-  rEmoji: { fontSize: 29, marginRight: 11 },
-  rEmojiLarge: { fontSize: 38, marginRight: 18 },
+  rEmojiWell: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#FFF8E7",
+    borderWidth: 0.5,
+    borderColor: "#F1D58E",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    flexShrink: 0,
+  },
+  rEmojiWellLarge: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    marginRight: 18,
+  },
+  rEmoji: { fontSize: 26 },
+  rEmojiLarge: { fontSize: 34 },
   rInfo: { flex: 1 },
   rTitle: { fontSize: 15, fontWeight: "600", color: C.text },
   rTitleLarge: { fontSize: 20, lineHeight: 26 },

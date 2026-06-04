@@ -5,6 +5,7 @@
 import React from "react";
 import {
   Animated,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
+import { visualAssets } from "../lib/visualAssets";
 import { T } from "./_SharedUI";
 import {
   C,
@@ -678,6 +680,14 @@ export function RewardsScreen({
         ]}
         keyboardShouldPersistTaps="handled"
       >
+        <Image
+          source={visualAssets.graphics.rewardGift}
+          style={[
+            s.rewardsHeroGraphic,
+            isLargeTablet && s.rewardsHeroGraphicLarge,
+          ]}
+          resizeMode="contain"
+        />
         <T
           style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]}
           speak={speak}
@@ -759,6 +769,17 @@ const s = StyleSheet.create({
   },
   rewardsScroll: {
     flexGrow: 1,
+  },
+  rewardsHeroGraphic: {
+    width: 74,
+    height: 74,
+    marginBottom: 8,
+    marginTop: 2,
+  },
+  rewardsHeroGraphicLarge: {
+    width: 112,
+    height: 112,
+    marginBottom: 14,
   },
   activeScreenScroll: {
     justifyContent: "flex-start",

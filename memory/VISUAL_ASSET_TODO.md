@@ -30,6 +30,8 @@ direction is warm, pastel, green-forward, and calm: closer to the parent onboard
   the child is engaged.
 - Later: develop a more consistent in-app Buddy asset set, ideally matching the
   original Buddy colors/shape while adding a little more life.
+- Later: support parent-uploaded local image overrides for missions, schedule
+  blocks, and morning routine items, always with built-in fallback artwork/icons.
 
 ## Guardrails
 

@@ -171,7 +171,11 @@ export default function HomeScreen({
           onPress={onMorningNudge}
           activeOpacity={0.85}
         >
-          <Text style={s.morningNudgeIcon}>🌅</Text>
+          <Image
+            source={visualAssets.graphics.sunrise}
+            style={s.morningNudgeIcon}
+            resizeMode="contain"
+          />
           <View style={s.morningNudgeContent}>
             <Text style={s.morningNudgeTitle}>
               {t("home.morning_nudge_title")}
@@ -428,7 +432,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  morningNudgeIcon: { fontSize: 22 },
+  morningNudgeIcon: { width: 34, height: 34, flexShrink: 0 },
   morningNudgeContent: { flex: 1 },
   morningNudgeTitle: {
     fontSize: 13,

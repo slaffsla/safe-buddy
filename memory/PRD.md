@@ -101,6 +101,22 @@ Main feasibility risks:
 - Local speech quality for English / Russian / Hebrew.
 - App size, battery, memory, latency, and Android device variability.
 
+### Later — Parent Image Overrides
+
+Let parents optionally attach local images to missions, schedule blocks, and
+morning routine steps so family-specific activities can look familiar and less
+emoji-like.
+
+Implementation guardrails:
+- Store only local image URIs / metadata in settings.
+- Always keep the existing emoji/generated icon as fallback.
+- If an image is missing, revoked, deleted, or fails to load, the app must keep
+  working without user-visible breakage.
+- Keep image picking/editing inside Parent Zone / Settings, never in the child
+  flow.
+- Avoid adding this until the current V1 visual system and settings editing are
+  stable.
+
 ## Near-Term Work
 
 - Keep polishing parent and child onboarding based on real-device testing.

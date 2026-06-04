@@ -541,6 +541,8 @@ export function CelebrateScreen({
   const emotionalMsg = isVeryExcited
     ? getMilestoneMessage(totalEver)
     : getProgressionMessage(totalMissions, completedToday);
+  const nextButtonKey =
+    mission.stars >= 2 ? "celebrate.btn_next_challenge" : "celebrate.btn_next";
 
   return (
     <View
@@ -585,9 +587,27 @@ export function CelebrateScreen({
           {t("celebrate.earned_total", { stars: stars })}
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={s.btnPrimary} onPress={onContinue}>
-        <Text style={s.btnPrimaryTxt}>
-          {tGender("celebrate.btn_next", undefined, rtlChildSex)}
+      <TouchableOpacity
+        style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
+        onPress={onContinue}
+      >
+        <View
+          style={[
+            s.btnPrimaryIconWell,
+            isLargeTablet && s.btnPrimaryIconWellLarge,
+          ]}
+        >
+          <Image
+            source={visualAssets.graphics.missionRocket}
+            style={[
+              s.btnPrimaryImageIcon,
+              isLargeTablet && s.btnPrimaryImageIconLarge,
+            ]}
+            resizeMode="contain"
+          />
+        </View>
+        <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
+          {tGender(nextButtonKey, undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
@@ -1236,6 +1256,14 @@ const s = StyleSheet.create({
   btnPrimaryIconLarge: {
     fontSize: 25,
     lineHeight: 30,
+  },
+  btnPrimaryImageIcon: {
+    width: 34,
+    height: 34,
+  },
+  btnPrimaryImageIconLarge: {
+    width: 44,
+    height: 44,
   },
   btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
   btnPrimaryTxtLarge: { fontSize: 24 },

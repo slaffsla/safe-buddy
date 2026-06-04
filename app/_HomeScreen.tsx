@@ -171,11 +171,13 @@ export default function HomeScreen({
           onPress={onMorningNudge}
           activeOpacity={0.85}
         >
-          <Image
-            source={visualAssets.graphics.sunrise}
-            style={s.morningNudgeIcon}
-            resizeMode="contain"
-          />
+          <View style={s.morningNudgeIconWell}>
+            <Image
+              source={visualAssets.graphics.sunrise}
+              style={s.morningNudgeIcon}
+              resizeMode="contain"
+            />
+          </View>
           <View style={s.morningNudgeContent}>
             <Text style={s.morningNudgeTitle}>
               {t("home.morning_nudge_title")}
@@ -436,7 +438,18 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  morningNudgeIcon: { width: 34, height: 34, flexShrink: 0 },
+  morningNudgeIconWell: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: "#FFF8E7",
+    borderWidth: 0.5,
+    borderColor: "#F1D58E",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  morningNudgeIcon: { width: 38, height: 38 },
   morningNudgeContent: { flex: 1 },
   morningNudgeTitle: {
     fontSize: 13,

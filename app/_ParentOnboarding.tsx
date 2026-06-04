@@ -314,9 +314,16 @@ function Screen1({ speak }: { speak: (t: string) => void }) {
       </Text>
       <View style={[s.noteCard, isLargeTablet && s.noteCardLarge]}>
         <SoftAccent asset="sprigLean" style={s.noteAccent} mirror />
-        <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
-          💬 {t("parent_onboarding.screen1_note")}
-        </Text>
+        <View style={s.noteRow}>
+          <Image
+            source={SOFT_ACCENT_IMAGES.hearts}
+            style={[s.noteIcon, isLargeTablet && s.noteIconLarge]}
+            resizeMode="contain"
+          />
+          <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
+            {t("parent_onboarding.screen1_note")}
+          </Text>
+        </View>
       </View>
     </ScrollView>
   );
@@ -362,7 +369,11 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
         <SoftAccent asset="sprigLean" style={s.handoffSprigLeft} />
         <SoftAccent asset="magic" style={s.handoffMagic} />
         <View style={[s.handoffChip, s.handoffChipRight]}>
-          <Text style={s.handoffChipText}>⭐</Text>
+          <Image
+            source={ONBOARDING_GRAPHICS.stars}
+            style={s.handoffChipImage}
+            resizeMode="contain"
+          />
         </View>
         <Buddy
           mood="happy"
@@ -422,9 +433,24 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
           ))}
         </View>
       </View>
-      <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
-        ✨ {t("parent_onboarding.screen2_note")}
-      </Text>
+      <View
+        style={[
+          s.noteCard,
+          s.noteCardCompact,
+          isLargeTablet && s.noteCardLarge,
+        ]}
+      >
+        <View style={s.noteRow}>
+          <Image
+            source={SOFT_ACCENT_IMAGES.magic}
+            style={[s.noteIcon, isLargeTablet && s.noteIconLarge]}
+            resizeMode="contain"
+          />
+          <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
+            {t("parent_onboarding.screen2_note")}
+          </Text>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -523,9 +549,24 @@ function Screen3() {
           </View>
         ))}
       </View>
-      <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
-        ✨ {t("parent_onboarding.screen3_note")}
-      </Text>
+      <View
+        style={[
+          s.noteCard,
+          s.noteCardCompact,
+          isLargeTablet && s.noteCardLarge,
+        ]}
+      >
+        <View style={s.noteRow}>
+          <Image
+            source={SOFT_ACCENT_IMAGES.settings}
+            style={[s.noteIcon, isLargeTablet && s.noteIconLarge]}
+            resizeMode="contain"
+          />
+          <Text style={[s.noteText, isLargeTablet && s.noteTextLarge]}>
+            {t("parent_onboarding.screen3_note")}
+          </Text>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -831,7 +872,7 @@ const s = StyleSheet.create({
     bottom: 30,
     transform: [{ rotate: "9deg" }],
   },
-  handoffChipText: { fontSize: 22 },
+  handoffChipImage: { width: 32, height: 32 },
   heading: {
     fontSize: 24,
     fontWeight: "800",
@@ -859,6 +900,9 @@ const s = StyleSheet.create({
     width: "100%",
     overflow: "hidden",
   },
+  noteCardCompact: {
+    marginTop: -4,
+  },
   noteCardLarge: { padding: 24, borderRadius: 16 },
   noteAccent: {
     right: -6,
@@ -867,12 +911,28 @@ const s = StyleSheet.create({
     height: 72,
     opacity: 0.62,
   },
+  noteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  noteIcon: {
+    width: 32,
+    height: 32,
+    flexShrink: 0,
+  },
+  noteIconLarge: {
+    width: 44,
+    height: 44,
+  },
   noteText: {
     fontSize: 13,
     color: C.green,
     lineHeight: 20,
-    textAlign: "center",
+    textAlign: "auto",
     fontStyle: "italic",
+    flex: 1,
   },
   noteTextLarge: { fontSize: 18, lineHeight: 27 },
 

@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Animated,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +18,7 @@ import {
   getScheduleTitle,
 } from "./_constants";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
+import { visualAssets, type VisualAssetSource } from "../lib/visualAssets";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
@@ -258,6 +260,12 @@ export default function HomeScreen({
         style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
         onPress={onStart}
       >
+        <HomeButtonIcon
+          source={visualAssets.graphics.missionRocket}
+          large={isLargeTablet}
+          boost
+          inverted
+        />
         <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
           {tGender("home.btn_pick_mission", undefined, rtlChildSex)}
         </Text>
@@ -267,6 +275,11 @@ export default function HomeScreen({
           style={[s.btnDay, isLargeTablet && s.btnTallLarge]}
           onPress={onOpenDay}
         >
+          <HomeButtonIcon
+            source={visualAssets.graphics.schedule}
+            large={isLargeTablet}
+            boost
+          />
           <Text style={[s.btnDayTxt, isLargeTablet && s.btnTextLarge]}>
             {tGender("home.btn_my_day", undefined, rtlChildSex)}
           </Text>
@@ -276,6 +289,11 @@ export default function HomeScreen({
         style={[s.btnSecondary, isLargeTablet && s.btnTallLarge]}
         onPress={onRewards}
       >
+        <HomeButtonIcon
+          source={visualAssets.graphics.rewardGift}
+          large={isLargeTablet}
+          boost
+        />
         <Text style={[s.btnSecondaryTxt, isLargeTablet && s.btnTextLarge]}>
           {tGender("home.btn_rewards", undefined, rtlChildSex)}
         </Text>
@@ -285,6 +303,11 @@ export default function HomeScreen({
           style={[s.btnBreathing, isLargeTablet && s.btnTallLarge]}
           onPress={onBreathing}
         >
+          <HomeButtonIcon
+            source={visualAssets.graphics.breathSwirl}
+            large={isLargeTablet}
+            boost
+          />
           <Text style={[s.btnBreathingTxt, isLargeTablet && s.btnTextLarge]}>
             {tGender("home.btn_breathing", undefined, rtlChildSex)}
           </Text>
@@ -297,16 +320,62 @@ export default function HomeScreen({
           settingsHighlightStyle,
         ]}
       >
-      <TouchableOpacity
+        <TouchableOpacity
           style={[s.btnSettings, isLargeTablet && s.btnSettingsLarge]}
           onPress={onSettings}
         >
-        <Text style={[s.btnSettingsTxt, isLargeTablet && s.btnSettingsTxtLarge]}>
-          {tGender("home.btn_settings", undefined, rtlChildSex)}
-        </Text>
-      </TouchableOpacity>
+          <HomeButtonIcon
+            source={visualAssets.graphics.settings}
+            large={isLargeTablet}
+            small
+          />
+          <Text
+            style={[s.btnSettingsTxt, isLargeTablet && s.btnSettingsTxtLarge]}
+          >
+            {tGender("home.btn_settings", undefined, rtlChildSex)}
+          </Text>
+        </TouchableOpacity>
       </Animated.View>
     </ScrollView>
+  );
+}
+
+function HomeButtonIcon({
+  source,
+  large,
+  inverted,
+  small,
+  boost,
+}: {
+  source: VisualAssetSource;
+  large: boolean;
+  inverted?: boolean;
+  small?: boolean;
+  boost?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        s.homeButtonIconSlot,
+        large && s.homeButtonIconSlotLarge,
+        small && s.homeButtonIconSmall,
+        small && large && s.homeButtonIconSmallLarge,
+      ]}
+    >
+      <Image
+        source={source}
+        style={[
+          s.homeButtonIcon,
+          large && s.homeButtonIconLarge,
+          boost && s.homeButtonIconBoost,
+          boost && large && s.homeButtonIconBoostLarge,
+          small && s.homeButtonIconSmallImage,
+          small && large && s.homeButtonIconSmallImageLarge,
+          inverted && s.homeButtonIconInverted,
+        ]}
+        resizeMode="contain"
+      />
+    </View>
   );
 }
 
@@ -380,16 +449,20 @@ const s = StyleSheet.create({
   btnPrimary: {
     backgroundColor: C.green,
     borderRadius: 16,
-    paddingVertical: 17,
+    paddingVertical: 14,
     paddingHorizontal: 32,
     marginTop: 10,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
   },
   btnPrimaryLarge: {
     borderRadius: 18,
-    paddingVertical: 22,
+    paddingVertical: 18,
     marginTop: 18,
+    gap: 14,
   },
   btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
   btnPrimaryTxtLarge: { fontSize: 24 },
@@ -403,6 +476,9 @@ const s = StyleSheet.create({
     marginTop: 8,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
   },
   btnSecondaryTxt: { fontSize: 17, color: "#92400E", fontWeight: "600" },
   btnTallLarge: { paddingVertical: 18, borderRadius: 18, marginTop: 12 },
@@ -417,6 +493,9 @@ const s = StyleSheet.create({
     marginTop: 8,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
   },
   btnDayTxt: { fontSize: 16, color: C.green, fontWeight: "600" },
   btnBreathing: {
@@ -429,6 +508,9 @@ const s = StyleSheet.create({
     marginTop: 8,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
   },
   btnBreathingTxt: { fontSize: 16, color: "#1E4E8C", fontWeight: "600" },
   settingsHighlightWrap: {
@@ -439,10 +521,65 @@ const s = StyleSheet.create({
     marginTop: 8,
   },
   settingsHighlightWrapLarge: { borderRadius: 18, marginTop: 14 },
-  btnSettings: { padding: 12, alignItems: "center" },
+  btnSettings: {
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
   btnSettingsTxt: { fontSize: 14, color: C.muted },
   btnSettingsLarge: { padding: 16 },
   btnSettingsTxtLarge: { fontSize: 18 },
+  homeButtonIconSlot: {
+    width: 34,
+    height: 34,
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "visible",
+  },
+  homeButtonIconSlotLarge: {
+    width: 46,
+    height: 46,
+  },
+  homeButtonIcon: {
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+  },
+  homeButtonIconLarge: {
+    width: 58,
+    height: 58,
+  },
+  homeButtonIconBoost: {
+    width: 54,
+    height: 54,
+  },
+  homeButtonIconBoostLarge: {
+    width: 72,
+    height: 72,
+  },
+  homeButtonIconSmall: {
+    width: 24,
+    height: 24,
+    opacity: 0.72,
+  },
+  homeButtonIconSmallLarge: {
+    width: 30,
+    height: 30,
+  },
+  homeButtonIconSmallImage: {
+    width: 32,
+    height: 32,
+  },
+  homeButtonIconSmallImageLarge: {
+    width: 40,
+    height: 40,
+  },
+  homeButtonIconInverted: {
+    opacity: 0.96,
+  },
 
   scheduleCard: { width: "100%", marginBottom: 12, gap: 6 },
   scheduleNow: {

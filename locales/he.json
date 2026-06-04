@@ -38,12 +38,12 @@
     "morning_nudge_cta_female": "התחילי",
     "morning_nudge_speak": "בדיקת בוקר. בוא נבחר משימה",
     "morning_nudge_speak_female": "בדיקת בוקר. בואי נבחר משימה",
-    "btn_pick_mission": "🚀 בחר משימה",
-    "btn_pick_mission_female": "🚀 בחרי משימה",
-    "btn_my_day": "📅 היום שלי",
-    "btn_rewards": "🎁 הפרסים שלי",
-    "btn_breathing": "🌬️ לנשום עם Buddy",
-    "btn_settings": "⚙️ הגדרות הורה"
+    "btn_pick_mission": "בחר משימה",
+    "btn_pick_mission_female": "בחרי משימה",
+    "btn_my_day": "היום שלי",
+    "btn_rewards": "הפרסים שלי",
+    "btn_breathing": "לנשום עם Buddy",
+    "btn_settings": "הגדרות הורה"
   },
   "onboarding": {
     "title": "היי! איך קוראים לילד/ה שלך?",

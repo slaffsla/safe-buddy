@@ -34,11 +34,11 @@
     "morning_nudge_sub": "A small start helps the day feel steadier.",
     "morning_nudge_cta": "Start",
     "morning_nudge_speak": "Morning check-in. Let's pick a mission.",
-    "btn_pick_mission": "🚀 Pick a mission",
-    "btn_my_day": "📅 My day",
-    "btn_rewards": "🎁 My rewards",
-    "btn_breathing": "🌬️ Breathe with Buddy",
-    "btn_settings": "⚙️ Parent settings"
+    "btn_pick_mission": "Pick a mission",
+    "btn_my_day": "My day",
+    "btn_rewards": "My rewards",
+    "btn_breathing": "Breathe with Buddy",
+    "btn_settings": "Parent settings"
   },
   "onboarding": {
     "title": "Hi! What is your child's name?",

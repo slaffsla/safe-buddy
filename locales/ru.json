@@ -34,11 +34,11 @@
     "morning_nudge_sub": "Небольшое начало помогает дню пройти спокойнее.",
     "morning_nudge_cta": "Начать",
     "morning_nudge_speak": "Утренний старт. Давай выберем миссию.",
-    "btn_pick_mission": "🚀 Выбрать миссию",
-    "btn_my_day": "📅 Мой день",
-    "btn_rewards": "🎁 Мои награды",
-    "btn_breathing": "🌬️ Подышать с Бадди",
-    "btn_settings": "⚙️ Настройки для родителей"
+    "btn_pick_mission": "Выбрать миссию",
+    "btn_my_day": "Мой день",
+    "btn_rewards": "Мои награды",
+    "btn_breathing": "Подышать с Бадди",
+    "btn_settings": "Настройки для родителей"
   },
   "onboarding": {
     "title": "Привет! Как зовут твоего ребёнка?",

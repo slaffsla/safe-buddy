@@ -445,9 +445,16 @@ export function ActiveScreen({
         }
         activeOpacity={0.85}
       >
-        <Text style={[s.activeEmoji, isLargeTablet && s.activeEmojiLarge]}>
-          {mission.emoji}
-        </Text>
+        <View
+          style={[
+            s.activeEmojiWell,
+            isLargeTablet && s.activeEmojiWellLarge,
+          ]}
+        >
+          <Text style={[s.activeEmoji, isLargeTablet && s.activeEmojiLarge]}>
+            {mission.emoji}
+          </Text>
+        </View>
         <Text style={[s.activeTitle, isLargeTablet && s.activeTitleLarge]}>
           {getMissionTitle(mission.id, mission.title)}
         </Text>
@@ -546,7 +553,9 @@ export function CelebrateScreen({
           style={s.earnedGraphic}
           resizeMode="contain"
         />
-        <Text style={s.earnedEmoji}>{mission.emoji}</Text>
+        <View style={s.earnedEmojiWell}>
+          <Text style={s.earnedEmoji}>{mission.emoji}</Text>
+        </View>
         <Text style={s.earnedName}>
           {getMissionTitle(mission.id, mission.title)}
         </Text>
@@ -1113,7 +1122,18 @@ const s = StyleSheet.create({
     marginVertical: 12,
   },
   earnedGraphic: { width: 62, height: 62, marginBottom: 2 },
-  earnedEmoji: { fontSize: 44, marginBottom: 6 },
+  earnedEmojiWell: {
+    width: 62,
+    height: 62,
+    borderRadius: 20,
+    backgroundColor: "#FFFDF9",
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  earnedEmoji: { fontSize: 38 },
   earnedName: { fontSize: 16, fontWeight: "600", color: C.green },
   earnedStars: { fontSize: 26, marginTop: 6 },
   earnedTotal: {
@@ -1184,8 +1204,25 @@ const s = StyleSheet.create({
     paddingHorizontal: 34,
     marginVertical: 22,
   },
-  activeEmoji: { fontSize: 54, marginBottom: 10 },
-  activeEmojiLarge: { fontSize: 72, marginBottom: 16 },
+  activeEmojiWell: {
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    backgroundColor: "#F4FAF7",
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  activeEmojiWellLarge: {
+    width: 116,
+    height: 116,
+    borderRadius: 36,
+    marginBottom: 20,
+  },
+  activeEmoji: { fontSize: 54 },
+  activeEmojiLarge: { fontSize: 72 },
   activeTitle: {
     fontSize: 22,
     fontWeight: "700",

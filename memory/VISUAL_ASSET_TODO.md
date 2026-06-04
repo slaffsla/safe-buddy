@@ -18,6 +18,9 @@ direction is warm, pastel, green-forward, and calm: closer to the parent onboard
 - Settings uses softer custom artwork for the child handoff / first experience
   invitation and a small handpan image for breathing music.
 - Breathing screen uses the handpan image as the music toggle affordance.
+- Mission and reward rows now use soft icon wells around parent/default emoji
+  icons; this direction tested well and should be reused where it improves
+  structure without hiding the activity/reward identity.
 
 ## Useful Next Slices
 
@@ -28,6 +31,8 @@ direction is warm, pastel, green-forward, and calm: closer to the parent onboard
 - Rewards screen can use `rewardGift` as an empty/intro anchor, not on every row.
 - Mission-completion and active breathing screens should stay visually quiet once
   the child is engaged.
+- Active mission and celebration screens may use one soft emoji/icon well, but
+  avoid adding extra decorative artwork beyond the task/reward identity.
 - Later: develop a more consistent in-app Buddy asset set, ideally matching the
   original Buddy colors/shape while adding a little more life.
 - Later: support parent-uploaded local image overrides for missions, schedule

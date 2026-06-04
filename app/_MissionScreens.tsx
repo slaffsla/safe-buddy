@@ -390,6 +390,7 @@ export function MissionPickScreen({
       </ScrollView>
       <View style={s.footer} pointerEvents="box-none">
         <TouchableOpacity style={s.btnBack} onPress={onBack}>
+          <Text style={s.btnBackArrow}>‹</Text>
           <Text style={s.btnBackTxt}>{t("common.back")}</Text>
         </TouchableOpacity>
       </View>
@@ -578,6 +579,7 @@ export function CelebrateScreen({
       </TouchableOpacity>
       <View style={s.footer} pointerEvents="box-none">
         <TouchableOpacity style={s.btnBack} onPress={onBack}>
+          <Text style={s.btnBackArrow}>‹</Text>
           <Text style={s.btnBackTxt}>{t("common.back")}</Text>
         </TouchableOpacity>
       </View>
@@ -755,6 +757,9 @@ export function RewardsScreen({
           style={[s.btnBack, isLargeTablet && s.btnBackLarge]}
           onPress={onBack}
         >
+          <Text style={[s.btnBackArrow, isLargeTablet && s.btnBackArrowLarge]}>
+            ‹
+          </Text>
           <Text style={[s.btnBackTxt, isLargeTablet && s.btnBackTxtLarge]}>
             {t("common.back")}
           </Text>
@@ -1174,18 +1179,31 @@ const s = StyleSheet.create({
   btnSkip: { marginTop: 10, padding: 12 },
   btnSkipTxt: { fontSize: 15, color: C.muted },
   btnBack: {
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     alignSelf: "center",
     backgroundColor: "#FFFDF9",
     borderRadius: 16,
     borderWidth: 0.5,
     borderColor: "#DED8CE",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  btnBackArrow: {
+    fontSize: 20,
+    lineHeight: 20,
+    color: C.green,
+    fontWeight: "700",
+    marginTop: -1,
   },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
   btnBackLarge: {
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
     alignSelf: "center",
   },
+  btnBackArrowLarge: { fontSize: 26, lineHeight: 26 },
   btnBackTxtLarge: { fontSize: 20 },
 
   activeCard: {

@@ -666,9 +666,11 @@ function RewardCard({
         </View>
         <View style={s.rInfo}>
           <Text style={[s.rTitle, large && s.rTitleLarge]}>{title}</Text>
-          <Text style={[s.rCost, large && s.rCostLarge]}>
-            {Array(reward.cost).fill("⭐").join("")}
-          </Text>
+          <View style={[s.rCostBadge, large && s.rCostBadgeLarge]}>
+            <Text style={[s.rCost, large && s.rCostLarge]}>
+              {Array(reward.cost).fill("⭐").join("")}
+            </Text>
+          </View>
         </View>
         {can ? (
           <TouchableOpacity
@@ -1341,8 +1343,23 @@ const s = StyleSheet.create({
   rInfo: { flex: 1 },
   rTitle: { fontSize: 15, fontWeight: "600", color: C.text },
   rTitleLarge: { fontSize: 20, lineHeight: 26 },
-  rCost: { fontSize: 12, color: C.muted, marginTop: 2 },
-  rCostLarge: { fontSize: 16, marginTop: 4 },
+  rCostBadge: {
+    alignSelf: "flex-start",
+    marginTop: 5,
+    backgroundColor: "#FFF8E7",
+    borderWidth: 0.5,
+    borderColor: "#F1D58E",
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+  },
+  rCostBadgeLarge: {
+    marginTop: 7,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  rCost: { fontSize: 12, color: C.muted },
+  rCostLarge: { fontSize: 16 },
   rReadyBtn: {
     backgroundColor: C.greenLt,
     borderRadius: 12,

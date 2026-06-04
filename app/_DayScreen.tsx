@@ -314,7 +314,6 @@ export default function DayScreen({
           onPress={onClose}
           accessibilityLabel={t("day.back_a11y")}
         >
-          <Text style={s.btnBackArrow}>‹</Text>
           <Text style={s.btnBackTxt}>{t("common.back")}</Text>
         </TouchableOpacity>
       </View>
@@ -455,13 +454,6 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-  },
-  btnBackArrow: {
-    fontSize: 20,
-    lineHeight: 20,
-    color: C.green,
-    fontWeight: "700",
-    marginTop: -1,
   },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
 });

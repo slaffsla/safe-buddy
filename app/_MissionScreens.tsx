@@ -114,6 +114,14 @@ export function MissionPickScreen({
         <View
           style={[s.firstMissionHero, isLargeTablet && s.firstMissionHeroLarge]}
         >
+          <Image
+            source={visualAssets.graphics.missionRocket}
+            style={[
+              s.firstMissionHeroGraphic,
+              isLargeTablet && s.firstMissionHeroGraphicLarge,
+            ]}
+            resizeMode="contain"
+          />
           <T style={[s.pageTitle, s.firstMissionTitle]} speak={speak}>
             {tGender("missionPick.first_title", undefined, rtlChildSex)}
           </T>
@@ -834,6 +842,16 @@ const s = StyleSheet.create({
   },
   firstMissionHeroLarge: {
     marginBottom: 20,
+  },
+  firstMissionHeroGraphic: {
+    width: 82,
+    height: 82,
+    marginBottom: 8,
+  },
+  firstMissionHeroGraphicLarge: {
+    width: 124,
+    height: 124,
+    marginBottom: 14,
   },
   firstMissionTitle: {
     marginBottom: 8,

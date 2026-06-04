@@ -138,6 +138,7 @@
     "earned_total": "Total: ⭐ {{stars}}",
     "btn_next": "Next mission",
     "btn_next_challenge": "Next challenge",
+    "btn_next_adventure": "Next adventure",
     "btn_rewards": "🎁 See rewards"
   },
   "rewards": {

@@ -25,6 +25,7 @@ import {
   getRewardTitle,
   MISSION_POOL,
   MissionSlot,
+  pickSeededItem,
   PoolMission,
   REWARDS,
 } from "./_constants";
@@ -537,12 +538,19 @@ export function CelebrateScreen({
 }) {
   const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
+  const nextButtonKey = React.useMemo(() => {
+    if (!mission || mission.stars < 2) return "celebrate.btn_next";
+    return (
+      pickSeededItem(
+        ["celebrate.btn_next_challenge", "celebrate.btn_next_adventure"],
+        mission.id * 37 + totalEver * 11 + completedToday * 17,
+      ) ?? "celebrate.btn_next_challenge"
+    );
+  }, [completedToday, mission, totalEver]);
   if (!mission) return null;
   const emotionalMsg = isVeryExcited
     ? getMilestoneMessage(totalEver)
     : getProgressionMessage(totalMissions, completedToday);
-  const nextButtonKey =
-    mission.stars >= 2 ? "celebrate.btn_next_challenge" : "celebrate.btn_next";
 
   return (
     <View

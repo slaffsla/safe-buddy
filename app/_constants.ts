@@ -1059,7 +1059,7 @@ function hashDateToSeed(dateStr: string): number {
  * Creates a seeded pseudo-random number generator using the Mulberry32 algorithm.
  * Returns a function that produces deterministic random values between 0 and 1.
  */
-function createSeededRandom(seed: number): () => number {
+export function createSeededRandom(seed: number): () => number {
   let state = seed >>> 0;
 
   return function random(): number {
@@ -1069,6 +1069,21 @@ function createSeededRandom(seed: number): () => number {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+export function pickRandomItem<T>(
+  items: readonly T[],
+  random: () => number = Math.random,
+): T | undefined {
+  if (items.length === 0) return undefined;
+  return items[Math.floor(random() * items.length)];
+}
+
+export function pickSeededItem<T>(
+  items: readonly T[],
+  seed: number,
+): T | undefined {
+  return pickRandomItem(items, createSeededRandom(seed));
 }
 
 /**

@@ -142,6 +142,7 @@
     "earned_total": "Всего: ⭐ {{stars}}",
     "btn_next": "Следующая миссия",
     "btn_next_challenge": "Следующее испытание",
+    "btn_next_adventure": "Следующее приключение",
     "btn_rewards": "🎁 Посмотреть награды"
   },
   "rewards": {

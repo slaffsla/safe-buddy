@@ -299,9 +299,11 @@ export function MissionPickScreen({
               >
                 <Text style={s.slotLabel}>{t(SLOT_LABEL_KEYS[slot])}</Text>
                 <View style={s.slotMeta}>
-                  <Text style={s.slotCount}>
-                    {slotDone}/{items.length}
-                  </Text>
+                  <View style={s.slotCountPill}>
+                    <Text style={s.slotCount}>
+                      {slotDone}/{items.length}
+                    </Text>
+                  </View>
                   <Text style={s.slotChevron}>{isOpen ? "▲" : "▼"}</Text>
                 </View>
               </TouchableOpacity>
@@ -978,16 +980,26 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  slotLabel: { fontSize: 14, fontWeight: "600", color: C.text },
+  slotLabel: { fontSize: 14, fontWeight: "700", color: C.text },
   slotMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
-  slotCount: { fontSize: 12, color: C.muted },
-  slotChevron: { fontSize: 10, color: C.muted },
+  slotCountPill: {
+    minWidth: 42,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderWidth: 0.5,
+    borderColor: "rgba(29,107,79,0.14)",
+    alignItems: "center",
+  },
+  slotCount: { fontSize: 12, color: C.green, fontWeight: "700" },
+  slotChevron: { fontSize: 10, color: C.green, fontWeight: "700" },
 
   // Mission cards
   mCard: {

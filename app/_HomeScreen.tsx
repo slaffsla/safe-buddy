@@ -217,7 +217,9 @@ export default function HomeScreen({
               }
               activeOpacity={0.8}
             >
-              <Text style={s.scheduleEmoji}>{currentBlock.emoji}</Text>
+              <View style={s.scheduleEmojiWell}>
+                <Text style={s.scheduleEmoji}>{currentBlock.emoji}</Text>
+              </View>
               <View style={s.scheduleInfo}>
                 <Text style={s.scheduleNowLabel}>{t("home.schedule_now")}</Text>
                 <Text style={s.scheduleTitle}>
@@ -245,7 +247,9 @@ export default function HomeScreen({
               }
               activeOpacity={0.8}
             >
-              <Text style={s.scheduleNextEmoji}>{nextBlock.emoji}</Text>
+              <View style={[s.scheduleEmojiWell, s.scheduleNextEmojiWell]}>
+                <Text style={s.scheduleNextEmoji}>{nextBlock.emoji}</Text>
+              </View>
               <View style={s.scheduleInfo}>
                 <Text style={s.scheduleNextLabel}>
                   {t("home.schedule_next")}
@@ -607,7 +611,25 @@ const s = StyleSheet.create({
     gap: 12,
     opacity: 0.85,
   },
-  scheduleEmoji: { fontSize: 28 },
+  scheduleEmojiWell: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: "#FFFDF9",
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  scheduleNextEmojiWell: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    borderColor: "#DED8CE",
+    opacity: 0.92,
+  },
+  scheduleEmoji: { fontSize: 26 },
   scheduleNextEmoji: { fontSize: 22 },
   scheduleInfo: { flex: 1 },
   scheduleNowLabel: {

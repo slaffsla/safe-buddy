@@ -618,8 +618,28 @@ export function CelebrateScreen({
           {tGender(nextButtonKey, undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>
+      <TouchableOpacity
+        style={[s.btnSecondary, isLargeTablet && s.btnSecondaryLarge]}
+        onPress={onRewards}
+      >
+        <View
+          style={[
+            s.btnSecondaryIconWell,
+            isLargeTablet && s.btnSecondaryIconWellLarge,
+          ]}
+        >
+          <Image
+            source={visualAssets.graphics.rewardGift}
+            style={[
+              s.btnSecondaryImageIcon,
+              isLargeTablet && s.btnSecondaryImageIconLarge,
+            ]}
+            resizeMode="contain"
+          />
+        </View>
+        <Text
+          style={[s.btnSecondaryTxt, isLargeTablet && s.btnSecondaryTxtLarge]}
+        >
           {tGender("celebrate.btn_rewards", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
@@ -1285,8 +1305,38 @@ const s = StyleSheet.create({
     marginTop: 8,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+  btnSecondaryLarge: {
+    borderRadius: 18,
+    paddingVertical: 19,
+    gap: 14,
+  },
+  btnSecondaryIconWell: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#FFF1CB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnSecondaryIconWellLarge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },
+  btnSecondaryImageIcon: {
+    width: 34,
+    height: 34,
+  },
+  btnSecondaryImageIconLarge: {
+    width: 44,
+    height: 44,
   },
   btnSecondaryTxt: { fontSize: 17, color: "#92400E", fontWeight: "600" },
+  btnSecondaryTxtLarge: { fontSize: 22 },
   btnSkip: { marginTop: 10, padding: 12 },
   btnSkipTxt: { fontSize: 15, color: C.muted },
   btnBack: {

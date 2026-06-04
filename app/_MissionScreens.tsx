@@ -423,6 +423,10 @@ export function ActiveScreen({
   const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   if (!mission) return null;
+  const doneLabel = tGender("active.btn_done", undefined, rtlChildSex).replace(
+    /^[^\p{L}\p{N}]+/u,
+    "",
+  );
   return (
     <ScrollView
       contentContainerStyle={[
@@ -486,8 +490,13 @@ export function ActiveScreen({
         style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
         onPress={onDone}
       >
+        <View style={[s.btnPrimaryIconWell, isLargeTablet && s.btnPrimaryIconWellLarge]}>
+          <Text style={[s.btnPrimaryIcon, isLargeTablet && s.btnPrimaryIconLarge]}>
+            ✓
+          </Text>
+        </View>
         <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
-          {tGender("active.btn_done", undefined, rtlChildSex)}
+          {doneLabel}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
@@ -1195,11 +1204,38 @@ const s = StyleSheet.create({
     marginTop: 10,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
   },
   btnPrimaryLarge: {
     borderRadius: 18,
     paddingVertical: 22,
     marginTop: 18,
+    gap: 14,
+  },
+  btnPrimaryIconWell: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnPrimaryIconWellLarge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },
+  btnPrimaryIcon: {
+    fontSize: 20,
+    lineHeight: 24,
+    color: C.white,
+    fontWeight: "900",
+  },
+  btnPrimaryIconLarge: {
+    fontSize: 25,
+    lineHeight: 30,
   },
   btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
   btnPrimaryTxtLarge: { fontSize: 24 },

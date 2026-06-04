@@ -224,7 +224,11 @@ export function MissionPickScreen({
 
         {allDone && (
           <View style={s.encoreCard}>
-            <Text style={s.encoreEmoji}>🌙</Text>
+            <Image
+              source={visualAssets.graphics.completeBadge}
+              style={s.encoreGraphic}
+              resizeMode="contain"
+            />
             <T style={s.encoreTitle} speak={speak}>
               {tGender("missionPick.encore_title", undefined, rtlChildSex)}
             </T>
@@ -527,6 +531,11 @@ export function CelebrateScreen({
         onPress={() => speak(tSpeak("buddy.done", undefined, rtlChildSex))}
         activeOpacity={0.85}
       >
+        <Image
+          source={visualAssets.graphics.completeBadge}
+          style={s.earnedGraphic}
+          resizeMode="contain"
+        />
         <Text style={s.earnedEmoji}>{mission.emoji}</Text>
         <Text style={s.earnedName}>
           {getMissionTitle(mission.id, mission.title)}
@@ -1010,7 +1019,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     marginBottom: 14,
   },
-  encoreEmoji: { fontSize: 40, marginBottom: 6 },
+  encoreGraphic: { width: 58, height: 58, marginBottom: 8 },
   encoreTitle: {
     fontSize: 18,
     fontWeight: "700",
@@ -1067,6 +1076,7 @@ const s = StyleSheet.create({
     width: "100%",
     marginVertical: 12,
   },
+  earnedGraphic: { width: 62, height: 62, marginBottom: 2 },
   earnedEmoji: { fontSize: 44, marginBottom: 6 },
   earnedName: { fontSize: 16, fontWeight: "600", color: C.green },
   earnedStars: { fontSize: 26, marginTop: 6 },

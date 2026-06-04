@@ -140,7 +140,8 @@
     "title": "Миссия выполнена! 🎉",
     "milestone_title": "🏆 Невероятно!",
     "earned_total": "Всего: ⭐ {{stars}}",
-    "btn_next": "🚀 Ещё миссию!",
+    "btn_next": "Следующая миссия",
+    "btn_next_challenge": "Следующее испытание",
     "btn_rewards": "🎁 Посмотреть награды"
   },
   "rewards": {

@@ -136,7 +136,8 @@
     "title": "Mission done! 🎉",
     "milestone_title": "🏆 Amazing!",
     "earned_total": "Total: ⭐ {{stars}}",
-    "btn_next": "🚀 Another mission!",
+    "btn_next": "Next mission",
+    "btn_next_challenge": "Next challenge",
     "btn_rewards": "🎁 See rewards"
   },
   "rewards": {

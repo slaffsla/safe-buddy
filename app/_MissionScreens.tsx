@@ -469,7 +469,7 @@ export function ActiveScreen({
         <Text style={[s.activeSub, isLargeTablet && s.activeSubLarge]}>
           {getMissionSubtitle(mission.id, mission.subtitle)}
         </Text>
-        <View style={s.starsRow}>
+        <View style={[s.mStarBadge, s.activeStarBadge]}>
           {Array(mission.stars)
             .fill("⭐")
             .map((_: any, i: number) => (
@@ -567,9 +567,11 @@ export function CelebrateScreen({
         <Text style={s.earnedName}>
           {getMissionTitle(mission.id, mission.title)}
         </Text>
-        <Text style={s.earnedStars}>
-          {Array(mission.stars).fill("⭐").join(" ")}
-        </Text>
+        <View style={[s.mStarBadge, s.earnedStarBadge]}>
+          <Text style={s.earnedStars}>
+            {Array(mission.stars).fill("⭐").join(" ")}
+          </Text>
+        </View>
         <Text style={s.earnedTotal}>
           {t("celebrate.earned_total", { stars: stars })}
         </Text>
@@ -1174,7 +1176,8 @@ const s = StyleSheet.create({
   },
   earnedEmoji: { fontSize: 38 },
   earnedName: { fontSize: 16, fontWeight: "600", color: C.green },
-  earnedStars: { fontSize: 26, marginTop: 6 },
+  earnedStarBadge: { marginTop: 6, marginLeft: 0, paddingHorizontal: 14 },
+  earnedStars: { fontSize: 23 },
   earnedTotal: {
     fontSize: 14,
     color: C.green,
@@ -1281,8 +1284,15 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   activeSubLarge: { fontSize: 19, lineHeight: 26, marginTop: 8 },
-  starsRow: { flexDirection: "row", marginTop: 12, gap: 4 },
-  starBig: { fontSize: 24 },
+  activeStarBadge: {
+    flexDirection: "row",
+    marginTop: 14,
+    marginLeft: 0,
+    gap: 4,
+    paddingVertical: 7,
+    paddingHorizontal: 13,
+  },
+  starBig: { fontSize: 22 },
 
   rAnimWrap: {
     width: "100%",

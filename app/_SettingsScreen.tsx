@@ -1673,6 +1673,13 @@ function ChildPreferencesSection({
   const [note, setNote] = useState("");
   const [frequency, setFrequency] =
     useState<ChildPreferenceFrequency>("rare");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editKind, setEditKind] = useState<ChildPreferenceKind>("love");
+  const [editEmoji, setEditEmoji] = useState("⭐");
+  const [editTitle, setEditTitle] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [editFrequency, setEditFrequency] =
+    useState<ChildPreferenceFrequency>("rare");
 
   function resetDraft(nextKind: ChildPreferenceKind = "love") {
     setKind(nextKind);
@@ -1717,6 +1724,44 @@ function ChildPreferencesSection({
     setAdding(false);
   }
 
+  function startEditPreference(item: ChildPreference) {
+    setAdding(false);
+    setEditingId(item.id);
+    setEditKind(item.kind);
+    setEditEmoji(item.emoji);
+    setEditTitle(item.title);
+    setEditNote(item.note);
+    setEditFrequency(item.frequency);
+  }
+
+  function cancelEditPreference() {
+    setEditingId(null);
+    setEditKind("love");
+    setEditEmoji("⭐");
+    setEditTitle("");
+    setEditNote("");
+    setEditFrequency("rare");
+  }
+
+  function saveEditedPreference() {
+    if (editingId == null) return;
+    const cleanTitle = editTitle.trim();
+    if (!cleanTitle) {
+      Alert.alert(t("settings.preferences_empty_title"));
+      return;
+    }
+    updatePreference(editingId, {
+      kind: editKind,
+      title: cleanTitle.slice(0, 40),
+      emoji:
+        editEmoji.trim().slice(0, 4) ||
+        (editKind === "comfort" ? "🤍" : "⭐"),
+      note: editNote.trim().slice(0, 120),
+      frequency: editFrequency,
+    });
+    cancelEditPreference();
+  }
+
   function updatePreference(id: number, patch: Partial<ChildPreference>) {
     onChange({
       childPreferences: normalizeChildPreferences(
@@ -1747,34 +1792,131 @@ function ChildPreferencesSection({
 
     return rows.map((item) => (
       <View key={item.id} style={u.preferenceItem}>
-        <View style={u.preferenceMain}>
-          <Text style={u.preferenceEmoji}>{item.emoji}</Text>
-          <View style={u.preferenceText}>
-            <Text style={u.preferenceTitle}>{item.title}</Text>
-            {item.note ? (
-              <Text style={u.preferenceNote}>{item.note}</Text>
-            ) : null}
-            <Text style={u.preferenceMeta}>
-              {item.frequency === "sometimes"
-                ? t("settings.preferences_frequency_sometimes")
-                : t("settings.preferences_frequency_rare")}
-            </Text>
+        {editingId === item.id ? (
+          <View>
+            <PillSelector
+              compact
+              options={[
+                { label: t("settings.preferences_love"), value: "love" },
+                {
+                  label: t("settings.preferences_comfort"),
+                  value: "comfort",
+                },
+              ]}
+              value={editKind}
+              onChange={(nextKind) => {
+                setEditKind(nextKind);
+                if (
+                  !editEmoji.trim() ||
+                  editEmoji === "⭐" ||
+                  editEmoji === "🤍"
+                ) {
+                  setEditEmoji(nextKind === "comfort" ? "🤍" : "⭐");
+                }
+              }}
+            />
+            <View style={[u.inlineEditRow, { marginTop: 12 }]}>
+              <TextInput
+                style={[u.editInput, { width: 56 }]}
+                value={editEmoji}
+                onChangeText={setEditEmoji}
+                placeholder="⭐"
+                placeholderTextColor={C.muted}
+              />
+              <TextInput
+                style={[u.editInput, { flex: 1 }]}
+                value={editTitle}
+                onChangeText={setEditTitle}
+                placeholder={
+                  editKind === "comfort"
+                    ? t("settings.preferences_comfort_placeholder")
+                    : t("settings.preferences_love_placeholder")
+                }
+                placeholderTextColor={C.muted}
+                autoFocus
+              />
+            </View>
+            <TextInput
+              style={[u.editInput, { marginTop: 10 }]}
+              value={editNote}
+              onChangeText={setEditNote}
+              placeholder={t("settings.preferences_note_placeholder")}
+              placeholderTextColor={C.muted}
+            />
+            <View style={{ marginTop: 10 }}>
+              <PillSelector
+                compact
+                options={[
+                  {
+                    label: t("settings.preferences_frequency_rare"),
+                    value: "rare",
+                  },
+                  {
+                    label: t("settings.preferences_frequency_sometimes"),
+                    value: "sometimes",
+                  },
+                ]}
+                value={editFrequency}
+                onChange={setEditFrequency}
+              />
+            </View>
+            <View style={u.rowBtns}>
+              <TouchableOpacity
+                style={u.btnPrimary}
+                onPress={saveEditedPreference}
+              >
+                <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={u.btnCancel}
+                onPress={cancelEditPreference}
+              >
+                <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-        <View style={u.preferenceActions}>
-          <Switch
-            value={item.enabled}
-            onValueChange={(enabled) => updatePreference(item.id, { enabled })}
-            trackColor={{ false: C.track, true: C.green }}
-            thumbColor={C.white}
-          />
-          <TouchableOpacity
-            style={u.dangerBtn}
-            onPress={() => deletePreference(item.id)}
-          >
-            <Text style={u.dangerBtnTxt}>✕</Text>
-          </TouchableOpacity>
-        </View>
+        ) : (
+          <>
+            <View style={u.preferenceMain}>
+              <Text style={u.preferenceEmoji}>{item.emoji}</Text>
+              <View style={u.preferenceText}>
+                <Text style={u.preferenceTitle}>{item.title}</Text>
+                {item.note ? (
+                  <Text style={u.preferenceNote}>{item.note}</Text>
+                ) : null}
+                <Text style={u.preferenceMeta}>
+                  {item.frequency === "sometimes"
+                    ? t("settings.preferences_frequency_sometimes")
+                    : t("settings.preferences_frequency_rare")}
+                </Text>
+              </View>
+            </View>
+            <View style={u.preferenceActions}>
+              <Switch
+                value={item.enabled}
+                onValueChange={(enabled) =>
+                  updatePreference(item.id, { enabled })
+                }
+                trackColor={{ false: C.track, true: C.green }}
+                thumbColor={C.white}
+              />
+              <View style={u.preferenceActionBtns}>
+                <TouchableOpacity
+                  style={u.linkBtn}
+                  onPress={() => startEditPreference(item)}
+                >
+                  <Text style={u.linkBtnTxt}>{t("settings.edit")}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={u.dangerBtn}
+                  onPress={() => deletePreference(item.id)}
+                >
+                  <Text style={u.dangerBtnTxt}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        )}
       </View>
     ));
   }
@@ -1886,6 +2028,7 @@ function ChildPreferencesSection({
             <TouchableOpacity
               style={u.inlineAction}
               onPress={() => {
+                cancelEditPreference();
                 resetDraft("love");
                 setAdding(true);
               }}
@@ -4504,6 +4647,11 @@ const u = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+  },
+  preferenceActionBtns: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   editCostRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
   scheduleItemWrap: { paddingHorizontal: 4, paddingVertical: 2 },

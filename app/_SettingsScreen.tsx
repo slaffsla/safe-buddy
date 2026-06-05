@@ -3256,6 +3256,10 @@ function ParentZoneView({
 
         <View style={pz.sectionSpacer} />
 
+        <ChildPreferencesSection settings={settings} onChange={onChange} />
+
+        <View style={pz.sectionSpacer} />
+
         <SectionHeader title={tx("settings.about_section")} icon="ℹ️" />
         <Card>
           <View style={pz.aboutWrap}>
@@ -3788,11 +3792,6 @@ export default function SettingsScreen({
           onChange={updateSettings}
           onResetProgress={handleResetProgress}
         />
-
-        <View style={ss.spacer} />
-
-        {/* Child preferences */}
-        <ChildPreferencesSection settings={settings} onChange={updateSettings} />
 
         <View style={ss.spacer} />
 

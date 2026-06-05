@@ -3120,21 +3120,32 @@ function LanguageToggle({
   value: AppLocale;
   onChange: (locale: AppLocale) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const options: { label: string; value: AppLocale }[] = [
     { label: "RU", value: "ru" },
     { label: "EN", value: "en" },
     { label: "HE", value: "he" },
   ];
+  const visibleOptions = expanded
+    ? options
+    : options.filter((option) => option.value === value);
 
   return (
-    <View style={ss.langToggle}>
-      {options.map((option) => {
+    <View style={[ss.langToggle, !expanded && ss.langToggleCollapsed]}>
+      {visibleOptions.map((option) => {
         const active = option.value === value;
         return (
           <TouchableOpacity
             key={option.value}
             style={[ss.langBtn, active && ss.langBtnActive]}
-            onPress={() => onChange(option.value)}
+            onPress={() => {
+              if (!expanded) {
+                setExpanded(true);
+                return;
+              }
+              onChange(option.value);
+              setExpanded(false);
+            }}
             activeOpacity={0.75}
           >
             <Text style={[ss.langBtnTxt, active && ss.langBtnTxtActive]}>
@@ -3703,6 +3714,10 @@ const ss = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     padding: 2,
+  },
+  langToggleCollapsed: {
+    backgroundColor: C.green,
+    borderColor: C.green,
   },
   langBtn: {
     minWidth: 34,

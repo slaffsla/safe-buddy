@@ -113,15 +113,27 @@ function LanguageToggle({
   value: AppLocale;
   onChange: (locale: AppLocale) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleOptions = expanded
+    ? LANGUAGE_OPTIONS
+    : LANGUAGE_OPTIONS.filter((option) => option.value === value);
+
   return (
-    <View style={s.langToggle}>
-      {LANGUAGE_OPTIONS.map((option) => {
+    <View style={[s.langToggle, !expanded && s.langToggleCollapsed]}>
+      {visibleOptions.map((option) => {
         const active = option.value === value;
         return (
           <TouchableOpacity
             key={option.value}
             style={[s.langBtn, active && s.langBtnActive]}
-            onPress={() => onChange(option.value)}
+            onPress={() => {
+              if (!expanded) {
+                setExpanded(true);
+                return;
+              }
+              onChange(option.value);
+              setExpanded(false);
+            }}
             activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
@@ -747,6 +759,9 @@ const s = StyleSheet.create({
     padding: 2,
     borderWidth: 1,
     borderColor: C.green,
+  },
+  langToggleCollapsed: {
+    backgroundColor: C.green,
   },
   langBtn: {
     minWidth: 34,

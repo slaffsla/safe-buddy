@@ -3126,8 +3126,12 @@ function LanguageToggle({
     { label: "EN", value: "en" },
     { label: "HE", value: "he" },
   ];
+  const currentOption = options.find((option) => option.value === value);
   const visibleOptions = expanded
-    ? options
+    ? [
+        ...(currentOption ? [currentOption] : []),
+        ...options.filter((option) => option.value !== value),
+      ]
     : options.filter((option) => option.value === value);
 
   return (

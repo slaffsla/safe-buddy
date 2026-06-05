@@ -114,8 +114,12 @@ function LanguageToggle({
   onChange: (locale: AppLocale) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const currentOption = LANGUAGE_OPTIONS.find((option) => option.value === value);
   const visibleOptions = expanded
-    ? LANGUAGE_OPTIONS
+    ? [
+        ...(currentOption ? [currentOption] : []),
+        ...LANGUAGE_OPTIONS.filter((option) => option.value !== value),
+      ]
     : LANGUAGE_OPTIONS.filter((option) => option.value === value);
 
   return (

@@ -79,6 +79,7 @@ import SettingsScreen, {
   saveSettings,
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
+import { SpeechCallOptions } from "./_speechTypes";
 import { AppLocale, getTtsLanguage, t, tSpeak } from "./i18n";
 
 const YESTERDAY = (() => {
@@ -222,12 +223,6 @@ async function resolveVoiceForLanguage(language: string) {
   }
 }
 
-type SpeechCallOptions = {
-  volume?: number;
-  intent?: "instruction" | "buddyTap" | "ambientPlay";
-  layering?: "replace" | "dj";
-};
-
 function applyRtlGenderSpeech(
   text: string,
   language: string,
@@ -286,7 +281,7 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
       if (!enabledRef.current || !text) return;
       const intent = options.intent ?? "instruction";
       const layering = options.layering ?? "replace";
-      const allowDjLayering = layering === "dj" && intent === "buddyTap";
+      const allowDjLayering = layering === "dj" && intent !== "instruction";
       const lang = getTtsLanguage();
       const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
       const cleanedText = genderedText
@@ -1159,7 +1154,6 @@ export default function App() {
           initialAge={childAge}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           speak={speak}
-          buddyDjModeEnabled={appSettings.buddyDjModeEnabled}
           onComplete={completeChildOnboarding}
         />
       </SafeAreaView>
@@ -1540,6 +1534,7 @@ export default function App() {
           blocks={appSettings.scheduleBlocks}
           isWeekendDay={isWeekendDay}
           speak={speak}
+          buddyDjModeEnabled={appSettings.buddyDjModeEnabled}
           onClose={() => setScreen("home")}
           onStartMission={(missionId: number) => {
             const m = allMissionPool.find((x) => x.id === missionId);

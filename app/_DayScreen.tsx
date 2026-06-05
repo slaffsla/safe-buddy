@@ -17,12 +17,14 @@ import {
   getBlockStatus,
   getScheduleTitle,
 } from "./_constants";
+import { SpeakFn } from "./_speechTypes";
 import { getAppLocale, t } from "./i18n";
 
 interface DayScreenProps {
   blocks: ScheduleBlock[];
   isWeekendDay: boolean;
-  speak: (t: string) => void;
+  speak: SpeakFn;
+  buddyDjModeEnabled?: boolean;
   onClose: () => void;
   onStartMission: (missionId: number) => void;
 }
@@ -114,6 +116,7 @@ export default function DayScreen({
   blocks,
   isWeekendDay,
   speak,
+  buddyDjModeEnabled = false,
   onClose,
   onStartMission,
 }: DayScreenProps) {
@@ -264,6 +267,10 @@ export default function DayScreen({
                   onPress={() =>
                     speak(
                       `${getScheduleTitle(block.id, block.title)}, ${formatTimeForSpeech(block.startTime)}`,
+                      {
+                        intent: "ambientPlay",
+                        layering: buddyDjModeEnabled ? "dj" : "replace",
+                      },
                     )
                   }
                   activeOpacity={0.75}

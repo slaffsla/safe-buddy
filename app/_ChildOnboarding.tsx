@@ -16,6 +16,7 @@ import { useLayoutMetrics } from "../lib/layoutMetrics";
 import { visualAssets } from "../lib/visualAssets";
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
+import { SpeakFn } from "./_speechTypes";
 import { RtlChildSex, t } from "./i18n";
 
 type ChildOnboardingStep = "meet" | "name" | "age" | "ready";
@@ -24,15 +25,7 @@ interface ChildOnboardingProps {
   initialName: string;
   initialAge: number;
   rtlChildSex: RtlChildSex;
-  speak: (
-    text: string,
-    options?: {
-      volume?: number;
-      intent?: "instruction" | "buddyTap" | "ambientPlay";
-      layering?: "replace" | "dj";
-    },
-  ) => void;
-  buddyDjModeEnabled?: boolean;
+  speak: SpeakFn;
   onComplete: (name: string, age: number | null) => void;
 }
 
@@ -49,7 +42,6 @@ export default function ChildOnboarding({
   initialAge,
   rtlChildSex,
   speak,
-  buddyDjModeEnabled = false,
   onComplete,
 }: ChildOnboardingProps) {
   const {
@@ -280,10 +272,6 @@ export default function ChildOnboarding({
                     firstPetDone
                       ? t("onboarding.meet_after_pet_sub")
                       : currentLine,
-                    {
-                      intent: "buddyTap",
-                      layering: buddyDjModeEnabled ? "dj" : "replace",
-                    },
                   );
                 }}
                 speak={speak}

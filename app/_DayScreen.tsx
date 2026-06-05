@@ -4,6 +4,7 @@
 
 import { useEffect, useRef } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -275,15 +276,27 @@ export default function DayScreen({
                   }
                   activeOpacity={0.75}
                 >
-                  <Text
-                    style={[
-                      s.cardEmoji,
-                      isCurrent && s.cardEmojiCurrent,
-                      isPast && s.cardEmojiPast,
-                    ]}
-                  >
-                    {block.emoji}
-                  </Text>
+                  {block.imageUri ? (
+                    <Image
+                      source={{ uri: block.imageUri }}
+                      style={[
+                        s.cardThumb,
+                        isCurrent && s.cardThumbCurrent,
+                        isPast && s.cardThumbPast,
+                      ]}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Text
+                      style={[
+                        s.cardEmoji,
+                        isCurrent && s.cardEmojiCurrent,
+                        isPast && s.cardEmojiPast,
+                      ]}
+                    >
+                      {block.emoji}
+                    </Text>
+                  )}
                   <View style={s.cardInfo}>
                     <Text
                       style={[
@@ -423,6 +436,20 @@ const s = StyleSheet.create({
   cardEmoji: { fontSize: 26 },
   cardEmojiCurrent: { fontSize: 32 },
   cardEmojiPast: { opacity: 0.6 },
+  cardThumb: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "#FFFDF9",
+    borderWidth: 0.5,
+    borderColor: "rgba(107,107,104,0.18)",
+  },
+  cardThumbCurrent: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+  },
+  cardThumbPast: { opacity: 0.6 },
 
   cardInfo: { flex: 1 },
   cardTitle: { fontSize: 15, fontWeight: "600", color: C.text },

@@ -49,6 +49,28 @@ const SLOT_COLORS: Record<MissionSlot, { bg: string; border: string }> = {
 
 const SLOT_ORDER: MissionSlot[] = ["morning", "afternoon", "evening", "any"];
 
+function MissionIcon({
+  item,
+  wellStyle,
+  emojiStyle,
+  imageStyle,
+}: {
+  item: { emoji: string; imageUri?: string };
+  wellStyle: any;
+  emojiStyle: any;
+  imageStyle: any;
+}) {
+  return (
+    <View style={wellStyle}>
+      {item.imageUri ? (
+        <Image source={{ uri: item.imageUri }} style={imageStyle} resizeMode="cover" />
+      ) : (
+        <Text style={emojiStyle}>{item.emoji}</Text>
+      )}
+    </View>
+  );
+}
+
 // ── MissionPickScreen ─────────────────────────────────────────────────────────
 
 interface MissionPickProps {
@@ -152,23 +174,24 @@ export function MissionPickScreen({
               }
               activeOpacity={0.75}
             >
-              <View
-                style={[
+              <MissionIcon
+                item={m}
+                wellStyle={[
                   s.mEmojiWell,
                   s.firstMissionEmojiWell,
                   isLargeTablet && s.firstMissionEmojiWellLarge,
                 ]}
-              >
-                <Text
-                  style={[
-                    s.mEmoji,
-                    s.firstMissionEmoji,
-                    isLargeTablet && s.firstMissionEmojiLarge,
-                  ]}
-                >
-                  {m.emoji}
-                </Text>
-              </View>
+                emojiStyle={[
+                  s.mEmoji,
+                  s.firstMissionEmoji,
+                  isLargeTablet && s.firstMissionEmojiLarge,
+                ]}
+                imageStyle={[
+                  s.missionThumb,
+                  s.firstMissionThumb,
+                  isLargeTablet && s.firstMissionThumbLarge,
+                ]}
+              />
               <View style={s.mInfo}>
                 <Text
                   style={[
@@ -258,9 +281,12 @@ export function MissionPickScreen({
                     )
                   }
                 >
-                  <View style={s.mEmojiWell}>
-                    <Text style={s.mEmoji}>{bonusMission.emoji}</Text>
-                  </View>
+                  <MissionIcon
+                    item={bonusMission}
+                    wellStyle={s.mEmojiWell}
+                    emojiStyle={s.mEmoji}
+                    imageStyle={s.missionThumb}
+                  />
                   <View style={s.mInfo}>
                     <Text style={s.mTitle}>
                       {getMissionTitle(bonusMission.id, bonusMission.title)}
@@ -350,11 +376,12 @@ export function MissionPickScreen({
                       }
                       activeOpacity={isDone ? 1 : 0.7}
                     >
-                      <View
-                        style={[s.mEmojiWell, isDone && s.mEmojiWellDone]}
-                      >
-                        <Text style={s.mEmoji}>{m.emoji}</Text>
-                      </View>
+                      <MissionIcon
+                        item={m}
+                        wellStyle={[s.mEmojiWell, isDone && s.mEmojiWellDone]}
+                        emojiStyle={s.mEmoji}
+                        imageStyle={s.missionThumb}
+                      />
                       <View style={s.mInfo}>
                         <Text style={[s.mTitle, isDone && s.mTitleDone]}>
                           {getMissionTitle(m.id, m.title)}
@@ -458,16 +485,18 @@ export function ActiveScreen({
         }
         activeOpacity={0.85}
       >
-        <View
-          style={[
+        <MissionIcon
+          item={mission}
+          wellStyle={[
             s.activeEmojiWell,
             isLargeTablet && s.activeEmojiWellLarge,
           ]}
-        >
-          <Text style={[s.activeEmoji, isLargeTablet && s.activeEmojiLarge]}>
-            {mission.emoji}
-          </Text>
-        </View>
+          emojiStyle={[s.activeEmoji, isLargeTablet && s.activeEmojiLarge]}
+          imageStyle={[
+            s.activeThumb,
+            isLargeTablet && s.activeThumbLarge,
+          ]}
+        />
         <Text style={[s.activeTitle, isLargeTablet && s.activeTitleLarge]}>
           {getMissionTitle(mission.id, mission.title)}
         </Text>
@@ -580,9 +609,12 @@ export function CelebrateScreen({
           style={s.earnedGraphic}
           resizeMode="contain"
         />
-        <View style={s.earnedEmojiWell}>
-          <Text style={s.earnedEmoji}>{mission.emoji}</Text>
-        </View>
+        <MissionIcon
+          item={mission}
+          wellStyle={s.earnedEmojiWell}
+          emojiStyle={s.earnedEmoji}
+          imageStyle={s.earnedThumb}
+        />
         <Text style={s.earnedName}>
           {getMissionTitle(mission.id, mission.title)}
         </Text>
@@ -1000,6 +1032,9 @@ const s = StyleSheet.create({
   firstMissionEmoji: {
     fontSize: 34,
   },
+  firstMissionThumb: {
+    borderRadius: 17,
+  },
   firstMissionEmojiWellLarge: {
     width: 76,
     height: 76,
@@ -1008,6 +1043,9 @@ const s = StyleSheet.create({
   },
   firstMissionEmojiLarge: {
     fontSize: 46,
+  },
+  firstMissionThumbLarge: {
+    borderRadius: 23,
   },
   firstMissionCardTitle: {
     fontSize: 20,
@@ -1095,6 +1133,11 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   mEmoji: { fontSize: 26 },
+  missionThumb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 13,
+  },
   mEmojiWellDone: {
     backgroundColor: "#F0F0EC",
     borderColor: "#DDD8CF",
@@ -1234,6 +1277,11 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   earnedEmoji: { fontSize: 38 },
+  earnedThumb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 19,
+  },
   earnedName: { fontSize: 16, fontWeight: "600", color: C.green },
   earnedStarBadge: { marginTop: 6, marginLeft: 0, paddingHorizontal: 14 },
   earnedStars: { fontSize: 23 },
@@ -1394,6 +1442,14 @@ const s = StyleSheet.create({
   },
   activeEmoji: { fontSize: 54 },
   activeEmojiLarge: { fontSize: 72 },
+  activeThumb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 27,
+  },
+  activeThumbLarge: {
+    borderRadius: 35,
+  },
   activeTitle: {
     fontSize: 22,
     fontWeight: "700",

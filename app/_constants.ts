@@ -118,6 +118,7 @@ export interface PoolMission {
   subtitle: string;
   stars: 1 | 2;
   emoji: string;
+  imageUri?: string;
   category: MissionCategory;
   slot: MissionSlot;
   weekdayDefault: boolean;
@@ -482,6 +483,7 @@ export interface MissionConfig {
   subtitle: string;
   stars: number;
   emoji: string;
+  imageUri?: string;
   type: MissionType;
 }
 
@@ -585,6 +587,7 @@ export interface MorningStep {
   id: number;
   title: string;
   emoji: string;
+  imageUri?: string;
 }
 
 export const DEFAULT_MORNING_STEPS: MorningStep[] = [
@@ -614,6 +617,7 @@ export interface ScheduleBlock {
   id: number;
   title: string;
   emoji: string;
+  imageUri?: string;
   startTime: string; // 'HH:MM' 24h
   endTime: string; // 'HH:MM'
   missionId?: number; // optional — tapping current block can launch this mission

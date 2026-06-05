@@ -16,6 +16,8 @@
 //   )}
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system/legacy";
+import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -266,6 +268,10 @@ function normalizeMorningSteps(value: unknown): MorningStep[] {
         typeof step.emoji === "string" && step.emoji.trim()
           ? step.emoji.trim()
           : "✅";
+      const imageUri =
+        typeof step.imageUri === "string" && step.imageUri.trim()
+          ? step.imageUri.trim()
+          : undefined;
       let id =
         typeof step.id === "number" && Number.isFinite(step.id)
           ? Math.trunc(step.id)
@@ -278,13 +284,158 @@ function normalizeMorningSteps(value: unknown): MorningStep[] {
       }
       used.add(id);
 
-      return { id, title, emoji };
+      return { id, title, emoji, ...(imageUri ? { imageUri } : {}) };
     })
     .filter((step): step is MorningStep => !!step);
 
   return normalized.length > 0
     ? normalized
     : DEFAULT_MORNING_STEPS.map((step) => ({ ...step }));
+}
+
+function normalizeImageUri(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function normalizeScheduleBlocks(value: unknown): ScheduleBlock[] {
+  const source = Array.isArray(value) ? value : DEFAULT_SCHEDULE;
+  return source
+    .map((raw) => {
+      if (!raw || typeof raw !== "object") return null;
+      const block = raw as Partial<ScheduleBlock>;
+      const id =
+        typeof block.id === "number" && Number.isFinite(block.id)
+          ? Math.trunc(block.id)
+          : 0;
+      const title =
+        typeof block.title === "string" && block.title.trim()
+          ? block.title.trim()
+          : "";
+      const emoji =
+        typeof block.emoji === "string" && block.emoji.trim()
+          ? block.emoji.trim()
+          : "⏰";
+      const startTime =
+        typeof block.startTime === "string" ? block.startTime.trim() : "";
+      const endTime =
+        typeof block.endTime === "string" ? block.endTime.trim() : "";
+      if (id <= 0 || !title || !startTime || !endTime) return null;
+      const normalized: ScheduleBlock = {
+        id,
+        title,
+        emoji,
+        startTime,
+        endTime,
+        weekdays: typeof block.weekdays === "boolean" ? block.weekdays : true,
+        weekends: typeof block.weekends === "boolean" ? block.weekends : true,
+      };
+      const imageUri = normalizeImageUri(block.imageUri);
+      if (imageUri) normalized.imageUri = imageUri;
+      if (
+        typeof block.missionId === "number" &&
+        Number.isFinite(block.missionId)
+      ) {
+        normalized.missionId = Math.trunc(block.missionId);
+      }
+      if (typeof block.color === "string") normalized.color = block.color;
+      return normalized;
+    })
+    .filter((block): block is ScheduleBlock => !!block);
+}
+
+function normalizeCustomMissions(value: unknown): PoolMission[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((raw) => {
+      if (!raw || typeof raw !== "object") return null;
+      const mission = raw as Partial<PoolMission>;
+      const id =
+        typeof mission.id === "number" && Number.isFinite(mission.id)
+          ? Math.trunc(mission.id)
+          : 0;
+      const title =
+        typeof mission.title === "string" && mission.title.trim()
+          ? mission.title.trim()
+          : "";
+      if (id <= 0 || !title) return null;
+      const normalized: PoolMission = {
+        id,
+        title,
+        subtitle:
+          typeof mission.subtitle === "string" && mission.subtitle.trim()
+            ? mission.subtitle.trim()
+            : "",
+        stars: mission.stars === 2 ? 2 : 1,
+        emoji:
+          typeof mission.emoji === "string" && mission.emoji.trim()
+            ? mission.emoji.trim()
+            : "✨",
+        category:
+          mission.category === "movement" ||
+          mission.category === "selfcare" ||
+          mission.category === "tidy" ||
+          mission.category === "social" ||
+          mission.category === "calm"
+            ? mission.category
+            : "movement",
+        slot:
+          mission.slot === "morning" ||
+          mission.slot === "afternoon" ||
+          mission.slot === "evening" ||
+          mission.slot === "any"
+            ? mission.slot
+            : "any",
+        weekdayDefault:
+          typeof mission.weekdayDefault === "boolean"
+            ? mission.weekdayDefault
+            : true,
+        weekendDefault:
+          typeof mission.weekendDefault === "boolean"
+            ? mission.weekendDefault
+            : true,
+      };
+      const imageUri = normalizeImageUri(mission.imageUri);
+      if (imageUri) normalized.imageUri = imageUri;
+      return normalized;
+    })
+    .filter((mission): mission is PoolMission => !!mission);
+}
+
+async function pickVisualImageUri(
+  tx: (key: string, params?: Record<string, unknown>) => string,
+): Promise<string | null> {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) {
+    Alert.alert(
+      tx("settings.image_permission_title"),
+      tx("settings.image_permission_msg"),
+    );
+    return null;
+  }
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ["images"],
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.72,
+    exif: false,
+  });
+  if (result.canceled || !result.assets?.[0]?.uri) return null;
+  return persistPickedImage(result.assets[0].uri);
+}
+
+async function persistPickedImage(uri: string): Promise<string> {
+  const documentDirectory = FileSystem.documentDirectory;
+  if (!documentDirectory || uri.startsWith(documentDirectory)) return uri;
+
+  const imageDir = `${documentDirectory}item-images/`;
+  await FileSystem.makeDirectoryAsync(imageDir, { intermediates: true });
+  const extensionMatch = /\.(png|jpe?g|webp)$/i.exec(uri.split("?")[0] ?? "");
+  const extension = extensionMatch?.[1]?.toLowerCase() ?? "jpg";
+  const targetUri = `${imageDir}${Date.now()}-${Math.round(
+    Math.random() * 1_000_000,
+  )}.${extension}`;
+  await FileSystem.copyAsync({ from: uri, to: targetUri });
+  return targetUri;
 }
 
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
@@ -440,6 +591,8 @@ export async function loadSettings(): Promise<AppSettings> {
         merged.buddyDjModeEnabled = parsedAny.playfulTtsEnabled;
       }
       merged.morningSteps = normalizeMorningSteps(merged.morningSteps);
+      merged.scheduleBlocks = normalizeScheduleBlocks(merged.scheduleBlocks);
+      merged.customMissions = normalizeCustomMissions(merged.customMissions);
       merged.childPreferences = normalizeChildPreferences(
         merged.childPreferences,
       );
@@ -460,6 +613,8 @@ export async function loadSettings(): Promise<AppSettings> {
       parentPin: legacy[1][1] ?? "",
       pinEnabled: legacy[2][1] === "true",
       morningSteps: normalizeMorningSteps(DEFAULT_SETTINGS.morningSteps),
+      scheduleBlocks: normalizeScheduleBlocks(DEFAULT_SETTINGS.scheduleBlocks),
+      customMissions: normalizeCustomMissions(DEFAULT_SETTINGS.customMissions),
       childPreferences: normalizeChildPreferences(
         DEFAULT_SETTINGS.childPreferences,
       ),
@@ -2059,9 +2214,12 @@ function DailyRoutineSection({
   showDayModeCard?: boolean;
   onOpenStepsManager?: () => void;
 }) {
+  const tx = (key: string, params?: Record<string, unknown>) =>
+    i18n.t(key, { ...(params ?? {}), locale: settings.appLocale });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [stepTitle, setStepTitle] = useState("");
   const [stepEmoji, setStepEmoji] = useState("");
+  const [stepImageUri, setStepImageUri] = useState<string | undefined>();
 
   // Move a morning step up or down by index offset (-1 or +1)
   function moveStep(id: number, dir: -1 | 1) {
@@ -2080,14 +2238,24 @@ function DailyRoutineSection({
       onChange({
         morningSteps: [
           ...settings.morningSteps,
-          { id: newId, title: stepTitle.trim(), emoji: stepEmoji || "✅" },
+          {
+            id: newId,
+            title: stepTitle.trim(),
+            emoji: stepEmoji || "✅",
+            imageUri: stepImageUri,
+          },
         ],
       });
     } else {
       onChange({
         morningSteps: settings.morningSteps.map((s) =>
           s.id === editingId
-            ? { ...s, title: stepTitle.trim(), emoji: stepEmoji || s.emoji }
+            ? {
+                ...s,
+                title: stepTitle.trim(),
+                emoji: stepEmoji || s.emoji,
+                imageUri: stepImageUri,
+              }
             : s,
         ),
       });
@@ -2095,12 +2263,67 @@ function DailyRoutineSection({
     setEditingId(null);
     setStepTitle("");
     setStepEmoji("");
+    setStepImageUri(undefined);
   }
 
   function deleteStep(id: number) {
     onChange({
       morningSteps: settings.morningSteps.filter((s) => s.id !== id),
     });
+  }
+
+  async function pickStepImage() {
+    const uri = await pickVisualImageUri(tx);
+    if (uri) setStepImageUri(uri);
+  }
+
+  function StepIcon({ step }: { step: MorningStep }) {
+    if (step.imageUri) {
+      return (
+        <Image
+          source={{ uri: step.imageUri }}
+          style={u.itemThumb}
+          resizeMode="cover"
+        />
+      );
+    }
+    return (
+      <Text style={{ fontSize: 22, marginRight: 10 }}>{step.emoji}</Text>
+    );
+  }
+
+  function StepImageControls() {
+    return (
+      <View style={u.imageEditRow}>
+        <View style={u.imagePreviewBox}>
+          {stepImageUri ? (
+            <Image
+              source={{ uri: stepImageUri }}
+              style={u.imagePreview}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={u.imagePreviewEmoji}>{stepEmoji || "✅"}</Text>
+          )}
+        </View>
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity style={u.imagePickBtn} onPress={pickStepImage}>
+            <Text style={u.imagePickTxt}>{tx("settings.image_pick")}</Text>
+          </TouchableOpacity>
+          {stepImageUri && (
+            <TouchableOpacity
+              style={u.imageRemoveBtn}
+              onPress={() => setStepImageUri(undefined)}
+            >
+              <Text style={u.imageRemoveTxt}>
+                {tx("settings.image_remove")}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <Text style={u.imageHint}>{tx("settings.image_guardrail")}</Text>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -2182,6 +2405,7 @@ function DailyRoutineSection({
                             autoFocus
                           />
                         </View>
+                        {StepImageControls()}
                         <View style={u.rowBtns}>
                           <TouchableOpacity
                             style={u.btnPrimary}
@@ -2197,6 +2421,7 @@ function DailyRoutineSection({
                               setEditingId(null);
                               setStepTitle("");
                               setStepEmoji("");
+                              setStepImageUri(undefined);
                             }}
                           >
                             <Text style={u.btnCancelTxt}>
@@ -2207,9 +2432,7 @@ function DailyRoutineSection({
                       </View>
                     ) : (
                       <View style={u.row}>
-                        <Text style={{ fontSize: 22, marginRight: 10 }}>
-                          {step.emoji}
-                        </Text>
+                        <StepIcon step={step} />
                         <Text style={[u.rowLabel, { flex: 1 }]}>
                           {getMorningStepTitle(step.id, step.title)}
                         </Text>
@@ -2251,6 +2474,7 @@ function DailyRoutineSection({
                               getMorningStepTitle(step.id, step.title),
                             );
                             setStepEmoji(step.emoji);
+                            setStepImageUri(step.imageUri);
                           }}
                         >
                           <Text style={u.linkBtnTxt}>
@@ -2277,6 +2501,7 @@ function DailyRoutineSection({
                         setEditingId(-1);
                         setStepTitle("");
                         setStepEmoji("");
+                        setStepImageUri(undefined);
                       }}
                     >
                       <Text style={ss.scheduleManageBtnTitle}>
@@ -2304,6 +2529,7 @@ function DailyRoutineSection({
                         autoFocus
                       />
                     </View>
+                    {StepImageControls()}
                     <View style={u.rowBtns}>
                       <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
                         <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
@@ -2314,6 +2540,7 @@ function DailyRoutineSection({
                           setEditingId(null);
                           setStepTitle("");
                           setStepEmoji("");
+                          setStepImageUri(undefined);
                         }}
                       >
                         <Text style={u.btnCancelTxt}>
@@ -2399,6 +2626,7 @@ function ScheduleSection({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftEmoji, setDraftEmoji] = useState("");
+  const [draftImageUri, setDraftImageUri] = useState<string | undefined>();
   const [draftStart, setDraftStart] = useState("");
   const [draftEnd, setDraftEnd] = useState("");
 
@@ -2406,6 +2634,7 @@ function ScheduleSection({
     setEditingId(it.id);
     setDraftTitle(scheduleTitle(it));
     setDraftEmoji(it.emoji);
+    setDraftImageUri(it.imageUri);
     setDraftStart(it.startTime);
     setDraftEnd(it.endTime);
   }
@@ -2421,6 +2650,7 @@ function ScheduleSection({
     setEditingId(-1);
     setDraftTitle("");
     setDraftEmoji("");
+    setDraftImageUri(undefined);
     setDraftStart("");
     setDraftEnd("");
   }
@@ -2455,6 +2685,7 @@ function ScheduleSection({
             id: newId,
             title,
             emoji: draftEmoji || "⏰",
+            imageUri: draftImageUri,
             startTime: draftStart,
             endTime: draftEnd,
             weekdays: true,
@@ -2471,6 +2702,7 @@ function ScheduleSection({
                   ...i,
                   title,
                   emoji: draftEmoji || i.emoji,
+                  imageUri: draftImageUri,
                   startTime: draftStart,
                   endTime: draftEnd,
                 }
@@ -2480,6 +2712,61 @@ function ScheduleSection({
       });
     }
     setEditingId(null);
+    setDraftImageUri(undefined);
+  }
+
+  async function pickDraftImage() {
+    const uri = await pickVisualImageUri(tx);
+    if (uri) setDraftImageUri(uri);
+  }
+
+  function ScheduleIcon({ item }: { item: ScheduleBlock }) {
+    if (item.imageUri) {
+      return (
+        <Image
+          source={{ uri: item.imageUri }}
+          style={u.itemThumb}
+          resizeMode="cover"
+        />
+      );
+    }
+    return <Text style={u.scheduleEmoji}>{item.emoji}</Text>;
+  }
+
+  function DraftImageControls() {
+    return (
+      <View style={u.imageEditRow}>
+        <View style={u.imagePreviewBox}>
+          {draftImageUri ? (
+            <Image
+              source={{ uri: draftImageUri }}
+              style={u.imagePreview}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={u.imagePreviewEmoji}>{draftEmoji || "⏰"}</Text>
+          )}
+        </View>
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity style={u.imagePickBtn} onPress={pickDraftImage}>
+            <Text style={u.imagePickTxt}>
+              {tx("settings.image_pick")}
+            </Text>
+          </TouchableOpacity>
+          {draftImageUri && (
+            <TouchableOpacity
+              style={u.imageRemoveBtn}
+              onPress={() => setDraftImageUri(undefined)}
+            >
+              <Text style={u.imageRemoveTxt}>
+                {tx("settings.image_remove")}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <Text style={u.imageHint}>{tx("settings.image_guardrail")}</Text>
+        </View>
+      </View>
+    );
   }
 
   function deleteBlock(id: number) {
@@ -2543,6 +2830,7 @@ function ScheduleSection({
                       autoFocus
                     />
                   </View>
+                  {DraftImageControls()}
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     <TextInput
                       style={[u.editInput, { flex: 1 }]}
@@ -2580,7 +2868,7 @@ function ScheduleSection({
               ) : (
                 <View style={u.scheduleItemWrap}>
                   <View style={u.scheduleMainRow}>
-                    <Text style={u.scheduleEmoji}>{it.emoji}</Text>
+                    <ScheduleIcon item={it} />
                     <View style={{ flex: 1 }}>
                       <Text style={u.scheduleLabel}>
                         {scheduleTitle(it)}
@@ -2650,6 +2938,7 @@ function ScheduleSection({
                   autoFocus
                 />
               </View>
+              {DraftImageControls()}
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TextInput
                   style={[u.editInput, { flex: 1 }]}
@@ -2805,6 +3094,9 @@ function ParentZoneView({
   const missionTypeById: Record<number, MissionType> = Object.fromEntries(
     settings.missions.map((m) => [m.id, m.type]),
   );
+  const missionConfigById: Record<number, MissionConfig> = Object.fromEntries(
+    settings.missions.map((m) => [m.id, m]),
+  );
   const missionTypeOrder: MissionType[] = ["permanent", "rotating", "inactive"];
 
   function missionTitle(mission: PoolMission) {
@@ -2827,6 +3119,9 @@ function ParentZoneView({
   // Add-form state for custom missions (shared between weekday/weekend cards).
   const [showAddMission, setShowAddMission] = useState(false);
   const [draftMissionEmoji, setDraftMissionEmoji] = useState("");
+  const [draftMissionImageUri, setDraftMissionImageUri] = useState<
+    string | undefined
+  >();
   const [draftMissionTitle, setDraftMissionTitle] = useState("");
   const [draftMissionSubtitle, setDraftMissionSubtitle] = useState("");
 
@@ -2884,6 +3179,7 @@ function ParentZoneView({
             subtitle: mission.subtitle,
             stars: mission.stars,
             emoji: mission.emoji,
+            imageUri: missionConfigById[mission.id]?.imageUri,
             type: nextType,
           },
         ];
@@ -2954,6 +3250,7 @@ function ParentZoneView({
         draftMissionSubtitle.trim() || tx("settings.custom_mission_subtitle"),
       stars: 1,
       emoji: draftMissionEmoji || "✨",
+      imageUri: draftMissionImageUri,
       category: "movement",
       slot: "any",
       weekdayDefault: true,
@@ -2967,6 +3264,7 @@ function ParentZoneView({
       subtitle: newMission.subtitle,
       stars: newMission.stars,
       emoji: newMission.emoji,
+      imageUri: newMission.imageUri,
       type: "rotating",
     };
     onChange({
@@ -2975,8 +3273,56 @@ function ParentZoneView({
     });
     setShowAddMission(false);
     setDraftMissionEmoji("");
+    setDraftMissionImageUri(undefined);
     setDraftMissionTitle("");
     setDraftMissionSubtitle("");
+  }
+
+  async function pickDraftMissionImage() {
+    const uri = await pickVisualImageUri(tx);
+    if (uri) setDraftMissionImageUri(uri);
+  }
+
+  function visualMission(mission: PoolMission): PoolMission {
+    return missionConfigById[mission.id]?.imageUri
+      ? { ...mission, imageUri: missionConfigById[mission.id].imageUri }
+      : mission;
+  }
+
+  function patchMissionConfigImage(mission: PoolMission, imageUri?: string) {
+    const existing = missionConfigById[mission.id];
+    const nextConfig: MissionConfig = {
+      id: mission.id,
+      title: mission.title,
+      subtitle: mission.subtitle,
+      stars: mission.stars,
+      emoji: mission.emoji,
+      type: existing?.type ?? "rotating",
+      ...(imageUri ? { imageUri } : {}),
+    };
+    const nextMissions = existing
+      ? settings.missions.map((m) =>
+          m.id === mission.id ? { ...m, imageUri } : m,
+        )
+      : [...settings.missions, nextConfig];
+    onChange({
+      missions: nextMissions,
+      customMissions: customMissionIds.has(mission.id)
+        ? customMissions.map((m) =>
+            m.id === mission.id ? { ...m, imageUri } : m,
+          )
+        : customMissions,
+    });
+  }
+
+  async function pickMissionImage(mission: PoolMission) {
+    const uri = await pickVisualImageUri(tx);
+    if (!uri) return;
+    patchMissionConfigImage(mission, uri);
+  }
+
+  function removeMissionImage(mission: PoolMission) {
+    patchMissionConfigImage(mission, undefined);
   }
 
   function deleteCustomMission(id: number) {
@@ -3099,6 +3445,7 @@ function ParentZoneView({
     if (!m) return null;
     const enabled = effectiveMissionEnabled(id, mode, missionOverrides);
     const isCustom = customMissionIds.has(id);
+    const displayMission = visualMission(m);
     const mType = missionTypeById[id] ?? "rotating";
     const tintStyle =
       mType === "permanent"
@@ -3109,7 +3456,15 @@ function ParentZoneView({
     return (
       <View style={[pz.missionBlock, tintStyle]}>
         <View style={[u.row, pz.compactRow]}>
-          <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
+          {displayMission.imageUri ? (
+            <Image
+              source={{ uri: displayMission.imageUri }}
+              style={u.itemThumb}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={u.rowLabel}>{missionTitle(m)}</Text>
             <Text style={u.rowSublabel}>{missionSubtitle(m)}</Text>
@@ -3139,6 +3494,27 @@ function ParentZoneView({
               onPress={() => deleteCustomMission(id)}
             >
               <Text style={u.dangerBtnTxt}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <View style={[u.row, pz.compactSubRow]}>
+          <Text style={[u.rowSublabel, { flex: 1 }]}>
+            {tx("settings.image_guardrail")}
+          </Text>
+          <TouchableOpacity
+            style={u.linkBtn}
+            onPress={() => pickMissionImage(m)}
+          >
+            <Text style={u.linkBtnTxt}>{tx("settings.image_pick")}</Text>
+          </TouchableOpacity>
+          {displayMission.imageUri && (
+            <TouchableOpacity
+              style={u.linkBtn}
+              onPress={() => removeMissionImage(m)}
+            >
+              <Text style={u.imageRemoveTxt}>
+                {tx("settings.image_remove")}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -3247,6 +3623,40 @@ function ParentZoneView({
           placeholder={tx("settings.mission_hint_placeholder")}
           placeholderTextColor={C.muted}
         />
+        <View style={u.imageEditRow}>
+          <View style={u.imagePreviewBox}>
+            {draftMissionImageUri ? (
+              <Image
+                source={{ uri: draftMissionImageUri }}
+                style={u.imagePreview}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={u.imagePreviewEmoji}>
+                {draftMissionEmoji || "✨"}
+              </Text>
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <TouchableOpacity
+              style={u.imagePickBtn}
+              onPress={pickDraftMissionImage}
+            >
+              <Text style={u.imagePickTxt}>{tx("settings.image_pick")}</Text>
+            </TouchableOpacity>
+            {draftMissionImageUri && (
+              <TouchableOpacity
+                style={u.imageRemoveBtn}
+                onPress={() => setDraftMissionImageUri(undefined)}
+              >
+                <Text style={u.imageRemoveTxt}>
+                  {tx("settings.image_remove")}
+                </Text>
+              </TouchableOpacity>
+            )}
+            <Text style={u.imageHint}>{tx("settings.image_guardrail")}</Text>
+          </View>
+        </View>
         <View style={u.rowBtns}>
           <TouchableOpacity style={u.btnPrimary} onPress={addCustomMission}>
             <Text style={u.btnPrimaryTxt}>{tx("settings.add")}</Text>
@@ -3256,6 +3666,7 @@ function ParentZoneView({
             onPress={() => {
               setShowAddMission(false);
               setDraftMissionEmoji("");
+              setDraftMissionImageUri(undefined);
               setDraftMissionTitle("");
               setDraftMissionSubtitle("");
             }}
@@ -4671,6 +5082,16 @@ const u = StyleSheet.create({
     gap: 10,
   },
   scheduleEmoji: { fontSize: 20, marginRight: 4 },
+  itemThumb: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: C.bg,
+    borderWidth: 0.5,
+    borderColor: C.border,
+    marginRight: 4,
+    flexShrink: 0,
+  },
   scheduleLabel: { fontSize: 14, fontWeight: "500", color: C.text },
   scheduleSublabel: {
     fontSize: 12,
@@ -4687,6 +5108,54 @@ const u = StyleSheet.create({
     paddingHorizontal: 12,
   },
   scheduleDangerBtnTxt: { fontSize: 13, color: C.red, fontWeight: "600" },
+  imageEditRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    backgroundColor: C.bg,
+    padding: 10,
+    marginBottom: 8,
+  },
+  imagePreviewBox: {
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: "#FFFDF9",
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  imagePreview: {
+    width: "100%",
+    height: "100%",
+  },
+  imagePreviewEmoji: { fontSize: 28 },
+  imagePickBtn: {
+    alignSelf: "flex-start",
+    borderRadius: 10,
+    backgroundColor: C.green,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  imagePickTxt: { fontSize: 12, color: C.white, fontWeight: "700" },
+  imageRemoveBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+  },
+  imageRemoveTxt: { fontSize: 12, color: C.red, fontWeight: "700" },
+  imageHint: {
+    fontSize: 11,
+    color: C.muted,
+    lineHeight: 15,
+    marginTop: 5,
+  },
 
   // Progress stats
   snapshotCard: {

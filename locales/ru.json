@@ -575,6 +575,11 @@
     "type_permanent": "Всегда",
     "type_rotating": "Ротация",
     "type_inactive": "Неактивна",
+    "image_pick": "Выбрать фото",
+    "image_remove": "Убрать фото",
+    "image_guardrail": "Лучше спокойное квадратное фото. Эмодзи остаётся запасным вариантом.",
+    "image_permission_title": "Нужен доступ к фото",
+    "image_permission_msg": "Разрешите доступ к фото, чтобы добавить картинку для этого пункта.",
     "cost_label": "Стоимость"
   },
 

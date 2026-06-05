@@ -1196,6 +1196,9 @@ export default function App() {
   const missionTypeById = Object.fromEntries(
     appSettings.missions.map((m) => [m.id, m.type]),
   );
+  const missionConfigById = Object.fromEntries(
+    appSettings.missions.map((m) => [m.id, m]),
+  );
 
   // Effective pools merge built-ins with parent-added custom items from
   // the Parent Zone. Custom items participate in overrides + daily picker
@@ -1203,7 +1206,10 @@ export default function App() {
   const allMissionPool: PoolMission[] = [
     ...MISSION_POOL,
     ...(appSettings.customMissions ?? []),
-  ];
+  ].map((m) => {
+    const configuredImageUri = missionConfigById[m.id]?.imageUri;
+    return configuredImageUri ? { ...m, imageUri: configuredImageUri } : m;
+  });
   const allRewardPool: Reward[] = [
     ...REWARDS,
     ...(appSettings.customRewards ?? []),

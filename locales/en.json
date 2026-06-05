@@ -570,6 +570,11 @@
     "type_permanent": "Always",
     "type_rotating": "Rotation",
     "type_inactive": "Inactive",
+    "image_pick": "Choose photo",
+    "image_remove": "Remove photo",
+    "image_guardrail": "Use a clear, calm square image. Emoji stays as backup.",
+    "image_permission_title": "Photo access needed",
+    "image_permission_msg": "Allow photo access to add a picture for this item.",
     "cost_label": "Cost"
   },
   "tiny_facts": {

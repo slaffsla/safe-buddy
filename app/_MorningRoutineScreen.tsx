@@ -4,6 +4,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -156,7 +157,15 @@ export default function MorningRoutineScreen({
                 onPress={() => toggleStep(step)}
                 activeOpacity={0.7}
               >
-                <Text style={s.stepEmoji}>{step.emoji}</Text>
+                {step.imageUri ? (
+                  <Image
+                    source={{ uri: step.imageUri }}
+                    style={s.stepThumb}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text style={s.stepEmoji}>{step.emoji}</Text>
+                )}
                 <Text style={[s.stepTitle, done && s.stepDone]}>
                   {getMorningStepTitle(step.id, step.title)}
                 </Text>
@@ -262,6 +271,12 @@ const s = StyleSheet.create({
   },
   stepRow: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
   stepEmoji: { fontSize: 26, width: 34 },
+  stepThumb: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: C.bg,
+  },
   stepTitle: { flex: 1, fontSize: 16, fontWeight: "500", color: C.text },
   stepDone: { color: C.muted, textDecorationLine: "line-through" },
   checkbox: {

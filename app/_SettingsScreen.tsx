@@ -129,6 +129,7 @@ export interface AppSettings {
   breathingMusicEnabled: boolean; // ambient music during breathing sessions
   breathingGuidanceEnabled: boolean; // spoken breathing phase prompts
   ttsEnabled: boolean; // text-to-speech
+  playfulTtsEnabled: boolean; // limited playful tap responses in child onboarding
   skipSensitivity: number; // skips before gentle-reminder (default 2)
   showExactStarCost: boolean; // show exact cost vs "ещё немного"
 
@@ -196,6 +197,7 @@ function buildDefaultSettings(): AppSettings {
     breathingMusicEnabled: false,
     breathingGuidanceEnabled: true,
     ttsEnabled: true,
+    playfulTtsEnabled: false,
     skipSensitivity: 2,
     showExactStarCost: false,
     rotationEnabled: false,
@@ -1345,6 +1347,18 @@ function BuddySection({
           <Switch
             value={settings.ttsEnabled}
             onValueChange={(v) => onChange({ ttsEnabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </SettingRow>
+        <Divider />
+        <SettingRow
+          label={t("settings.playful_tts_label")}
+          sublabel={t("settings.playful_tts_sub")}
+        >
+          <Switch
+            value={settings.playfulTtsEnabled}
+            onValueChange={(v) => onChange({ playfulTtsEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />

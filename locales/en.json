@@ -446,6 +446,8 @@
     "buddy_section": "Buddy behavior",
     "tts_label": "Voice (TTS)",
     "tts_sub": "Buddy reads text aloud",
+    "playful_tts_label": "Playful voice taps",
+    "playful_tts_sub": "Allow limited voice stacking only while meeting Buddy",
     "breathing_music_label": "Breathing music",
     "breathing_music_sub": "Play music during breathing sessions",
     "nudge_label": "Daily suggestion",

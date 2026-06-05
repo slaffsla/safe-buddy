@@ -224,6 +224,7 @@ async function resolveVoiceForLanguage(language: string) {
 
 type SpeechCallOptions = {
   volume?: number;
+  mode?: "calm" | "playful";
 };
 
 function applyRtlGenderSpeech(
@@ -249,6 +250,8 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
   const languageRef = useRef(getTtsLanguage());
   const enabledRef = useRef(enabled);
   const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSpeechRef = useRef({ text: "", at: 0 });
+  const playfulWindowRef = useRef({ startedAt: 0, count: 0 });
 
   useEffect(() => {
     enabledRef.current = enabled;
@@ -280,13 +283,7 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
   return useCallback(
     (text: string, options: SpeechCallOptions = {}) => {
       if (!enabledRef.current || !text) return;
-      if (speakTimerRef.current) {
-        clearTimeout(speakTimerRef.current);
-        speakTimerRef.current = null;
-      }
-      try {
-        Speech.stop();
-      } catch {}
+      const mode = options.mode ?? "calm";
       const lang = getTtsLanguage();
       const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
       const cleanedText = genderedText
@@ -300,6 +297,40 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
         .replace(/\s+/g, " ")
         .trim();
       if (!cleanedText) return;
+      const now = Date.now();
+      const sameAsLast = lastSpeechRef.current.text === cleanedText;
+
+      if (mode === "calm" && sameAsLast && now - lastSpeechRef.current.at < 1400) {
+        return;
+      }
+
+      if (mode === "playful") {
+        const windowAge = now - playfulWindowRef.current.startedAt;
+        if (windowAge > 2400) {
+          playfulWindowRef.current = { startedAt: now, count: 0 };
+        }
+        if (
+          sameAsLast &&
+          now - lastSpeechRef.current.at < 350
+        ) {
+          return;
+        }
+        if (playfulWindowRef.current.count >= 3) {
+          return;
+        }
+        playfulWindowRef.current.count += 1;
+      }
+
+      if (speakTimerRef.current) {
+        clearTimeout(speakTimerRef.current);
+        speakTimerRef.current = null;
+      }
+      if (mode === "calm") {
+        try {
+          Speech.stop();
+        } catch {}
+      }
+      lastSpeechRef.current = { text: cleanedText, at: now };
       if (languageRef.current !== lang) {
         languageRef.current = lang;
         resolveVoiceForLanguage(lang).then((v) => {
@@ -1124,6 +1155,7 @@ export default function App() {
           initialAge={childAge}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           speak={speak}
+          playfulVoiceTapsEnabled={appSettings.playfulTtsEnabled}
           onComplete={completeChildOnboarding}
         />
       </SafeAreaView>

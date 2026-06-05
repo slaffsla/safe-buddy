@@ -24,7 +24,11 @@ interface ChildOnboardingProps {
   initialName: string;
   initialAge: number;
   rtlChildSex: RtlChildSex;
-  speak: (text: string, options?: { volume?: number }) => void;
+  speak: (
+    text: string,
+    options?: { volume?: number; mode?: "calm" | "playful" },
+  ) => void;
+  playfulVoiceTapsEnabled?: boolean;
   onComplete: (name: string, age: number | null) => void;
 }
 
@@ -41,6 +45,7 @@ export default function ChildOnboarding({
   initialAge,
   rtlChildSex,
   speak,
+  playfulVoiceTapsEnabled = false,
   onComplete,
 }: ChildOnboardingProps) {
   const {
@@ -271,6 +276,9 @@ export default function ChildOnboarding({
                     firstPetDone
                       ? t("onboarding.meet_after_pet_sub")
                       : currentLine,
+                    {
+                      mode: playfulVoiceTapsEnabled ? "playful" : "calm",
+                    },
                   );
                 }}
                 speak={speak}

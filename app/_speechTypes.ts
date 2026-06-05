@@ -1,11 +1,11 @@
 export type SpeechIntent = "instruction" | "buddyTap" | "ambientPlay";
 
-export type SpeechLayering = "replace" | "dj";
+export type SpeechDelivery = "replace" | "djCut";
 
 export type SpeechCallOptions = {
   volume?: number;
   intent?: SpeechIntent;
-  layering?: SpeechLayering;
+  delivery?: SpeechDelivery;
 };
 
 export type SpeakFn = (text: string, options?: SpeechCallOptions) => void;

@@ -269,7 +269,7 @@ export default function DayScreen({
                       `${getScheduleTitle(block.id, block.title)}, ${formatTimeForSpeech(block.startTime)}`,
                       {
                         intent: "ambientPlay",
-                        layering: buddyDjModeEnabled ? "dj" : "replace",
+                        delivery: buddyDjModeEnabled ? "djCut" : "replace",
                       },
                     )
                   }

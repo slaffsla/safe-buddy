@@ -280,8 +280,8 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
     (text: string, options: SpeechCallOptions = {}) => {
       if (!enabledRef.current || !text) return;
       const intent = options.intent ?? "instruction";
-      const layering = options.layering ?? "replace";
-      const allowDjLayering = layering === "dj" && intent !== "instruction";
+      const delivery = options.delivery ?? "replace";
+      const allowDjCut = delivery === "djCut" && intent !== "instruction";
       const lang = getTtsLanguage();
       const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
       const cleanedText = genderedText
@@ -299,14 +299,14 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
       const sameAsLast = lastSpeechRef.current.text === cleanedText;
 
       if (
-        !allowDjLayering &&
+        !allowDjCut &&
         sameAsLast &&
         now - lastSpeechRef.current.at < 1400
       ) {
         return;
       }
 
-      if (allowDjLayering) {
+      if (allowDjCut) {
         const windowAge = now - playfulWindowRef.current.startedAt;
         if (windowAge > 2400) {
           playfulWindowRef.current = { startedAt: now, count: 0 };
@@ -324,11 +324,9 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
         clearTimeout(speakTimerRef.current);
         speakTimerRef.current = null;
       }
-      if (!allowDjLayering) {
-        try {
-          Speech.stop();
-        } catch {}
-      }
+      try {
+        Speech.stop();
+      } catch {}
       lastSpeechRef.current = { text: cleanedText, at: now };
       if (languageRef.current !== lang) {
         languageRef.current = lang;

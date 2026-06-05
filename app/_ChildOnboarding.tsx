@@ -26,9 +26,13 @@ interface ChildOnboardingProps {
   rtlChildSex: RtlChildSex;
   speak: (
     text: string,
-    options?: { volume?: number; mode?: "calm" | "playful" },
+    options?: {
+      volume?: number;
+      intent?: "instruction" | "buddyTap" | "ambientPlay";
+      layering?: "replace" | "dj";
+    },
   ) => void;
-  playfulVoiceTapsEnabled?: boolean;
+  buddyDjModeEnabled?: boolean;
   onComplete: (name: string, age: number | null) => void;
 }
 
@@ -45,7 +49,7 @@ export default function ChildOnboarding({
   initialAge,
   rtlChildSex,
   speak,
-  playfulVoiceTapsEnabled = false,
+  buddyDjModeEnabled = false,
   onComplete,
 }: ChildOnboardingProps) {
   const {
@@ -277,7 +281,8 @@ export default function ChildOnboarding({
                       ? t("onboarding.meet_after_pet_sub")
                       : currentLine,
                     {
-                      mode: playfulVoiceTapsEnabled ? "playful" : "calm",
+                      intent: "buddyTap",
+                      layering: buddyDjModeEnabled ? "dj" : "replace",
                     },
                   );
                 }}

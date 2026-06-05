@@ -224,7 +224,8 @@ async function resolveVoiceForLanguage(language: string) {
 
 type SpeechCallOptions = {
   volume?: number;
-  mode?: "calm" | "playful";
+  intent?: "instruction" | "buddyTap" | "ambientPlay";
+  layering?: "replace" | "dj";
 };
 
 function applyRtlGenderSpeech(
@@ -283,7 +284,9 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
   return useCallback(
     (text: string, options: SpeechCallOptions = {}) => {
       if (!enabledRef.current || !text) return;
-      const mode = options.mode ?? "calm";
+      const intent = options.intent ?? "instruction";
+      const layering = options.layering ?? "replace";
+      const allowDjLayering = layering === "dj" && intent === "buddyTap";
       const lang = getTtsLanguage();
       const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
       const cleanedText = genderedText
@@ -300,19 +303,20 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
       const now = Date.now();
       const sameAsLast = lastSpeechRef.current.text === cleanedText;
 
-      if (mode === "calm" && sameAsLast && now - lastSpeechRef.current.at < 1400) {
+      if (
+        !allowDjLayering &&
+        sameAsLast &&
+        now - lastSpeechRef.current.at < 1400
+      ) {
         return;
       }
 
-      if (mode === "playful") {
+      if (allowDjLayering) {
         const windowAge = now - playfulWindowRef.current.startedAt;
         if (windowAge > 2400) {
           playfulWindowRef.current = { startedAt: now, count: 0 };
         }
-        if (
-          sameAsLast &&
-          now - lastSpeechRef.current.at < 350
-        ) {
+        if (sameAsLast && now - lastSpeechRef.current.at < 350) {
           return;
         }
         if (playfulWindowRef.current.count >= 3) {
@@ -325,7 +329,7 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
         clearTimeout(speakTimerRef.current);
         speakTimerRef.current = null;
       }
-      if (mode === "calm") {
+      if (!allowDjLayering) {
         try {
           Speech.stop();
         } catch {}
@@ -1155,7 +1159,7 @@ export default function App() {
           initialAge={childAge}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           speak={speak}
-          playfulVoiceTapsEnabled={appSettings.playfulTtsEnabled}
+          buddyDjModeEnabled={appSettings.buddyDjModeEnabled}
           onComplete={completeChildOnboarding}
         />
       </SafeAreaView>

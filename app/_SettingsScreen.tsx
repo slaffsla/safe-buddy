@@ -129,7 +129,7 @@ export interface AppSettings {
   breathingMusicEnabled: boolean; // ambient music during breathing sessions
   breathingGuidanceEnabled: boolean; // spoken breathing phase prompts
   ttsEnabled: boolean; // text-to-speech
-  playfulTtsEnabled: boolean; // limited playful tap responses in child onboarding
+  buddyDjModeEnabled: boolean; // optional layered Buddy tap voices
   skipSensitivity: number; // skips before gentle-reminder (default 2)
   showExactStarCost: boolean; // show exact cost vs "ещё немного"
 
@@ -197,7 +197,7 @@ function buildDefaultSettings(): AppSettings {
     breathingMusicEnabled: false,
     breathingGuidanceEnabled: true,
     ttsEnabled: true,
-    playfulTtsEnabled: false,
+    buddyDjModeEnabled: false,
     skipSensitivity: 2,
     showExactStarCost: false,
     rotationEnabled: false,
@@ -420,6 +420,12 @@ export async function loadSettings(): Promise<AppSettings> {
         typeof parsed.tinyFactsMinMinutesManual === "undefined"
       ) {
         merged.tinyFactsMinMinutesManual = true;
+      }
+      if (
+        typeof parsedAny.buddyDjModeEnabled === "undefined" &&
+        typeof parsedAny.playfulTtsEnabled === "boolean"
+      ) {
+        merged.buddyDjModeEnabled = parsedAny.playfulTtsEnabled;
       }
       merged.morningSteps = normalizeMorningSteps(merged.morningSteps);
 
@@ -1353,12 +1359,12 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
-          label={t("settings.playful_tts_label")}
-          sublabel={t("settings.playful_tts_sub")}
+          label={t("settings.buddy_dj_label")}
+          sublabel={t("settings.buddy_dj_sub")}
         >
           <Switch
-            value={settings.playfulTtsEnabled}
-            onValueChange={(v) => onChange({ playfulTtsEnabled: v })}
+            value={settings.buddyDjModeEnabled}
+            onValueChange={(v) => onChange({ buddyDjModeEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />

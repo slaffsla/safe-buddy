@@ -31,6 +31,7 @@ import {
 } from "react-native";
 import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
 import { visualAssets } from "../lib/visualAssets";
+import { ChildPreference } from "../lib/childPreferences";
 import Buddy from "./_Buddy";
 import { C, type BuddyMood } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
@@ -75,6 +76,7 @@ interface Props {
   onMusicChange?: (enabled: boolean) => void;
   onGuidanceChange?: (enabled: boolean) => void;
   rtlChildSex?: RtlChildSex;
+  comfortPreference?: ChildPreference | null;
 }
 
 type State = "idle" | "priming" | "active" | "complete";
@@ -92,6 +94,7 @@ export default function BreathingScreen({
   onMusicChange,
   onGuidanceChange,
   rtlChildSex = "male",
+  comfortPreference = null,
 }: Props) {
   const [state, setState] = useState<State>("idle");
   const [phaseIdx, setPhaseIdx] = useState(0);
@@ -451,7 +454,7 @@ export default function BreathingScreen({
     }
     setPrepRemainingMs(PREP_HINT_DURATION_MS);
     setState("priming");
-    speak(petHintText);
+    speak(primingPromptText);
     const prepStart = Date.now();
     prepTickRef.current = setInterval(() => {
       const dt = Date.now() - prepStart;
@@ -546,6 +549,12 @@ export default function BreathingScreen({
   }, [isPetting]);
 
   const petHintText = tSpeak("breathing.pet_hint", undefined, rtlChildSex);
+  const comfortPromptText = comfortPreference
+    ? t("breathing.comfort_prompt", { comfort: comfortPreference.title })
+    : null;
+  const primingPromptText = comfortPromptText
+    ? `${petHintText} ${comfortPromptText}`
+    : petHintText;
   const natureFactText = tSpeak(
     "tiny_facts.breathing_nature",
     undefined,
@@ -617,11 +626,14 @@ export default function BreathingScreen({
 
         <TouchableOpacity
           style={s.natureFact}
-          onPressIn={() => speakCardText(petHintText)}
-          onPress={() => speakCardText(petHintText)}
+          onPressIn={() => speakCardText(primingPromptText)}
+          onPress={() => speakCardText(primingPromptText)}
           activeOpacity={0.8}
         >
-          <Text style={s.natureFactText}>💡 {petHintText}</Text>
+          <Text style={s.natureFactText}>
+            💡 {petHintText}
+            {comfortPromptText ? `\n${comfortPromptText}` : ""}
+          </Text>
         </TouchableOpacity>
         <View style={s.footer} pointerEvents="box-none">
           <TouchableOpacity

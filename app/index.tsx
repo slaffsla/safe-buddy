@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
+import { pickPreferenceForUse } from "../lib/childPreferences";
 import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
@@ -503,6 +504,15 @@ export default function App() {
   ]);
 
   const fixedOverlayCelebrate = visibleScreen === "celebrate";
+  const breathingComfortPreference = useMemo(
+    () =>
+      pickPreferenceForUse(
+        appSettings.childPreferences,
+        "calming",
+        `${todayStr()}:breathing`,
+      ),
+    [appSettings.childPreferences],
+  );
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1560,6 +1570,7 @@ export default function App() {
           musicEnabled={appSettings.breathingMusicEnabled}
           guidanceEnabled={appSettings.breathingGuidanceEnabled}
           introEnabled={breathingIntroRuns < 10}
+          comfortPreference={breathingComfortPreference}
           onSessionStart={handleBreathingSessionStart}
           onMusicChange={handleBreathingMusicChange}
           onGuidanceChange={handleBreathingGuidanceChange}

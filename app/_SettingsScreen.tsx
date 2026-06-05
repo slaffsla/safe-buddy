@@ -44,6 +44,13 @@ import ParentOnboarding from "./_ParentOnboarding";
 import { CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
 import { visualAssets } from "../lib/visualAssets";
 import {
+  CHILD_PREFERENCES_MAX,
+  ChildPreference,
+  ChildPreferenceFrequency,
+  ChildPreferenceKind,
+  normalizeChildPreferences,
+} from "../lib/childPreferences";
+import {
   DEFAULT_MISSION_CONFIGS,
   DEFAULT_MORNING_STEPS,
   DEFAULT_REWARD_CONFIGS,
@@ -167,6 +174,10 @@ export interface AppSettings {
   customMissions: PoolMission[];
   customRewards: Reward[];
 
+  // Parent-authored preference tokens. These are typed inputs for later
+  // deterministic reactions; they are not open-ended generation prompts.
+  childPreferences: ChildPreference[];
+
   // Day schedule (Option A — "what's now" card on HomeScreen; Option B reserved)
   scheduleEnabled: boolean;
   scheduleBlocks: ScheduleBlock[];
@@ -218,6 +229,7 @@ function buildDefaultSettings(): AppSettings {
     rewardOverrides: {},
     customMissions: [],
     customRewards: [],
+    childPreferences: [],
     scheduleEnabled: true,
     scheduleBlocks: DEFAULT_SCHEDULE,
     morningReminderEnabled: false,
@@ -428,6 +440,9 @@ export async function loadSettings(): Promise<AppSettings> {
         merged.buddyDjModeEnabled = parsedAny.playfulTtsEnabled;
       }
       merged.morningSteps = normalizeMorningSteps(merged.morningSteps);
+      merged.childPreferences = normalizeChildPreferences(
+        merged.childPreferences,
+      );
 
       return merged;
     }
@@ -445,6 +460,9 @@ export async function loadSettings(): Promise<AppSettings> {
       parentPin: legacy[1][1] ?? "",
       pinEnabled: legacy[2][1] === "true",
       morningSteps: normalizeMorningSteps(DEFAULT_SETTINGS.morningSteps),
+      childPreferences: normalizeChildPreferences(
+        DEFAULT_SETTINGS.childPreferences,
+      ),
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -1633,6 +1651,251 @@ function ChildSection({
             <Text style={u.dangerBtnTxt}>{t("settings.reset")}</Text>
           </TouchableOpacity>
         </SettingRow>
+      </Card>
+    </View>
+  );
+}
+
+// ── CHILD PREFERENCES SECTION ─────────────────────────────────────────────────
+
+function ChildPreferencesSection({
+  settings,
+  onChange,
+}: {
+  settings: AppSettings;
+  onChange: (patch: Partial<AppSettings>) => void;
+}) {
+  const preferences = normalizeChildPreferences(settings.childPreferences);
+  const [adding, setAdding] = useState(false);
+  const [kind, setKind] = useState<ChildPreferenceKind>("love");
+  const [emoji, setEmoji] = useState("⭐");
+  const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
+  const [frequency, setFrequency] =
+    useState<ChildPreferenceFrequency>("rare");
+
+  function resetDraft(nextKind: ChildPreferenceKind = "love") {
+    setKind(nextKind);
+    setEmoji(nextKind === "comfort" ? "🤍" : "⭐");
+    setTitle("");
+    setNote("");
+    setFrequency("rare");
+  }
+
+  function addPreference() {
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      Alert.alert(t("settings.preferences_empty_title"));
+      return;
+    }
+    if (preferences.length >= CHILD_PREFERENCES_MAX) {
+      Alert.alert(
+        t("settings.preferences_limit_title"),
+        t("settings.preferences_limit_body", {
+          count: CHILD_PREFERENCES_MAX,
+        }),
+      );
+      return;
+    }
+    const nextId = Math.max(0, ...preferences.map((p) => p.id)) + 1;
+    const newPreference: ChildPreference = {
+      id: nextId,
+      kind,
+      title: cleanTitle.slice(0, 40),
+      emoji: emoji.trim().slice(0, 4) || (kind === "comfort" ? "🤍" : "⭐"),
+      note: note.trim().slice(0, 120),
+      enabled: true,
+      frequency,
+    };
+    onChange({
+      childPreferences: normalizeChildPreferences([
+        ...preferences,
+        newPreference,
+      ]),
+    });
+    resetDraft(kind);
+    setAdding(false);
+  }
+
+  function updatePreference(id: number, patch: Partial<ChildPreference>) {
+    onChange({
+      childPreferences: normalizeChildPreferences(
+        preferences.map((item) =>
+          item.id === id ? { ...item, ...patch } : item,
+        ),
+      ),
+    });
+  }
+
+  function deletePreference(id: number) {
+    onChange({
+      childPreferences: preferences.filter((item) => item.id !== id),
+    });
+  }
+
+  function preferenceRows(prefKind: ChildPreferenceKind) {
+    const rows = preferences.filter((item) => item.kind === prefKind);
+    if (rows.length === 0) {
+      return (
+        <Text style={u.preferenceEmpty}>
+          {prefKind === "love"
+            ? t("settings.preferences_loves_empty")
+            : t("settings.preferences_comforts_empty")}
+        </Text>
+      );
+    }
+
+    return rows.map((item) => (
+      <View key={item.id} style={u.preferenceItem}>
+        <View style={u.preferenceMain}>
+          <Text style={u.preferenceEmoji}>{item.emoji}</Text>
+          <View style={u.preferenceText}>
+            <Text style={u.preferenceTitle}>{item.title}</Text>
+            {item.note ? (
+              <Text style={u.preferenceNote}>{item.note}</Text>
+            ) : null}
+            <Text style={u.preferenceMeta}>
+              {item.frequency === "sometimes"
+                ? t("settings.preferences_frequency_sometimes")
+                : t("settings.preferences_frequency_rare")}
+            </Text>
+          </View>
+        </View>
+        <View style={u.preferenceActions}>
+          <Switch
+            value={item.enabled}
+            onValueChange={(enabled) => updatePreference(item.id, { enabled })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+          <TouchableOpacity
+            style={u.dangerBtn}
+            onPress={() => deletePreference(item.id)}
+          >
+            <Text style={u.dangerBtnTxt}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    ));
+  }
+
+  return (
+    <View>
+      <SectionHeader title={t("settings.preferences_section")} icon="💛" />
+      <Card>
+        <Text style={u.preferenceIntro}>
+          {t("settings.preferences_intro")}
+        </Text>
+        <View style={u.preferenceGroup}>
+          <Text style={u.preferenceGroupTitle}>
+            {t("settings.preferences_loves")}
+          </Text>
+          {preferenceRows("love")}
+        </View>
+        <Divider />
+        <View style={u.preferenceGroup}>
+          <Text style={u.preferenceGroupTitle}>
+            {t("settings.preferences_comforts")}
+          </Text>
+          {preferenceRows("comfort")}
+        </View>
+        {adding ? (
+          <>
+            <Divider />
+            <View style={u.editBlock}>
+              <PillSelector
+                compact
+                options={[
+                  { label: t("settings.preferences_love"), value: "love" },
+                  {
+                    label: t("settings.preferences_comfort"),
+                    value: "comfort",
+                  },
+                ]}
+                value={kind}
+                onChange={(nextKind) => {
+                  setKind(nextKind);
+                  if (!emoji.trim() || emoji === "⭐" || emoji === "🤍") {
+                    setEmoji(nextKind === "comfort" ? "🤍" : "⭐");
+                  }
+                }}
+              />
+              <View style={[u.inlineEditRow, { marginTop: 12 }]}>
+                <TextInput
+                  style={[u.editInput, { width: 56 }]}
+                  value={emoji}
+                  onChangeText={setEmoji}
+                  placeholder="⭐"
+                  placeholderTextColor={C.muted}
+                />
+                <TextInput
+                  style={[u.editInput, { flex: 1 }]}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder={
+                    kind === "comfort"
+                      ? t("settings.preferences_comfort_placeholder")
+                      : t("settings.preferences_love_placeholder")
+                  }
+                  placeholderTextColor={C.muted}
+                />
+              </View>
+              <TextInput
+                style={[u.editInput, { marginTop: 10 }]}
+                value={note}
+                onChangeText={setNote}
+                placeholder={t("settings.preferences_note_placeholder")}
+                placeholderTextColor={C.muted}
+              />
+              <View style={{ marginTop: 10 }}>
+                <PillSelector
+                  compact
+                  options={[
+                    {
+                      label: t("settings.preferences_frequency_rare"),
+                      value: "rare",
+                    },
+                    {
+                      label: t("settings.preferences_frequency_sometimes"),
+                      value: "sometimes",
+                    },
+                  ]}
+                  value={frequency}
+                  onChange={setFrequency}
+                />
+              </View>
+              <View style={u.rowBtns}>
+                <TouchableOpacity style={u.btnPrimary} onPress={addPreference}>
+                  <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={u.btnCancel}
+                  onPress={() => {
+                    resetDraft(kind);
+                    setAdding(false);
+                  }}
+                >
+                  <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        ) : (
+          <>
+            <Divider />
+            <TouchableOpacity
+              style={u.inlineAction}
+              onPress={() => {
+                resetDraft("love");
+                setAdding(true);
+              }}
+            >
+              <Text style={u.inlineActionTxt}>
+                {t("settings.preferences_add")}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
       </Card>
     </View>
   );
@@ -3528,6 +3791,11 @@ export default function SettingsScreen({
 
         <View style={ss.spacer} />
 
+        {/* Child preferences */}
+        <ChildPreferencesSection settings={settings} onChange={updateSettings} />
+
+        <View style={ss.spacer} />
+
         {/* Security */}
         <PinSection settings={settings} onChange={updateSettings} />
 
@@ -4186,6 +4454,57 @@ const u = StyleSheet.create({
     color: C.text,
     backgroundColor: C.bg,
     marginBottom: 8,
+  },
+  inlineEditRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  preferenceIntro: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 18,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 4,
+  },
+  preferenceGroup: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
+  preferenceGroupTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: C.green,
+  },
+  preferenceEmpty: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 17,
+    paddingVertical: 4,
+  },
+  preferenceItem: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    backgroundColor: C.bg,
+    padding: 10,
+    gap: 10,
+  },
+  preferenceMain: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  preferenceEmoji: { fontSize: 22, width: 28, textAlign: "center" },
+  preferenceText: { flex: 1, minWidth: 0 },
+  preferenceTitle: { fontSize: 14, fontWeight: "700", color: C.text },
+  preferenceNote: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  preferenceMeta: {
+    fontSize: 11,
+    color: C.green,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  preferenceActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
   editCostRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
   scheduleItemWrap: { paddingHorizontal: 4, paddingVertical: 2 },

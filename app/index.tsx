@@ -248,10 +248,12 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
   const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpeechRef = useRef({ text: "", at: 0 });
   const playfulWindowRef = useRef({ startedAt: 0, count: 0 });
+  const speechSeqRef = useRef(0);
 
   useEffect(() => {
     enabledRef.current = enabled;
     if (!enabled) {
+      speechSeqRef.current += 1;
       if (speakTimerRef.current) {
         clearTimeout(speakTimerRef.current);
         speakTimerRef.current = null;
@@ -269,6 +271,7 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
       voiceRef.current = v;
     });
     return () => {
+      speechSeqRef.current += 1;
       if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
       try {
         Speech.stop();
@@ -297,12 +300,12 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
       if (!cleanedText) return;
       const now = Date.now();
       const sameAsLast = lastSpeechRef.current.text === cleanedText;
+      const duplicateLockMs = Math.max(
+        1800,
+        Math.min(7000, cleanedText.length * 70 + 900),
+      );
 
-      if (
-        !allowDjCut &&
-        sameAsLast &&
-        now - lastSpeechRef.current.at < 1400
-      ) {
+      if (sameAsLast && now - lastSpeechRef.current.at < duplicateLockMs) {
         return;
       }
 
@@ -324,9 +327,8 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
         clearTimeout(speakTimerRef.current);
         speakTimerRef.current = null;
       }
-      try {
-        Speech.stop();
-      } catch {}
+      const speechSeq = speechSeqRef.current + 1;
+      speechSeqRef.current = speechSeq;
       lastSpeechRef.current = { text: cleanedText, at: now };
       if (languageRef.current !== lang) {
         languageRef.current = lang;
@@ -348,39 +350,49 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
       ) {
         opts.voice = voiceRef.current.identifier;
       }
-      speakTimerRef.current = setTimeout(
-        () => {
-          speakTimerRef.current = null;
-          if (!enabledRef.current) return;
-          const fallbackOpts: any = { ...opts };
-          delete fallbackOpts.voice;
-          const speakWithFallback = () => {
-            try {
-              Speech.speak(cleanedText, {
-                ...fallbackOpts,
-                onError: () => {
-                  // Last resort for Hebrew engines that reject selected voice.
-                  try {
-                    Speech.speak(cleanedText, fallbackOpts);
-                  } catch {}
-                },
-              });
-            } catch {}
-          };
-          try {
-            Speech.speak(cleanedText, {
-              ...opts,
-              onError: () => {
-                voiceRef.current = null;
+      Promise.resolve(Speech.stop())
+        .catch(() => {})
+        .finally(() => {
+          if (speechSeqRef.current !== speechSeq) return;
+          speakTimerRef.current = setTimeout(
+            () => {
+              speakTimerRef.current = null;
+              if (!enabledRef.current || speechSeqRef.current !== speechSeq) {
+                return;
+              }
+              const fallbackOpts: any = { ...opts };
+              delete fallbackOpts.voice;
+              const speakWithFallback = () => {
+                if (speechSeqRef.current !== speechSeq) return;
+                try {
+                  Speech.speak(cleanedText, {
+                    ...fallbackOpts,
+                    onError: () => {
+                      // Last resort for Hebrew engines that reject selected voice.
+                      if (speechSeqRef.current !== speechSeq) return;
+                      try {
+                        Speech.speak(cleanedText, fallbackOpts);
+                      } catch {}
+                    },
+                  });
+                } catch {}
+              };
+              try {
+                Speech.speak(cleanedText, {
+                  ...opts,
+                  onError: () => {
+                    if (speechSeqRef.current !== speechSeq) return;
+                    voiceRef.current = null;
+                    speakWithFallback();
+                  },
+                });
+              } catch {
                 speakWithFallback();
-              },
-            });
-          } catch {
-            speakWithFallback();
-          }
-        },
-        Platform.OS === "ios" ? 120 : 0,
-      );
+              }
+            },
+            Platform.OS === "ios" ? 120 : 0,
+          );
+        });
     },
     [rtlChildSex],
   );

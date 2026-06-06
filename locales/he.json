@@ -175,6 +175,14 @@
     "btn_get_reward_female": "קבלי את הפרס",
     "btn_get_rewards": "קבל את הפרסים",
     "btn_get_rewards_female": "קבלי את הפרסים",
+    "next_boost_challenge_1": "האתגר התקבל.",
+    "next_boost_challenge_2": "מוכן לאתגר הבא.",
+    "next_boost_challenge_2_female": "מוכנה לאתגר הבא.",
+    "next_boost_challenge_3": "אתה יכול.",
+    "next_boost_challenge_3_female": "את יכולה.",
+    "next_boost_adventure_1": "מצב הרפתקה מתחיל.",
+    "next_boost_adventure_2": "נראה מה הדבר הבא.",
+    "next_boost_adventure_3": "קדימה להרפתקה הבאה.",
     "btn_rewards": "לראות פרסים"
   },
   "rewards": {

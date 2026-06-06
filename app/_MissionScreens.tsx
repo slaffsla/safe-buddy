@@ -621,6 +621,30 @@ export function CelebrateScreen({
       ) ?? "celebrate.btn_next_challenge"
     );
   }, [completedToday, mission, totalEver]);
+  const nextBoostKey = React.useMemo(() => {
+    if (!mission || mission.stars < 2 || continueLabelKey) return null;
+    if (
+      nextButtonKey !== "celebrate.btn_next_challenge" &&
+      nextButtonKey !== "celebrate.btn_next_adventure"
+    ) {
+      return null;
+    }
+    const seed = mission.id * 19 + totalEver * 7 + completedToday * 13;
+    if (seed % 10 >= 3) return null;
+    const keys =
+      nextButtonKey === "celebrate.btn_next_challenge"
+        ? [
+            "celebrate.next_boost_challenge_1",
+            "celebrate.next_boost_challenge_2",
+            "celebrate.next_boost_challenge_3",
+          ]
+        : [
+            "celebrate.next_boost_adventure_1",
+            "celebrate.next_boost_adventure_2",
+            "celebrate.next_boost_adventure_3",
+          ];
+    return keys[seed % keys.length];
+  }, [completedToday, continueLabelKey, mission, nextButtonKey, totalEver]);
   if (!mission) return null;
   const emotionalMsg = isVeryExcited
     ? getMilestoneMessage(totalEver, rtlChildSex)
@@ -677,7 +701,12 @@ export function CelebrateScreen({
       </TouchableOpacity>
       <TouchableOpacity
         style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
-        onPress={onContinue}
+        onPress={() => {
+          if (nextBoostKey) {
+            speak(tSpeak(nextBoostKey, undefined, rtlChildSex));
+          }
+          onContinue();
+        }}
       >
         <View
           style={[

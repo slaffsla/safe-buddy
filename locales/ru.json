@@ -157,6 +157,13 @@
     "btn_next_adventure": "Следующее приключение",
     "btn_get_reward": "Получить награду",
     "btn_get_rewards": "Получить награды",
+    "next_boost_challenge_1": "Вызов принят.",
+    "next_boost_challenge_2": "Готов к следующему испытанию.",
+    "next_boost_challenge_2_female": "Готова к следующему испытанию.",
+    "next_boost_challenge_3": "У тебя получится.",
+    "next_boost_adventure_1": "Режим приключения включён.",
+    "next_boost_adventure_2": "Посмотрим, что дальше.",
+    "next_boost_adventure_3": "К следующему приключению.",
     "btn_rewards": "Посмотреть награды"
   },
   "rewards": {

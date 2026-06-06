@@ -152,6 +152,12 @@
     "btn_next_adventure": "Next adventure",
     "btn_get_reward": "Get your reward",
     "btn_get_rewards": "Get your rewards",
+    "next_boost_challenge_1": "Challenge accepted.",
+    "next_boost_challenge_2": "Ready for the next challenge.",
+    "next_boost_challenge_3": "You have got this.",
+    "next_boost_adventure_1": "Adventure mode on.",
+    "next_boost_adventure_2": "Let us see what is next.",
+    "next_boost_adventure_3": "On to the next adventure.",
     "btn_rewards": "See rewards"
   },
   "rewards": {

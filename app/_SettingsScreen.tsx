@@ -3881,9 +3881,12 @@ function ParentZoneView({
         <Card>
           <SettingRow
             label={tx("settings.before_reward_label")}
-            sublabel={tx("settings.before_reward_sub", {
-              count: settings.beforeRewardMissionCount ?? 1,
-            })}
+            sublabel={tx(
+              (settings.beforeRewardMissionCount ?? 1) === 1
+                ? "settings.before_reward_sub_one"
+                : "settings.before_reward_sub_many",
+              { count: settings.beforeRewardMissionCount ?? 1 },
+            )}
           >
             <Switch
               value={settings.beforeRewardEnabled}

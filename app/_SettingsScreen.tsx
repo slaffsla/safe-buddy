@@ -3554,9 +3554,7 @@ function ParentZoneView({
           )}
         </View>
         <View style={[u.row, pz.compactSubRow]}>
-          <Text style={[u.rowSublabel, { flex: 1 }]}>
-            {tx("settings.image_guardrail")}
-          </Text>
+          <View style={{ flex: 1 }} />
           <TouchableOpacity
             style={u.linkBtn}
             onPress={() => pickMissionImage(m)}

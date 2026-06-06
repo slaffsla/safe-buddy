@@ -2053,6 +2053,7 @@ const s = StyleSheet.create({
   tinyFactBubble: {
     position: "absolute",
     left: "56%",
+    transform: [{ translateX: 10 }, { translateY: -20 }],
     width: "47%",
     backgroundColor: "#FFFDF9",
     borderRadius: 14,

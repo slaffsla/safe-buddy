@@ -157,12 +157,12 @@ export function Confetti({ trigger }: { trigger: boolean }) {
   return (
     <View style={[s.confettiOverlay, s.noPointerEvents]}>
       <ConfettiCannon
-        count={128}
+        count={84}
         origin={{ x: width / 2, y: 0 }}
         autoStart={true}
         fadeOut={true}
-        explosionSpeed={520}
-        fallSpeed={3600}
+        explosionSpeed={460}
+        fallSpeed={3200}
         colors={[C.green, C.greenLt, C.gold, C.border, "#8FCFB8", "#EEF2FF"]}
       />
     </View>

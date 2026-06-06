@@ -894,6 +894,7 @@ export default function App() {
   function triggerCelebrateConfetti(elevatedMood: BuddyMood = "excited") {
     if (celebrateConfettiTimer.current) {
       clearTimeout(celebrateConfettiTimer.current);
+      celebrateConfettiTimer.current = null;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
       () => {},
@@ -907,6 +908,14 @@ export default function App() {
       setShowCelebrateConfetti(false);
       celebrateConfettiTimer.current = null;
     }, 5200);
+  }
+
+  function clearCelebrateConfetti() {
+    if (celebrateConfettiTimer.current) {
+      clearTimeout(celebrateConfettiTimer.current);
+      celebrateConfettiTimer.current = null;
+    }
+    setShowCelebrateConfetti(false);
   }
 
   function completeMissionInternal() {
@@ -1608,6 +1617,7 @@ export default function App() {
             beforeRewardUnlocked ? beforeRewardContinueLabelKey : undefined
           }
           onContinue={() => {
+            clearCelebrateConfetti();
             if (beforeRewardUnlocked) {
               setBeforeRewardUnlocked(false);
               speak(
@@ -1622,8 +1632,14 @@ export default function App() {
             }
             setScreen("pick");
           }}
-          onRewards={openRewardsScreen}
-          onBack={() => setScreen("home")}
+          onRewards={() => {
+            clearCelebrateConfetti();
+            openRewardsScreen();
+          }}
+          onBack={() => {
+            clearCelebrateConfetti();
+            setScreen("home");
+          }}
         />
       )}
 

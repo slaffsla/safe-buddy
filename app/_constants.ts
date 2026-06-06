@@ -857,7 +857,7 @@ export function getBlockStatus(block: ScheduleBlock): BlockStatus {
 
 // ── OTHER DATA ────────────────────────────────────────────────────────────────
 
-export const CONFETTI_AT: number[] = [1, 5, 10, 25, 50, 100];
+export const CONFETTI_AT: number[] = [1, 5, 25];
 
 export const DEMO_STEPS = [
   {

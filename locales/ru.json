@@ -122,8 +122,8 @@
   },
   "missionPick": {
     "title": "Выбери миссию",
-    "before_reward_title": "Сначала, потом",
-    "before_reward_sub": "Выбери маленькую миссию перед наградой.",
+    "before_reward_title": "Перед наградой",
+    "before_reward_sub": "Выбери одну маленькую миссию.",
     "before_reward_hint": "Это быстрые миссии-переходы",
     "first_title": "Выбери первую маленькую миссию",
     "first_title_female": "Выбери первую маленькую миссию",

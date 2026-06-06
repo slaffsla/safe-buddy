@@ -695,9 +695,6 @@ export function CelebrateScreen({
             {Array(mission.stars).fill("⭐").join(" ")}
           </Text>
         </View>
-        <Text style={s.earnedTotal}>
-          {t("celebrate.earned_total", { stars: stars })}
-        </Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}

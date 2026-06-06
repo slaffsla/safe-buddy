@@ -583,7 +583,11 @@ export default function BreathingScreen({
         <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
         <View style={s.circleStatic}>
-          <Text style={s.circleEmoji}>🌬️</Text>
+          <Image
+            source={visualAssets.graphics.breathSwirl}
+            style={s.breathArt}
+            resizeMode="contain"
+          />
         </View>
 
         <TouchableOpacity
@@ -618,7 +622,11 @@ export default function BreathingScreen({
         <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
         <View style={s.circleStatic}>
-          <Text style={s.circleEmoji}>🌬️</Text>
+          <Image
+            source={visualAssets.graphics.breathSwirl}
+            style={s.breathArt}
+            resizeMode="contain"
+          />
           <View style={[s.prepCountdownOverlay, s.noPointerEvents]}>
             <Text style={s.prepCountdownTxt}>{prepCountdown}</Text>
           </View>
@@ -662,7 +670,11 @@ export default function BreathingScreen({
           <Animated.View
             style={[s.circleActive, { transform: [{ scale: buddyScale }] }]}
           >
-            <Text style={s.circleEmoji}>🌱</Text>
+            <Image
+              source={visualAssets.graphics.completeBadge}
+              style={s.completeArt}
+              resizeMode="contain"
+            />
           </Animated.View>
         </View>
         <View style={s.footer}>
@@ -690,6 +702,8 @@ export default function BreathingScreen({
 
   return (
     <View style={s.screenRoot}>
+      <View style={[s.activeBackdrop, s.noPointerEvents]} />
+      <View style={[s.activeWarmPool, s.noPointerEvents]} />
       <View style={s.screen}>
         <View style={s.topRightControls}>
           <TouchableOpacity
@@ -739,6 +753,8 @@ export default function BreathingScreen({
 
         {/* Buddy IS the breathing element — no separate circle */}
         <View style={s.buddyContainer}>
+          <View style={[s.buddyOuterGlow, s.noPointerEvents]} />
+          <View style={[s.buddyInnerGlow, s.noPointerEvents]} />
           <Buddy
             mood={buddyTapMood ?? "serene"}
             speak={speak}
@@ -796,6 +812,7 @@ const s = StyleSheet.create({
   screenRoot: {
     flex: 1,
     width: "100%",
+    backgroundColor: "#F8F6EF",
   },
   screen: {
     flex: 1,
@@ -806,6 +823,20 @@ const s = StyleSheet.create({
     justifyContent: "flex-start",
     padding: 20,
     paddingBottom: 0,
+  },
+  activeBackdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "#F8F6EF",
+  },
+  activeWarmPool: {
+    position: "absolute",
+    top: BUDDY_CONTENT_SPACER - 18,
+    alignSelf: "center",
+    width: Math.min(CONTENT_MAX_WIDTH, SCREEN_W - 28),
+    height: Math.round(SCREEN_W * 0.9),
+    maxHeight: 410,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,248,231,0.58)",
   },
   footer: {
     position: "absolute",
@@ -879,7 +910,7 @@ const s = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#FFFDF9",
+    backgroundColor: "rgba(255,253,249,0.92)",
     borderWidth: 0.5,
     borderColor: "#DED8CE",
     alignItems: "center",
@@ -899,36 +930,43 @@ const s = StyleSheet.create({
   guidanceToggleTxt: { fontSize: 20 },
 
   circleStatic: {
-    width: CIRCLE_BASE,
-    height: CIRCLE_BASE,
-    borderRadius: CIRCLE_BASE / 2,
-    backgroundColor: "#EAF6F8",
-    borderWidth: 2,
-    borderColor: "#BBDDE5",
+    width: CIRCLE_BASE + 26,
+    height: CIRCLE_BASE + 26,
+    borderRadius: (CIRCLE_BASE + 26) / 2,
+    backgroundColor: "#F4FAF7",
+    borderWidth: 1,
+    borderColor: "#D4EDE1",
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 24,
   },
   circleActive: {
-    width: CIRCLE_BASE,
-    height: CIRCLE_BASE,
-    borderRadius: CIRCLE_BASE / 2,
-    backgroundColor: "#EAF6F8",
-    borderWidth: 2,
-    borderColor: "#BBDDE5",
+    width: CIRCLE_BASE + 20,
+    height: CIRCLE_BASE + 20,
+    borderRadius: (CIRCLE_BASE + 20) / 2,
+    backgroundColor: "#F4FAF7",
+    borderWidth: 1,
+    borderColor: "#D4EDE1",
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 16,
   },
-  circleEmoji: { fontSize: 56 },
+  breathArt: {
+    width: CIRCLE_BASE + 4,
+    height: CIRCLE_BASE + 4,
+  },
+  completeArt: {
+    width: CIRCLE_BASE,
+    height: CIRCLE_BASE,
+  },
   prepCountdownOverlay: {
     position: "absolute",
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-    borderRadius: CIRCLE_BASE / 2,
-    backgroundColor: "rgba(234,246,248,0.94)",
+    borderRadius: (CIRCLE_BASE + 26) / 2,
+    backgroundColor: "rgba(244,250,247,0.9)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1011,6 +1049,22 @@ const s = StyleSheet.create({
     justifyContent: "center",
     marginVertical: 12,
     overflow: "visible",
+  },
+  buddyOuterGlow: {
+    position: "absolute",
+    width: BUDDY_BASE * 1.38,
+    height: BUDDY_BASE * 1.38,
+    borderRadius: BUDDY_BASE,
+    backgroundColor: "rgba(255,248,231,0.72)",
+  },
+  buddyInnerGlow: {
+    position: "absolute",
+    width: BUDDY_BASE * 1.1,
+    height: BUDDY_BASE * 1.1,
+    borderRadius: BUDDY_BASE,
+    backgroundColor: "rgba(225,245,238,0.68)",
+    borderWidth: 1,
+    borderColor: "rgba(207,233,221,0.82)",
   },
   natureFact: {
     backgroundColor: "#F4FAF7",

@@ -144,6 +144,8 @@ export interface AppSettings {
   showExactStarCost: boolean; // show exact missing stars vs "a little more"
   beforeRewardEnabled: boolean;
   beforeRewardMissionCount: 1 | 2 | 3;
+  beforeRewardMissionIds: number[];
+  beforeRewardRewardIds: number[];
 
   // Mission rotation
   rotationEnabled: boolean;
@@ -218,6 +220,8 @@ function buildDefaultSettings(): AppSettings {
     showExactStarCost: false,
     beforeRewardEnabled: false,
     beforeRewardMissionCount: 1,
+    beforeRewardMissionIds: [],
+    beforeRewardRewardIds: [],
     rotationEnabled: false,
     rotationFrequency: "weekly",
     rotatingPoolSize: 2,
@@ -598,6 +602,20 @@ export async function loadSettings(): Promise<AppSettings> {
       merged.morningSteps = normalizeMorningSteps(merged.morningSteps);
       merged.scheduleBlocks = normalizeScheduleBlocks(merged.scheduleBlocks);
       merged.customMissions = normalizeCustomMissions(merged.customMissions);
+      merged.beforeRewardMissionIds = Array.isArray(
+        merged.beforeRewardMissionIds,
+      )
+        ? merged.beforeRewardMissionIds.filter(
+            (id: unknown): id is number => typeof id === "number",
+          )
+        : [];
+      merged.beforeRewardRewardIds = Array.isArray(
+        merged.beforeRewardRewardIds,
+      )
+        ? merged.beforeRewardRewardIds.filter(
+            (id: unknown): id is number => typeof id === "number",
+          )
+        : [];
       merged.childPreferences = normalizeChildPreferences(
         merged.childPreferences,
       );
@@ -620,6 +638,8 @@ export async function loadSettings(): Promise<AppSettings> {
       morningSteps: normalizeMorningSteps(DEFAULT_SETTINGS.morningSteps),
       scheduleBlocks: normalizeScheduleBlocks(DEFAULT_SETTINGS.scheduleBlocks),
       customMissions: normalizeCustomMissions(DEFAULT_SETTINGS.customMissions),
+      beforeRewardMissionIds: [],
+      beforeRewardRewardIds: [],
       childPreferences: normalizeChildPreferences(
         DEFAULT_SETTINGS.childPreferences,
       ),
@@ -3146,6 +3166,8 @@ function ParentZoneView({
   const [draftRewardEmoji, setDraftRewardEmoji] = useState("");
   const [draftRewardTitle, setDraftRewardTitle] = useState("");
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [beforeRewardCustomizeOpen, setBeforeRewardCustomizeOpen] =
+    useState(false);
 
   if (aboutOpen) {
     return (
@@ -3173,6 +3195,24 @@ function ParentZoneView({
     };
     onChange({
       rewardOverrides: { ...rewardOverrides, [id]: { ...cur, ...patch } },
+    });
+  }
+
+  function toggleBeforeRewardMission(id: number, enabled: boolean) {
+    const current = settings.beforeRewardMissionIds ?? [];
+    onChange({
+      beforeRewardMissionIds: enabled
+        ? Array.from(new Set([...current, id]))
+        : current.filter((x) => x !== id),
+    });
+  }
+
+  function toggleBeforeRewardReward(id: number, enabled: boolean) {
+    const current = settings.beforeRewardRewardIds ?? [];
+    onChange({
+      beforeRewardRewardIds: enabled
+        ? Array.from(new Set([...current, id]))
+        : current.filter((x) => x !== id),
     });
   }
 
@@ -3611,6 +3651,50 @@ function ParentZoneView({
     );
   }
 
+  function BeforeRewardMissionRow({ mission }: { mission: PoolMission }) {
+    const selected = (settings.beforeRewardMissionIds ?? []).includes(
+      mission.id,
+    );
+    return (
+      <View style={[u.row, pz.customizeRow]}>
+        <Text style={{ fontSize: 20, marginRight: 10 }}>{mission.emoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={u.rowLabel}>{missionTitle(mission)}</Text>
+          <Text style={u.rowSublabel}>
+            {tx("settings.before_reward_mission_hint")}
+          </Text>
+        </View>
+        <Switch
+          value={selected}
+          onValueChange={(v) => toggleBeforeRewardMission(mission.id, v)}
+          trackColor={{ false: C.track, true: C.green }}
+          thumbColor={C.white}
+        />
+      </View>
+    );
+  }
+
+  function BeforeRewardRewardRow({ reward }: { reward: Reward }) {
+    const selected = (settings.beforeRewardRewardIds ?? []).includes(reward.id);
+    return (
+      <View style={[u.row, pz.customizeRow]}>
+        <Text style={{ fontSize: 20, marginRight: 10 }}>{reward.emoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={u.rowLabel}>{rewardTitle(reward)}</Text>
+          <Text style={u.rowSublabel}>
+            {tx("settings.before_reward_reward_hint")}
+          </Text>
+        </View>
+        <Switch
+          value={selected}
+          onValueChange={(v) => toggleBeforeRewardReward(reward.id, v)}
+          trackColor={{ false: C.track, true: C.green }}
+          thumbColor={C.white}
+        />
+      </View>
+    );
+  }
+
   // Inline editor for new mission — mirrors the day-schedule add UI.
   function AddMissionBlock() {
     return (
@@ -3847,6 +3931,48 @@ function ParentZoneView({
                   </TouchableOpacity>
                 </View>
               </SettingRow>
+              <Divider />
+              <TouchableOpacity
+                style={pz.customizeHeader}
+                onPress={() =>
+                  setBeforeRewardCustomizeOpen((open) => !open)
+                }
+                activeOpacity={0.75}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={u.rowLabel}>
+                    {tx("settings.before_reward_customize")}
+                  </Text>
+                  <Text style={u.rowSublabel}>
+                    {tx("settings.before_reward_customize_sub")}
+                  </Text>
+                </View>
+                <Text style={pz.customizeChevron}>
+                  {beforeRewardCustomizeOpen ? "▲" : "▼"}
+                </Text>
+              </TouchableOpacity>
+              {beforeRewardCustomizeOpen && (
+                <View style={pz.customizePanel}>
+                  <Text style={pz.customizeGroupTitle}>
+                    {tx("settings.before_reward_customize_missions")}
+                  </Text>
+                  {missionPool.map((m, idx) => (
+                    <View key={`before-reward-mission-${m.id}`}>
+                      {idx > 0 && <Divider />}
+                      <BeforeRewardMissionRow mission={m} />
+                    </View>
+                  ))}
+                  <Text style={[pz.customizeGroupTitle, pz.customizeGroupGap]}>
+                    {tx("settings.before_reward_customize_rewards")}
+                  </Text>
+                  {rewardPool.map((r, idx) => (
+                    <View key={`before-reward-reward-${r.id}`}>
+                      {idx > 0 && <Divider />}
+                      <BeforeRewardRewardRow reward={r} />
+                    </View>
+                  ))}
+                </View>
+              )}
             </>
           )}
         </Card>
@@ -3917,6 +4043,29 @@ const pz = StyleSheet.create({
   compactRow: { paddingVertical: 10, paddingHorizontal: 12, gap: 10 },
   compactSubRow: { paddingTop: 0, paddingBottom: 8, paddingHorizontal: 12 },
   sectionSpacer: { height: 18 },
+  customizeHeader: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  customizeChevron: { fontSize: 14, color: C.green, fontWeight: "700" },
+  customizePanel: {
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    backgroundColor: "#FBFAF6",
+  },
+  customizeGroupTitle: {
+    paddingTop: 12,
+    paddingHorizontal: 14,
+    paddingBottom: 6,
+    fontSize: 12,
+    fontWeight: "800",
+    color: C.green,
+  },
+  customizeGroupGap: { marginTop: 8 },
+  customizeRow: { paddingVertical: 10, paddingHorizontal: 14, gap: 10 },
   blockPermanent: { backgroundColor: "#F1FAF6" },
   blockRotating: { backgroundColor: "#FFF8E7" },
 

@@ -457,6 +457,7 @@ export default function App() {
   const [beforeRewardActive, setBeforeRewardActive] = useState(false);
   const [beforeRewardCompleted, setBeforeRewardCompleted] = useState(0);
   const [beforeRewardUnlocked, setBeforeRewardUnlocked] = useState(false);
+  const [beforeRewardRewardsOnly, setBeforeRewardRewardsOnly] = useState(false);
 
   // Settings
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -1001,6 +1002,7 @@ export default function App() {
     setBeforeRewardActive(true);
     setBeforeRewardCompleted(0);
     setBeforeRewardUnlocked(false);
+    setBeforeRewardRewardsOnly(false);
     speak(
       tSpeak(
         "beforeReward.start_speak",
@@ -1139,8 +1141,9 @@ export default function App() {
     }
   }, []);
 
-  function openRewardsScreen() {
+  function openRewardsScreen(options?: { beforeRewardOnly?: boolean }) {
     incrementLocalUsage("rewardsViewed").catch(console.log);
+    setBeforeRewardRewardsOnly(!!options?.beforeRewardOnly);
     setScreen("rewards");
   }
 
@@ -1365,6 +1368,15 @@ export default function App() {
     ...dayMissions,
     ...activePool.filter((m) => !dayMissions.some((d) => d.id === m.id)),
   ].filter((m) => !doneIdsToday.includes(m.id));
+  const selectedBeforeRewardMissionIds = new Set(
+    appSettings.beforeRewardMissionIds ?? [],
+  );
+  const bridgeSelectedMissions =
+    selectedBeforeRewardMissionIds.size > 0
+      ? bridgeMissionSources.filter((m) =>
+          selectedBeforeRewardMissionIds.has(m.id),
+        )
+      : [];
   const bridgePreferredMissions = bridgeMissionSources.filter(
     (m) => m.stars === 1 && m.category !== "social",
   );
@@ -1372,7 +1384,9 @@ export default function App() {
     (m) => m.stars === 1,
   );
   const beforeRewardMissions = (
-    bridgePreferredMissions.length > 0
+    bridgeSelectedMissions.length > 0
+      ? bridgeSelectedMissions
+      : bridgePreferredMissions.length > 0
       ? bridgePreferredMissions
       : bridgeFallbackMissions.length > 0
         ? bridgeFallbackMissions
@@ -1383,6 +1397,13 @@ export default function App() {
   const effectiveRewards: Reward[] = allRewardPool
     .filter((r) => effectiveRewardEnabled(r.id, rewardOverrides))
     .map((r) => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
+  const selectedBeforeRewardRewardIds = new Set(
+    appSettings.beforeRewardRewardIds ?? [],
+  );
+  const beforeRewardRewards =
+    selectedBeforeRewardRewardIds.size > 0
+      ? effectiveRewards.filter((r) => selectedBeforeRewardRewardIds.has(r.id))
+      : effectiveRewards;
 
   const currentBlock = appSettings.scheduleEnabled
     ? getCurrentBlock(appSettings.scheduleBlocks, isWeekendDay)
@@ -1589,7 +1610,7 @@ export default function App() {
                   appSettings.rtlChildSex ?? "male",
                 ),
               );
-              openRewardsScreen();
+              openRewardsScreen({ beforeRewardOnly: true });
               return;
             }
             setScreen("pick");
@@ -1602,7 +1623,11 @@ export default function App() {
       {visibleScreen === "rewards" && (
         <RewardsScreen
           {...p}
-          rewards={effectiveRewards}
+          rewards={
+            beforeRewardRewardsOnly && beforeRewardRewards.length > 0
+              ? beforeRewardRewards
+              : effectiveRewards
+          }
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onBack={() => setScreen("home")}
           onRedeem={handleRewardRedeem}

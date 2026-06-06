@@ -175,13 +175,6 @@ export default function DayScreen({
         <Text style={[s.headerTitle, isLargeTablet && s.headerTitleLarge]}>
           {t("day.title")}
         </Text>
-        <TouchableOpacity
-          style={s.closeBtn}
-          onPress={onClose}
-          accessibilityLabel={t("day.close_a11y")}
-        >
-          <Text style={s.closeBtnTxt}>✕</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -346,7 +339,7 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 10,
@@ -360,17 +353,6 @@ const s = StyleSheet.create({
   },
   headerTitle: { fontSize: 22, fontWeight: "700", color: C.text },
   headerTitleLarge: { fontSize: 30 },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FFFDF9",
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeBtnTxt: { fontSize: 18, color: C.text },
 
   scroll: {
     width: "100%",

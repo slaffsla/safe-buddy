@@ -47,7 +47,6 @@
     "start_btn": "Начать приключение",
     "name_required": "Пожалуйста, введи имя ребёнка",
     "welcome_greeting": "Привет, {{name}}! Рад тебя видеть!",
-    "welcome_greeting_female": "Привет, {{name}}! Рада тебя видеть!",
     "save_error": "Ошибка сохранения",
     "meet_title": "Привет! Я Бадди.",
     "meet_prompt": "Погладь меня нежно.",
@@ -63,9 +62,7 @@
     "age_continue": "Дальше",
     "age_skip": "Не сейчас",
     "ready_title": "Очень рад знакомству.",
-    "ready_title_female": "Очень рада знакомству.",
     "ready_title_named": "Очень рад знакомству, {{name}}.",
-    "ready_title_named_female": "Очень рада знакомству, {{name}}.",
     "ready_sub": "Давай заработаем твою первую звезду!",
     "ready_start": "Начать"
   },
@@ -156,8 +153,9 @@
     "need_vague": "ещё немного",
     "hint": "Нажми на награду, чтобы услышать",
     "redeemed_alert_title": "🎉 Награда получена!",
-    "redeemed_speak": "Молодец! Ты заслужил награду",
-    "redeemed_speak_female": "Молодец! Ты заслужила награду",
+    "redeemed_speak": "Отличная работа. Награда твоя!",
+    "redeemed_speak_male": "Горжусь тобой, чемпион!",
+    "redeemed_speak_female": "Горжусь тобой, умница!",
     "redeemed_alert_close": "ОК"
   },
   "reward_titles": {

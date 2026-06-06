@@ -89,6 +89,17 @@ const YESTERDAY = (() => {
   return d.toISOString().split("T")[0];
 })();
 
+function rewardRedemptionSpeakKey(
+  rtlChildSex: "male" | "female",
+  isFirstReward: boolean,
+) {
+  const useRareLine = isFirstReward || Math.random() < 0.14;
+  if (!useRareLine) return "rewards.redeemed_speak";
+  return rtlChildSex === "female"
+    ? "rewards.redeemed_speak_female"
+    : "rewards.redeemed_speak_male";
+}
+
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
 const BUDDY = {
@@ -975,11 +986,7 @@ export default function App() {
       const title = t("rewards.redeemed_alert_title");
       const message = getRewardTitle(reward.id, reward.title);
       speak(
-        tSpeak(
-          "rewards.redeemed_speak",
-          undefined,
-          appSettings.rtlChildSex ?? "male",
-        ),
+        t(rewardRedemptionSpeakKey(appSettings.rtlChildSex ?? "male", isFirst)),
       );
       setRedeemedAlertTitle(title);
       setRedeemedAlertMessage(message);

@@ -52,7 +52,6 @@
     "start_btn": "מתחילים את ההרפתקה",
     "name_required": "נא להזין את שם הילד/ה",
     "welcome_greeting": "היי {{name}}. שמח להיפגש",
-    "welcome_greeting_female": "היי {{name}}. שמחה להיפגש",
     "save_error": "השמירה נכשלה",
     "meet_title": "היי! אני Buddy.",
     "meet_prompt": "לטף אותי בעדינות.",
@@ -168,7 +167,9 @@
     "hint": "לחץ על פרס כדי לשמוע",
     "hint_female": "לחצי על פרס כדי לשמוע",
     "redeemed_alert_title": "🎉 פרס נפתח!",
-    "redeemed_speak": " כל הכבוד!",
+    "redeemed_speak": "כל הכבוד! הפרס נפתח.",
+    "redeemed_speak_male": "כל הכבוד, אלוף!",
+    "redeemed_speak_female": "כל הכבוד, אלופה!",
     "redeemed_alert_close": "בסדר"
   },
   "reward_titles": {

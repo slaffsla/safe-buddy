@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -20,6 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
+import { visualAssets } from "../lib/visualAssets";
 import { pickPreferenceForUse } from "../lib/childPreferences";
 import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
@@ -1447,6 +1449,12 @@ export default function App() {
     ),
   );
   const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);
+  const showMilestoneDoodleBg =
+    totalEver >= 20 &&
+    parentOnboardingDone &&
+    onboardingDone &&
+    !showPinScreen &&
+    visibleScreen !== "settings";
 
   if (showMorning) {
     return (
@@ -1483,6 +1491,14 @@ export default function App() {
   return (
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
+      {showMilestoneDoodleBg && (
+        <ImageBackground
+          source={visualAssets.graphics.appBg}
+          style={s.appDoodleBg}
+          imageStyle={s.appDoodleBgImage}
+          resizeMode="repeat"
+        />
+      )}
 
       {visibleScreen === "demo_intro" && (
         <DemoIntroScreen
@@ -1929,6 +1945,16 @@ const C = {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
+  appDoodleBg: {
+    ...StyleSheet.absoluteFill,
+    opacity: 0.09,
+    pointerEvents: "none",
+    zIndex: 1,
+  },
+  appDoodleBgImage: {
+    width: 500,
+    height: 500,
+  },
   center: { justifyContent: "center", alignItems: "center" },
   screen: {
     flex: 1,

@@ -27,6 +27,7 @@ export const visualAssets = {
     buddyBubble: require("../assets/Graphics/BubbleTL1.png"),
     buddyBubbleSoft: require("../assets/Graphics/Graphics15.bubble0.png"),
     handpan: require("../assets/Graphics/Handpan.png"),
+    appBg: require("../assets/Graphics/App.Bg.png"),
   },
 } satisfies {
   accents: Record<string, ImageSourcePropType>;

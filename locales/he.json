@@ -171,6 +171,10 @@
     "btn_next": "המשימה הבאה",
     "btn_next_challenge": "האתגר הבא",
     "btn_next_adventure": "ההרפתקה הבאה",
+    "btn_get_reward": "קבל את הפרס",
+    "btn_get_reward_female": "קבלי את הפרס",
+    "btn_get_rewards": "קבל את הפרסים",
+    "btn_get_rewards_female": "קבלי את הפרסים",
     "btn_rewards": "לראות פרסים"
   },
   "rewards": {

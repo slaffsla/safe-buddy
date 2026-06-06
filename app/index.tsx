@@ -1404,6 +1404,10 @@ export default function App() {
     selectedBeforeRewardRewardIds.size > 0
       ? effectiveRewards.filter((r) => selectedBeforeRewardRewardIds.has(r.id))
       : effectiveRewards;
+  const beforeRewardContinueLabelKey =
+    beforeRewardRewards.length === 1
+      ? "celebrate.btn_get_reward"
+      : "celebrate.btn_get_rewards";
 
   const currentBlock = appSettings.scheduleEnabled
     ? getCurrentBlock(appSettings.scheduleBlocks, isWeekendDay)
@@ -1600,6 +1604,9 @@ export default function App() {
           completedToday={completedToday}
           isVeryExcited={isVeryExcited}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
+          continueLabelKey={
+            beforeRewardUnlocked ? beforeRewardContinueLabelKey : undefined
+          }
           onContinue={() => {
             if (beforeRewardUnlocked) {
               setBeforeRewardUnlocked(false);

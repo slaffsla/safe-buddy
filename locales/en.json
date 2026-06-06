@@ -150,6 +150,8 @@
     "btn_next": "Next mission",
     "btn_next_challenge": "Next challenge",
     "btn_next_adventure": "Next adventure",
+    "btn_get_reward": "Get your reward",
+    "btn_get_rewards": "Get your rewards",
     "btn_rewards": "See rewards"
   },
   "rewards": {

@@ -155,6 +155,8 @@
     "btn_next": "Следующая миссия",
     "btn_next_challenge": "Следующее испытание",
     "btn_next_adventure": "Следующее приключение",
+    "btn_get_reward": "Получить награду",
+    "btn_get_rewards": "Получить награды",
     "btn_rewards": "Посмотреть награды"
   },
   "rewards": {

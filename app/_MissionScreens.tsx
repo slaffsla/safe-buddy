@@ -594,6 +594,7 @@ export function CelebrateScreen({
   onRewards,
   speak,
   onBack,
+  continueLabelKey,
   rtlChildSex = "male",
 }: {
   mission: any;
@@ -606,6 +607,7 @@ export function CelebrateScreen({
   onRewards: () => void;
   speak: (t: string) => void;
   onBack: () => void;
+  continueLabelKey?: string;
   rtlChildSex?: RtlChildSex;
 }) {
   const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
@@ -693,7 +695,7 @@ export function CelebrateScreen({
           />
         </View>
         <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
-          {tGender(nextButtonKey, undefined, rtlChildSex)}
+          {tGender(continueLabelKey ?? nextButtonKey, undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity

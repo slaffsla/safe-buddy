@@ -18,3 +18,10 @@ credentials.json
 *.key
 .credentials
 -e
+
+# Local IDE
+.idea/
+
+# Expo native prebuild output
+android/
+ios/

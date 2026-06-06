@@ -973,7 +973,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
-    backgroundColor: C.bg,
   },
   scroll: {
     width: "100%",
@@ -982,7 +981,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     paddingBottom: 52,
-    backgroundColor: C.bg,
   },
   footer: {
     position: "absolute",

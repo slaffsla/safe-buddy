@@ -140,6 +140,7 @@ export interface AppSettings {
   breathingGuidanceEnabled: boolean; // spoken breathing phase prompts
   ttsEnabled: boolean; // text-to-speech
   buddyDjModeEnabled: boolean; // optional layered Buddy tap voices
+  doodleBackgroundEnabled: boolean; // earned child-facing background after 20 stars
   skipSensitivity: number; // skips before gentle-reminder (default 2)
   showExactStarCost: boolean; // show exact missing stars vs "a little more"
   beforeRewardEnabled: boolean;
@@ -216,6 +217,7 @@ function buildDefaultSettings(): AppSettings {
     breathingGuidanceEnabled: true,
     ttsEnabled: true,
     buddyDjModeEnabled: false,
+    doodleBackgroundEnabled: true,
     skipSensitivity: 2,
     showExactStarCost: false,
     beforeRewardEnabled: false,
@@ -1563,6 +1565,18 @@ function BuddySection({
           <Switch
             value={settings.buddyDjModeEnabled}
             onValueChange={(v) => onChange({ buddyDjModeEnabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </SettingRow>
+        <Divider />
+        <SettingRow
+          label={t("settings.doodle_bg_label")}
+          sublabel={t("settings.doodle_bg_sub")}
+        >
+          <Switch
+            value={settings.doodleBackgroundEnabled}
+            onValueChange={(v) => onChange({ doodleBackgroundEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
           />

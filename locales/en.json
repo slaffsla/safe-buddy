@@ -470,6 +470,8 @@
     "tts_sub": "Buddy reads text aloud",
     "buddy_dj_label": "Buddy DJ mode",
     "buddy_dj_sub": "Some kids may enjoy trying playful quick-cut day-card taps. Important instructions stay clear.",
+    "doodle_bg_label": "Doodle background",
+    "doodle_bg_sub": "After 20 stars, show a soft background in child screens.",
     "breathing_music_label": "Breathing music",
     "breathing_music_sub": "Play music during breathing sessions",
     "nudge_label": "Daily suggestion",

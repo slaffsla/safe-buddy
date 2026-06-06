@@ -335,7 +335,7 @@ export default function DayScreen({
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",

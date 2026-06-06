@@ -16,8 +16,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
   useWindowDimensions,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { pickPreferenceForUse } from "../lib/childPreferences";
@@ -1451,6 +1451,7 @@ export default function App() {
   );
   const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);
   const showMilestoneDoodleBg =
+    appSettings.doodleBackgroundEnabled !== false &&
     totalEver >= 20 &&
     parentOnboardingDone &&
     onboardingDone &&
@@ -1981,7 +1982,7 @@ const s = StyleSheet.create({
   appDoodleBgTile: {
     width: 500,
     height: 500,
-    opacity: 0.99,
+    opacity: 0.89,
   },
   center: { justifyContent: "center", alignItems: "center" },
   screen: {

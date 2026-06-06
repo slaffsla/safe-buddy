@@ -456,7 +456,6 @@ const s = StyleSheet.create({
     alignSelf: "center",
     alignItems: "center",
     paddingBottom: 52,
-    backgroundColor: C.bg,
   },
   homeScrollLarge: {
     paddingBottom: 96,

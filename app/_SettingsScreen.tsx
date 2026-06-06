@@ -88,6 +88,7 @@ import {
   normalizeAppLocale,
   setAppLocale,
   t,
+  tGender,
 } from "./i18n";
 
 // Custom items added by parent in the Parent Zone are stored in settings.
@@ -2078,10 +2079,21 @@ function ChildPreferencesSection({
 
   return (
     <View>
-      <SectionHeader title={t("settings.preferences_section")} icon="💛" />
+      <SectionHeader
+        title={tGender(
+          "settings.preferences_section",
+          undefined,
+          settings.rtlChildSex ?? "male",
+        )}
+        icon="💛"
+      />
       <Card>
         <Text style={u.preferenceIntro}>
-          {t("settings.preferences_intro")}
+          {tGender(
+            "settings.preferences_intro",
+            undefined,
+            settings.rtlChildSex ?? "male",
+          )}
         </Text>
         <View style={u.preferenceGroup}>
           <Text style={u.preferenceGroupTitle}>

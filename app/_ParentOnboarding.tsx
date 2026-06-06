@@ -523,16 +523,25 @@ function Screen3() {
         ]}
       >
         {items.map((item, i) => (
-          <View key={item.title}>
-            {i > 0 && (
-              <View
-                style={[
-                  s.featureDivider,
-                  isLargeTablet && s.featureDividerLarge,
-                ]}
-              />
-            )}
-            <View style={[s.featureRow, isLargeTablet && s.featureRowLarge]}>
+          <View
+            key={item.title}
+            style={[
+              s.featureRow,
+              {
+                backgroundColor: HOW_IT_WORKS_COLORS[i].bg,
+                borderColor: HOW_IT_WORKS_COLORS[i].border,
+              },
+              isLargeTablet && s.featureRowLarge,
+              i === items.length - 1 && s.featureRowLast,
+            ]}
+          >
+            <View
+              style={[
+                s.featureGraphicWell,
+                { backgroundColor: HOW_IT_WORKS_COLORS[i].badge },
+                isLargeTablet && s.featureGraphicWellLarge,
+              ]}
+            >
               {item.image ? (
                 <Image
                   source={item.image}
@@ -549,18 +558,16 @@ function Screen3() {
                   {item.icon}
                 </Text>
               )}
-              <View style={s.featureTextWrap}>
-                <Text
-                  style={[s.featureTitle, isLargeTablet && s.featureTitleLarge]}
-                >
-                  {item.title}
-                </Text>
-                <Text
-                  style={[s.featureSub, isLargeTablet && s.featureSubLarge]}
-                >
-                  {item.sub}
-                </Text>
-              </View>
+            </View>
+            <View style={s.featureTextWrap}>
+              <Text
+                style={[s.featureTitle, isLargeTablet && s.featureTitleLarge]}
+              >
+                {item.title}
+              </Text>
+              <Text style={[s.featureSub, isLargeTablet && s.featureSubLarge]}>
+                {item.sub}
+              </Text>
             </View>
           </View>
         ))}
@@ -1020,32 +1027,53 @@ const s = StyleSheet.create({
   tipTextLarge: { fontSize: 19, lineHeight: 28 },
 
   featureCard: {
-    backgroundColor: C.white,
-    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.66)",
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: C.border,
-    padding: 16,
+    borderColor: "#EBDDC7",
+    padding: 12,
     width: "100%",
     marginBottom: 16,
     overflow: "hidden",
   },
   featureCardTablet: { padding: 20, borderRadius: 16 },
   featureCardLarge: { padding: 28, borderRadius: 18, marginBottom: 24 },
-  featureDivider: {
-    height: 1,
-    backgroundColor: C.border,
-    marginVertical: 12,
-  },
-  featureDividerLarge: { marginVertical: 18 },
   featureRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    marginBottom: 8,
   },
-  featureRowLarge: { gap: 20 },
+  featureRowLarge: {
+    gap: 18,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 12,
+  },
+  featureRowLast: { marginBottom: 0 },
   featureIcon: { fontSize: 24, width: 32, textAlign: "center" },
   featureIconLarge: { fontSize: 34, width: 48 },
-  featureGraphic: { width: 42, height: 42, flexShrink: 0 },
+  featureGraphicWell: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    borderWidth: 1,
+    borderColor: "rgba(29,107,79,0.18)",
+  },
+  featureGraphicWellLarge: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+  },
+  featureGraphic: { width: 38, height: 38, flexShrink: 0 },
   featureGraphicLarge: { width: 58, height: 58 },
   featureTextWrap: { flex: 1 },
   featureTitle: { fontSize: 15, fontWeight: "700", color: C.text },

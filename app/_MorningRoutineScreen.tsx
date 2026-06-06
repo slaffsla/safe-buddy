@@ -30,6 +30,13 @@ interface Props {
   onSkip: () => void;
 }
 
+const STEP_COLORS = [
+  { bg: "#F4FAF7", border: "#CFE9DD", well: "#DFF5EC" },
+  { bg: "#FFF8E7", border: "#F1D58E", well: "#FFE7B8" },
+  { bg: "#EEF2FF", border: "#D6DDFC", well: "#E1E7FF" },
+  { bg: "#FFF1E9", border: "#F5C7B5", well: "#FFD9CB" },
+];
+
 export default function MorningRoutineScreen({
   childName,
   steps = [],
@@ -146,16 +153,30 @@ export default function MorningRoutineScreen({
       </View>
 
       {/* Step checklist */}
-      <View style={s.card}>
+      <View style={s.stepList}>
         {validSteps.map((step, idx) => {
           const done = doneIds.includes(step.id);
+          const colors = STEP_COLORS[idx % STEP_COLORS.length];
           return (
-            <View key={`morning-step-${step.id}-${idx}`}>
-              {idx > 0 && <View style={s.divider} />}
-              <TouchableOpacity
-                style={s.stepRow}
-                onPress={() => toggleStep(step)}
-                activeOpacity={0.7}
+            <TouchableOpacity
+              key={`morning-step-${step.id}-${idx}`}
+              style={[
+                s.stepRow,
+                {
+                  backgroundColor: colors.bg,
+                  borderColor: colors.border,
+                },
+                done && s.stepRowDone,
+              ]}
+              onPress={() => toggleStep(step)}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  s.stepIconWell,
+                  { backgroundColor: colors.well, borderColor: colors.border },
+                  done && s.stepIconWellDone,
+                ]}
               >
                 {step.imageUri ? (
                   <Image
@@ -166,14 +187,14 @@ export default function MorningRoutineScreen({
                 ) : (
                   <Text style={s.stepEmoji}>{step.emoji}</Text>
                 )}
-                <Text style={[s.stepTitle, done && s.stepDone]}>
-                  {getMorningStepTitle(step.id, step.title)}
-                </Text>
-                <View style={[s.checkbox, done && s.checkboxDone]}>
-                  {done && <Text style={s.checkmark}>✓</Text>}
-                </View>
-              </TouchableOpacity>
-            </View>
+              </View>
+              <Text style={[s.stepTitle, done && s.stepDone]}>
+                {getMorningStepTitle(step.id, step.title)}
+              </Text>
+              <View style={[s.checkbox, done && s.checkboxDone]}>
+                {done && <Text style={s.checkmark}>✓</Text>}
+              </View>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -260,42 +281,55 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
 
-  card: {
+  stepList: {
     width: "100%",
-    backgroundColor: "#FFFDF9",
-    borderRadius: 16,
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
-    overflow: "hidden",
+    gap: 8,
     marginBottom: 16,
   },
-  stepRow: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
-  stepEmoji: { fontSize: 26, width: 34 },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  stepRowDone: { opacity: 0.66 },
+  stepIconWell: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    overflow: "hidden",
+  },
+  stepIconWellDone: {
+    backgroundColor: "#F0F0EC",
+    borderColor: "#DDD8CF",
+  },
+  stepEmoji: { fontSize: 25 },
   stepThumb: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
+    width: "100%",
+    height: "100%",
+    borderRadius: 13,
     backgroundColor: C.bg,
   },
-  stepTitle: { flex: 1, fontSize: 16, fontWeight: "500", color: C.text },
+  stepTitle: { flex: 1, fontSize: 16, fontWeight: "600", color: C.text },
   stepDone: { color: C.muted, textDecorationLine: "line-through" },
   checkbox: {
     width: 28,
     height: 28,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: "#DED8CE",
+    borderColor: "rgba(107,107,104,0.24)",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: C.bg,
+    backgroundColor: "rgba(255,255,255,0.62)",
   },
   checkboxDone: { backgroundColor: C.green, borderColor: C.green },
   checkmark: { color: C.white, fontSize: 14, fontWeight: "700" },
-  divider: {
-    height: 0.5,
-    backgroundColor: "rgba(107,107,104,0.16)",
-    marginHorizontal: 16,
-  },
 
   dotsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.border },

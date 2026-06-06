@@ -7,6 +7,12 @@ import { C } from "./_constants";
 import { t, tDemoStepPraise, tDemoStepTitle } from "./i18n";
 import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
 
+const DEMO_COLORS = [
+  { bg: "#F4FAF7", border: "#CFE9DD", well: "#DFF5EC" },
+  { bg: "#FFF8E7", border: "#F1D58E", well: "#FFE7B8" },
+  { bg: "#EEF2FF", border: "#D6DDFC", well: "#E1E7FF" },
+];
+
 // ── DemoIntroScreen ───────────────────────────────────────────────────────────
 
 export function DemoIntroScreen({
@@ -67,6 +73,7 @@ export function DemoStepScreen({
   const localizedPraise = step.id
     ? tDemoStepPraise(step.id, t(step.praiseKey))
     : step.praise;
+  const colors = DEMO_COLORS[stepIndex % DEMO_COLORS.length];
 
   function handleDone() {
     if (done) return;
@@ -89,11 +96,21 @@ export function DemoStepScreen({
           ))}
       </View>
       <TouchableOpacity
-        style={s.demoCard}
+        style={[
+          s.demoCard,
+          { backgroundColor: colors.bg, borderColor: colors.border },
+        ]}
         onPress={() => speak(localizedTitle)}
         activeOpacity={0.85}
       >
-        <Text style={s.demoEmoji}>{step.emoji}</Text>
+        <View
+          style={[
+            s.demoEmojiWell,
+            { backgroundColor: colors.well, borderColor: colors.border },
+          ]}
+        >
+          <Text style={s.demoEmoji}>{step.emoji}</Text>
+        </View>
         <Text style={s.demoTitle}>{localizedTitle}</Text>
         <Text style={s.tapHint}>{t("demo.step_tap_hint")}</Text>
       </TouchableOpacity>
@@ -102,7 +119,7 @@ export function DemoStepScreen({
           <Text style={s.btnPrimaryTxt}>{t("demo.step_done")}</Text>
         </TouchableOpacity>
       ) : (
-        <View style={s.praiseRow}>
+        <View style={[s.praiseRow, { borderColor: colors.border }]}>
           <Text style={s.praiseText}>{localizedPraise} 🎉</Text>
         </View>
       )}
@@ -182,21 +199,39 @@ const s = StyleSheet.create({
   demoCard: {
     backgroundColor: "#FFFDF9",
     borderRadius: 20,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: "#DED8CE",
     padding: 32,
     alignItems: "center",
     width: "100%",
     marginVertical: 12,
   },
-  demoEmoji: { fontSize: 64, marginBottom: 12 },
+  demoEmojiWell: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  demoEmoji: { fontSize: 58 },
   demoTitle: {
     fontSize: 22,
     fontWeight: "700",
     color: C.text,
     textAlign: "center",
   },
-  praiseRow: { marginTop: 16, alignItems: "center" },
+  praiseRow: {
+    marginTop: 16,
+    alignItems: "center",
+    backgroundColor: "#F4FAF7",
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    width: "100%",
+  },
   praiseText: { fontSize: 26, fontWeight: "800", color: C.green },
 
   demoCompleteButtons: { width: "100%", marginTop: 8 },

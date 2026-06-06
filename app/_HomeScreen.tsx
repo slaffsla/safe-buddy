@@ -49,6 +49,30 @@ interface HomeScreenProps {
   rtlChildSex?: RtlChildSex;
 }
 
+function ScheduleIcon({
+  block,
+  next = false,
+}: {
+  block: ScheduleBlock;
+  next?: boolean;
+}) {
+  return (
+    <View style={[s.scheduleEmojiWell, next && s.scheduleNextEmojiWell]}>
+      {block.imageUri ? (
+        <Image
+          source={{ uri: block.imageUri }}
+          style={s.scheduleThumb}
+          resizeMode="cover"
+        />
+      ) : (
+        <Text style={next ? s.scheduleNextEmoji : s.scheduleEmoji}>
+          {block.emoji}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 export default function HomeScreen({
   totalEver,
   completedToday,
@@ -219,9 +243,7 @@ export default function HomeScreen({
               }
               activeOpacity={0.8}
             >
-              <View style={s.scheduleEmojiWell}>
-                <Text style={s.scheduleEmoji}>{currentBlock.emoji}</Text>
-              </View>
+              <ScheduleIcon block={currentBlock} />
               <View style={s.scheduleInfo}>
                 <Text style={s.scheduleNowLabel}>{t("home.schedule_now")}</Text>
                 <Text style={s.scheduleTitle}>
@@ -249,9 +271,7 @@ export default function HomeScreen({
               }
               activeOpacity={0.8}
             >
-              <View style={[s.scheduleEmojiWell, s.scheduleNextEmojiWell]}>
-                <Text style={s.scheduleNextEmoji}>{nextBlock.emoji}</Text>
-              </View>
+              <ScheduleIcon block={nextBlock} next />
               <View style={s.scheduleInfo}>
                 <Text style={s.scheduleNextLabel}>
                   {t("home.schedule_next")}
@@ -428,10 +448,10 @@ const s = StyleSheet.create({
   msgLarge: { fontSize: 22, lineHeight: 32, marginVertical: 12 },
   morningNudgeCard: {
     width: "100%",
-    backgroundColor: "#FFFDF9",
+    backgroundColor: "#FFF8E7",
     borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
+    borderWidth: 1,
+    borderColor: "#F1D58E",
     padding: 12,
     marginBottom: 8,
     flexDirection: "row",
@@ -505,9 +525,9 @@ const s = StyleSheet.create({
   btnTallLarge: { paddingVertical: 18, borderRadius: 18, marginTop: 12 },
   btnTextLarge: { fontSize: 21 },
   btnDay: {
-    backgroundColor: "#FFFDF9",
+    backgroundColor: "#F4FAF7",
     borderRadius: 16,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: "#CFE9DD",
     paddingVertical: 13,
     paddingHorizontal: 32,
@@ -612,7 +632,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     backgroundColor: C.greenLt,
     borderRadius: 14,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: "#CFE9DD",
     padding: 14,
     gap: 12,
@@ -620,10 +640,10 @@ const s = StyleSheet.create({
   scheduleNext: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFDF9",
+    backgroundColor: "#EEF2FF",
     borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
+    borderWidth: 1,
+    borderColor: "#D6DDFC",
     padding: 12,
     gap: 12,
     opacity: 0.85,
@@ -638,13 +658,19 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    overflow: "hidden",
   },
   scheduleNextEmojiWell: {
     width: 40,
     height: 40,
     borderRadius: 13,
-    borderColor: "#DED8CE",
+    borderColor: "#D6DDFC",
     opacity: 0.92,
+  },
+  scheduleThumb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 14,
   },
   scheduleEmoji: { fontSize: 26 },
   scheduleNextEmoji: { fontSize: 22 },

@@ -48,6 +48,17 @@ const SLOT_COLORS: Record<MissionSlot, { bg: string; border: string }> = {
 };
 
 const SLOT_ORDER: MissionSlot[] = ["morning", "afternoon", "evening", "any"];
+const REWARD_COLORS = [
+  { bg: "#FFF8E7", border: "#F1D58E", well: "#FFE7B8" },
+  { bg: "#F4FAF7", border: "#CFE9DD", well: "#DFF5EC" },
+  { bg: "#EEF2FF", border: "#D6DDFC", well: "#E1E7FF" },
+  { bg: "#FFF1E9", border: "#F5C7B5", well: "#FFD9CB" },
+];
+
+function missionRowTint(slot: MissionSlot) {
+  const colors = SLOT_COLORS[slot] ?? SLOT_COLORS.any;
+  return { backgroundColor: colors.bg, borderColor: colors.border };
+}
 
 function MissionIcon({
   item,
@@ -162,6 +173,7 @@ export function MissionPickScreen({
               key={`first-mission-${m.id}`}
               style={[
                 s.mCard,
+                missionRowTint(m.slot),
                 s.firstMissionCard,
                 index === 0 && s.firstMissionCardPrimary,
                 isLargeTablet && s.firstMissionCardLarge,
@@ -273,7 +285,11 @@ export function MissionPickScreen({
                   {tGender("missionPick.encore_bonus", undefined, rtlChildSex)}
                 </T>
                 <TouchableOpacity
-                  style={[s.mCard, s.bonusCard]}
+                  style={[
+                    s.mCard,
+                    missionRowTint(bonusMission.slot),
+                    s.bonusCard,
+                  ]}
                   onPress={() => onPick(bonusMission)}
                   onLongPress={() =>
                     speak(
@@ -352,6 +368,7 @@ export function MissionPickScreen({
                       key={m.id}
                       style={[
                         s.mCard,
+                        missionRowTint(m.slot),
                         tintStyle,
                         m.stars >= 2 && s.mCardBig,
                         isDone && s.mCardDone,
@@ -477,7 +494,11 @@ export function ActiveScreen({
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[s.activeCard, isLargeTablet && s.activeCardLarge]}
+        style={[
+          s.activeCard,
+          missionRowTint(mission.slot ?? "any"),
+          isLargeTablet && s.activeCardLarge,
+        ]}
         onPress={() =>
           speak(
             `${getMissionTitle(mission.id, mission.title)}. ${getMissionSubtitle(mission.id, mission.subtitle)}`,
@@ -600,7 +621,10 @@ export function CelebrateScreen({
         {emotionalMsg}
       </T>
       <TouchableOpacity
-        style={s.earnedCard}
+        style={[
+          s.earnedCard,
+          missionRowTint(mission.slot ?? "any"),
+        ]}
         onPress={() => speak(tSpeak("buddy.done", undefined, rtlChildSex))}
         activeOpacity={0.85}
       >
@@ -688,6 +712,7 @@ export function CelebrateScreen({
 
 function RewardCard({
   reward,
+  index,
   stars,
   speak,
   onRedeem,
@@ -696,6 +721,7 @@ function RewardCard({
   rtlChildSex = "male",
 }: {
   reward: (typeof REWARDS)[number];
+  index: number;
   stars: number;
   speak: (t: string) => void;
   onRedeem: (r: any) => void;
@@ -706,6 +732,7 @@ function RewardCard({
   const [scale] = React.useState(() => new Animated.Value(1));
   const animatingRef = React.useRef(false);
   const can = stars >= reward.cost;
+  const colors = REWARD_COLORS[index % REWARD_COLORS.length];
   const title = getRewardTitle(reward.id, reward.title);
   const needText = showExactStarCost
     ? t("rewards.need_exact", { count: Math.max(0, reward.cost - stars) })
@@ -744,11 +771,22 @@ function RewardCard({
       ]}
     >
       <TouchableOpacity
-        style={[s.rCard, large && s.rCardLarge, !can && s.rLocked]}
+        style={[
+          s.rCard,
+          { backgroundColor: colors.bg, borderColor: colors.border },
+          large && s.rCardLarge,
+          !can && s.rLocked,
+        ]}
         onPress={() => speak(`${title}. ${statusText}`)}
         activeOpacity={0.7}
       >
-        <View style={[s.rEmojiWell, large && s.rEmojiWellLarge]}>
+        <View
+          style={[
+            s.rEmojiWell,
+            { backgroundColor: colors.well, borderColor: colors.border },
+            large && s.rEmojiWellLarge,
+          ]}
+        >
           <Text style={[s.rEmoji, large && s.rEmojiLarge]}>
             {reward.emoji}
           </Text>
@@ -835,10 +873,11 @@ export function RewardsScreen({
         >
           {t("rewards.title")}
         </T>
-        {list.map((r) => (
+        {list.map((r, index) => (
           <RewardCard
             key={r.id}
             reward={r}
+            index={index}
             stars={stars}
             speak={speak}
             onRedeem={onRedeem}
@@ -1113,13 +1152,13 @@ const s = StyleSheet.create({
     marginBottom: 7,
     width: "100%",
   },
-  mCardBig: { backgroundColor: "#FFF9EC", borderColor: "#E8D7A9" },
+  mCardBig: { borderColor: "#E8D7A9", borderWidth: 1 },
   mCardDone: {
     backgroundColor: "#F7F7F4",
     borderColor: "#E2DED6",
   },
-  mCardPermanent: { backgroundColor: "#F1FAF6", borderColor: "#CDE7DA" },
-  mCardRotating: { backgroundColor: "#FFF8E7", borderColor: "#F1D58E" },
+  mCardPermanent: { borderColor: "#CDE7DA", borderWidth: 1 },
+  mCardRotating: { borderColor: "#F1D58E", borderWidth: 1 },
   mEmojiWell: {
     width: 42,
     height: 42,
@@ -1229,7 +1268,7 @@ const s = StyleSheet.create({
     marginBottom: 6,
     alignSelf: "flex-start",
   },
-  bonusCard: { backgroundColor: "#FFF9EC", borderColor: "#E8D7A9" },
+  bonusCard: { borderColor: "#E8D7A9", borderWidth: 1 },
 
   celebTitle: {
     fontSize: 24,

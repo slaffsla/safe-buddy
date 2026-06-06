@@ -463,7 +463,7 @@ export function MissionPickScreen({
           )}
         </T>
       </ScrollView>
-      <View style={s.footer} pointerEvents="box-none">
+      <View style={s.footer}>
         <TouchableOpacity style={s.btnBack} onPress={onBack}>
           <Text style={s.btnBackTxt}>{t("common.back")}</Text>
         </TouchableOpacity>
@@ -721,7 +721,7 @@ export function CelebrateScreen({
           {tGender("celebrate.btn_rewards", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
-      <View style={s.footer} pointerEvents="box-none">
+      <View style={s.footer}>
         <TouchableOpacity style={s.btnBack} onPress={onBack}>
           <Text style={s.btnBackTxt}>{t("common.back")}</Text>
         </TouchableOpacity>
@@ -912,7 +912,7 @@ export function RewardsScreen({
           {tGender("rewards.hint", undefined, rtlChildSex)}
         </T>
       </ScrollView>
-      <View style={s.footer} pointerEvents="box-none">
+      <View style={s.footer}>
         <TouchableOpacity
           style={[s.btnBack, isLargeTablet && s.btnBackLarge]}
           onPress={onBack}

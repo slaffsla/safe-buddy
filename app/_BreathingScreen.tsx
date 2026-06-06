@@ -595,7 +595,7 @@ export default function BreathingScreen({
             {tGender("breathing.btn_start", undefined, rtlChildSex)}
           </Text>
         </TouchableOpacity>
-        <View style={s.footer} pointerEvents="box-none">
+        <View style={s.footer}>
           <TouchableOpacity
             style={[s.btnSecondary, s.btnSecondaryFooter]}
             onPress={onSkip}
@@ -635,7 +635,7 @@ export default function BreathingScreen({
             {comfortPromptText ? `\n${comfortPromptText}` : ""}
           </Text>
         </TouchableOpacity>
-        <View style={s.footer} pointerEvents="box-none">
+        <View style={s.footer}>
           <TouchableOpacity
             style={[s.btnSecondary, s.btnSecondaryFooter]}
             onPress={handleExit}
@@ -665,7 +665,7 @@ export default function BreathingScreen({
             <Text style={s.circleEmoji}>🌱</Text>
           </Animated.View>
         </View>
-        <View style={s.footer} pointerEvents="box-none">
+        <View style={s.footer}>
           <TouchableOpacity
             style={s.btnPrimaryFooter}
             onPress={onComplete}
@@ -776,7 +776,7 @@ export default function BreathingScreen({
         </View>
       </View>
 
-      <View style={s.footer} pointerEvents="box-none">
+      <View style={s.footer}>
         <TouchableOpacity
           style={s.btnExitFooter}
           onPress={handleExit}

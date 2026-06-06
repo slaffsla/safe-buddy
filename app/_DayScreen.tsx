@@ -321,7 +321,7 @@ export default function DayScreen({
           })
         )}
       </ScrollView>
-      <View style={s.footer} pointerEvents="box-none">
+      <View style={s.footer}>
         <TouchableOpacity
           style={s.btnBack}
           onPress={onClose}

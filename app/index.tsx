@@ -1970,7 +1970,7 @@ const s = StyleSheet.create({
   appDoodleBg: {
     ...StyleSheet.absoluteFill,
     pointerEvents: "none",
-    zIndex: 1,
+    zIndex: 0,
     overflow: "hidden",
   },
   appDoodleBgRow: {
@@ -2006,8 +2006,6 @@ const s = StyleSheet.create({
   },
   topOverlayDoodleSanctuary: {
     backgroundColor: C.bg,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "rgba(222,216,206,0.75)",
     overflow: "hidden",
   },
   topOverlayDoodleLayer: {

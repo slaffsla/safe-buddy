@@ -255,6 +255,29 @@ function applyRtlGenderSpeech(
     .replace(/\bעצמאי\b/g, "עצמאית");
 }
 
+function normalizeSpeechText(text: string) {
+  return text
+    .replace(/\bun-bear-lievably\b/gi, "unbelievably")
+    .replace(/\bun-bear-able\b/gi, "unbearable")
+    .replace(/\bhiber-napper\b/gi, "hibernapper")
+    .replace(/\bbear-sics\b/gi, "basics")
+    .replace(/\bgrowl-itar\b/gi, "guitar")
+    .replace(/\bbear-y\b/gi, "very")
+    .replace(/\bim-paw-sible\b/gi, "impossible")
+    .replace(/Мё-е-едленно/gi, "Медленно")
+    .replace(
+      /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+      "",
+    )
+    .replace(/[⭐★☆•▪︎▶️→←]/g, " ")
+    .replace(/\s*[—–]\s*/g, ", ")
+    .replace(/([A-Za-zА-Яа-яЁёא-ת])\s*-\s*([A-Za-zА-Яа-яЁёא-ת])/g, "$1 $2")
+    .replace(/\s*-\s*/g, ", ")
+    .replace(/\s*\.\s*/g, ". ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
   const voiceRef = useRef<any>(null);
   const languageRef = useRef(getTtsLanguage());
@@ -301,16 +324,7 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
       const allowDjCut = delivery === "djCut" && intent !== "instruction";
       const lang = getTtsLanguage();
       const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
-      const cleanedText = genderedText
-        .replace(
-          /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
-          "",
-        )
-        .replace(/[⭐★☆•▪︎▶️→←]/g, " ")
-        .replace(/\s*[—–-]\s*/g, ", ")
-        .replace(/\s*\.\s*/g, ". ")
-        .replace(/\s+/g, " ")
-        .trim();
+      const cleanedText = normalizeSpeechText(genderedText);
       if (!cleanedText) return;
       const now = Date.now();
       const sameAsLast = lastSpeechRef.current.text === cleanedText;

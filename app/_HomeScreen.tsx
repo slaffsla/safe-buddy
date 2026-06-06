@@ -45,6 +45,10 @@ interface HomeScreenProps {
   onBreathing?: () => void;
   showMorningNudge?: boolean;
   onMorningNudge?: () => void;
+  beforeRewardEnabled?: boolean;
+  beforeRewardRequired?: number;
+  beforeRewardCompleted?: number;
+  onBeforeReward?: () => void;
   highlightSettings?: boolean;
   rtlChildSex?: RtlChildSex;
 }
@@ -95,6 +99,10 @@ export default function HomeScreen({
   onBreathing,
   showMorningNudge,
   onMorningNudge,
+  beforeRewardEnabled,
+  beforeRewardRequired = 1,
+  beforeRewardCompleted = 0,
+  onBeforeReward,
   highlightSettings = false,
   rtlChildSex = "male",
 }: HomeScreenProps) {
@@ -211,6 +219,39 @@ export default function HomeScreen({
             </Text>
           </View>
           <Text style={s.morningNudgeCta}>{t("home.morning_nudge_cta")}</Text>
+        </TouchableOpacity>
+      )}
+      {beforeRewardEnabled && onBeforeReward && (
+        <TouchableOpacity
+          style={s.beforeRewardCard}
+          onPress={onBeforeReward}
+          activeOpacity={0.85}
+        >
+          <View style={s.beforeRewardIconWell}>
+            <Image
+              source={visualAssets.graphics.rewardGift}
+              style={s.beforeRewardIcon}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={s.morningNudgeContent}>
+            <Text style={s.morningNudgeTitle}>
+              {t("home.before_reward_title")}
+            </Text>
+            <Text style={s.morningNudgeText}>
+              {beforeRewardCompleted > 0
+                ? t("home.before_reward_progress", {
+                    done: beforeRewardCompleted,
+                    count: beforeRewardRequired,
+                  })
+                : t("home.before_reward_sub", {
+                    count: beforeRewardRequired,
+                  })}
+            </Text>
+          </View>
+          <Text style={s.morningNudgeCta}>
+            {tGender("home.before_reward_cta", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       )}
       {showSuggestion && (
@@ -470,6 +511,30 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   morningNudgeIcon: { width: 38, height: 38 },
+  beforeRewardCard: {
+    width: "100%",
+    backgroundColor: "#F4FAF7",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#CFE9DD",
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  beforeRewardIconWell: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: "#E1F5EE",
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  beforeRewardIcon: { width: 40, height: 40 },
   morningNudgeContent: { flex: 1 },
   morningNudgeTitle: {
     fontSize: 13,

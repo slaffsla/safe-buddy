@@ -454,6 +454,9 @@ export default function App() {
   const [showRedeemedAlert, setShowRedeemedAlert] = useState(false);
   const [redeemedAlertTitle, setRedeemedAlertTitle] = useState("");
   const [redeemedAlertMessage, setRedeemedAlertMessage] = useState("");
+  const [beforeRewardActive, setBeforeRewardActive] = useState(false);
+  const [beforeRewardCompleted, setBeforeRewardCompleted] = useState(0);
+  const [beforeRewardUnlocked, setBeforeRewardUnlocked] = useState(false);
 
   // Settings
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -909,6 +912,15 @@ export default function App() {
     if (!mission) return;
     const newEver = totalEver + mission.stars;
     const newTotal = totalMissions + 1;
+    const beforeRewardRequired = Math.max(
+      1,
+      Math.min(3, appSettings.beforeRewardMissionCount ?? 1),
+    );
+    const nextBeforeRewardCompleted = beforeRewardActive
+      ? beforeRewardCompleted + 1
+      : beforeRewardCompleted;
+    const unlockBeforeReward =
+      beforeRewardActive && nextBeforeRewardCompleted >= beforeRewardRequired;
     const veryExcited = shouldBeVeryExcited(newEver, prevTotalEver, false);
     const completionMood = veryExcited
       ? "very-excited"
@@ -921,6 +933,15 @@ export default function App() {
     setTotalEver(newEver);
     setCompletedToday((n) => n + 1);
     setTotalMissions(newTotal);
+    if (beforeRewardActive) {
+      setBeforeRewardCompleted(
+        Math.min(nextBeforeRewardCompleted, beforeRewardRequired),
+      );
+      if (unlockBeforeReward) {
+        setBeforeRewardActive(false);
+        setBeforeRewardUnlocked(true);
+      }
+    }
     incrementLocalUsage("missionsCompleted").catch(console.log);
     setSkipCount(0);
     setFirstMission(false);
@@ -970,6 +991,24 @@ export default function App() {
       MISSIONS_EASY[0];
     setShowSuggestion(false);
     pickMission(m);
+  }
+
+  function startBeforeRewardBridge() {
+    const required = Math.max(
+      1,
+      Math.min(3, appSettings.beforeRewardMissionCount ?? 1),
+    );
+    setBeforeRewardActive(true);
+    setBeforeRewardCompleted(0);
+    setBeforeRewardUnlocked(false);
+    speak(
+      tSpeak(
+        "beforeReward.start_speak",
+        { count: required },
+        appSettings.rtlChildSex ?? "male",
+      ),
+    );
+    setScreen("pick");
   }
 
   // ── PIN / Reward redemption ─────────────────────────────────────────────────
@@ -1470,6 +1509,12 @@ export default function App() {
             );
             setScreen("pick");
           }}
+          beforeRewardEnabled={appSettings.beforeRewardEnabled}
+          beforeRewardRequired={appSettings.beforeRewardMissionCount ?? 1}
+          beforeRewardCompleted={
+            beforeRewardActive ? beforeRewardCompleted : 0
+          }
+          onBeforeReward={startBeforeRewardBridge}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
         />
       )}
@@ -1510,7 +1555,21 @@ export default function App() {
           completedToday={completedToday}
           isVeryExcited={isVeryExcited}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
-          onContinue={() => setScreen("pick")}
+          onContinue={() => {
+            if (beforeRewardUnlocked) {
+              setBeforeRewardUnlocked(false);
+              speak(
+                tSpeak(
+                  "beforeReward.unlocked_speak",
+                  undefined,
+                  appSettings.rtlChildSex ?? "male",
+                ),
+              );
+              openRewardsScreen();
+              return;
+            }
+            setScreen("pick");
+          }}
           onRewards={openRewardsScreen}
           onBack={() => setScreen("home")}
         />

@@ -34,11 +34,19 @@
     "morning_nudge_sub": "A small start helps the day feel steadier.",
     "morning_nudge_cta": "Start",
     "morning_nudge_speak": "Morning check-in. Let's pick a mission.",
+    "before_reward_title": "Before a reward",
+    "before_reward_sub": "Missions first: {{count}}. Then the reward.",
+    "before_reward_progress": "{{done}} of {{count}} missions done.",
+    "before_reward_cta": "Start",
     "btn_pick_mission": "Pick a mission",
     "btn_my_day": "My day",
     "btn_rewards": "My rewards",
     "btn_breathing": "Breathe with Buddy",
     "btn_settings": "Parent settings"
+  },
+  "beforeReward": {
+    "start_speak": "Missions first: {{count}}. Then your reward.",
+    "unlocked_speak": "Nice work. Your reward is ready."
   },
   "onboarding": {
     "title": "Hi! What is your child's name?",
@@ -460,6 +468,11 @@
     "exact_cost_label": "Show exact stars needed",
     "exact_cost_on": "Locked rewards say “need 2 more ⭐”",
     "exact_cost_off": "Locked rewards say “a little more”",
+    "before_reward_section": "Before rewards",
+    "before_reward_label": "Before screen time mode",
+    "before_reward_sub": "Use {{count}} small mission as a calm bridge before videos, games, snacks, stories, or parent play.",
+    "before_reward_count_label": "Missions before reward",
+    "before_reward_count_sub": "Start with 1. Use 2–3 only when it still feels calm.",
     "age_profile_label": "Child profile",
     "age_profile_sub": "Auto from age",
     "age_auto": "Auto",

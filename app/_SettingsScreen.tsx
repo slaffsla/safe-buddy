@@ -142,6 +142,8 @@ export interface AppSettings {
   buddyDjModeEnabled: boolean; // optional layered Buddy tap voices
   skipSensitivity: number; // skips before gentle-reminder (default 2)
   showExactStarCost: boolean; // show exact missing stars vs "a little more"
+  beforeRewardEnabled: boolean;
+  beforeRewardMissionCount: 1 | 2 | 3;
 
   // Mission rotation
   rotationEnabled: boolean;
@@ -214,6 +216,8 @@ function buildDefaultSettings(): AppSettings {
     buddyDjModeEnabled: false,
     skipSensitivity: 2,
     showExactStarCost: false,
+    beforeRewardEnabled: false,
+    beforeRewardMissionCount: 1,
     rotationEnabled: false,
     rotationFrequency: "weekly",
     rotatingPoolSize: 2,
@@ -3784,6 +3788,66 @@ function ParentZoneView({
                 </TouchableOpacity>
               </>
             )
+          )}
+        </Card>
+
+        <View style={pz.sectionSpacer} />
+
+        <SectionHeader title={tx("settings.before_reward_section")} icon="▶" />
+        <Card>
+          <SettingRow
+            label={tx("settings.before_reward_label")}
+            sublabel={tx("settings.before_reward_sub", {
+              count: settings.beforeRewardMissionCount ?? 1,
+            })}
+          >
+            <Switch
+              value={settings.beforeRewardEnabled}
+              onValueChange={(v) => onChange({ beforeRewardEnabled: v })}
+              trackColor={{ false: C.track, true: C.green }}
+              thumbColor={C.white}
+            />
+          </SettingRow>
+          {settings.beforeRewardEnabled && (
+            <>
+              <Divider />
+              <SettingRow
+                label={tx("settings.before_reward_count_label")}
+                sublabel={tx("settings.before_reward_count_sub")}
+              >
+                <View style={u.stepperRow}>
+                  <TouchableOpacity
+                    style={u.stepperBtn}
+                    onPress={() =>
+                      onChange({
+                        beforeRewardMissionCount: Math.max(
+                          1,
+                          (settings.beforeRewardMissionCount ?? 1) - 1,
+                        ) as 1 | 2 | 3,
+                      })
+                    }
+                  >
+                    <Text style={u.stepperTxt}>−</Text>
+                  </TouchableOpacity>
+                  <Text style={u.stepperVal}>
+                    {settings.beforeRewardMissionCount ?? 1}
+                  </Text>
+                  <TouchableOpacity
+                    style={u.stepperBtn}
+                    onPress={() =>
+                      onChange({
+                        beforeRewardMissionCount: Math.min(
+                          3,
+                          (settings.beforeRewardMissionCount ?? 1) + 1,
+                        ) as 1 | 2 | 3,
+                      })
+                    }
+                  >
+                    <Text style={u.stepperTxt}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </SettingRow>
+            </>
           )}
         </Card>
 

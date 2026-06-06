@@ -34,11 +34,19 @@
     "morning_nudge_sub": "Небольшое начало помогает дню пройти спокойнее.",
     "morning_nudge_cta": "Начать",
     "morning_nudge_speak": "Утренний старт. Давай выберем миссию.",
+    "before_reward_title": "Перед наградой",
+    "before_reward_sub": "Миссий перед наградой: {{count}}.",
+    "before_reward_progress": "Готово: {{done}} из {{count}}.",
+    "before_reward_cta": "Начать",
     "btn_pick_mission": "Выбрать миссию",
     "btn_my_day": "Мой день",
     "btn_rewards": "Мои награды",
     "btn_breathing": "Подышать с Бадди",
     "btn_settings": "Настройки для родителей"
+  },
+  "beforeReward": {
+    "start_speak": "Миссий перед наградой: {{count}}. Потом награда.",
+    "unlocked_speak": "Отличная работа. Награда готова."
   },
   "onboarding": {
     "title": "Привет! Как зовут твоего ребёнка?",
@@ -467,6 +475,11 @@
     "exact_cost_label": "Показывать, сколько звёзд не хватает",
     "exact_cost_on": "Закрытые награды пишут «нужно ещё 2 ⭐»",
     "exact_cost_off": "Закрытые награды пишут «ещё немного»",
+    "before_reward_section": "Перед наградами",
+    "before_reward_label": "Режим перед экранным временем",
+    "before_reward_sub": "{{count}} маленькие миссии как спокойный мостик перед видео, играми, перекусом, сказкой или игрой с родителем.",
+    "before_reward_count_label": "Миссий перед наградой",
+    "before_reward_count_sub": "Начните с 1. Используйте 2–3 только если это всё ещё спокойно.",
     "age_profile_label": "Профиль ребёнка",
     "age_profile_sub": "Авто определяет по возрасту",
     "age_auto": "Авто",

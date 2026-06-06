@@ -141,7 +141,7 @@ export interface AppSettings {
   ttsEnabled: boolean; // text-to-speech
   buddyDjModeEnabled: boolean; // optional layered Buddy tap voices
   skipSensitivity: number; // skips before gentle-reminder (default 2)
-  showExactStarCost: boolean; // show exact cost vs "ещё немного"
+  showExactStarCost: boolean; // show exact missing stars vs "a little more"
 
   // Mission rotation
   rotationEnabled: boolean;

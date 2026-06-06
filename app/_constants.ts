@@ -990,7 +990,8 @@ export function getProgress(total: number) {
     if (m <= total) prev = m;
     else break;
   }
-  const pct = next === prev ? 1 : Math.min((total - prev) / (next - prev), 1);
+  const max = MILESTONES[MILESTONES.length - 1];
+  const pct = Math.min(total / max, 1);
   return { next, prev, pct };
 }
 

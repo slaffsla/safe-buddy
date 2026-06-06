@@ -38,14 +38,17 @@ export function T({
 
 export function ProgressBar({
   total,
+  available,
   speak,
   rtlChildSex = "male",
 }: {
   total: number;
+  available?: number;
   speak: (t: string) => void;
   rtlChildSex?: RtlChildSex;
 }) {
   const { pct, prev } = getProgress(total);
+  const redeemable = available ?? total;
   const emotionalLabel =
     total === 0
       ? tSpeak("progress.label_first", undefined, rtlChildSex)
@@ -66,7 +69,7 @@ export function ProgressBar({
         speak(
           tSpeak(
             "progress.stars_speak",
-            { label: emotionalLabel, count: total },
+            { label: emotionalLabel, available: redeemable, total },
             rtlChildSex,
           ),
         )
@@ -75,7 +78,10 @@ export function ProgressBar({
     >
       <View style={s.pbRow}>
         <Text style={s.pbEmotion}>{emotionalLabel}</Text>
-        <Text style={s.pbStars}>⭐ {total}</Text>
+        <View style={s.pbStarsPill}>
+          <Text style={s.pbStarsLabel}>{t("progress.available_short")}</Text>
+          <Text style={s.pbStars}>⭐ {redeemable}</Text>
+        </View>
       </View>
       <View
         style={[
@@ -196,7 +202,23 @@ const s = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  pbStars: { fontSize: 13, fontWeight: "700", color: C.green },
+  pbStarsPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: "#F4FAF7",
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
+  },
+  pbStarsLabel: {
+    fontSize: 10,
+    color: C.muted,
+    fontWeight: "600",
+  },
+  pbStars: { fontSize: 13, fontWeight: "800", color: C.green },
   pbTrack: {
     height: 8,
     backgroundColor: C.track,

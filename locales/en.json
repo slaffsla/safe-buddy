@@ -135,7 +135,7 @@
   "celebrate": {
     "title": "Mission done! 🎉",
     "milestone_title": "🏆 Amazing!",
-    "earned_total": "Total: ⭐ {{stars}}",
+    "earned_total": "Ready now: ⭐ {{stars}}",
     "btn_next": "Next mission",
     "btn_next_challenge": "Next challenge",
     "btn_next_adventure": "Next adventure",
@@ -241,7 +241,8 @@
     "label_lt20": "You grow stronger every day.",
     "label_lt50": "Buddy sees you growing.",
     "label_max": "You are a real star.",
-    "stars_speak": "{{label}}. Stars: {{count}}"
+    "available_short": "Ready",
+    "stars_speak": "{{label}}. Ready stars: {{available}}. Total earned: {{total}}"
   },
   "reflect": {
     "boost": "Yesterday you did \"{{title}}\". Buddy remembers."
@@ -456,9 +457,9 @@
     "nudge_sub": "Suggestion card on the home screen",
     "skip_label": "Skip reaction",
     "skip_sub": "Buddy changes after {{count}} skips in a row",
-    "exact_cost_label": "Show exact star cost",
-    "exact_cost_on": "Child sees “need 2 more ⭐”",
-    "exact_cost_off": "Child sees “a little more”",
+    "exact_cost_label": "Show exact stars needed",
+    "exact_cost_on": "Locked rewards say “need 2 more ⭐”",
+    "exact_cost_off": "Locked rewards say “a little more”",
     "age_profile_label": "Child profile",
     "age_profile_sub": "Auto from age",
     "age_auto": "Auto",

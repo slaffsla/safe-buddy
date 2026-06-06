@@ -152,7 +152,7 @@
   "celebrate": {
     "title": "המשימה הושלמה! 🎉",
     "milestone_title": "🏆 מדהים!",
-    "earned_total": "סה\"כ: ⭐ {{stars}}",
+    "earned_total": "זמין עכשיו: ⭐ {{stars}}",
     "btn_next": "המשימה הבאה",
     "btn_next_challenge": "האתגר הבא",
     "btn_next_adventure": "ההרפתקה הבאה",
@@ -272,7 +272,8 @@
     "label_lt50_female": "\u200FBuddy רואה איך את גדלה",
     "label_max": "אתה כוכב אמיתי",
     "label_max_female": "את כוכבת אמיתית",
-    "stars_speak": "{{label}}. כוכבים: {{count}}"
+    "available_short": "זמין",
+    "stars_speak": "{{label}}. כוכבים זמינים: {{available}}. סך הכול הרווחת: {{total}}"
   },
   "reflect": {
     "boost": "אתמול עשית \"{{title}}\". Buddy זוכר."
@@ -487,9 +488,9 @@
     "nudge_sub": "כרטיס הצעה במסך הבית",
     "skip_label": "תגובה לדילוג",
     "skip_sub": "\u200FBuddy משתנה אחרי {{count}} דילוגים רצופים",
-    "exact_cost_label": "הצגת עלות כוכבים מדויקת",
-    "exact_cost_on": "הילד/ה רואה \"צריך עוד 2 ⭐\"",
-    "exact_cost_off": "הילד/ה רואה \"עוד קצת\"",
+    "exact_cost_label": "הצגת כוכבים חסרים במדויק",
+    "exact_cost_on": "פרסים נעולים מציגים \"צריך עוד 2 ⭐\"",
+    "exact_cost_off": "פרסים נעולים מציגים \"עוד קצת\"",
     "age_profile_label": "פרופיל ילד/ה",
     "age_profile_sub": "אוטומטי לפי גיל",
     "age_auto": "אוטומטי",

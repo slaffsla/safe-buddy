@@ -26,7 +26,7 @@
   "home": {
     "greeting_with_name": "היי {{name}}!",
     "greeting": "היי!",
-    "idle_calm": "הכול בסדר. אני כאן איתך",
+    "idle_calm": "הכול בסדר. אני כאן.",
     "schedule_now": "עכשיו",
     "schedule_next": "אחר כך",
     "schedule_until": "עד {{time}}",
@@ -51,25 +51,31 @@
     "age_placeholder": "גיל",
     "start_btn": "מתחילים את ההרפתקה",
     "name_required": "נא להזין את שם הילד/ה",
-    "welcome_greeting": "היי {{name}}. שמח לראות אותך",
-    "welcome_greeting_female": "היי {{name}}. שמחה לראות אותך",
+    "welcome_greeting": "היי {{name}}. שמח להיפגש",
+    "welcome_greeting_female": "היי {{name}}. שמחה להיפגש",
     "save_error": "השמירה נכשלה",
     "meet_title": "היי! אני Buddy.",
-    "meet_prompt": "לטפו אותי בעדינות.",
+    "meet_prompt": "לטף אותי בעדינות.",
+    "meet_prompt_female": "לטפי אותי בעדינות.",
     "meet_after_pet_title": "זה היה נעים.",
-    "meet_after_pet_sub": "אני יכול להישאר איתך בזמן שמרוויחים כוכבים קטנים.",
+    "meet_after_pet_sub": "אני יכול להישאר כאן בזמן שאתה מרוויח כוכבים קטנים.",
+    "meet_after_pet_sub_female": "אני יכול להישאר כאן בזמן שאת מרוויחה כוכבים קטנים.",
     "name_title": "איך לקרוא לך?",
     "meet_next": "המשך",
+    "meet_next_female": "המשיכי",
     "tiny_fact_bear_sleep": "ידעת שדובים יכולים לישון כל החורף?",
     "name_sub": "Buddy יזכור את השם שלך.",
     "name_continue": "זה אני!",
-    "age_title": "בן/בת כמה את/ה?",
+    "age_title": "בן כמה אתה?",
+    "age_title_female": "בת כמה את?",
     "age_sub": "אפשר לדלג על זה עכשיו.",
     "age_continue": "המשך",
+    "age_continue_female": "המשיכי",
     "age_skip": "לא עכשיו",
     "ready_title": "נעים מאוד להכיר.",
     "ready_title_named": "נעים מאוד להכיר, {{name}}.",
-    "ready_sub": "בואו נרוויח את הכוכב הראשון שלך!",
+    "ready_sub": "בוא נרוויח כוכב ראשון!",
+    "ready_sub_female": "בואי נרוויח כוכב ראשון!",
     "ready_start": "להתחיל"
   },
   "parent_onboarding": {
@@ -113,17 +119,17 @@
     "praise_3": "מעולה"
   },
   "demoSteps": {
-    "d1": { "title": "מחא כפיים", "praise": "מעולה" },
-    "d2": { "title": "קפוץ פעם אחת", "praise": "יפה" },
-    "d3": { "title": "גע באף שלך", "praise": "מעולה" }
+    "d1": { "title": "מחיאת כפיים", "praise": "מעולה" },
+    "d2": { "title": "קפיצה אחת", "praise": "יפה" },
+    "d3": { "title": "לגעת באף", "praise": "מעולה" }
   },
   "missionPick": {
     "title": "בחר משימה",
     "title_female": "בחרי משימה",
     "first_title": "בחר משימה קטנה ראשונה",
     "first_title_female": "בחרי משימה קטנה ראשונה",
-    "first_sub": "בחר אחת. Buddy יישאר איתך.",
-    "first_sub_female": "בחרי אחת. Buddy יישאר איתך.",
+    "first_sub": "בחר אחת. Buddy יישאר כאן.",
+    "first_sub_female": "בחרי אחת. Buddy יישאר כאן.",
     "first_hint": "לחצו על כרטיס כדי להתחיל. לחיצה ארוכה תשמיע אותו קודם.",
     "encore_title": "עשית הכול להיום!",
     "encore_sub": "מחר Buddy יביא משימות חדשות",
@@ -154,12 +160,13 @@
     "btn_rewards": "לראות פרסים"
   },
   "rewards": {
-    "title": "הפרסים שלך",
+    "title": "פרסים",
     "ready": "קח!",
     "ready_female": "קחי!",
     "need_exact": "צריך עוד {{count}} ⭐",
     "need_vague": "עוד קצת",
-    "hint": "לחצו על פרס כדי לשמוע",
+    "hint": "לחץ על פרס כדי לשמוע",
+    "hint_female": "לחצי על פרס כדי לשמוע",
     "redeemed_alert_title": "🎉 פרס נפתח!",
     "redeemed_speak": " כל הכבוד!",
     "redeemed_alert_close": "בסדר"
@@ -243,7 +250,7 @@
     "guidance_on_a11y": "הפעלת הנחיית נשימה קולית",
     "guidance_off_a11y": "כיבוי הנחיית נשימה קולית",
     "celeb_title": "כל הכבוד",
-    "celeb_sub": "זה מרגיע אותך ואת Buddy"
+    "celeb_sub": "זה מרגיע גם את Buddy"
   },
   "day": {
     "title": "היום שלי",
@@ -274,7 +281,7 @@
     "no": "לא עכשיו"
   },
   "progression": {
-    "first_mission": "המשימה הראשונה שלך",
+    "first_mission": "משימה ראשונה",
     "started_today": "התחלת היום",
     "two_today": "שתי משימות היום",
     "three_today": "שלוש משימות היום",
@@ -282,7 +289,7 @@
     "more_today_female": "התקדמות יפה מאוד",
     "five_total": "חמש משימות בסך הכול",
     "ten_total": "עשר משימות",
-    "default": "אני רואה את ההתקדמות שלך"
+    "default": "אני רואה התקדמות יפה"
   },
   "milestone": {
     "ten": "עשרה כוכבים! התקדמות נהדרת",

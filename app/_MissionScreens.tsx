@@ -599,8 +599,8 @@ export function CelebrateScreen({
   }, [completedToday, mission, totalEver]);
   if (!mission) return null;
   const emotionalMsg = isVeryExcited
-    ? getMilestoneMessage(totalEver)
-    : getProgressionMessage(totalMissions, completedToday);
+    ? getMilestoneMessage(totalEver, rtlChildSex)
+    : getProgressionMessage(totalMissions, completedToday, rtlChildSex);
 
   return (
     <View
@@ -871,7 +871,7 @@ export function RewardsScreen({
           style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]}
           speak={speak}
         >
-          {t("rewards.title")}
+          {tGender("rewards.title", undefined, rtlChildSex)}
         </T>
         {list.map((r, index) => (
           <RewardCard
@@ -887,7 +887,7 @@ export function RewardsScreen({
           />
         ))}
         <T style={s.hint} speak={speak}>
-          {t("rewards.hint")}
+          {tGender("rewards.hint", undefined, rtlChildSex)}
         </T>
       </ScrollView>
       <View style={s.footer} pointerEvents="box-none">

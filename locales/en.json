@@ -149,7 +149,7 @@
     "hint": "Tap a reward to hear",
     "redeemed_alert_title": "🎉 Reward unlocked!",
     "redeemed_speak": "Well done. You earned it.",
-    "redeemed_speak_female": "I'm proud of you, sweetheart!",
+    "redeemed_speak_female": "Well done. You earned it.",
     "redeemed_alert_close": "OK"
   },
   "reward_titles": {

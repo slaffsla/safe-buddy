@@ -155,7 +155,7 @@ export default function HomeScreen({
   const suggestion = getDailySuggestion();
   const progressMsg =
     totalMissions > 0
-      ? getProgressionMessage(totalMissions, completedToday)
+      ? getProgressionMessage(totalMissions, completedToday, rtlChildSex)
       : null;
 
   return (

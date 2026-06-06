@@ -1,6 +1,6 @@
 // _ChildOnboarding.tsx — first child-facing Buddy bonding flow.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
   KeyboardAvoidingView,
@@ -17,7 +17,7 @@ import { visualAssets } from "../lib/visualAssets";
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
 import { SpeakFn } from "./_speechTypes";
-import { RtlChildSex, t } from "./i18n";
+import { RtlChildSex, t, tGender } from "./i18n";
 
 type ChildOnboardingStep = "meet" | "name" | "age" | "ready";
 
@@ -67,6 +67,11 @@ export default function ChildOnboarding({
   const lastInteractionAtRef = useRef(0);
   const postPetSequenceTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const speakRef = useRef(speak);
+  const tg = useCallback(
+    (key: string, params?: Record<string, unknown>) =>
+      tGender(key, params, rtlChildSex),
+    [rtlChildSex],
+  );
 
   const buddySize = isLargeTablet
     ? 340
@@ -109,16 +114,16 @@ export default function ChildOnboarding({
   const currentLine = useMemo(() => {
     if (step === "meet") {
       return firstPetDone
-        ? t("onboarding.meet_after_pet_title")
-        : t("onboarding.meet_title");
+        ? tg("onboarding.meet_after_pet_title")
+        : tg("onboarding.meet_title");
     }
-    if (step === "name") return t("onboarding.name_title");
-    if (step === "age") return t("onboarding.age_title");
+    if (step === "name") return tg("onboarding.name_title");
+    if (step === "age") return tg("onboarding.age_title");
     const trimmed = name.trim();
     return trimmed
-      ? t("onboarding.ready_title_named", { name: trimmed })
-      : t("onboarding.ready_title");
-  }, [firstPetDone, name, step]);
+      ? tg("onboarding.ready_title_named", { name: trimmed })
+      : tg("onboarding.ready_title");
+  }, [firstPetDone, name, step, tg]);
 
   useEffect(() => {
     speakRef.current = speak;
@@ -155,7 +160,7 @@ export default function ChildOnboarding({
     factSpokenRef.current = false;
     factAllowedRef.current = false;
     const initialFactDelay =
-      estimateSpeechMs(t("onboarding.meet_title")) + 1000;
+      estimateSpeechMs(tg("onboarding.meet_title")) + 1000;
     postPetSequenceTimersRef.current = [
       setTimeout(() => {
         factAllowedRef.current = true;
@@ -191,17 +196,17 @@ export default function ChildOnboarding({
       if (idlePoll) clearInterval(idlePoll);
       clearPostPetSequenceTimers();
     };
-  }, [step]);
+  }, [step, tg]);
 
   useEffect(() => {
     if (step !== "ready") return;
     if (readySubSpokenRef.current) return;
     readySubSpokenRef.current = true;
     const readySubTimer = setTimeout(() => {
-      speakRef.current(t("onboarding.ready_sub"));
+      speakRef.current(tg("onboarding.ready_sub"));
     }, estimateSpeechMs(currentLine) + 220);
     return () => clearTimeout(readySubTimer);
-  }, [currentLine, step]);
+  }, [currentLine, step, tg]);
 
   function markInteraction() {
     lastInteractionAtRef.current = Date.now();
@@ -216,8 +221,8 @@ export default function ChildOnboarding({
     if (!firstPetSpokenRef.current) {
       firstPetSpokenRef.current = true;
       clearPostPetSequenceTimers();
-      const afterPetTitle = t("onboarding.meet_after_pet_title");
-      const companionLine = t("onboarding.meet_after_pet_sub");
+      const afterPetTitle = tg("onboarding.meet_after_pet_title");
+      const companionLine = tg("onboarding.meet_after_pet_sub");
       const companionDelay = estimateSpeechMs(afterPetTitle) + 220;
       const factDelay = companionDelay + estimateSpeechMs(companionLine) + 1000;
       postPetSequenceTimersRef.current = [
@@ -270,7 +275,7 @@ export default function ChildOnboarding({
                   markInteraction();
                   speak(
                     firstPetDone
-                      ? t("onboarding.meet_after_pet_sub")
+                      ? tg("onboarding.meet_after_pet_sub")
                       : currentLine,
                   );
                 }}
@@ -292,13 +297,13 @@ export default function ChildOnboarding({
             </View>
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
               {firstPetDone
-                ? t("onboarding.meet_after_pet_title")
-                : t("onboarding.meet_title")}
+                ? tg("onboarding.meet_after_pet_title")
+                : tg("onboarding.meet_title")}
             </Text>
             <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
               {firstPetDone
-                ? t("onboarding.meet_after_pet_sub")
-                : t("onboarding.meet_prompt")}
+                ? tg("onboarding.meet_after_pet_sub")
+                : tg("onboarding.meet_prompt")}
             </Text>
             {firstPetDone && (
               <TouchableOpacity
@@ -312,7 +317,7 @@ export default function ChildOnboarding({
                     isLargeTablet && s.primaryBtnTextLarge,
                   ]}
                 >
-                  {t("onboarding.meet_next")}
+                  {tg("onboarding.meet_next")}
                 </Text>
               </TouchableOpacity>
             )}
@@ -328,10 +333,10 @@ export default function ChildOnboarding({
               size={Math.round(buddySize * 0.7)}
             />
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
-              {t("onboarding.name_title")}
+              {tg("onboarding.name_title")}
             </Text>
             <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
-              {t("onboarding.name_sub")}
+              {tg("onboarding.name_sub")}
             </Text>
             <TextInput
               style={[
@@ -339,7 +344,7 @@ export default function ChildOnboarding({
                 { maxWidth: formMaxWidth },
                 isLargeTablet && s.inputLarge,
               ]}
-              placeholder={t("onboarding.name_placeholder")}
+              placeholder={tg("onboarding.name_placeholder")}
               placeholderTextColor={C.muted}
               value={name}
               onChangeText={setName}
@@ -366,7 +371,7 @@ export default function ChildOnboarding({
                   isLargeTablet && s.primaryBtnTextLarge,
                 ]}
               >
-                {t("onboarding.name_continue")}
+                {tg("onboarding.name_continue")}
               </Text>
             </TouchableOpacity>
           </>
@@ -381,10 +386,10 @@ export default function ChildOnboarding({
               size={Math.round(buddySize * 0.62)}
             />
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
-              {t("onboarding.age_title")}
+              {tg("onboarding.age_title")}
             </Text>
             <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
-              {t("onboarding.age_sub")}
+              {tg("onboarding.age_sub")}
             </Text>
             <View style={[s.ageGrid, { maxWidth: formMaxWidth }]}>
               {AGE_OPTIONS.map((option) => {
@@ -424,7 +429,7 @@ export default function ChildOnboarding({
                   isLargeTablet && s.primaryBtnTextLarge,
                 ]}
               >
-                {t("onboarding.age_continue")}
+                {tg("onboarding.age_continue")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -437,7 +442,7 @@ export default function ChildOnboarding({
               <Text
                 style={[s.textBtnText, isLargeTablet && s.textBtnTextLarge]}
               >
-                {t("onboarding.age_skip")}
+                {tg("onboarding.age_skip")}
               </Text>
             </TouchableOpacity>
           </>
@@ -454,11 +459,11 @@ export default function ChildOnboarding({
             />
             <Text style={[s.title, isLargeTablet && s.titleLarge]}>
               {name.trim()
-                ? t("onboarding.ready_title_named", { name: name.trim() })
-                : t("onboarding.ready_title")}
+                ? tg("onboarding.ready_title_named", { name: name.trim() })
+                : tg("onboarding.ready_title")}
             </Text>
             <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
-              {t("onboarding.ready_sub")}
+              {tg("onboarding.ready_sub")}
             </Text>
             <TouchableOpacity
               style={[s.primaryBtn, isLargeTablet && s.primaryBtnLarge]}
@@ -471,7 +476,7 @@ export default function ChildOnboarding({
                   isLargeTablet && s.primaryBtnTextLarge,
                 ]}
               >
-                {t("onboarding.ready_start")}
+                {tg("onboarding.ready_start")}
               </Text>
             </TouchableOpacity>
           </>

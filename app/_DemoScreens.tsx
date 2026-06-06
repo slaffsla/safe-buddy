@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { T } from "./_SharedUI";
 import { C } from "./_constants";
-import { t, tDemoStepPraise, tDemoStepTitle } from "./i18n";
+import { RtlChildSex, t, tDemoStepPraise, tDemoStepTitle, tGender } from "./i18n";
 import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
 
 const DEMO_COLORS = [
@@ -19,22 +19,26 @@ export function DemoIntroScreen({
   onStart,
   onSkip,
   speak,
+  rtlChildSex = "male",
 }: {
   onStart: () => void;
   onSkip: () => void;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   return (
     <ScrollView contentContainerStyle={s.screen}>
       <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <T style={s.msg} speak={speak}>
-        {t("demo.intro_title")}
+        {tGender("demo.intro_title", undefined, rtlChildSex)}
       </T>
       <T style={s.sub} speak={speak}>
-        {t("demo.intro_sub")}
+        {tGender("demo.intro_sub", undefined, rtlChildSex)}
       </T>
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>{t("demo.intro_start")}</Text>
+        <Text style={s.btnPrimaryTxt}>
+          {tGender("demo.intro_start", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
         <Text style={s.btnSkipTxt}>{t("common.skip")}</Text>
@@ -51,6 +55,7 @@ export function DemoStepScreen({
   totalSteps,
   onDone,
   speak,
+  rtlChildSex = "male",
 }: {
   step: {
     id?: string;
@@ -63,6 +68,7 @@ export function DemoStepScreen({
   totalSteps: number;
   onDone: () => void;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   const [done, setDone] = useState(false);
   // Resolve translated copy with the canonical Russian title/praise as fallback
@@ -112,11 +118,15 @@ export function DemoStepScreen({
           <Text style={s.demoEmoji}>{step.emoji}</Text>
         </View>
         <Text style={s.demoTitle}>{localizedTitle}</Text>
-        <Text style={s.tapHint}>{t("demo.step_tap_hint")}</Text>
+        <Text style={s.tapHint}>
+          {tGender("demo.step_tap_hint", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       {!done ? (
         <TouchableOpacity style={s.btnPrimary} onPress={handleDone}>
-          <Text style={s.btnPrimaryTxt}>{t("demo.step_done")}</Text>
+          <Text style={s.btnPrimaryTxt}>
+            {tGender("demo.step_done", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       ) : (
         <View style={[s.praiseRow, { borderColor: colors.border }]}>
@@ -133,24 +143,32 @@ export function DemoCompleteScreen({
   onGoToMissions,
   onGoHome,
   speak,
+  rtlChildSex = "male",
 }: {
   onGoToMissions: () => void;
   onGoHome: () => void;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   return (
     <ScrollView contentContainerStyle={s.screen}>
       <View style={{ height: BUDDY_CONTENT_SPACER }} />
-      <Text style={s.celebTitle}>{t("demo.complete_title")}</Text>
+      <Text style={s.celebTitle}>
+        {tGender("demo.complete_title", undefined, rtlChildSex)}
+      </Text>
       <T style={s.msg} speak={speak}>
-        {t("demo.complete_msg")}
+        {tGender("demo.complete_msg", undefined, rtlChildSex)}
       </T>
       <View style={s.demoCompleteButtons}>
         <TouchableOpacity style={s.btnPrimary} onPress={onGoToMissions}>
-          <Text style={s.btnPrimaryTxt}>{t("demo.complete_yes")}</Text>
+          <Text style={s.btnPrimaryTxt}>
+            {tGender("demo.complete_yes", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.btnSecondary} onPress={onGoHome}>
-          <Text style={s.btnSecondaryTxt}>{t("demo.complete_later")}</Text>
+          <Text style={s.btnSecondaryTxt}>
+            {tGender("demo.complete_later", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

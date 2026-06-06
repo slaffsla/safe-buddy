@@ -47,6 +47,7 @@
     "start_btn": "Начать приключение",
     "name_required": "Пожалуйста, введи имя ребёнка",
     "welcome_greeting": "Привет, {{name}}! Рад тебя видеть!",
+    "welcome_greeting_female": "Привет, {{name}}! Рада тебя видеть!",
     "save_error": "Ошибка сохранения",
     "meet_title": "Привет! Я Бадди.",
     "meet_prompt": "Погладь меня нежно.",
@@ -62,7 +63,9 @@
     "age_continue": "Дальше",
     "age_skip": "Не сейчас",
     "ready_title": "Очень рад знакомству.",
+    "ready_title_female": "Очень рада знакомству.",
     "ready_title_named": "Очень рад знакомству, {{name}}.",
+    "ready_title_named_female": "Очень рада знакомству, {{name}}.",
     "ready_sub": "Давай заработаем твою первую звезду!",
     "ready_start": "Начать"
   },
@@ -96,6 +99,7 @@
     "intro_sub": "Три простых задания — для разминки",
     "intro_start": "▶ Начать разминку",
     "step_done": "✅ Сделал!",
+    "step_done_female": "✅ Сделала!",
     "step_tap_hint": "нажми чтобы услышать",
     "complete_title": "Ты справился! 🎉",
     "complete_title_female": "Ты справилась! 🎉",
@@ -261,6 +265,7 @@
   "progression": {
     "first_mission": "Первая миссия",
     "started_today": "Ты начал сегодня",
+    "started_today_female": "Ты начала сегодня",
     "two_today": "Две миссии сегодня",
     "three_today": "Три миссии сегодня",
     "more_today": "Ты продолжаешь",

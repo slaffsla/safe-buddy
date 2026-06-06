@@ -1390,6 +1390,7 @@ export default function App() {
       {visibleScreen === "demo_intro" && (
         <DemoIntroScreen
           speak={speak}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onStart={() => {
             setDemoStep(0);
             setScreen("demo_step");
@@ -1405,6 +1406,7 @@ export default function App() {
         <DemoStepScreen
           key={demoStep}
           speak={speak}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           step={DEMO_STEPS[demoStep]}
           stepIndex={demoStep}
           totalSteps={DEMO_STEPS.length}
@@ -1415,6 +1417,7 @@ export default function App() {
       {visibleScreen === "demo_complete" && (
         <DemoCompleteScreen
           speak={speak}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onGoToMissions={async () => {
             await finishDemo();
             setScreen("pick");

@@ -123,10 +123,14 @@ export default function MorningRoutineScreen({
         <Text style={s.celebTitle}>{t("morning.celeb_title")}</Text>
         <Text style={s.celebSub}>
           {stars === 1
-            ? t("morning.earned_one")
-            : t("morning.earned_many", {
-                stars: Array(stars).fill("⭐").join(""),
-              })}
+            ? tGender("morning.earned_one", undefined, rtlChildSex)
+            : tGender(
+                "morning.earned_many",
+                {
+                  stars: Array(stars).fill("⭐").join(""),
+                },
+                rtlChildSex,
+              )}
         </Text>
       </View>
     );

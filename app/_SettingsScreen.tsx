@@ -16,6 +16,8 @@
 //   )}
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system/legacy";
+import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -34,6 +36,23 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  DEFAULT_LOCAL_USAGE,
+  incrementLocalUsage,
+  loadLocalUsage,
+  LocalUsage,
+  resetLocalUsage,
+} from "../localUsage";
+import ParentOnboarding from "./_ParentOnboarding";
+import { CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
+import { visualAssets } from "../lib/visualAssets";
+import {
+  CHILD_PREFERENCES_MAX,
+  ChildPreference,
+  ChildPreferenceFrequency,
+  ChildPreferenceKind,
+  normalizeChildPreferences,
+} from "../lib/childPreferences";
+import {
   DEFAULT_MISSION_CONFIGS,
   DEFAULT_MORNING_STEPS,
   DEFAULT_REWARD_CONFIGS,
@@ -45,11 +64,7 @@ import {
   effectiveRewardCost,
   effectiveRewardEnabled,
   getBuddyImage,
-  getMissionSubtitle,
-  getMissionTitle,
   getMorningStepTitle,
-  getRewardTitle,
-  getScheduleTitle,
   getStoredMissionTitle,
   MISSION_POOL,
   MissionConfig,
@@ -66,19 +81,14 @@ import {
   ScheduleBlock,
 } from "./_constants";
 import {
-  DEFAULT_LOCAL_USAGE,
-  incrementLocalUsage,
-  loadLocalUsage,
-  LocalUsage,
-  resetLocalUsage,
-} from "./_localUsage";
-import {
   AppLocale,
   getAppLocale,
+  i18n,
   isRtl,
   normalizeAppLocale,
   setAppLocale,
   t,
+  tGender,
 } from "./i18n";
 
 // Custom items added by parent in the Parent Zone are stored in settings.
@@ -129,8 +139,13 @@ export interface AppSettings {
   breathingMusicEnabled: boolean; // ambient music during breathing sessions
   breathingGuidanceEnabled: boolean; // spoken breathing phase prompts
   ttsEnabled: boolean; // text-to-speech
+  buddyDjModeEnabled: boolean; // optional layered Buddy tap voices
   skipSensitivity: number; // skips before gentle-reminder (default 2)
-  showExactStarCost: boolean; // show exact cost vs "ещё немного"
+  showExactStarCost: boolean; // show exact missing stars vs "a little more"
+  beforeRewardEnabled: boolean;
+  beforeRewardMissionCount: 1 | 2 | 3;
+  beforeRewardMissionIds: number[];
+  beforeRewardRewardIds: number[];
 
   // Mission rotation
   rotationEnabled: boolean;
@@ -166,6 +181,10 @@ export interface AppSettings {
   customMissions: PoolMission[];
   customRewards: Reward[];
 
+  // Parent-authored preference tokens. These are typed inputs for later
+  // deterministic reactions; they are not open-ended generation prompts.
+  childPreferences: ChildPreference[];
+
   // Day schedule (Option A — "what's now" card on HomeScreen; Option B reserved)
   scheduleEnabled: boolean;
   scheduleBlocks: ScheduleBlock[];
@@ -196,8 +215,13 @@ function buildDefaultSettings(): AppSettings {
     breathingMusicEnabled: false,
     breathingGuidanceEnabled: true,
     ttsEnabled: true,
+    buddyDjModeEnabled: false,
     skipSensitivity: 2,
     showExactStarCost: false,
+    beforeRewardEnabled: false,
+    beforeRewardMissionCount: 1,
+    beforeRewardMissionIds: [],
+    beforeRewardRewardIds: [],
     rotationEnabled: false,
     rotationFrequency: "weekly",
     rotatingPoolSize: 2,
@@ -216,6 +240,7 @@ function buildDefaultSettings(): AppSettings {
     rewardOverrides: {},
     customMissions: [],
     customRewards: [],
+    childPreferences: [],
     scheduleEnabled: true,
     scheduleBlocks: DEFAULT_SCHEDULE,
     morningReminderEnabled: false,
@@ -224,6 +249,203 @@ function buildDefaultSettings(): AppSettings {
 }
 
 export const DEFAULT_SETTINGS = buildDefaultSettings();
+
+function normalizeMorningSteps(value: unknown): MorningStep[] {
+  const source = Array.isArray(value) ? value : DEFAULT_MORNING_STEPS;
+  const numericIds = source
+    .map((step) =>
+      typeof step?.id === "number" && Number.isFinite(step.id)
+        ? Math.trunc(step.id)
+        : 0,
+    )
+    .filter((id) => id > 0);
+  let nextId =
+    Math.max(0, ...DEFAULT_MORNING_STEPS.map((s) => s.id), ...numericIds) + 1;
+  const used = new Set<number>();
+
+  const normalized = source
+    .map((raw) => {
+      if (!raw || typeof raw !== "object") return null;
+      const step = raw as Partial<MorningStep>;
+      const title =
+        typeof step.title === "string" && step.title.trim()
+          ? step.title.trim()
+          : "";
+      if (!title) return null;
+
+      const emoji =
+        typeof step.emoji === "string" && step.emoji.trim()
+          ? step.emoji.trim()
+          : "✅";
+      const imageUri =
+        typeof step.imageUri === "string" && step.imageUri.trim()
+          ? step.imageUri.trim()
+          : undefined;
+      let id =
+        typeof step.id === "number" && Number.isFinite(step.id)
+          ? Math.trunc(step.id)
+          : 0;
+
+      if (id <= 0 || used.has(id)) {
+        while (used.has(nextId)) nextId += 1;
+        id = nextId;
+        nextId += 1;
+      }
+      used.add(id);
+
+      return { id, title, emoji, ...(imageUri ? { imageUri } : {}) };
+    })
+    .filter((step): step is MorningStep => !!step);
+
+  return normalized.length > 0
+    ? normalized
+    : DEFAULT_MORNING_STEPS.map((step) => ({ ...step }));
+}
+
+function normalizeImageUri(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function normalizeScheduleBlocks(value: unknown): ScheduleBlock[] {
+  const source = Array.isArray(value) ? value : DEFAULT_SCHEDULE;
+  return source
+    .map((raw) => {
+      if (!raw || typeof raw !== "object") return null;
+      const block = raw as Partial<ScheduleBlock>;
+      const id =
+        typeof block.id === "number" && Number.isFinite(block.id)
+          ? Math.trunc(block.id)
+          : 0;
+      const title =
+        typeof block.title === "string" && block.title.trim()
+          ? block.title.trim()
+          : "";
+      const emoji =
+        typeof block.emoji === "string" && block.emoji.trim()
+          ? block.emoji.trim()
+          : "⏰";
+      const startTime =
+        typeof block.startTime === "string" ? block.startTime.trim() : "";
+      const endTime =
+        typeof block.endTime === "string" ? block.endTime.trim() : "";
+      if (id <= 0 || !title || !startTime || !endTime) return null;
+      const normalized: ScheduleBlock = {
+        id,
+        title,
+        emoji,
+        startTime,
+        endTime,
+        weekdays: typeof block.weekdays === "boolean" ? block.weekdays : true,
+        weekends: typeof block.weekends === "boolean" ? block.weekends : true,
+      };
+      const imageUri = normalizeImageUri(block.imageUri);
+      if (imageUri) normalized.imageUri = imageUri;
+      if (
+        typeof block.missionId === "number" &&
+        Number.isFinite(block.missionId)
+      ) {
+        normalized.missionId = Math.trunc(block.missionId);
+      }
+      if (typeof block.color === "string") normalized.color = block.color;
+      return normalized;
+    })
+    .filter((block): block is ScheduleBlock => !!block);
+}
+
+function normalizeCustomMissions(value: unknown): PoolMission[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((raw) => {
+      if (!raw || typeof raw !== "object") return null;
+      const mission = raw as Partial<PoolMission>;
+      const id =
+        typeof mission.id === "number" && Number.isFinite(mission.id)
+          ? Math.trunc(mission.id)
+          : 0;
+      const title =
+        typeof mission.title === "string" && mission.title.trim()
+          ? mission.title.trim()
+          : "";
+      if (id <= 0 || !title) return null;
+      const normalized: PoolMission = {
+        id,
+        title,
+        subtitle:
+          typeof mission.subtitle === "string" && mission.subtitle.trim()
+            ? mission.subtitle.trim()
+            : "",
+        stars: mission.stars === 2 ? 2 : 1,
+        emoji:
+          typeof mission.emoji === "string" && mission.emoji.trim()
+            ? mission.emoji.trim()
+            : "✨",
+        category:
+          mission.category === "movement" ||
+          mission.category === "selfcare" ||
+          mission.category === "tidy" ||
+          mission.category === "social" ||
+          mission.category === "calm"
+            ? mission.category
+            : "movement",
+        slot:
+          mission.slot === "morning" ||
+          mission.slot === "afternoon" ||
+          mission.slot === "evening" ||
+          mission.slot === "any"
+            ? mission.slot
+            : "any",
+        weekdayDefault:
+          typeof mission.weekdayDefault === "boolean"
+            ? mission.weekdayDefault
+            : true,
+        weekendDefault:
+          typeof mission.weekendDefault === "boolean"
+            ? mission.weekendDefault
+            : true,
+      };
+      const imageUri = normalizeImageUri(mission.imageUri);
+      if (imageUri) normalized.imageUri = imageUri;
+      return normalized;
+    })
+    .filter((mission): mission is PoolMission => !!mission);
+}
+
+async function pickVisualImageUri(
+  tx: (key: string, params?: Record<string, unknown>) => string,
+): Promise<string | null> {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) {
+    Alert.alert(
+      tx("settings.image_permission_title"),
+      tx("settings.image_permission_msg"),
+    );
+    return null;
+  }
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ["images"],
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.72,
+    exif: false,
+  });
+  if (result.canceled || !result.assets?.[0]?.uri) return null;
+  return persistPickedImage(result.assets[0].uri);
+}
+
+async function persistPickedImage(uri: string): Promise<string> {
+  const documentDirectory = FileSystem.documentDirectory;
+  if (!documentDirectory || uri.startsWith(documentDirectory)) return uri;
+
+  const imageDir = `${documentDirectory}item-images/`;
+  await FileSystem.makeDirectoryAsync(imageDir, { intermediates: true });
+  const extensionMatch = /\.(png|jpe?g|webp)$/i.exec(uri.split("?")[0] ?? "");
+  const extension = extensionMatch?.[1]?.toLowerCase() ?? "jpg";
+  const targetUri = `${imageDir}${Date.now()}-${Math.round(
+    Math.random() * 1_000_000,
+  )}.${extension}`;
+  await FileSystem.copyAsync({ from: uri, to: targetUri });
+  return targetUri;
+}
 
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────
 // All settings stored as one JSON blob for atomicity.
@@ -371,6 +593,32 @@ export async function loadSettings(): Promise<AppSettings> {
       ) {
         merged.tinyFactsMinMinutesManual = true;
       }
+      if (
+        typeof parsedAny.buddyDjModeEnabled === "undefined" &&
+        typeof parsedAny.playfulTtsEnabled === "boolean"
+      ) {
+        merged.buddyDjModeEnabled = parsedAny.playfulTtsEnabled;
+      }
+      merged.morningSteps = normalizeMorningSteps(merged.morningSteps);
+      merged.scheduleBlocks = normalizeScheduleBlocks(merged.scheduleBlocks);
+      merged.customMissions = normalizeCustomMissions(merged.customMissions);
+      merged.beforeRewardMissionIds = Array.isArray(
+        merged.beforeRewardMissionIds,
+      )
+        ? merged.beforeRewardMissionIds.filter(
+            (id: unknown): id is number => typeof id === "number",
+          )
+        : [];
+      merged.beforeRewardRewardIds = Array.isArray(
+        merged.beforeRewardRewardIds,
+      )
+        ? merged.beforeRewardRewardIds.filter(
+            (id: unknown): id is number => typeof id === "number",
+          )
+        : [];
+      merged.childPreferences = normalizeChildPreferences(
+        merged.childPreferences,
+      );
 
       return merged;
     }
@@ -387,6 +635,14 @@ export async function loadSettings(): Promise<AppSettings> {
       childName: legacy[0][1] ?? "",
       parentPin: legacy[1][1] ?? "",
       pinEnabled: legacy[2][1] === "true",
+      morningSteps: normalizeMorningSteps(DEFAULT_SETTINGS.morningSteps),
+      scheduleBlocks: normalizeScheduleBlocks(DEFAULT_SETTINGS.scheduleBlocks),
+      customMissions: normalizeCustomMissions(DEFAULT_SETTINGS.customMissions),
+      beforeRewardMissionIds: [],
+      beforeRewardRewardIds: [],
+      childPreferences: normalizeChildPreferences(
+        DEFAULT_SETTINGS.childPreferences,
+      ),
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -890,6 +1146,19 @@ function PinSection({
     }
   }
 
+  function showControlLevelHint() {
+    const key =
+      settings.controlLevel === "hands-on"
+        ? "hands_on"
+        : settings.controlLevel === "balanced"
+          ? "standard"
+          : "independent";
+    Alert.alert(
+      t(`settings.control_${key}_hint_title`),
+      t(`settings.control_${key}_hint_body`),
+    );
+  }
+
   return (
     <View>
       <SectionHeader title={t("settings.security_section")} icon="🔒" />
@@ -934,10 +1203,7 @@ function PinSection({
               label={t("settings.pin_change_label")}
               sublabel={t("settings.pin_change_sublabel")}
             >
-              <TouchableOpacity
-                onPress={requestChangePin}
-                style={u.linkBtn}
-              >
+              <TouchableOpacity onPress={requestChangePin} style={u.linkBtn}>
                 <Text style={u.linkBtnTxt}>{t("settings.edit")}</Text>
               </TouchableOpacity>
             </SettingRow>
@@ -986,7 +1252,9 @@ function PinSection({
             <View style={ss.pinCard}>
               {showSetPin ? (
                 <>
-                  <Text style={ss.pinTitle}>{t("settings.pin_new_heading")}</Text>
+                  <Text style={ss.pinTitle}>
+                    {t("settings.pin_new_heading")}
+                  </Text>
                   <TextInput
                     keyboardType="numeric"
                     maxLength={4}
@@ -1041,7 +1309,9 @@ function PinSection({
                     style={ss.pinBtnPrimary}
                     onPress={handleSetPin}
                   >
-                    <Text style={ss.pinBtnPrimaryTxt}>{t("settings.save")}</Text>
+                    <Text style={ss.pinBtnPrimaryTxt}>
+                      {t("settings.save")}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={ss.pinBtnCancel}
@@ -1053,12 +1323,16 @@ function PinSection({
                       setSetPinFocused(false);
                     }}
                   >
-                    <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+                    <Text style={ss.pinBtnCancelTxt}>
+                      {t("settings.cancel")}
+                    </Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
-                  <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
+                  <Text style={ss.pinTitle}>
+                    {t("settings.pin_enter_title")}
+                  </Text>
                   <TextInput
                     keyboardType="numeric"
                     maxLength={4}
@@ -1105,7 +1379,9 @@ function PinSection({
                       setRemovePinFocused(false);
                     }}
                   >
-                    <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
+                    <Text style={ss.pinBtnCancelTxt}>
+                      {t("settings.cancel")}
+                    </Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -1123,13 +1399,27 @@ function PinSection({
         >
           {t("settings.control_level")}
         </Text>
-        <Text style={[u.rowSublabel, { marginLeft: 10 }]}>
-          {settings.controlLevel === "hands-on"
-            ? t("settings.control_hands_on")
-            : settings.controlLevel === "balanced"
-              ? t("settings.control_balanced")
-              : t("settings.control_independent")}
-        </Text>
+        <View
+          style={[
+            u.rowLabelWithInfo,
+            { marginLeft: 10, marginTop: 2, marginBottom: 2 },
+          ]}
+        >
+          <Text style={u.rowSublabel}>
+            {settings.controlLevel === "hands-on"
+              ? t("settings.control_hands_on")
+              : settings.controlLevel === "balanced"
+                ? t("settings.control_balanced")
+                : t("settings.control_independent")}
+          </Text>
+          <TouchableOpacity
+            style={u.infoDot}
+            onPress={showControlLevelHint}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={u.infoDotTxt}>i</Text>
+          </TouchableOpacity>
+        </View>
         <PillSelector
           options={[
             { label: t("settings.control_pill_together"), value: "hands-on" },
@@ -1247,10 +1537,7 @@ function BuddySection({
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
   function showTinyFactsHint() {
-    Alert.alert(
-      t("settings.facts_hint_title"),
-      t("settings.facts_hint_body"),
-    );
+    Alert.alert(t("settings.facts_hint_title"), t("settings.facts_hint_body"));
   }
 
   return (
@@ -1270,7 +1557,30 @@ function BuddySection({
         </SettingRow>
         <Divider />
         <SettingRow
-          label={t("settings.breathing_music_label")}
+          label={t("settings.buddy_dj_label")}
+          sublabel={t("settings.buddy_dj_sub")}
+        >
+          <Switch
+            value={settings.buddyDjModeEnabled}
+            onValueChange={(v) => onChange({ buddyDjModeEnabled: v })}
+            trackColor={{ false: C.track, true: C.green }}
+            thumbColor={C.white}
+          />
+        </SettingRow>
+        <Divider />
+        <SettingRow
+          label={
+            <View style={u.rowLabelWithIcon}>
+              <Image
+                source={visualAssets.graphics.handpan}
+                style={u.handpanRowIcon}
+                resizeMode="contain"
+              />
+              <Text style={u.rowLabel}>
+                {t("settings.breathing_music_label")}
+              </Text>
+            </View>
+          }
           sublabel={t("settings.breathing_music_sub")}
         >
           <Switch
@@ -1439,8 +1749,7 @@ function ChildSection({
 }) {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(settings.childName);
-  const showRtlGender =
-    settings.appLocale.startsWith("he") || settings.appLocale.startsWith("ar");
+  const showRtlGender = true;
 
   function saveName() {
     if (!nameInput.trim()) {
@@ -1527,6 +1836,405 @@ function ChildSection({
   );
 }
 
+// ── CHILD PREFERENCES SECTION ─────────────────────────────────────────────────
+
+function ChildPreferencesSection({
+  settings,
+  onChange,
+}: {
+  settings: AppSettings;
+  onChange: (patch: Partial<AppSettings>) => void;
+}) {
+  const preferences = normalizeChildPreferences(settings.childPreferences);
+  const [adding, setAdding] = useState(false);
+  const [kind, setKind] = useState<ChildPreferenceKind>("love");
+  const [emoji, setEmoji] = useState("⭐");
+  const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
+  const [frequency, setFrequency] =
+    useState<ChildPreferenceFrequency>("rare");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editKind, setEditKind] = useState<ChildPreferenceKind>("love");
+  const [editEmoji, setEditEmoji] = useState("⭐");
+  const [editTitle, setEditTitle] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [editFrequency, setEditFrequency] =
+    useState<ChildPreferenceFrequency>("rare");
+
+  function resetDraft(nextKind: ChildPreferenceKind = "love") {
+    setKind(nextKind);
+    setEmoji(nextKind === "comfort" ? "🤍" : "⭐");
+    setTitle("");
+    setNote("");
+    setFrequency("rare");
+  }
+
+  function addPreference() {
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      Alert.alert(t("settings.preferences_empty_title"));
+      return;
+    }
+    if (preferences.length >= CHILD_PREFERENCES_MAX) {
+      Alert.alert(
+        t("settings.preferences_limit_title"),
+        t("settings.preferences_limit_body", {
+          count: CHILD_PREFERENCES_MAX,
+        }),
+      );
+      return;
+    }
+    const nextId = Math.max(0, ...preferences.map((p) => p.id)) + 1;
+    const newPreference: ChildPreference = {
+      id: nextId,
+      kind,
+      title: cleanTitle.slice(0, 40),
+      emoji: emoji.trim().slice(0, 4) || (kind === "comfort" ? "🤍" : "⭐"),
+      note: note.trim().slice(0, 120),
+      enabled: true,
+      frequency,
+    };
+    onChange({
+      childPreferences: normalizeChildPreferences([
+        ...preferences,
+        newPreference,
+      ]),
+    });
+    resetDraft(kind);
+    setAdding(false);
+  }
+
+  function startEditPreference(item: ChildPreference) {
+    setAdding(false);
+    setEditingId(item.id);
+    setEditKind(item.kind);
+    setEditEmoji(item.emoji);
+    setEditTitle(item.title);
+    setEditNote(item.note);
+    setEditFrequency(item.frequency);
+  }
+
+  function cancelEditPreference() {
+    setEditingId(null);
+    setEditKind("love");
+    setEditEmoji("⭐");
+    setEditTitle("");
+    setEditNote("");
+    setEditFrequency("rare");
+  }
+
+  function saveEditedPreference() {
+    if (editingId == null) return;
+    const cleanTitle = editTitle.trim();
+    if (!cleanTitle) {
+      Alert.alert(t("settings.preferences_empty_title"));
+      return;
+    }
+    updatePreference(editingId, {
+      kind: editKind,
+      title: cleanTitle.slice(0, 40),
+      emoji:
+        editEmoji.trim().slice(0, 4) ||
+        (editKind === "comfort" ? "🤍" : "⭐"),
+      note: editNote.trim().slice(0, 120),
+      frequency: editFrequency,
+    });
+    cancelEditPreference();
+  }
+
+  function updatePreference(id: number, patch: Partial<ChildPreference>) {
+    onChange({
+      childPreferences: normalizeChildPreferences(
+        preferences.map((item) =>
+          item.id === id ? { ...item, ...patch } : item,
+        ),
+      ),
+    });
+  }
+
+  function deletePreference(id: number) {
+    onChange({
+      childPreferences: preferences.filter((item) => item.id !== id),
+    });
+  }
+
+  function preferenceRows(prefKind: ChildPreferenceKind) {
+    const rows = preferences.filter((item) => item.kind === prefKind);
+    if (rows.length === 0) {
+      return (
+        <Text style={u.preferenceEmpty}>
+          {prefKind === "love"
+            ? t("settings.preferences_loves_empty")
+            : t("settings.preferences_comforts_empty")}
+        </Text>
+      );
+    }
+
+    return rows.map((item) => (
+      <View key={item.id} style={u.preferenceItem}>
+        {editingId === item.id ? (
+          <View>
+            <PillSelector
+              compact
+              options={[
+                { label: t("settings.preferences_love"), value: "love" },
+                {
+                  label: t("settings.preferences_comfort"),
+                  value: "comfort",
+                },
+              ]}
+              value={editKind}
+              onChange={(nextKind) => {
+                setEditKind(nextKind);
+                if (
+                  !editEmoji.trim() ||
+                  editEmoji === "⭐" ||
+                  editEmoji === "🤍"
+                ) {
+                  setEditEmoji(nextKind === "comfort" ? "🤍" : "⭐");
+                }
+              }}
+            />
+            <View style={[u.inlineEditRow, { marginTop: 12 }]}>
+              <TextInput
+                style={[u.editInput, { width: 56 }]}
+                value={editEmoji}
+                onChangeText={setEditEmoji}
+                placeholder="⭐"
+                placeholderTextColor={C.muted}
+              />
+              <TextInput
+                style={[u.editInput, { flex: 1 }]}
+                value={editTitle}
+                onChangeText={setEditTitle}
+                placeholder={
+                  editKind === "comfort"
+                    ? t("settings.preferences_comfort_placeholder")
+                    : t("settings.preferences_love_placeholder")
+                }
+                placeholderTextColor={C.muted}
+                autoFocus
+              />
+            </View>
+            <TextInput
+              style={[u.editInput, { marginTop: 10 }]}
+              value={editNote}
+              onChangeText={setEditNote}
+              placeholder={t("settings.preferences_note_placeholder")}
+              placeholderTextColor={C.muted}
+            />
+            <View style={{ marginTop: 10 }}>
+              <PillSelector
+                compact
+                options={[
+                  {
+                    label: t("settings.preferences_frequency_rare"),
+                    value: "rare",
+                  },
+                  {
+                    label: t("settings.preferences_frequency_sometimes"),
+                    value: "sometimes",
+                  },
+                ]}
+                value={editFrequency}
+                onChange={setEditFrequency}
+              />
+            </View>
+            <View style={u.rowBtns}>
+              <TouchableOpacity
+                style={u.btnPrimary}
+                onPress={saveEditedPreference}
+              >
+                <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={u.btnCancel}
+                onPress={cancelEditPreference}
+              >
+                <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <>
+            <View style={u.preferenceMain}>
+              <Text style={u.preferenceEmoji}>{item.emoji}</Text>
+              <View style={u.preferenceText}>
+                <Text style={u.preferenceTitle}>{item.title}</Text>
+                {item.note ? (
+                  <Text style={u.preferenceNote}>{item.note}</Text>
+                ) : null}
+                <Text style={u.preferenceMeta}>
+                  {item.frequency === "sometimes"
+                    ? t("settings.preferences_frequency_sometimes")
+                    : t("settings.preferences_frequency_rare")}
+                </Text>
+              </View>
+            </View>
+            <View style={u.preferenceActions}>
+              <Switch
+                value={item.enabled}
+                onValueChange={(enabled) =>
+                  updatePreference(item.id, { enabled })
+                }
+                trackColor={{ false: C.track, true: C.green }}
+                thumbColor={C.white}
+              />
+              <View style={u.preferenceActionBtns}>
+                <TouchableOpacity
+                  style={u.linkBtn}
+                  onPress={() => startEditPreference(item)}
+                >
+                  <Text style={u.linkBtnTxt}>{t("settings.edit")}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={u.dangerBtn}
+                  onPress={() => deletePreference(item.id)}
+                >
+                  <Text style={u.dangerBtnTxt}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        )}
+      </View>
+    ));
+  }
+
+  return (
+    <View>
+      <SectionHeader
+        title={tGender(
+          "settings.preferences_section",
+          undefined,
+          settings.rtlChildSex ?? "male",
+        )}
+        icon="💛"
+      />
+      <Card>
+        <Text style={u.preferenceIntro}>
+          {tGender(
+            "settings.preferences_intro",
+            undefined,
+            settings.rtlChildSex ?? "male",
+          )}
+        </Text>
+        <View style={u.preferenceGroup}>
+          <Text style={u.preferenceGroupTitle}>
+            {t("settings.preferences_loves")}
+          </Text>
+          {preferenceRows("love")}
+        </View>
+        <Divider />
+        <View style={u.preferenceGroup}>
+          <Text style={u.preferenceGroupTitle}>
+            {t("settings.preferences_comforts")}
+          </Text>
+          {preferenceRows("comfort")}
+        </View>
+        {adding ? (
+          <>
+            <Divider />
+            <View style={u.editBlock}>
+              <PillSelector
+                compact
+                options={[
+                  { label: t("settings.preferences_love"), value: "love" },
+                  {
+                    label: t("settings.preferences_comfort"),
+                    value: "comfort",
+                  },
+                ]}
+                value={kind}
+                onChange={(nextKind) => {
+                  setKind(nextKind);
+                  if (!emoji.trim() || emoji === "⭐" || emoji === "🤍") {
+                    setEmoji(nextKind === "comfort" ? "🤍" : "⭐");
+                  }
+                }}
+              />
+              <View style={[u.inlineEditRow, { marginTop: 12 }]}>
+                <TextInput
+                  style={[u.editInput, { width: 56 }]}
+                  value={emoji}
+                  onChangeText={setEmoji}
+                  placeholder="⭐"
+                  placeholderTextColor={C.muted}
+                />
+                <TextInput
+                  style={[u.editInput, { flex: 1 }]}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder={
+                    kind === "comfort"
+                      ? t("settings.preferences_comfort_placeholder")
+                      : t("settings.preferences_love_placeholder")
+                  }
+                  placeholderTextColor={C.muted}
+                />
+              </View>
+              <TextInput
+                style={[u.editInput, { marginTop: 10 }]}
+                value={note}
+                onChangeText={setNote}
+                placeholder={t("settings.preferences_note_placeholder")}
+                placeholderTextColor={C.muted}
+              />
+              <View style={{ marginTop: 10 }}>
+                <PillSelector
+                  compact
+                  options={[
+                    {
+                      label: t("settings.preferences_frequency_rare"),
+                      value: "rare",
+                    },
+                    {
+                      label: t("settings.preferences_frequency_sometimes"),
+                      value: "sometimes",
+                    },
+                  ]}
+                  value={frequency}
+                  onChange={setFrequency}
+                />
+              </View>
+              <View style={u.rowBtns}>
+                <TouchableOpacity style={u.btnPrimary} onPress={addPreference}>
+                  <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={u.btnCancel}
+                  onPress={() => {
+                    resetDraft(kind);
+                    setAdding(false);
+                  }}
+                >
+                  <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        ) : (
+          <>
+            <Divider />
+            <TouchableOpacity
+              style={u.inlineAction}
+              onPress={() => {
+                cancelEditPreference();
+                resetDraft("love");
+                setAdding(true);
+              }}
+            >
+              <Text style={u.inlineActionTxt}>
+                {t("settings.preferences_add")}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </Card>
+    </View>
+  );
+}
+
 // ── DAILY ROUTINE SECTION ─────────────────────────────────────────────────────
 
 function DailyRoutineSection({
@@ -1542,9 +2250,12 @@ function DailyRoutineSection({
   showDayModeCard?: boolean;
   onOpenStepsManager?: () => void;
 }) {
+  const tx = (key: string, params?: Record<string, unknown>) =>
+    i18n.t(key, { ...(params ?? {}), locale: settings.appLocale });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [stepTitle, setStepTitle] = useState("");
   const [stepEmoji, setStepEmoji] = useState("");
+  const [stepImageUri, setStepImageUri] = useState<string | undefined>();
 
   // Move a morning step up or down by index offset (-1 or +1)
   function moveStep(id: number, dir: -1 | 1) {
@@ -1563,14 +2274,24 @@ function DailyRoutineSection({
       onChange({
         morningSteps: [
           ...settings.morningSteps,
-          { id: newId, title: stepTitle.trim(), emoji: stepEmoji || "✅" },
+          {
+            id: newId,
+            title: stepTitle.trim(),
+            emoji: stepEmoji || "✅",
+            imageUri: stepImageUri,
+          },
         ],
       });
     } else {
       onChange({
         morningSteps: settings.morningSteps.map((s) =>
           s.id === editingId
-            ? { ...s, title: stepTitle.trim(), emoji: stepEmoji || s.emoji }
+            ? {
+                ...s,
+                title: stepTitle.trim(),
+                emoji: stepEmoji || s.emoji,
+                imageUri: stepImageUri,
+              }
             : s,
         ),
       });
@@ -1578,12 +2299,67 @@ function DailyRoutineSection({
     setEditingId(null);
     setStepTitle("");
     setStepEmoji("");
+    setStepImageUri(undefined);
   }
 
   function deleteStep(id: number) {
     onChange({
       morningSteps: settings.morningSteps.filter((s) => s.id !== id),
     });
+  }
+
+  async function pickStepImage() {
+    const uri = await pickVisualImageUri(tx);
+    if (uri) setStepImageUri(uri);
+  }
+
+  function StepIcon({ step }: { step: MorningStep }) {
+    if (step.imageUri) {
+      return (
+        <Image
+          source={{ uri: step.imageUri }}
+          style={u.itemThumb}
+          resizeMode="cover"
+        />
+      );
+    }
+    return (
+      <Text style={{ fontSize: 22, marginRight: 10 }}>{step.emoji}</Text>
+    );
+  }
+
+  function StepImageControls() {
+    return (
+      <View style={u.imageEditRow}>
+        <View style={u.imagePreviewBox}>
+          {stepImageUri ? (
+            <Image
+              source={{ uri: stepImageUri }}
+              style={u.imagePreview}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={u.imagePreviewEmoji}>{stepEmoji || "✅"}</Text>
+          )}
+        </View>
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity style={u.imagePickBtn} onPress={pickStepImage}>
+            <Text style={u.imagePickTxt}>{tx("settings.image_pick")}</Text>
+          </TouchableOpacity>
+          {stepImageUri && (
+            <TouchableOpacity
+              style={u.imageRemoveBtn}
+              onPress={() => setStepImageUri(undefined)}
+            >
+              <Text style={u.imageRemoveTxt}>
+                {tx("settings.image_remove")}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <Text style={u.imageHint}>{tx("settings.image_guardrail")}</Text>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -1644,7 +2420,7 @@ function DailyRoutineSection({
                 </Text>
 
                 {settings.morningSteps.map((step, idx) => (
-                  <View key={step.id}>
+                  <View key={`morning-step-setting-${step.id}-${idx}`}>
                     {idx > 0 && <Divider />}
                     {editingId === step.id ? (
                       <View style={u.editBlock}>
@@ -1665,8 +2441,12 @@ function DailyRoutineSection({
                             autoFocus
                           />
                         </View>
+                        {StepImageControls()}
                         <View style={u.rowBtns}>
-                          <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
+                          <TouchableOpacity
+                            style={u.btnPrimary}
+                            onPress={saveStep}
+                          >
                             <Text style={u.btnPrimaryTxt}>
                               {t("settings.save")}
                             </Text>
@@ -1677,6 +2457,7 @@ function DailyRoutineSection({
                               setEditingId(null);
                               setStepTitle("");
                               setStepEmoji("");
+                              setStepImageUri(undefined);
                             }}
                           >
                             <Text style={u.btnCancelTxt}>
@@ -1687,9 +2468,7 @@ function DailyRoutineSection({
                       </View>
                     ) : (
                       <View style={u.row}>
-                        <Text style={{ fontSize: 22, marginRight: 10 }}>
-                          {step.emoji}
-                        </Text>
+                        <StepIcon step={step} />
                         <Text style={[u.rowLabel, { flex: 1 }]}>
                           {getMorningStepTitle(step.id, step.title)}
                         </Text>
@@ -1699,7 +2478,10 @@ function DailyRoutineSection({
                           disabled={idx === 0}
                         >
                           <Text
-                            style={[u.stepperTxt, idx === 0 && { opacity: 0.25 }]}
+                            style={[
+                              u.stepperTxt,
+                              idx === 0 && { opacity: 0.25 },
+                            ]}
                           >
                             ↑
                           </Text>
@@ -1724,8 +2506,11 @@ function DailyRoutineSection({
                           style={[u.linkBtn, { marginLeft: 4 }]}
                           onPress={() => {
                             setEditingId(step.id);
-                            setStepTitle(getMorningStepTitle(step.id, step.title));
+                            setStepTitle(
+                              getMorningStepTitle(step.id, step.title),
+                            );
                             setStepEmoji(step.emoji);
+                            setStepImageUri(step.imageUri);
                           }}
                         >
                           <Text style={u.linkBtnTxt}>
@@ -1752,6 +2537,7 @@ function DailyRoutineSection({
                         setEditingId(-1);
                         setStepTitle("");
                         setStepEmoji("");
+                        setStepImageUri(undefined);
                       }}
                     >
                       <Text style={ss.scheduleManageBtnTitle}>
@@ -1779,6 +2565,7 @@ function DailyRoutineSection({
                         autoFocus
                       />
                     </View>
+                    {StepImageControls()}
                     <View style={u.rowBtns}>
                       <TouchableOpacity style={u.btnPrimary} onPress={saveStep}>
                         <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
@@ -1789,9 +2576,12 @@ function DailyRoutineSection({
                           setEditingId(null);
                           setStepTitle("");
                           setStepEmoji("");
+                          setStepImageUri(undefined);
                         }}
                       >
-                        <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                        <Text style={u.btnCancelTxt}>
+                          {t("settings.cancel")}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1865,18 +2655,22 @@ function ScheduleSection({
   settings: AppSettings;
   onChange: (patch: Partial<AppSettings>) => void;
 }) {
+  const tx = (key: string, params?: Record<string, unknown>) =>
+    i18n.t(key, { ...(params ?? {}), locale: settings.appLocale });
   const blocks = settings.scheduleBlocks ?? DEFAULT_SCHEDULE;
   const sortedBlocks = sortScheduleBlocks(blocks);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftEmoji, setDraftEmoji] = useState("");
+  const [draftImageUri, setDraftImageUri] = useState<string | undefined>();
   const [draftStart, setDraftStart] = useState("");
   const [draftEnd, setDraftEnd] = useState("");
 
   function startEdit(it: ScheduleBlock) {
     setEditingId(it.id);
-    setDraftTitle(getScheduleTitle(it.id, it.title));
+    setDraftTitle(scheduleTitle(it));
     setDraftEmoji(it.emoji);
+    setDraftImageUri(it.imageUri);
     setDraftStart(it.startTime);
     setDraftEnd(it.endTime);
   }
@@ -1884,14 +2678,15 @@ function ScheduleSection({
   function startAdd() {
     if (blocks.length >= SCHEDULE_MAX_BLOCKS) {
       Alert.alert(
-        t("settings.schedule_limit_title"),
-        t("settings.schedule_limit_msg", { max: SCHEDULE_MAX_BLOCKS }),
+        tx("settings.schedule_limit_title"),
+        tx("settings.schedule_limit_msg", { max: SCHEDULE_MAX_BLOCKS }),
       );
       return;
     }
     setEditingId(-1);
     setDraftTitle("");
     setDraftEmoji("");
+    setDraftImageUri(undefined);
     setDraftStart("");
     setDraftEnd("");
   }
@@ -1912,8 +2707,8 @@ function ScheduleSection({
     const title = draftTitle.trim();
     if (!title || !isValidTime(draftStart) || !isValidTime(draftEnd)) {
       Alert.alert(
-        t("settings.schedule_invalid_title"),
-        t("settings.schedule_invalid_msg"),
+        tx("settings.schedule_invalid_title"),
+        tx("settings.schedule_invalid_msg"),
       );
       return;
     }
@@ -1926,6 +2721,7 @@ function ScheduleSection({
             id: newId,
             title,
             emoji: draftEmoji || "⏰",
+            imageUri: draftImageUri,
             startTime: draftStart,
             endTime: draftEnd,
             weekdays: true,
@@ -1942,6 +2738,7 @@ function ScheduleSection({
                   ...i,
                   title,
                   emoji: draftEmoji || i.emoji,
+                  imageUri: draftImageUri,
                   startTime: draftStart,
                   endTime: draftEnd,
                 }
@@ -1951,6 +2748,61 @@ function ScheduleSection({
       });
     }
     setEditingId(null);
+    setDraftImageUri(undefined);
+  }
+
+  async function pickDraftImage() {
+    const uri = await pickVisualImageUri(tx);
+    if (uri) setDraftImageUri(uri);
+  }
+
+  function ScheduleIcon({ item }: { item: ScheduleBlock }) {
+    if (item.imageUri) {
+      return (
+        <Image
+          source={{ uri: item.imageUri }}
+          style={u.itemThumb}
+          resizeMode="cover"
+        />
+      );
+    }
+    return <Text style={u.scheduleEmoji}>{item.emoji}</Text>;
+  }
+
+  function DraftImageControls() {
+    return (
+      <View style={u.imageEditRow}>
+        <View style={u.imagePreviewBox}>
+          {draftImageUri ? (
+            <Image
+              source={{ uri: draftImageUri }}
+              style={u.imagePreview}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={u.imagePreviewEmoji}>{draftEmoji || "⏰"}</Text>
+          )}
+        </View>
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity style={u.imagePickBtn} onPress={pickDraftImage}>
+            <Text style={u.imagePickTxt}>
+              {tx("settings.image_pick")}
+            </Text>
+          </TouchableOpacity>
+          {draftImageUri && (
+            <TouchableOpacity
+              style={u.imageRemoveBtn}
+              onPress={() => setDraftImageUri(undefined)}
+            >
+              <Text style={u.imageRemoveTxt}>
+                {tx("settings.image_remove")}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <Text style={u.imageHint}>{tx("settings.image_guardrail")}</Text>
+        </View>
+      </View>
+    );
   }
 
   function deleteBlock(id: number) {
@@ -1967,13 +2819,19 @@ function ScheduleSection({
     });
   }
 
+  function scheduleTitle(block: ScheduleBlock) {
+    const defaultBlock = DEFAULT_SCHEDULE.find((b) => b.id === block.id);
+    if (!defaultBlock || block.title !== defaultBlock.title) return block.title;
+    return tx(`schedule_titles.s${block.id}`, { defaultValue: block.title });
+  }
+
   return (
     <View>
-      <SectionHeader title={t("settings.schedule_section")} icon="📅" />
+      <SectionHeader title={tx("settings.schedule_section")} icon="📅" />
       <Card>
         <SettingRow
-          label={t("settings.schedule_now_card")}
-          sublabel={t("settings.schedule_now_sub")}
+          label={tx("settings.schedule_now_card")}
+          sublabel={tx("settings.schedule_now_sub")}
         >
           <Switch
             value={settings.scheduleEnabled}
@@ -2003,17 +2861,18 @@ function ScheduleSection({
                       style={[u.editInput, { flex: 1 }]}
                       value={draftTitle}
                       onChangeText={setDraftTitle}
-                      placeholder={t("settings.schedule_name_placeholder")}
+                      placeholder={tx("settings.schedule_name_placeholder")}
                       placeholderTextColor={C.muted}
                       autoFocus
                     />
                   </View>
+                  {DraftImageControls()}
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     <TextInput
                       style={[u.editInput, { flex: 1 }]}
                       value={draftStart}
                       onChangeText={setDraftStart}
-                      placeholder={t("settings.schedule_time_start")}
+                      placeholder={tx("settings.schedule_time_start")}
                       placeholderTextColor={C.muted}
                       maxLength={5}
                     />
@@ -2021,32 +2880,34 @@ function ScheduleSection({
                       style={[u.editInput, { flex: 1 }]}
                       value={draftEnd}
                       onChangeText={setDraftEnd}
-                      placeholder={t("settings.schedule_time_end")}
+                      placeholder={tx("settings.schedule_time_end")}
                       placeholderTextColor={C.muted}
                       maxLength={5}
                     />
                   </View>
                   <View style={u.rowBtns}>
                     <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}>
-                      <Text style={u.btnPrimaryTxt}>{t("settings.save")}</Text>
+                      <Text style={u.btnPrimaryTxt}>
+                        {tx("settings.save")}
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={u.btnCancel}
                       onPress={() => setEditingId(null)}
                     >
-                      <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                      <Text style={u.btnCancelTxt}>
+                        {tx("settings.cancel")}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               ) : (
                 <View style={u.scheduleItemWrap}>
                   <View style={u.scheduleMainRow}>
-                    <Text style={u.scheduleEmoji}>
-                      {it.emoji}
-                    </Text>
+                    <ScheduleIcon item={it} />
                     <View style={{ flex: 1 }}>
                       <Text style={u.scheduleLabel}>
-                        {getScheduleTitle(it.id, it.title)}
+                        {scheduleTitle(it)}
                       </Text>
                       <Text style={u.scheduleSublabel}>
                         {it.startTime} — {it.endTime}
@@ -2057,7 +2918,7 @@ function ScheduleSection({
                       onPress={() => startEdit(it)}
                     >
                       <Text style={u.scheduleLinkBtnTxt}>
-                        {t("settings.edit_short")}
+                        {tx("settings.edit_short")}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -2069,7 +2930,7 @@ function ScheduleSection({
                   </View>
                   <View style={u.scheduleSubRow}>
                     <Text style={[u.scheduleSublabel, { flex: 1 }]}>
-                      {t("settings.schedule_weekdays")}
+                      {tx("settings.schedule_weekdays")}
                     </Text>
                     <Switch
                       value={it.weekdays}
@@ -2080,7 +2941,7 @@ function ScheduleSection({
                   </View>
                   <View style={u.scheduleSubRow}>
                     <Text style={[u.scheduleSublabel, { flex: 1 }]}>
-                      {t("settings.schedule_weekends")}
+                      {tx("settings.schedule_weekends")}
                     </Text>
                     <Switch
                       value={it.weekends}
@@ -2108,17 +2969,18 @@ function ScheduleSection({
                   style={[u.editInput, { flex: 1 }]}
                   value={draftTitle}
                   onChangeText={setDraftTitle}
-                  placeholder={t("settings.schedule_name_placeholder")}
+                  placeholder={tx("settings.schedule_name_placeholder")}
                   placeholderTextColor={C.muted}
                   autoFocus
                 />
               </View>
+              {DraftImageControls()}
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TextInput
                   style={[u.editInput, { flex: 1 }]}
                   value={draftStart}
                   onChangeText={setDraftStart}
-                  placeholder={t("settings.schedule_time_start")}
+                  placeholder={tx("settings.schedule_time_start")}
                   placeholderTextColor={C.muted}
                   maxLength={5}
                 />
@@ -2126,20 +2988,20 @@ function ScheduleSection({
                   style={[u.editInput, { flex: 1 }]}
                   value={draftEnd}
                   onChangeText={setDraftEnd}
-                  placeholder={t("settings.schedule_time_end")}
+                  placeholder={tx("settings.schedule_time_end")}
                   placeholderTextColor={C.muted}
                   maxLength={5}
                 />
               </View>
               <View style={u.rowBtns}>
                 <TouchableOpacity style={u.btnPrimary} onPress={saveDraft}>
-                  <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
+                  <Text style={u.btnPrimaryTxt}>{tx("settings.add")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={u.btnCancel}
                   onPress={() => setEditingId(null)}
                 >
-                  <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+                  <Text style={u.btnCancelTxt}>{tx("settings.cancel")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -2150,7 +3012,7 @@ function ScheduleSection({
               <Divider />
               <TouchableOpacity style={ss.scheduleManageBtn} onPress={startAdd}>
                 <Text style={ss.scheduleManageBtnTitle}>
-                  {t("settings.add_schedule_item")}
+                  {tx("settings.add_schedule_item")}
                 </Text>
               </TouchableOpacity>
             </>
@@ -2206,7 +3068,7 @@ function CreditsSection() {
 function FeedbackSection() {
   async function openFeedbackEmail() {
     incrementLocalUsage("feedbackTapped").catch(console.log);
-    const email = "buddy@realokids.com";
+    const email = "hello@realokids.com";
     const subject = encodeURIComponent(t("settings.feedback_email_subject"));
     const body = encodeURIComponent(t("settings.feedback_email_body"));
     const url = `mailto:${email}?subject=${subject}&body=${body}`;
@@ -2254,6 +3116,8 @@ function ParentZoneView({
   onChange: (patch: Partial<AppSettings>) => void;
   onBack: () => void;
 }) {
+  const tx = (key: string, params?: Record<string, unknown>) =>
+    i18n.t(key, { ...(params ?? {}), locale: settings.appLocale });
   const missionOverrides = settings.missionOverrides ?? {};
   const rewardOverrides = settings.rewardOverrides ?? {};
   const customMissions = settings.customMissions ?? [];
@@ -2266,11 +3130,34 @@ function ParentZoneView({
   const missionTypeById: Record<number, MissionType> = Object.fromEntries(
     settings.missions.map((m) => [m.id, m.type]),
   );
+  const missionConfigById: Record<number, MissionConfig> = Object.fromEntries(
+    settings.missions.map((m) => [m.id, m]),
+  );
   const missionTypeOrder: MissionType[] = ["permanent", "rotating", "inactive"];
+
+  function missionTitle(mission: PoolMission) {
+    if (mission.id >= CUSTOM_ID_OFFSET) return mission.title;
+    return tx(`missions.${mission.id}.title`, { defaultValue: mission.title });
+  }
+
+  function missionSubtitle(mission: PoolMission) {
+    if (mission.id >= CUSTOM_ID_OFFSET) return mission.subtitle;
+    return tx(`missions.${mission.id}.subtitle`, {
+      defaultValue: mission.subtitle,
+    });
+  }
+
+  function rewardTitle(reward: Reward) {
+    if (reward.id >= CUSTOM_ID_OFFSET) return reward.title;
+    return tx(`reward_titles.r${reward.id}`, { defaultValue: reward.title });
+  }
 
   // Add-form state for custom missions (shared between weekday/weekend cards).
   const [showAddMission, setShowAddMission] = useState(false);
   const [draftMissionEmoji, setDraftMissionEmoji] = useState("");
+  const [draftMissionImageUri, setDraftMissionImageUri] = useState<
+    string | undefined
+  >();
   const [draftMissionTitle, setDraftMissionTitle] = useState("");
   const [draftMissionSubtitle, setDraftMissionSubtitle] = useState("");
 
@@ -2278,6 +3165,17 @@ function ParentZoneView({
   const [showAddReward, setShowAddReward] = useState(false);
   const [draftRewardEmoji, setDraftRewardEmoji] = useState("");
   const [draftRewardTitle, setDraftRewardTitle] = useState("");
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [beforeRewardCustomizeOpen, setBeforeRewardCustomizeOpen] =
+    useState(false);
+
+  if (aboutOpen) {
+    return (
+      <SafeAreaView key={`about-${settings.appLocale}`} style={ss.root}>
+        <ParentOnboarding onDone={() => setAboutOpen(false)} />
+      </SafeAreaView>
+    );
+  }
 
   function patchMission(id: number, patch: Partial<MissionOverride>) {
     const cur: MissionOverride = missionOverrides[id] ?? {
@@ -2300,6 +3198,24 @@ function ParentZoneView({
     });
   }
 
+  function toggleBeforeRewardMission(id: number, enabled: boolean) {
+    const current = settings.beforeRewardMissionIds ?? [];
+    onChange({
+      beforeRewardMissionIds: enabled
+        ? Array.from(new Set([...current, id]))
+        : current.filter((x) => x !== id),
+    });
+  }
+
+  function toggleBeforeRewardReward(id: number, enabled: boolean) {
+    const current = settings.beforeRewardRewardIds ?? [];
+    onChange({
+      beforeRewardRewardIds: enabled
+        ? Array.from(new Set([...current, id]))
+        : current.filter((x) => x !== id),
+    });
+  }
+
   function cycleMissionType(mission: PoolMission) {
     const currentType = missionTypeById[mission.id] ?? "rotating";
     const nextType =
@@ -2319,6 +3235,7 @@ function ParentZoneView({
             subtitle: mission.subtitle,
             stars: mission.stars,
             emoji: mission.emoji,
+            imageUri: missionConfigById[mission.id]?.imageUri,
             type: nextType,
           },
         ];
@@ -2340,10 +3257,10 @@ function ParentZoneView({
           : pz.typePillInactive;
     const label =
       type === "permanent"
-        ? t("settings.type_permanent")
+        ? tx("settings.type_permanent")
         : type === "rotating"
-          ? t("settings.type_rotating")
-          : t("settings.type_inactive");
+          ? tx("settings.type_rotating")
+          : tx("settings.type_inactive");
 
     return (
       <TouchableOpacity
@@ -2370,15 +3287,15 @@ function ParentZoneView({
     const title = draftMissionTitle.trim();
     if (!title) {
       Alert.alert(
-        t("settings.mission_check_title"),
-        t("settings.mission_check_msg"),
+        tx("settings.mission_check_title"),
+        tx("settings.mission_check_msg"),
       );
       return;
     }
     if (customMissions.length >= CUSTOM_MISSIONS_MAX) {
       Alert.alert(
-        t("settings.schedule_limit_title"),
-        t("settings.mission_limit_msg", { max: CUSTOM_MISSIONS_MAX }),
+        tx("settings.schedule_limit_title"),
+        tx("settings.mission_limit_msg", { max: CUSTOM_MISSIONS_MAX }),
       );
       return;
     }
@@ -2386,9 +3303,10 @@ function ParentZoneView({
       id: nextCustomMissionId(),
       title,
       subtitle:
-        draftMissionSubtitle.trim() || t("settings.custom_mission_subtitle"),
+        draftMissionSubtitle.trim() || tx("settings.custom_mission_subtitle"),
       stars: 1,
       emoji: draftMissionEmoji || "✨",
+      imageUri: draftMissionImageUri,
       category: "movement",
       slot: "any",
       weekdayDefault: true,
@@ -2402,6 +3320,7 @@ function ParentZoneView({
       subtitle: newMission.subtitle,
       stars: newMission.stars,
       emoji: newMission.emoji,
+      imageUri: newMission.imageUri,
       type: "rotating",
     };
     onChange({
@@ -2410,18 +3329,66 @@ function ParentZoneView({
     });
     setShowAddMission(false);
     setDraftMissionEmoji("");
+    setDraftMissionImageUri(undefined);
     setDraftMissionTitle("");
     setDraftMissionSubtitle("");
   }
 
+  async function pickDraftMissionImage() {
+    const uri = await pickVisualImageUri(tx);
+    if (uri) setDraftMissionImageUri(uri);
+  }
+
+  function visualMission(mission: PoolMission): PoolMission {
+    return missionConfigById[mission.id]?.imageUri
+      ? { ...mission, imageUri: missionConfigById[mission.id].imageUri }
+      : mission;
+  }
+
+  function patchMissionConfigImage(mission: PoolMission, imageUri?: string) {
+    const existing = missionConfigById[mission.id];
+    const nextConfig: MissionConfig = {
+      id: mission.id,
+      title: mission.title,
+      subtitle: mission.subtitle,
+      stars: mission.stars,
+      emoji: mission.emoji,
+      type: existing?.type ?? "rotating",
+      ...(imageUri ? { imageUri } : {}),
+    };
+    const nextMissions = existing
+      ? settings.missions.map((m) =>
+          m.id === mission.id ? { ...m, imageUri } : m,
+        )
+      : [...settings.missions, nextConfig];
+    onChange({
+      missions: nextMissions,
+      customMissions: customMissionIds.has(mission.id)
+        ? customMissions.map((m) =>
+            m.id === mission.id ? { ...m, imageUri } : m,
+          )
+        : customMissions,
+    });
+  }
+
+  async function pickMissionImage(mission: PoolMission) {
+    const uri = await pickVisualImageUri(tx);
+    if (!uri) return;
+    patchMissionConfigImage(mission, uri);
+  }
+
+  function removeMissionImage(mission: PoolMission) {
+    patchMissionConfigImage(mission, undefined);
+  }
+
   function deleteCustomMission(id: number) {
     Alert.alert(
-      t("settings.mission_delete_title"),
-      t("settings.mission_delete_msg"),
+      tx("settings.mission_delete_title"),
+      tx("settings.mission_delete_msg"),
       [
-        { text: t("settings.cancel"), style: "cancel" },
+        { text: tx("settings.cancel"), style: "cancel" },
         {
-          text: t("settings.delete"),
+          text: tx("settings.delete"),
           style: "destructive",
           onPress: () => {
             const nextOverrides = { ...missionOverrides };
@@ -2441,15 +3408,15 @@ function ParentZoneView({
     const title = draftRewardTitle.trim();
     if (!title) {
       Alert.alert(
-        t("settings.mission_check_title"),
-        t("settings.reward_check_msg"),
+        tx("settings.mission_check_title"),
+        tx("settings.reward_check_msg"),
       );
       return;
     }
     if (customRewards.length >= CUSTOM_REWARDS_MAX) {
       Alert.alert(
-        t("settings.schedule_limit_title"),
-        t("settings.reward_limit_msg", { max: CUSTOM_REWARDS_MAX }),
+        tx("settings.schedule_limit_title"),
+        tx("settings.reward_limit_msg", { max: CUSTOM_REWARDS_MAX }),
       );
       return;
     }
@@ -2477,12 +3444,12 @@ function ParentZoneView({
 
   function deleteCustomReward(id: number) {
     Alert.alert(
-      t("settings.reward_delete_title"),
-      t("settings.reward_delete_msg"),
+      tx("settings.reward_delete_title"),
+      tx("settings.reward_delete_msg"),
       [
-        { text: t("settings.cancel"), style: "cancel" },
+        { text: tx("settings.cancel"), style: "cancel" },
         {
-          text: t("settings.delete"),
+          text: tx("settings.delete"),
           style: "destructive",
           onPress: () => {
             const nextOverrides = { ...rewardOverrides };
@@ -2534,6 +3501,7 @@ function ParentZoneView({
     if (!m) return null;
     const enabled = effectiveMissionEnabled(id, mode, missionOverrides);
     const isCustom = customMissionIds.has(id);
+    const displayMission = visualMission(m);
     const mType = missionTypeById[id] ?? "rotating";
     const tintStyle =
       mType === "permanent"
@@ -2544,15 +3512,21 @@ function ParentZoneView({
     return (
       <View style={[pz.missionBlock, tintStyle]}>
         <View style={[u.row, pz.compactRow]}>
-          <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
+          {displayMission.imageUri ? (
+            <Image
+              source={{ uri: displayMission.imageUri }}
+              style={u.itemThumb}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={{ fontSize: 22, marginRight: 10 }}>{m.emoji}</Text>
+          )}
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{getMissionTitle(m.id, m.title)}</Text>
-            <Text style={u.rowSublabel}>
-              {getMissionSubtitle(m.id, m.subtitle)}
-            </Text>
+            <Text style={u.rowLabel}>{missionTitle(m)}</Text>
+            <Text style={u.rowSublabel}>{missionSubtitle(m)}</Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
-                <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>
+                <Text style={pz.typePillTxt}>{tx("settings.type_custom")}</Text>
               </View>
             )}
             <MissionTypePill mission={m} type={mType} />
@@ -2579,6 +3553,27 @@ function ParentZoneView({
             </TouchableOpacity>
           )}
         </View>
+        <View style={[u.row, pz.compactSubRow]}>
+          <Text style={[u.rowSublabel, { flex: 1 }]}>
+            {tx("settings.image_guardrail")}
+          </Text>
+          <TouchableOpacity
+            style={u.linkBtn}
+            onPress={() => pickMissionImage(m)}
+          >
+            <Text style={u.linkBtnTxt}>{tx("settings.image_pick")}</Text>
+          </TouchableOpacity>
+          {displayMission.imageUri && (
+            <TouchableOpacity
+              style={u.linkBtn}
+              onPress={() => removeMissionImage(m)}
+            >
+              <Text style={u.imageRemoveTxt}>
+                {tx("settings.image_remove")}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <StarPicker id={id} />
       </View>
     );
@@ -2596,13 +3591,13 @@ function ParentZoneView({
         <View style={[u.row, pz.compactRow]}>
           <Text style={{ fontSize: 22, marginRight: 10 }}>{r.emoji}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={u.rowLabel}>{getRewardTitle(r.id, r.title)}</Text>
+            <Text style={u.rowLabel}>{rewardTitle(r)}</Text>
             <Text style={u.rowSublabel}>
               {Array(clampedCost).fill("⭐").join("")}
             </Text>
             {isCustom && (
               <View style={[pz.typePill, pz.typePillCustom]}>
-                <Text style={pz.typePillTxt}>{t("settings.type_custom")}</Text>
+                <Text style={pz.typePillTxt}>{tx("settings.type_custom")}</Text>
               </View>
             )}
           </View>
@@ -2623,7 +3618,7 @@ function ParentZoneView({
         </View>
         <View style={[u.row, pz.compactSubRow]}>
           <Text style={[u.rowSublabel, { flex: 1 }]}>
-            {t("settings.cost_label")}
+            {tx("settings.cost_label")}
           </Text>
           <View style={pz.starStepperRow}>
             <TouchableOpacity
@@ -2636,7 +3631,7 @@ function ParentZoneView({
             </TouchableOpacity>
             <View style={pz.starStepperStars}>
               {Array.from({ length: clampedCost }).map((_, i) => (
-                <Text key={i} style={pz.starStepperStar}>
+                <Text key={`reward-cost-star-${id}-${i}`} style={pz.starStepperStar}>
                   ★
                 </Text>
               ))}
@@ -2652,6 +3647,50 @@ function ParentZoneView({
             </TouchableOpacity>
           </View>
         </View>
+      </View>
+    );
+  }
+
+  function BeforeRewardMissionRow({ mission }: { mission: PoolMission }) {
+    const selected = (settings.beforeRewardMissionIds ?? []).includes(
+      mission.id,
+    );
+    return (
+      <View style={[u.row, pz.customizeRow]}>
+        <Text style={{ fontSize: 20, marginRight: 10 }}>{mission.emoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={u.rowLabel}>{missionTitle(mission)}</Text>
+          <Text style={u.rowSublabel}>
+            {tx("settings.before_reward_mission_hint")}
+          </Text>
+        </View>
+        <Switch
+          value={selected}
+          onValueChange={(v) => toggleBeforeRewardMission(mission.id, v)}
+          trackColor={{ false: C.track, true: C.green }}
+          thumbColor={C.white}
+        />
+      </View>
+    );
+  }
+
+  function BeforeRewardRewardRow({ reward }: { reward: Reward }) {
+    const selected = (settings.beforeRewardRewardIds ?? []).includes(reward.id);
+    return (
+      <View style={[u.row, pz.customizeRow]}>
+        <Text style={{ fontSize: 20, marginRight: 10 }}>{reward.emoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={u.rowLabel}>{rewardTitle(reward)}</Text>
+          <Text style={u.rowSublabel}>
+            {tx("settings.before_reward_reward_hint")}
+          </Text>
+        </View>
+        <Switch
+          value={selected}
+          onValueChange={(v) => toggleBeforeRewardReward(reward.id, v)}
+          trackColor={{ false: C.track, true: C.green }}
+          thumbColor={C.white}
+        />
       </View>
     );
   }
@@ -2672,7 +3711,7 @@ function ParentZoneView({
             style={[u.editInput, { flex: 1 }]}
             value={draftMissionTitle}
             onChangeText={setDraftMissionTitle}
-            placeholder={t("settings.mission_name_placeholder")}
+            placeholder={tx("settings.mission_name_placeholder")}
             placeholderTextColor={C.muted}
             autoFocus
           />
@@ -2681,23 +3720,58 @@ function ParentZoneView({
           style={u.editInput}
           value={draftMissionSubtitle}
           onChangeText={setDraftMissionSubtitle}
-          placeholder={t("settings.mission_hint_placeholder")}
+          placeholder={tx("settings.mission_hint_placeholder")}
           placeholderTextColor={C.muted}
         />
+        <View style={u.imageEditRow}>
+          <View style={u.imagePreviewBox}>
+            {draftMissionImageUri ? (
+              <Image
+                source={{ uri: draftMissionImageUri }}
+                style={u.imagePreview}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={u.imagePreviewEmoji}>
+                {draftMissionEmoji || "✨"}
+              </Text>
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <TouchableOpacity
+              style={u.imagePickBtn}
+              onPress={pickDraftMissionImage}
+            >
+              <Text style={u.imagePickTxt}>{tx("settings.image_pick")}</Text>
+            </TouchableOpacity>
+            {draftMissionImageUri && (
+              <TouchableOpacity
+                style={u.imageRemoveBtn}
+                onPress={() => setDraftMissionImageUri(undefined)}
+              >
+                <Text style={u.imageRemoveTxt}>
+                  {tx("settings.image_remove")}
+                </Text>
+              </TouchableOpacity>
+            )}
+            <Text style={u.imageHint}>{tx("settings.image_guardrail")}</Text>
+          </View>
+        </View>
         <View style={u.rowBtns}>
           <TouchableOpacity style={u.btnPrimary} onPress={addCustomMission}>
-            <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
+            <Text style={u.btnPrimaryTxt}>{tx("settings.add")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={u.btnCancel}
             onPress={() => {
               setShowAddMission(false);
               setDraftMissionEmoji("");
+              setDraftMissionImageUri(undefined);
               setDraftMissionTitle("");
               setDraftMissionSubtitle("");
             }}
           >
-            <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+            <Text style={u.btnCancelTxt}>{tx("settings.cancel")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2720,13 +3794,13 @@ function ParentZoneView({
             style={[u.editInput, { flex: 1 }]}
             value={draftRewardTitle}
             onChangeText={setDraftRewardTitle}
-            placeholder={t("settings.reward_name_placeholder")}
+            placeholder={tx("settings.reward_name_placeholder")}
             placeholderTextColor={C.muted}
           />
         </View>
         <View style={u.rowBtns}>
           <TouchableOpacity style={u.btnPrimary} onPress={addCustomReward}>
-            <Text style={u.btnPrimaryTxt}>{t("settings.add")}</Text>
+            <Text style={u.btnPrimaryTxt}>{tx("settings.add")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={u.btnCancel}
@@ -2736,7 +3810,7 @@ function ParentZoneView({
               setDraftRewardTitle("");
             }}
           >
-            <Text style={u.btnCancelTxt}>{t("settings.cancel")}</Text>
+            <Text style={u.btnCancelTxt}>{tx("settings.cancel")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2747,9 +3821,9 @@ function ParentZoneView({
     <SafeAreaView key={`pz-${settings.appLocale}`} style={ss.root}>
       <View style={ss.header}>
         <TouchableOpacity onPress={onBack} style={ss.backBtn}>
-          <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+          <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
         </TouchableOpacity>
-        <Text style={ss.headerTitle}>{t("settings.parent_zone_header")}</Text>
+        <Text style={ss.headerTitle}>{tx("settings.parent_zone_header")}</Text>
         <View style={{ width: 80 }} />
       </View>
       <ScrollView
@@ -2758,7 +3832,7 @@ function ParentZoneView({
         contentContainerStyle={ss.content}
         keyboardShouldPersistTaps="handled"
       >
-        <SectionHeader title={t("settings.missions_weekday")} icon="📅" />
+        <SectionHeader title={tx("settings.missions_weekday")} icon="📅" />
         <Card>
           {missionPool.map((m, idx) => (
             <View key={m.id}>
@@ -2770,7 +3844,7 @@ function ParentZoneView({
 
         <View style={pz.sectionSpacer} />
 
-        <SectionHeader title={t("settings.missions_weekend")} icon="🌈" />
+        <SectionHeader title={tx("settings.missions_weekend")} icon="🌈" />
         <Card>
           {missionPool.map((m, idx) => (
             <View key={m.id}>
@@ -2793,7 +3867,7 @@ function ParentZoneView({
                   onPress={() => setShowAddMission(true)}
                 >
                   <Text style={pz.addActionTxt}>
-                    {t("settings.add_mission")}
+                    {tx("settings.add_mission")}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -2803,7 +3877,109 @@ function ParentZoneView({
 
         <View style={pz.sectionSpacer} />
 
-        <SectionHeader title={t("settings.rewards_section")} icon="🎁" />
+        <SectionHeader title={tx("settings.before_reward_section")} icon="▶" />
+        <Card>
+          <SettingRow
+            label={tx("settings.before_reward_label")}
+            sublabel={tx("settings.before_reward_sub", {
+              count: settings.beforeRewardMissionCount ?? 1,
+            })}
+          >
+            <Switch
+              value={settings.beforeRewardEnabled}
+              onValueChange={(v) => onChange({ beforeRewardEnabled: v })}
+              trackColor={{ false: C.track, true: C.green }}
+              thumbColor={C.white}
+            />
+          </SettingRow>
+          {settings.beforeRewardEnabled && (
+            <>
+              <Divider />
+              <SettingRow
+                label={tx("settings.before_reward_count_label")}
+                sublabel={tx("settings.before_reward_count_sub")}
+              >
+                <View style={u.stepperRow}>
+                  <TouchableOpacity
+                    style={u.stepperBtn}
+                    onPress={() =>
+                      onChange({
+                        beforeRewardMissionCount: Math.max(
+                          1,
+                          (settings.beforeRewardMissionCount ?? 1) - 1,
+                        ) as 1 | 2 | 3,
+                      })
+                    }
+                  >
+                    <Text style={u.stepperTxt}>−</Text>
+                  </TouchableOpacity>
+                  <Text style={u.stepperVal}>
+                    {settings.beforeRewardMissionCount ?? 1}
+                  </Text>
+                  <TouchableOpacity
+                    style={u.stepperBtn}
+                    onPress={() =>
+                      onChange({
+                        beforeRewardMissionCount: Math.min(
+                          3,
+                          (settings.beforeRewardMissionCount ?? 1) + 1,
+                        ) as 1 | 2 | 3,
+                      })
+                    }
+                  >
+                    <Text style={u.stepperTxt}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </SettingRow>
+              <Divider />
+              <TouchableOpacity
+                style={pz.customizeHeader}
+                onPress={() =>
+                  setBeforeRewardCustomizeOpen((open) => !open)
+                }
+                activeOpacity={0.75}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={u.rowLabel}>
+                    {tx("settings.before_reward_customize")}
+                  </Text>
+                  <Text style={u.rowSublabel}>
+                    {tx("settings.before_reward_customize_sub")}
+                  </Text>
+                </View>
+                <Text style={pz.customizeChevron}>
+                  {beforeRewardCustomizeOpen ? "▲" : "▼"}
+                </Text>
+              </TouchableOpacity>
+              {beforeRewardCustomizeOpen && (
+                <View style={pz.customizePanel}>
+                  <Text style={pz.customizeGroupTitle}>
+                    {tx("settings.before_reward_customize_missions")}
+                  </Text>
+                  {missionPool.map((m, idx) => (
+                    <View key={`before-reward-mission-${m.id}`}>
+                      {idx > 0 && <Divider />}
+                      <BeforeRewardMissionRow mission={m} />
+                    </View>
+                  ))}
+                  <Text style={[pz.customizeGroupTitle, pz.customizeGroupGap]}>
+                    {tx("settings.before_reward_customize_rewards")}
+                  </Text>
+                  {rewardPool.map((r, idx) => (
+                    <View key={`before-reward-reward-${r.id}`}>
+                      {idx > 0 && <Divider />}
+                      <BeforeRewardRewardRow reward={r} />
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+        </Card>
+
+        <View style={pz.sectionSpacer} />
+
+        <SectionHeader title={tx("settings.rewards_section")} icon="🎁" />
         <Card>
           {rewardPool.map((r, idx) => (
             <View key={r.id}>
@@ -2826,12 +4002,34 @@ function ParentZoneView({
                   onPress={() => setShowAddReward(true)}
                 >
                   <Text style={pz.addActionTxt}>
-                    {t("settings.add_reward")}
+                    {tx("settings.add_reward")}
                   </Text>
                 </TouchableOpacity>
               </>
             )
           )}
+        </Card>
+
+        <View style={pz.sectionSpacer} />
+
+        <ChildPreferencesSection settings={settings} onChange={onChange} />
+
+        <View style={pz.sectionSpacer} />
+
+        <SectionHeader title={tx("settings.about_section")} icon="ℹ️" />
+        <Card>
+          <View style={pz.aboutWrap}>
+            <Text style={u.rowSublabel}>{tx("settings.about_realo_sub")}</Text>
+            <TouchableOpacity
+              style={pz.aboutBtn}
+              onPress={() => setAboutOpen(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={pz.aboutBtnTxt}>
+                {tx("settings.about_realo_btn")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </Card>
 
         <View style={{ height: 40 }} />
@@ -2845,6 +4043,29 @@ const pz = StyleSheet.create({
   compactRow: { paddingVertical: 10, paddingHorizontal: 12, gap: 10 },
   compactSubRow: { paddingTop: 0, paddingBottom: 8, paddingHorizontal: 12 },
   sectionSpacer: { height: 18 },
+  customizeHeader: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  customizeChevron: { fontSize: 14, color: C.green, fontWeight: "700" },
+  customizePanel: {
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    backgroundColor: "#FBFAF6",
+  },
+  customizeGroupTitle: {
+    paddingTop: 12,
+    paddingHorizontal: 14,
+    paddingBottom: 6,
+    fontSize: 12,
+    fontWeight: "800",
+    color: C.green,
+  },
+  customizeGroupGap: { marginTop: 8 },
+  customizeRow: { paddingVertical: 10, paddingHorizontal: 14, gap: 10 },
   blockPermanent: { backgroundColor: "#F1FAF6" },
   blockRotating: { backgroundColor: "#FFF8E7" },
 
@@ -2906,6 +4127,21 @@ const pz = StyleSheet.create({
     justifyContent: "center",
   },
   addActionTxt: { fontSize: 14, color: C.green, fontWeight: "700" },
+  aboutWrap: {
+    padding: 14,
+    gap: 10,
+  },
+  aboutBtn: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CFE6DD",
+    backgroundColor: C.greenLt,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aboutBtnTxt: { fontSize: 14, color: C.green, fontWeight: "700" },
 });
 
 // ── MAIN SETTINGS SCREEN ──────────────────────────────────────────────────────
@@ -2914,6 +4150,8 @@ interface SettingsScreenProps {
   onClose: () => void;
   // Called whenever settings change so index.tsx can update its own state
   onSettingsChange: (settings: AppSettings) => void;
+  onStartChildOnboarding?: () => void;
+  childOnboardingDone?: boolean;
   // Called after full progress reset so index.tsx can sync in-memory counters
   onProgressReset?: () => void;
   // Optional: pass current PIN for protected reset
@@ -2928,21 +4166,36 @@ function LanguageToggle({
   value: AppLocale;
   onChange: (locale: AppLocale) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const options: { label: string; value: AppLocale }[] = [
     { label: "RU", value: "ru" },
     { label: "EN", value: "en" },
     { label: "HE", value: "he" },
   ];
+  const currentOption = options.find((option) => option.value === value);
+  const visibleOptions = expanded
+    ? [
+        ...(currentOption ? [currentOption] : []),
+        ...options.filter((option) => option.value !== value),
+      ]
+    : options.filter((option) => option.value === value);
 
   return (
-    <View style={ss.langToggle}>
-      {options.map((option) => {
+    <View style={[ss.langToggle, !expanded && ss.langToggleCollapsed]}>
+      {visibleOptions.map((option) => {
         const active = option.value === value;
         return (
           <TouchableOpacity
             key={option.value}
             style={[ss.langBtn, active && ss.langBtnActive]}
-            onPress={() => onChange(option.value)}
+            onPress={() => {
+              if (!expanded) {
+                setExpanded(true);
+                return;
+              }
+              onChange(option.value);
+              setExpanded(false);
+            }}
             activeOpacity={0.75}
           >
             <Text style={[ss.langBtnTxt, active && ss.langBtnTxtActive]}>
@@ -2958,10 +4211,14 @@ function LanguageToggle({
 export default function SettingsScreen({
   onClose,
   onSettingsChange,
+  onStartChildOnboarding,
+  childOnboardingDone = false,
   onProgressReset,
   currentPin = "",
   pinEnabled = false,
 }: SettingsScreenProps) {
+  const tx = (key: string, params?: Record<string, unknown>) =>
+    i18n.t(key, { ...(params ?? {}), locale: settings.appLocale });
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -2971,6 +4228,7 @@ export default function SettingsScreen({
   const [showPin, setShowPin] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [parentZoneOpen, setParentZoneOpen] = useState(false);
+  const [handoffCardDismissed, setHandoffCardDismissed] = useState(false);
   const [activeSubscreen, setActiveSubscreen] = useState<
     "main" | "schedule" | "routine"
   >("main");
@@ -3107,16 +4365,16 @@ export default function SettingsScreen({
     const scheduleCount = (settings.scheduleBlocks ?? []).length;
     return (
       <SafeAreaView key={`schedule-${settings.appLocale}`} style={ss.root}>
-        <View pointerEvents="none" style={ss.bgBandTop} />
-        <View pointerEvents="none" style={ss.bgBandMid} />
+        <View style={[ss.bgBandTop, ss.noPointerEvents]} />
+        <View style={[ss.bgBandMid, ss.noPointerEvents]} />
         <View style={ss.header}>
           <TouchableOpacity
             onPress={() => setActiveSubscreen("main")}
             style={ss.backBtn}
           >
-            <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+            <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
           </TouchableOpacity>
-          <Text style={ss.headerTitle}>{t("settings.schedule_section")}</Text>
+          <Text style={ss.headerTitle}>{tx("settings.schedule_section")}</Text>
           <View style={ss.headerRight}>
             <Text style={ss.subHeaderMeta}>{scheduleCount}</Text>
           </View>
@@ -3138,16 +4396,16 @@ export default function SettingsScreen({
     const stepsCount = settings.morningSteps.length;
     return (
       <SafeAreaView key={`routine-${settings.appLocale}`} style={ss.root}>
-        <View pointerEvents="none" style={ss.bgBandTop} />
-        <View pointerEvents="none" style={ss.bgBandMid} />
+        <View style={[ss.bgBandTop, ss.noPointerEvents]} />
+        <View style={[ss.bgBandMid, ss.noPointerEvents]} />
         <View style={ss.header}>
           <TouchableOpacity
             onPress={() => setActiveSubscreen("main")}
             style={ss.backBtn}
           >
-            <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+            <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
           </TouchableOpacity>
-          <Text style={ss.headerTitle}>{t("settings.routine_section")}</Text>
+          <Text style={ss.headerTitle}>{tx("settings.routine_section")}</Text>
           <View style={ss.headerRight}>
             <Text style={ss.subHeaderMeta}>{stepsCount}</Text>
           </View>
@@ -3171,14 +4429,14 @@ export default function SettingsScreen({
 
   return (
     <SafeAreaView style={ss.root}>
-      <View pointerEvents="none" style={ss.bgBandTop} />
-      <View pointerEvents="none" style={ss.bgBandMid} />
+      <View style={[ss.bgBandTop, ss.noPointerEvents]} />
+      <View style={[ss.bgBandMid, ss.noPointerEvents]} />
       {/* Header */}
       <View style={ss.header}>
         <TouchableOpacity onPress={onClose} style={ss.backBtn}>
-          <Text style={ss.backBtnTxt}>{t("settings.back")}</Text>
+          <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
         </TouchableOpacity>
-        <Text style={ss.headerTitle}>{t("settings.title")}</Text>
+        <Text style={ss.headerTitle}>{tx("settings.title")}</Text>
         <View style={ss.headerRight}>
           <LanguageToggle
             value={settings.appLocale}
@@ -3193,10 +4451,93 @@ export default function SettingsScreen({
         contentContainerStyle={ss.content}
         keyboardShouldPersistTaps="handled"
       >
+        {!childOnboardingDone &&
+          onStartChildOnboarding &&
+          !handoffCardDismissed && (
+            <>
+              <View style={ss.handoffCard}>
+                <View style={ss.handoffHeader}>
+                  <Image
+                    source={visualAssets.graphics.buddyBubbleSoft}
+                    style={ss.handoffGraphic}
+                    resizeMode="contain"
+                  />
+                  <View style={ss.handoffTextWrap}>
+                    <Text style={ss.handoffTitle}>
+                      {tx("settings.child_handoff_title")}
+                    </Text>
+                    <Text style={ss.handoffSub}>
+                      {tx("settings.child_handoff_body")}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={ss.handoffSteps}>
+                  <Text style={ss.handoffStep}>
+                    1. {tx("settings.child_handoff_step_look")}
+                  </Text>
+                  <Text style={ss.handoffStep}>
+                    2. {tx("settings.child_handoff_step_adjust")}
+                  </Text>
+                  <Text style={ss.handoffStep}>
+                    3. {tx("settings.child_handoff_step_start")}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={ss.handoffPrimary}
+                  onPress={onStartChildOnboarding}
+                  activeOpacity={0.85}
+                >
+                  <Text style={ss.handoffPrimaryTxt}>
+                    {tx("settings.child_handoff_start")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={ss.handoffSecondary}
+                  onPress={() => setHandoffCardDismissed(true)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={ss.handoffSecondaryTxt}>
+                    {tx("settings.child_handoff_adjust_first")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={ss.spacer} />
+            </>
+          )}
+
         {/* Progress report — high priority, first */}
         {progress && <ProgressSection progress={progress} />}
 
         <View style={pz.sectionSpacer} />
+
+        {!childOnboardingDone &&
+          onStartChildOnboarding &&
+          handoffCardDismissed && (
+          <>
+            <TouchableOpacity
+              style={ss.childStartCard}
+              onPress={onStartChildOnboarding}
+              activeOpacity={0.85}
+            >
+              <Image
+                source={visualAssets.graphics.buddyBubbleSoft}
+                style={ss.childStartGraphic}
+                resizeMode="contain"
+              />
+              <View style={ss.childStartTextWrap}>
+                <Text style={ss.childStartTitle}>
+                  {tx("settings.child_start_title")}
+                </Text>
+                <Text style={ss.childStartSub}>
+                  {tx("settings.child_start_sub")}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <View style={ss.spacer} />
+          </>
+        )}
 
         {/* Parent zone — PIN-gated overrides */}
         <TouchableOpacity
@@ -3205,13 +4546,17 @@ export default function SettingsScreen({
           activeOpacity={0.75}
         >
           <View style={ss.parentZoneLeft}>
-            <Text style={ss.parentZoneIcon}>🔐</Text>
+            <Image
+              source={visualAssets.graphics.parentZone}
+              style={ss.parentZoneGraphic}
+              resizeMode="contain"
+            />
             <View style={{ flex: 1 }}>
               <Text style={ss.parentZoneTitle}>
-                {t("settings.parent_zone_title")}
+                {tx("settings.parent_zone_title")}
               </Text>
               <Text style={ss.parentZoneSub}>
-                {t("settings.parent_zone_sub")}
+                {tx("settings.parent_zone_sub")}
               </Text>
             </View>
           </View>
@@ -3251,11 +4596,11 @@ export default function SettingsScreen({
         <View style={ss.spacer} />
 
         {/* Day schedule */}
-        <SectionHeader title={t("settings.schedule_section")} icon="📅" />
+        <SectionHeader title={tx("settings.schedule_section")} icon="📅" />
         <Card>
           <SettingRow
-            label={t("settings.schedule_home_card_label")}
-            sublabel={t("settings.schedule_home_card_sub")}
+            label={tx("settings.schedule_home_card_label")}
+            sublabel={tx("settings.schedule_home_card_sub")}
           >
             <Switch
               value={settings.scheduleEnabled}
@@ -3272,14 +4617,14 @@ export default function SettingsScreen({
           >
             <View style={ss.subscreenRowLeft}>
               <Text style={ss.scheduleManageBtnTitle}>
-                {t("settings.schedule_manage_title")}
+                {tx("settings.schedule_manage_title")}
               </Text>
               <Text style={ss.scheduleManageBtnSub}>
                 {settings.scheduleEnabled
-                  ? t("settings.schedule_summary_on", {
+                  ? tx("settings.schedule_summary_on", {
                       count: String((settings.scheduleBlocks ?? []).length),
                     })
-                  : t("settings.schedule_summary_off")}
+                  : tx("settings.schedule_summary_off")}
               </Text>
             </View>
             <Text style={ss.scheduleManageBtnArrow}>→</Text>
@@ -3388,6 +4733,7 @@ const ss = StyleSheet.create({
     height: 180,
     backgroundColor: "rgba(255,248,231,0.42)",
   },
+  noPointerEvents: { pointerEvents: "none" },
   loadingCenter: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { fontSize: 16, color: C.muted },
   header: {
@@ -3419,6 +4765,10 @@ const ss = StyleSheet.create({
     borderColor: C.border,
     padding: 2,
   },
+  langToggleCollapsed: {
+    backgroundColor: C.green,
+    borderColor: C.green,
+  },
   langBtn: {
     minWidth: 34,
     paddingVertical: 5,
@@ -3429,8 +4779,111 @@ const ss = StyleSheet.create({
   langBtnTxt: { fontSize: 11, color: C.muted, fontWeight: "700" },
   langBtnTxtActive: { color: C.white },
   scroll: { flex: 1 },
-  content: { padding: 16 },
+  content: {
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
+    padding: 16,
+  },
   spacer: { height: 24 },
+  handoffCard: {
+    width: "100%",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#CFE9DD",
+    padding: 18,
+    shadowColor: "#104C39",
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
+  },
+  handoffHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+  },
+  handoffGraphic: { width: 48, height: 48, marginTop: -2, flexShrink: 0 },
+  handoffTextWrap: { flex: 1, minWidth: 0 },
+  handoffTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: C.text,
+    lineHeight: 25,
+  },
+  handoffSub: {
+    fontSize: 13,
+    color: C.muted,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  handoffSteps: {
+    backgroundColor: "#F4FAF7",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D8EFE6",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: 16,
+    gap: 7,
+  },
+  handoffStep: {
+    fontSize: 13,
+    color: C.green,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  handoffPrimary: {
+    backgroundColor: C.green,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  handoffPrimaryTxt: {
+    fontSize: 15,
+    color: C.white,
+    fontWeight: "800",
+  },
+  handoffSecondary: {
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: 4,
+  },
+  handoffSecondaryTxt: {
+    fontSize: 14,
+    color: C.green,
+    fontWeight: "700",
+  },
+  childStartCard: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: C.green,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: C.green,
+  },
+  childStartGraphic: { width: 44, height: 44, flexShrink: 0 },
+  childStartTextWrap: { flex: 1 },
+  childStartTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: C.white,
+    lineHeight: 22,
+  },
+  childStartSub: {
+    fontSize: 12,
+    color: C.greenLt,
+    lineHeight: 17,
+    marginTop: 4,
+  },
   subscreenRowLeft: { flex: 1, minWidth: 0 },
   scheduleManageBtn: {
     margin: 12,
@@ -3555,7 +5008,7 @@ const ss = StyleSheet.create({
     gap: 14,
     flex: 1,
   },
-  parentZoneIcon: { fontSize: 28 },
+  parentZoneGraphic: { width: 44, height: 44, flexShrink: 0 },
   parentZoneTitle: { fontSize: 16, fontWeight: "700", color: C.white },
   parentZoneSub: {
     fontSize: 12,
@@ -3599,6 +5052,8 @@ const u = StyleSheet.create({
   rowLabel: { fontSize: 14, fontWeight: "500", color: C.text },
   rowSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 17 },
   rowLabelWithInfo: { flexDirection: "row", alignItems: "center", gap: 6 },
+  rowLabelWithIcon: { flexDirection: "row", alignItems: "center", gap: 8 },
+  handpanRowIcon: { width: 26, height: 22, marginLeft: -2 },
   infoDot: {
     width: 16,
     height: 16,
@@ -3778,6 +5233,62 @@ const u = StyleSheet.create({
     backgroundColor: C.bg,
     marginBottom: 8,
   },
+  inlineEditRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  preferenceIntro: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 18,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 4,
+  },
+  preferenceGroup: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
+  preferenceGroupTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: C.green,
+  },
+  preferenceEmpty: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 17,
+    paddingVertical: 4,
+  },
+  preferenceItem: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    backgroundColor: C.bg,
+    padding: 10,
+    gap: 10,
+  },
+  preferenceMain: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  preferenceEmoji: { fontSize: 22, width: 28, textAlign: "center" },
+  preferenceText: { flex: 1, minWidth: 0 },
+  preferenceTitle: { fontSize: 14, fontWeight: "700", color: C.text },
+  preferenceNote: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  preferenceMeta: {
+    fontSize: 11,
+    color: C.green,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  preferenceActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  preferenceActionBtns: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   editCostRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
   scheduleItemWrap: { paddingHorizontal: 4, paddingVertical: 2 },
   scheduleMainRow: {
@@ -3796,8 +5307,23 @@ const u = StyleSheet.create({
     gap: 10,
   },
   scheduleEmoji: { fontSize: 20, marginRight: 4 },
+  itemThumb: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: C.bg,
+    borderWidth: 0.5,
+    borderColor: C.border,
+    marginRight: 4,
+    flexShrink: 0,
+  },
   scheduleLabel: { fontSize: 14, fontWeight: "500", color: C.text },
-  scheduleSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 16 },
+  scheduleSublabel: {
+    fontSize: 12,
+    color: C.muted,
+    marginTop: 2,
+    lineHeight: 16,
+  },
   scheduleLinkBtn: { paddingVertical: 3, paddingHorizontal: 8 },
   scheduleLinkBtnTxt: { fontSize: 13, color: C.green, fontWeight: "500" },
   scheduleDangerBtn: {
@@ -3807,6 +5333,54 @@ const u = StyleSheet.create({
     paddingHorizontal: 12,
   },
   scheduleDangerBtnTxt: { fontSize: 13, color: C.red, fontWeight: "600" },
+  imageEditRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    backgroundColor: C.bg,
+    padding: 10,
+    marginBottom: 8,
+  },
+  imagePreviewBox: {
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: "#FFFDF9",
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  imagePreview: {
+    width: "100%",
+    height: "100%",
+  },
+  imagePreviewEmoji: { fontSize: 28 },
+  imagePickBtn: {
+    alignSelf: "flex-start",
+    borderRadius: 10,
+    backgroundColor: C.green,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  imagePickTxt: { fontSize: 12, color: C.white, fontWeight: "700" },
+  imageRemoveBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+  },
+  imageRemoveTxt: { fontSize: 12, color: C.red, fontWeight: "700" },
+  imageHint: {
+    fontSize: 11,
+    color: C.muted,
+    lineHeight: 15,
+    marginTop: 5,
+  },
 
   // Progress stats
   snapshotCard: {
@@ -3951,5 +5525,4 @@ const u = StyleSheet.create({
     padding: 14,
     paddingTop: 4,
   },
-
 });

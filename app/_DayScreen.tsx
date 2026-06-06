@@ -2,28 +2,37 @@
 // Vertical list of all schedule blocks. Past fades, current is prominent,
 // upcoming is normal. Never shows a "missed" state.
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 import {
   C,
   ScheduleBlock,
   getBlockStatus,
   getScheduleTitle,
 } from "./_constants";
+import { SpeakFn } from "./_speechTypes";
 import { getAppLocale, t } from "./i18n";
 
 interface DayScreenProps {
   blocks: ScheduleBlock[];
   isWeekendDay: boolean;
-  speak: (t: string) => void;
+  speak: SpeakFn;
+  buddyDjModeEnabled?: boolean;
   onClose: () => void;
   onStartMission: (missionId: number) => void;
+}
+
+function parseTimeToMinutes(time: string): number {
+  const [hour, minute] = time.split(":").map(Number);
+  return hour * 60 + minute;
 }
 
 function englishHour(hour: number): string {
@@ -81,66 +90,124 @@ function formatTimeForSpeech(time: string): string {
   if (!match) return time;
   const hour = parseInt(match[1], 10);
   const minute = parseInt(match[2], 10);
+  const locale = getAppLocale();
 
-  if (getAppLocale() === "en") {
+  if (locale === "en") {
     const hourText = englishHour(hour);
     if (minute === 0) return `${hourText} o'clock`;
     if (minute < 10) return `${hourText} oh ${minute}`;
     return `${hourText} ${minute}`;
   }
 
-  const hourText = russianHour(hour);
-  if (minute === 0) {
-    return hour % 12 === 1 ? `${hourText}` : `${hourText} часов`;
+  if (locale === "ru") {
+    const hourText = russianHour(hour);
+    if (minute === 0) {
+      return hour % 12 === 1 ? `${hourText}` : `${hourText} часов`;
+    }
+    return `${hourText} ${minute}`;
   }
-  return `${hourText} ${minute}`;
+
+  // For non-English / non-Russian locales, keep a neutral numeric wording
+  // instead of forcing Russian hour forms.
+  if (minute === 0) return `${hour}`;
+  return `${hour} ${minute}`;
 }
 
 export default function DayScreen({
   blocks,
   isWeekendDay,
   speak,
+  buddyDjModeEnabled = false,
   onClose,
   onStartMission,
 }: DayScreenProps) {
+  const { contentMaxWidth, screenPadding, isLargeTablet, buddyContentSpacer } =
+    useLayoutMetrics();
   const scrollRef = useRef<ScrollView | null>(null);
   const blockYRef = useRef<Record<number, number>>({});
 
   const visibleBlocks = blocks
     .filter((b) => (isWeekendDay ? b.weekends : b.weekdays))
     .slice()
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    .sort(
+      (a, b) =>
+        parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime),
+    );
 
-  // Scroll to current block on mount (if any).
+  const currentBlock = visibleBlocks.find(
+    (b) => getBlockStatus(b) === "current",
+  );
+  const nextUpcomingBlock = visibleBlocks.find(
+    (b) => getBlockStatus(b) === "upcoming",
+  );
+  const focusBlock = currentBlock ?? nextUpcomingBlock;
+  const didScrollToFocus = useRef(false);
+
   useEffect(() => {
     const t = setTimeout(() => {
-      const current = visibleBlocks.find(
-        (b) => getBlockStatus(b) === "current",
-      );
-      if (current && blockYRef.current[current.id] != null) {
-        scrollRef.current?.scrollTo({
-          y: Math.max(0, blockYRef.current[current.id] - 40),
-          animated: true,
-        });
+      if (didScrollToFocus.current) return;
+      if (focusBlock) {
+        const targetY = blockYRef.current[focusBlock.id];
+        if (targetY != null) {
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, targetY - 40),
+            animated: true,
+          });
+          didScrollToFocus.current = true;
+        }
+      } else {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        didScrollToFocus.current = true;
       }
     }, 150);
     return () => clearTimeout(t);
-  }, [visibleBlocks]);
+  }, [focusBlock]);
 
   return (
     <View style={s.root}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t("day.title")}</Text>
-        <TouchableOpacity
-          style={s.closeBtn}
-          onPress={onClose}
-          accessibilityLabel={t("day.close_a11y")}
-        >
-          <Text style={s.closeBtnTxt}>✕</Text>
-        </TouchableOpacity>
+      <View
+        style={[
+          s.header,
+          isLargeTablet && s.headerLarge,
+          { maxWidth: contentMaxWidth + screenPadding * 2 },
+        ]}
+      >
+        <Text style={[s.headerTitle, isLargeTablet && s.headerTitleLarge]}>
+          {t("day.title")}
+        </Text>
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={s.scroll}>
+      <ScrollView
+        ref={scrollRef}
+        style={s.scrollView}
+        contentContainerStyle={[
+          s.scroll,
+          isLargeTablet && s.scrollLarge,
+          {
+            flexGrow: 1,
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+            paddingTop: buddyContentSpacer,
+            paddingBottom: isLargeTablet ? 70 : 50,
+          },
+        ]}
+        onContentSizeChange={() => {
+          if (didScrollToFocus.current) return;
+          if (focusBlock) {
+            const targetY = blockYRef.current[focusBlock.id];
+            if (targetY != null) {
+              scrollRef.current?.scrollTo({
+                y: Math.max(0, targetY - 40),
+                animated: true,
+              });
+              didScrollToFocus.current = true;
+            }
+          } else {
+            scrollRef.current?.scrollTo({ y: 0, animated: false });
+            didScrollToFocus.current = true;
+          }
+        }}
+      >
         {visibleBlocks.length === 0 ? (
           <Text style={s.empty}>{t("day.empty")}</Text>
         ) : (
@@ -160,7 +227,18 @@ export default function DayScreen({
                 key={block.id}
                 style={s.row}
                 onLayout={(e) => {
-                  blockYRef.current[block.id] = e.nativeEvent.layout.y;
+                  const y = e.nativeEvent.layout.y;
+                  blockYRef.current[block.id] = y;
+                  if (
+                    !didScrollToFocus.current &&
+                    focusBlock?.id === block.id
+                  ) {
+                    scrollRef.current?.scrollTo({
+                      y: Math.max(0, y - 40),
+                      animated: true,
+                    });
+                    didScrollToFocus.current = true;
+                  }
                 }}
               >
                 {/* Timeline spine */}
@@ -183,19 +261,35 @@ export default function DayScreen({
                   onPress={() =>
                     speak(
                       `${getScheduleTitle(block.id, block.title)}, ${formatTimeForSpeech(block.startTime)}`,
+                      {
+                        intent: "ambientPlay",
+                        delivery: buddyDjModeEnabled ? "djCut" : "replace",
+                      },
                     )
                   }
                   activeOpacity={0.75}
                 >
-                  <Text
-                    style={[
-                      s.cardEmoji,
-                      isCurrent && s.cardEmojiCurrent,
-                      isPast && s.cardEmojiPast,
-                    ]}
-                  >
-                    {block.emoji}
-                  </Text>
+                  {block.imageUri ? (
+                    <Image
+                      source={{ uri: block.imageUri }}
+                      style={[
+                        s.cardThumb,
+                        isCurrent && s.cardThumbCurrent,
+                        isPast && s.cardThumbPast,
+                      ]}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Text
+                      style={[
+                        s.cardEmoji,
+                        isCurrent && s.cardEmojiCurrent,
+                        isPast && s.cardEmojiPast,
+                      ]}
+                    >
+                      {block.emoji}
+                    </Text>
+                  )}
                   <View style={s.cardInfo}>
                     <Text
                       style={[
@@ -226,6 +320,8 @@ export default function DayScreen({
             );
           })
         )}
+      </ScrollView>
+      <View style={s.footer} pointerEvents="box-none">
         <TouchableOpacity
           style={s.btnBack}
           onPress={onClose}
@@ -233,8 +329,7 @@ export default function DayScreen({
         >
           <Text style={s.btnBackTxt}>{t("common.back")}</Text>
         </TouchableOpacity>
-        <View style={{ height: 60 }} />
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -244,25 +339,32 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 10,
   },
-  headerTitle: { fontSize: 22, fontWeight: "700", color: C.text },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FFFDF9",
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
-    alignItems: "center",
-    justifyContent: "center",
+  headerLarge: {
+    width: "100%",
+    alignSelf: "center",
+    paddingHorizontal: 32,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
-  closeBtnTxt: { fontSize: 18, color: C.text },
+  headerTitle: { fontSize: 22, fontWeight: "700", color: C.text },
+  headerTitleLarge: { fontSize: 30 },
 
-  scroll: { padding: 20, paddingTop: 6 },
+  scroll: {
+    width: "100%",
+    alignSelf: "center",
+  },
+  scrollView: {
+    flex: 1,
+    width: "100%",
+  },
+  scrollLarge: {
+    paddingBottom: 110,
+  },
   empty: { textAlign: "center", color: C.muted, marginTop: 40, fontSize: 15 },
 
   row: { flexDirection: "row", alignItems: "stretch" },
@@ -316,6 +418,20 @@ const s = StyleSheet.create({
   cardEmoji: { fontSize: 26 },
   cardEmojiCurrent: { fontSize: 32 },
   cardEmojiPast: { opacity: 0.6 },
+  cardThumb: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "#FFFDF9",
+    borderWidth: 0.5,
+    borderColor: "rgba(107,107,104,0.18)",
+  },
+  cardThumbCurrent: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+  },
+  cardThumbPast: { opacity: 0.6 },
 
   cardInfo: { flex: 1 },
   cardTitle: { fontSize: 15, fontWeight: "600", color: C.text },
@@ -334,6 +450,26 @@ const s = StyleSheet.create({
   },
   startBtnTxt: { fontSize: 18, color: C.white, fontWeight: "700" },
 
-  btnBack: { marginTop: 18, padding: 12, alignSelf: "center" },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 8,
+    alignItems: "center",
+    zIndex: 10,
+    pointerEvents: "box-none",
+  },
+  btnBack: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignSelf: "center",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   btnBackTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
 });

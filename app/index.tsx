@@ -1,20 +1,16 @@
 // npx expo install expo-speech @react-native-async-storage/async-storage react-native-confetti-cannon
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import { StatusBar } from "expo-status-bar";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -23,8 +19,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
+import { pickPreferenceForUse } from "../lib/childPreferences";
+import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
+import ChildOnboarding from "./_ChildOnboarding";
 import {
   AgeProfile,
   BuddyMood,
@@ -64,7 +64,6 @@ import {
   DemoStepScreen,
 } from "./_DemoScreens";
 import HomeScreen from "./_HomeScreen";
-import { incrementLocalUsage } from "./_localUsage";
 import {
   ActiveScreen,
   CelebrateScreen,
@@ -81,7 +80,25 @@ import SettingsScreen, {
   saveSettings,
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
-import { getTtsLanguage, t, tSpeak } from "./i18n";
+import { SpeechCallOptions } from "./_speechTypes";
+import { AppLocale, getTtsLanguage, t, tSpeak } from "./i18n";
+
+const YESTERDAY = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+})();
+
+function rewardRedemptionSpeakKey(
+  rtlChildSex: "male" | "female",
+  isFirstReward: boolean,
+) {
+  const useRareLine = isFirstReward || Math.random() < 0.14;
+  if (!useRareLine) return "rewards.redeemed_speak";
+  return rtlChildSex === "female"
+    ? "rewards.redeemed_speak_female"
+    : "rewards.redeemed_speak_male";
+}
 
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
@@ -119,6 +136,7 @@ const K = {
   TOTAL_MISSIONS: "sb_total_missions",
   CHILD_NAME: "sb_child_name",
   LAST_MISSION: "sb_last_mission",
+  LAST_MISSION_DATE: "sb_last_mission_date",
   SKIP_COUNT: "sb_skip_count",
   FIRST_REWARD: "sb_first_reward",
   PARENT_PIN: "sb_parent_pin",
@@ -135,6 +153,7 @@ const K = {
 const TINY_FACT_IDLE_MIN_MS = 2000;
 const TINY_FACT_IDLE_JITTER_MS = 3000;
 const TINY_FACT_VISIBLE_MS = 10000;
+const FIRST_EXPERIENCE_MISSION_IDS = [4, 15, 13, 17, 1, 3, 20, 2];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -184,8 +203,11 @@ async function resolveVoiceForLanguage(language: string) {
     const byNameScore = (v: any) => {
       const name = String(v?.name ?? "").toLowerCase();
       const qualityBonus = v?.quality === enhanced ? 10 : 0;
-      const minusNovelty =
-        /compact|novelty|enhanced\(novelty\)|eloquence/.test(name) ? -4 : 0;
+      const minusNovelty = /compact|novelty|enhanced\(novelty\)|eloquence/.test(
+        name,
+      )
+        ? -4
+        : 0;
       const plusDefault = /default|siri|female|male/.test(name) ? 2 : 0;
       return qualityBonus + plusDefault + minusNovelty;
     };
@@ -200,7 +222,8 @@ async function resolveVoiceForLanguage(language: string) {
           v.quality === enhanced,
       ) ||
       voices.find(
-        (v) => v.language?.toLowerCase().replace("_", "-") === normalizedLanguage,
+        (v) =>
+          v.language?.toLowerCase().replace("_", "-") === normalizedLanguage,
       ) ||
       voices.find((v) =>
         v.language?.toLowerCase().replace("_", "-").startsWith(prefix),
@@ -211,10 +234,6 @@ async function resolveVoiceForLanguage(language: string) {
     return null;
   }
 }
-
-type SpeechCallOptions = {
-  volume?: number;
-};
 
 function applyRtlGenderSpeech(
   text: string,
@@ -239,10 +258,14 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
   const languageRef = useRef(getTtsLanguage());
   const enabledRef = useRef(enabled);
   const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSpeechRef = useRef({ text: "", at: 0 });
+  const playfulWindowRef = useRef({ startedAt: 0, count: 0 });
+  const speechSeqRef = useRef(0);
 
   useEffect(() => {
     enabledRef.current = enabled;
     if (!enabled) {
+      speechSeqRef.current += 1;
       if (speakTimerRef.current) {
         clearTimeout(speakTimerRef.current);
         speakTimerRef.current = null;
@@ -260,6 +283,7 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
       voiceRef.current = v;
     });
     return () => {
+      speechSeqRef.current += 1;
       if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
       try {
         Speech.stop();
@@ -267,82 +291,123 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
     };
   }, []);
 
-  return useCallback((text: string, options: SpeechCallOptions = {}) => {
-    if (!enabledRef.current || !text) return;
-    if (speakTimerRef.current) {
-      clearTimeout(speakTimerRef.current);
-      speakTimerRef.current = null;
-    }
-    try {
-      Speech.stop();
-    } catch {}
-    const lang = getTtsLanguage();
-    const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
-    const cleanedText = genderedText
-      .replace(
-        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
-        "",
-      )
-      .replace(/[⭐★☆•▪︎▶️→←]/g, " ")
-      .replace(/\s*[—–-]\s*/g, ", ")
-      .replace(/\s*\.\s*/g, ". ")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!cleanedText) return;
-    if (languageRef.current !== lang) {
-      languageRef.current = lang;
-      resolveVoiceForLanguage(lang).then((v) => {
-        voiceRef.current = v;
-      });
-    }
-    const opts: any = {
-      language: lang,
-      pitch: 1.05,
-      rate: Platform.OS === "ios" ? 0.52 : 0.65,
-    };
-    if (typeof options.volume === "number") {
-      opts.volume = Math.max(0, Math.min(1, options.volume));
-    }
-    if (
-      voiceMatchesLanguage(voiceRef.current, lang) &&
-      voiceRef.current?.identifier
-    ) {
-      opts.voice = voiceRef.current.identifier;
-    }
-    speakTimerRef.current = setTimeout(
-      () => {
-        speakTimerRef.current = null;
-        if (!enabledRef.current) return;
-        const fallbackOpts: any = { ...opts };
-        delete fallbackOpts.voice;
-        const speakWithFallback = () => {
-          try {
-            Speech.speak(cleanedText, {
-              ...fallbackOpts,
-              onError: () => {
-                // Last resort for Hebrew engines that reject selected voice.
-                try {
-                  Speech.speak(cleanedText, fallbackOpts);
-                } catch {}
-              },
-            });
-          } catch {}
-        };
-        try {
-          Speech.speak(cleanedText, {
-            ...opts,
-            onError: () => {
-              voiceRef.current = null;
-              speakWithFallback();
-            },
-          });
-        } catch {
-          speakWithFallback();
+  return useCallback(
+    (text: string, options: SpeechCallOptions = {}) => {
+      if (!enabledRef.current || !text) return;
+      const intent = options.intent ?? "instruction";
+      const delivery = options.delivery ?? "replace";
+      const allowDjCut = delivery === "djCut" && intent !== "instruction";
+      const lang = getTtsLanguage();
+      const genderedText = applyRtlGenderSpeech(text, lang, rtlChildSex);
+      const cleanedText = genderedText
+        .replace(
+          /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+          "",
+        )
+        .replace(/[⭐★☆•▪︎▶️→←]/g, " ")
+        .replace(/\s*[—–-]\s*/g, ", ")
+        .replace(/\s*\.\s*/g, ". ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!cleanedText) return;
+      const now = Date.now();
+      const sameAsLast = lastSpeechRef.current.text === cleanedText;
+      const duplicateLockMs = Math.max(
+        1800,
+        Math.min(7000, cleanedText.length * 70 + 900),
+      );
+
+      if (sameAsLast && now - lastSpeechRef.current.at < duplicateLockMs) {
+        return;
+      }
+
+      if (allowDjCut) {
+        const windowAge = now - playfulWindowRef.current.startedAt;
+        if (windowAge > 2400) {
+          playfulWindowRef.current = { startedAt: now, count: 0 };
         }
-      },
-      Platform.OS === "ios" ? 120 : 0,
-    );
-  }, [rtlChildSex]);
+        if (sameAsLast && now - lastSpeechRef.current.at < 350) {
+          return;
+        }
+        if (playfulWindowRef.current.count >= 3) {
+          return;
+        }
+        playfulWindowRef.current.count += 1;
+      }
+
+      if (speakTimerRef.current) {
+        clearTimeout(speakTimerRef.current);
+        speakTimerRef.current = null;
+      }
+      const speechSeq = speechSeqRef.current + 1;
+      speechSeqRef.current = speechSeq;
+      lastSpeechRef.current = { text: cleanedText, at: now };
+      if (languageRef.current !== lang) {
+        languageRef.current = lang;
+        resolveVoiceForLanguage(lang).then((v) => {
+          voiceRef.current = v;
+        });
+      }
+      const opts: any = {
+        language: lang,
+        pitch: 1.05,
+        rate: Platform.OS === "ios" ? 0.52 : 0.65,
+      };
+      if (typeof options.volume === "number") {
+        opts.volume = Math.max(0, Math.min(1, options.volume));
+      }
+      if (
+        voiceMatchesLanguage(voiceRef.current, lang) &&
+        voiceRef.current?.identifier
+      ) {
+        opts.voice = voiceRef.current.identifier;
+      }
+      Promise.resolve(Speech.stop())
+        .catch(() => {})
+        .finally(() => {
+          if (speechSeqRef.current !== speechSeq) return;
+          speakTimerRef.current = setTimeout(
+            () => {
+              speakTimerRef.current = null;
+              if (!enabledRef.current || speechSeqRef.current !== speechSeq) {
+                return;
+              }
+              const fallbackOpts: any = { ...opts };
+              delete fallbackOpts.voice;
+              const speakWithFallback = () => {
+                if (speechSeqRef.current !== speechSeq) return;
+                try {
+                  Speech.speak(cleanedText, {
+                    ...fallbackOpts,
+                    onError: () => {
+                      // Last resort for Hebrew engines that reject selected voice.
+                      if (speechSeqRef.current !== speechSeq) return;
+                      try {
+                        Speech.speak(cleanedText, fallbackOpts);
+                      } catch {}
+                    },
+                  });
+                } catch {}
+              };
+              try {
+                Speech.speak(cleanedText, {
+                  ...opts,
+                  onError: () => {
+                    if (speechSeqRef.current !== speechSeq) return;
+                    voiceRef.current = null;
+                    speakWithFallback();
+                  },
+                });
+              } catch {
+                speakWithFallback();
+              }
+            },
+            Platform.OS === "ios" ? 120 : 0,
+          );
+        });
+    },
+    [rtlChildSex],
+  );
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
@@ -360,6 +425,7 @@ export default function App() {
   const [mission, setMission] = useState<any>(null);
   const [firstMission, setFirstMission] = useState(true);
   const [lastMission, setLastMission] = useState<string | null>(null);
+  const [lastMissionDate, setLastMissionDate] = useState<string | null>(null);
   const [skipCount, setSkipCount] = useState(0);
   const [isVeryExcited, setIsVeryExcited] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(true);
@@ -371,6 +437,7 @@ export default function App() {
 
   // Onboarding
   const [parentOnboardingDone, setParentOnboardingDone] = useState(false);
+  const [highlightSettings, setHighlightSettings] = useState(false);
   const [childName, setChildName] = useState("");
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [childAge, setChildAge] = useState(7);
@@ -384,6 +451,13 @@ export default function App() {
   const [pendingMissionComplete, setPendingMissionComplete] = useState(false);
   const [pinError, setPinError] = useState("");
   const [pinFocused, setPinFocused] = useState(false);
+  const [showRedeemedAlert, setShowRedeemedAlert] = useState(false);
+  const [redeemedAlertTitle, setRedeemedAlertTitle] = useState("");
+  const [redeemedAlertMessage, setRedeemedAlertMessage] = useState("");
+  const [beforeRewardActive, setBeforeRewardActive] = useState(false);
+  const [beforeRewardCompleted, setBeforeRewardCompleted] = useState(0);
+  const [beforeRewardUnlocked, setBeforeRewardUnlocked] = useState(false);
+  const [beforeRewardRewardsOnly, setBeforeRewardRewardsOnly] = useState(false);
 
   // Settings
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -403,6 +477,10 @@ export default function App() {
   );
 
   const speak = useSpeech(ttsEnabled, appSettings.rtlChildSex ?? "male");
+  const [useGentleHomeMood] = useState(() => Math.random() > 0.7);
+  const { contentMaxWidth, isTabletWidth, isLargeTablet, isShortHeight } =
+    useLayoutMetrics();
+  const visibleScreen = screen;
   const ageProfile: AgeProfile =
     appSettings.ageProfileOverride && appSettings.ageProfileOverride !== "auto"
       ? appSettings.ageProfileOverride
@@ -410,36 +488,46 @@ export default function App() {
 
   const fixedOverlayMood = useMemo(() => {
     if (transientMood) return transientMood;
-    if (screen === "home") {
+    if (visibleScreen === "home") {
       const threshold = Math.max(1, appSettings.skipSensitivity ?? 2);
       return skipCount >= threshold
         ? "gentle-reminder"
-        : Math.random() > 0.7
+        : useGentleHomeMood
           ? "gentle-reminder"
           : "calm";
     }
-    if (screen === "pick") return "encouraging";
-    if (screen === "active") {
+    if (visibleScreen === "pick") return "encouraging";
+    if (visibleScreen === "active") {
       return "encouraging";
     }
-    if (screen === "celebrate") {
+    if (visibleScreen === "celebrate") {
       return isVeryExcited ? "very-excited" : "proud";
     }
-    if (screen === "rewards") return "serene";
-    if (screen === "breathing") return "serene";
-    if (screen === "demo_intro") return "calm";
-    if (screen === "demo_step") return "excited";
-    if (screen === "demo_complete") return "proud";
+    if (visibleScreen === "rewards") return "serene";
+    if (visibleScreen === "breathing") return "serene";
+    if (visibleScreen === "demo_intro") return "calm";
+    if (visibleScreen === "demo_step") return "excited";
+    if (visibleScreen === "demo_complete") return "proud";
     return "calm";
   }, [
-    screen,
+    visibleScreen,
     skipCount,
     appSettings.skipSensitivity,
     isVeryExcited,
     transientMood,
+    useGentleHomeMood,
   ]);
 
-  const fixedOverlayCelebrate = screen === "celebrate";
+  const fixedOverlayCelebrate = visibleScreen === "celebrate";
+  const breathingComfortPreference = useMemo(
+    () =>
+      pickPreferenceForUse(
+        appSettings.childPreferences,
+        "calming",
+        `${todayStr()}:breathing`,
+      ),
+    [appSettings.childPreferences],
+  );
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -530,9 +618,18 @@ export default function App() {
 
         // Load full settings
         const s = await loadSettings();
-        setLastMission(
-          newDay ? getStoredMissionTitle(v[K.LAST_MISSION]) : null,
-        );
+        const storedLastMission =
+          tm > 0 && v[K.LAST_MISSION_DATE] === YESTERDAY
+            ? getStoredMissionTitle(v[K.LAST_MISSION])
+            : null;
+        setLastMission(storedLastMission);
+        setLastMissionDate(v[K.LAST_MISSION_DATE] || null);
+        if (!storedLastMission && v[K.LAST_MISSION]) {
+          AsyncStorage.multiSet([
+            [K.LAST_MISSION, ""],
+            [K.LAST_MISSION_DATE, ""],
+          ]).catch(console.log);
+        }
         const onboardingAlreadyComplete =
           v[K.PARENT_ONBOARDING_DONE] === "true" &&
           v[K.ONBOARDING_DONE] === "true";
@@ -596,23 +693,37 @@ export default function App() {
   }, [doneIdsToday, ready]);
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
-  async function saveChildName() {
-    const name = childName.trim();
+  async function completeChildOnboarding(
+    nextName: string,
+    nextAge: number | null,
+  ) {
+    const name = nextName.trim();
     if (!name) {
       Alert.alert(t("onboarding.name_required"));
       return;
     }
+    const resolvedAge = nextAge ?? childAge ?? 7;
     try {
+      const nextSettings = { ...appSettings, childName: name };
       await AsyncStorage.multiSet([
         [K.CHILD_NAME, name],
-        [K.CHILD_AGE, String(childAge)],
+        [K.CHILD_AGE, String(resolvedAge)],
         [K.ONBOARDING_DONE, "true"],
+        [K.DEMO_DONE, "true"],
       ]);
+      await saveSettings(nextSettings);
+      setAppSettings(nextSettings);
       setChildName(name);
+      setChildAge(resolvedAge);
       setOnboardingDone(true);
-      speak(tSpeak("onboarding.welcome_greeting", { name }, appSettings.rtlChildSex ?? "male"));
-      // After onboarding go to demo if not done, else home
-      setScreen("demo_intro");
+      speak(
+        tSpeak(
+          "onboarding.welcome_greeting",
+          { name },
+          appSettings.rtlChildSex ?? "male",
+        ),
+      );
+      setScreen("pick");
     } catch {
       Alert.alert(t("onboarding.save_error"));
     }
@@ -679,10 +790,20 @@ export default function App() {
   useEffect(() => {
     if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
     if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
-    setTinyFactBubble(null);
+    let cancelled = false;
+    const clearBubbleTimer = setTimeout(() => {
+      if (!cancelled) setTinyFactBubble(null);
+    }, 0);
 
-    if (screen !== "active" || !mission || !appSettings.tinyFactsEnabled) {
-      return;
+    if (
+      visibleScreen !== "active" ||
+      !mission ||
+      !appSettings.tinyFactsEnabled
+    ) {
+      return () => {
+        cancelled = true;
+        clearTimeout(clearBubbleTimer);
+      };
     }
 
     const allFacts = MISSION_POOL.map((m) => getTinyFact(m.id)).filter(
@@ -690,10 +811,11 @@ export default function App() {
     );
     const allJokes = getTinyJokes();
     if (allFacts.length === 0 && allJokes.length === 0) {
-      return;
+      return () => {
+        cancelled = true;
+        clearTimeout(clearBubbleTimer);
+      };
     }
-
-    let cancelled = false;
 
     function pickFact(): string {
       const missionFact = getTinyFact(mission.id);
@@ -755,11 +877,12 @@ export default function App() {
     scheduleFact();
     return () => {
       cancelled = true;
+      clearTimeout(clearBubbleTimer);
       if (tinyFactTimer.current) clearTimeout(tinyFactTimer.current);
       if (tinyFactHideTimer.current) clearTimeout(tinyFactHideTimer.current);
     };
   }, [
-    screen,
+    visibleScreen,
     mission,
     appSettings.tinyFactsEnabled,
     appSettings.tinyFactsMinMinutes,
@@ -772,6 +895,9 @@ export default function App() {
     if (celebrateConfettiTimer.current) {
       clearTimeout(celebrateConfettiTimer.current);
     }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+      () => {},
+    );
     // Ensure confetti is paired with a visible mood lift, then naturally
     // fall back through the existing transient mood cooldown path.
     flashBuddyMood(elevatedMood, 3950);
@@ -787,6 +913,15 @@ export default function App() {
     if (!mission) return;
     const newEver = totalEver + mission.stars;
     const newTotal = totalMissions + 1;
+    const beforeRewardRequired = Math.max(
+      1,
+      Math.min(3, appSettings.beforeRewardMissionCount ?? 1),
+    );
+    const nextBeforeRewardCompleted = beforeRewardActive
+      ? beforeRewardCompleted + 1
+      : beforeRewardCompleted;
+    const unlockBeforeReward =
+      beforeRewardActive && nextBeforeRewardCompleted >= beforeRewardRequired;
     const veryExcited = shouldBeVeryExcited(newEver, prevTotalEver, false);
     const completionMood = veryExcited
       ? "very-excited"
@@ -799,6 +934,15 @@ export default function App() {
     setTotalEver(newEver);
     setCompletedToday((n) => n + 1);
     setTotalMissions(newTotal);
+    if (beforeRewardActive) {
+      setBeforeRewardCompleted(
+        Math.min(nextBeforeRewardCompleted, beforeRewardRequired),
+      );
+      if (unlockBeforeReward) {
+        setBeforeRewardActive(false);
+        setBeforeRewardUnlocked(true);
+      }
+    }
     incrementLocalUsage("missionsCompleted").catch(console.log);
     setSkipCount(0);
     setFirstMission(false);
@@ -809,10 +953,14 @@ export default function App() {
       );
     }
     setLastMission(getMissionTitle(mission.id, mission.title));
-    AsyncStorage.setItem(
-      K.LAST_MISSION,
-      JSON.stringify({ id: mission.id, title: mission.title }),
-    ).catch(console.log);
+    const completedToday = todayStr();
+    AsyncStorage.multiSet([
+      [
+        K.LAST_MISSION,
+        JSON.stringify({ id: mission.id, title: mission.title }),
+      ],
+      [K.LAST_MISSION_DATE, completedToday],
+    ]).catch(console.log);
     flashBuddyMood(completionMood);
     if (shouldShowConfetti(newTotal) || veryExcited) {
       triggerCelebrateConfetti(veryExcited ? "very-excited" : "excited");
@@ -846,6 +994,25 @@ export default function App() {
     pickMission(m);
   }
 
+  function startBeforeRewardBridge() {
+    const required = Math.max(
+      1,
+      Math.min(3, appSettings.beforeRewardMissionCount ?? 1),
+    );
+    setBeforeRewardActive(true);
+    setBeforeRewardCompleted(0);
+    setBeforeRewardUnlocked(false);
+    setBeforeRewardRewardsOnly(false);
+    speak(
+      tSpeak(
+        "beforeReward.start_speak",
+        { count: required },
+        appSettings.rtlChildSex ?? "male",
+      ),
+    );
+    setScreen("pick");
+  }
+
   // ── PIN / Reward redemption ─────────────────────────────────────────────────
   const redeemReward = useCallback(
     (reward: any) => {
@@ -857,13 +1024,16 @@ export default function App() {
         AsyncStorage.setItem(K.FIRST_REWARD, "true").catch(console.log);
       }
       incrementLocalUsage("rewardsRedeemed").catch(console.log);
-      speak(t("rewards.redeemed_speak"));
-      Alert.alert(
-        t("rewards.redeemed_alert_title"),
-        getRewardTitle(reward.id, reward.title),
+      const title = t("rewards.redeemed_alert_title");
+      const message = getRewardTitle(reward.id, reward.title);
+      speak(
+        t(rewardRedemptionSpeakKey(appSettings.rtlChildSex ?? "male", isFirst)),
       );
+      setRedeemedAlertTitle(title);
+      setRedeemedAlertMessage(message);
+      setShowRedeemedAlert(true);
     },
-    [firstReward, speak],
+    [firstReward, speak, appSettings.rtlChildSex],
   );
 
   const handleRewardRedeem = useCallback(
@@ -918,6 +1088,7 @@ export default function App() {
         K.COMPLETED_TODAY,
         K.TOTAL_MISSIONS,
         K.LAST_MISSION,
+        K.LAST_MISSION_DATE,
         K.FIRST_REWARD,
         K.SKIP_COUNT,
         K.DONE_IDS_TODAY,
@@ -935,7 +1106,9 @@ export default function App() {
       const sk = v[K.SKIP_COUNT] ? parseInt(v[K.SKIP_COUNT], 10) : 0;
       let doneIds: number[] = [];
       try {
-        const parsed = v[K.DONE_IDS_TODAY] ? JSON.parse(v[K.DONE_IDS_TODAY]) : [];
+        const parsed = v[K.DONE_IDS_TODAY]
+          ? JSON.parse(v[K.DONE_IDS_TODAY])
+          : [];
         doneIds = Array.isArray(parsed)
           ? parsed.filter((n: unknown) => typeof n === "number")
           : [];
@@ -947,7 +1120,15 @@ export default function App() {
       setPrevTotalEver(tot);
       setCompletedToday(comp);
       setTotalMissions(tm);
-      setLastMission(getStoredMissionTitle(v[K.LAST_MISSION]));
+      const yesterday = new Date(Date.now() - 86400000)
+        .toISOString()
+        .split("T")[0];
+      setLastMission(
+        tm > 0 && v[K.LAST_MISSION_DATE] === yesterday
+          ? getStoredMissionTitle(v[K.LAST_MISSION])
+          : null,
+      );
+      setLastMissionDate(v[K.LAST_MISSION_DATE] || null);
       setFirstReward(v[K.FIRST_REWARD] === "true");
       setSkipCount(sk);
       setDoneIdsToday(doneIds);
@@ -960,8 +1141,9 @@ export default function App() {
     }
   }, []);
 
-  function openRewardsScreen() {
+  function openRewardsScreen(options?: { beforeRewardOnly?: boolean }) {
     incrementLocalUsage("rewardsViewed").catch(console.log);
+    setBeforeRewardRewardsOnly(!!options?.beforeRewardOnly);
     setScreen("rewards");
   }
 
@@ -999,6 +1181,10 @@ export default function App() {
     }
   }
 
+  function handleParentOnboardingLocaleChange(appLocale: AppLocale) {
+    setAppSettings((prev) => ({ ...prev, appLocale }));
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (!ready) {
@@ -1016,47 +1202,29 @@ export default function App() {
       <SafeAreaView style={s.root}>
         <StatusBar style="dark" />
         <ParentOnboarding
+          onLocaleChange={handleParentOnboardingLocaleChange}
           onDone={async () => {
             await AsyncStorage.setItem(K.PARENT_ONBOARDING_DONE, "true");
             setParentOnboardingDone(true);
+            setHighlightSettings(true);
+            setScreen("home");
           }}
         />
       </SafeAreaView>
     );
   }
 
-  if (!onboardingDone) {
+  if (!onboardingDone && screen === "child_onboarding") {
     return (
-      <SafeAreaView style={[s.root, s.center]}>
+      <SafeAreaView style={s.root}>
         <StatusBar style="dark" />
-        <Image
-          source={BUDDY.calm}
-          style={{ width: 180, height: 180, backgroundColor: "transparent" }}
-          resizeMode="contain"
+        <ChildOnboarding
+          initialName={childName}
+          initialAge={childAge}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
+          speak={speak}
+          onComplete={completeChildOnboarding}
         />
-        <Text style={s.onboardingTitle}>{t("onboarding.title")}</Text>
-        <TextInput
-          style={s.onboardingInput}
-          placeholder={t("onboarding.name_placeholder")}
-          placeholderTextColor={C.muted}
-          value={childName}
-          onChangeText={setChildName}
-          autoFocus
-          returnKeyType="done"
-          onSubmitEditing={saveChildName}
-        />
-        <TextInput
-          style={s.onboardingInput}
-          placeholder={t("onboarding.age_placeholder")}
-          placeholderTextColor={C.muted}
-          value={childAge > 0 ? String(childAge) : ""}
-          onChangeText={(t) => setChildAge(parseInt(t) || 7)}
-          keyboardType="numeric"
-          maxLength={2}
-        />
-        <TouchableOpacity style={s.onboardingBtn} onPress={saveChildName}>
-          <Text style={s.onboardingBtnTxt}>{t("onboarding.start_btn")}</Text>
-        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -1077,6 +1245,9 @@ export default function App() {
   const missionTypeById = Object.fromEntries(
     appSettings.missions.map((m) => [m.id, m.type]),
   );
+  const missionConfigById = Object.fromEntries(
+    appSettings.missions.map((m) => [m.id, m]),
+  );
 
   // Effective pools merge built-ins with parent-added custom items from
   // the Parent Zone. Custom items participate in overrides + daily picker
@@ -1084,7 +1255,10 @@ export default function App() {
   const allMissionPool: PoolMission[] = [
     ...MISSION_POOL,
     ...(appSettings.customMissions ?? []),
-  ];
+  ].map((m) => {
+    const configuredImageUri = missionConfigById[m.id]?.imageUri;
+    return configuredImageUri ? { ...m, imageUri: configuredImageUri } : m;
+  });
   const allRewardPool: Reward[] = [
     ...REWARDS,
     ...(appSettings.customRewards ?? []),
@@ -1157,10 +1331,79 @@ export default function App() {
     dayMissions = [...permanent, ...rotated];
   }
 
+  const firstExperienceMissions: PoolMission[] = [];
+  const firstExperienceSeen = new Set<number>();
+  const firstExperienceSources: PoolMission[] = [
+    ...FIRST_EXPERIENCE_MISSION_IDS.map(
+      (id) =>
+        dayMissions.find((m) => m.id === id) ??
+        activePool.find((m) => m.id === id),
+    ).filter((m): m is PoolMission => !!m),
+    ...dayMissions,
+    ...activePool,
+    ...MISSIONS_EASY.filter(
+      (m) =>
+        effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
+        missionTypeById[m.id] !== "inactive",
+    ).map((m) => ({
+      ...m,
+      stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,
+    })),
+  ];
+  for (const candidate of firstExperienceSources) {
+    if (firstExperienceSeen.has(candidate.id)) continue;
+    if (doneIdsToday.includes(candidate.id)) continue;
+    firstExperienceSeen.add(candidate.id);
+    if (candidate.stars !== 1) continue;
+    firstExperienceMissions.push(candidate);
+    if (firstExperienceMissions.length >= 3) break;
+  }
+  const missionPickMissions =
+    firstMission && firstExperienceMissions.length > 0
+      ? firstExperienceMissions
+      : dayMissions.length > 0
+        ? dayMissions
+        : null;
+  const bridgeMissionSources = [
+    ...dayMissions,
+    ...activePool.filter((m) => !dayMissions.some((d) => d.id === m.id)),
+  ].filter((m) => !doneIdsToday.includes(m.id));
+  const selectedBeforeRewardMissionIds = new Set(
+    appSettings.beforeRewardMissionIds ?? [],
+  );
+  const bridgeSelectedMissions =
+    selectedBeforeRewardMissionIds.size > 0
+      ? bridgeMissionSources.filter((m) =>
+          selectedBeforeRewardMissionIds.has(m.id),
+        )
+      : [];
+  const bridgePreferredMissions = bridgeMissionSources.filter(
+    (m) => m.stars === 1 && m.category !== "social",
+  );
+  const bridgeFallbackMissions = bridgeMissionSources.filter(
+    (m) => m.stars === 1,
+  );
+  const beforeRewardMissions = (
+    bridgeSelectedMissions.length > 0
+      ? bridgeSelectedMissions
+      : bridgePreferredMissions.length > 0
+      ? bridgePreferredMissions
+      : bridgeFallbackMissions.length > 0
+        ? bridgeFallbackMissions
+        : bridgeMissionSources
+  ).slice(0, 4);
+
   // Effective rewards list (parent overrides applied; disabled rewards hidden).
   const effectiveRewards: Reward[] = allRewardPool
     .filter((r) => effectiveRewardEnabled(r.id, rewardOverrides))
     .map((r) => ({ ...r, cost: effectiveRewardCost(r.id, rewardOverrides) }));
+  const selectedBeforeRewardRewardIds = new Set(
+    appSettings.beforeRewardRewardIds ?? [],
+  );
+  const beforeRewardRewards =
+    selectedBeforeRewardRewardIds.size > 0
+      ? effectiveRewards.filter((r) => selectedBeforeRewardRewardIds.has(r.id))
+      : effectiveRewards;
 
   const currentBlock = appSettings.scheduleEnabled
     ? getCurrentBlock(appSettings.scheduleBlocks, isWeekendDay)
@@ -1176,7 +1419,20 @@ export default function App() {
     completedToday === 0 &&
     nowMinutes < 12 * 60 &&
     nowMinutes >= (reminderMinutes ?? 8 * 60);
-  const overlayBuddySize = PROFILE_CONFIGS[ageProfile].buddySize;
+  const baseOverlayBuddySize = PROFILE_CONFIGS[ageProfile].buddySize;
+  const overlayBuddySize = Math.max(
+    92,
+    Math.round(
+      baseOverlayBuddySize *
+        (isShortHeight
+          ? 0.78
+          : isLargeTablet
+            ? 1.18
+            : isTabletWidth
+              ? 0.96
+              : 1),
+    ),
+  );
   const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);
 
   if (showMorning) {
@@ -1215,9 +1471,10 @@ export default function App() {
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
 
-      {screen === "demo_intro" && (
+      {visibleScreen === "demo_intro" && (
         <DemoIntroScreen
           speak={speak}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onStart={() => {
             setDemoStep(0);
             setScreen("demo_step");
@@ -1229,10 +1486,11 @@ export default function App() {
         />
       )}
 
-      {screen === "demo_step" && (
+      {visibleScreen === "demo_step" && (
         <DemoStepScreen
           key={demoStep}
           speak={speak}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           step={DEMO_STEPS[demoStep]}
           stepIndex={demoStep}
           totalSteps={DEMO_STEPS.length}
@@ -1240,9 +1498,10 @@ export default function App() {
         />
       )}
 
-      {screen === "demo_complete" && (
+      {visibleScreen === "demo_complete" && (
         <DemoCompleteScreen
           speak={speak}
+          rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onGoToMissions={async () => {
             await finishDemo();
             setScreen("pick");
@@ -1254,13 +1513,13 @@ export default function App() {
         />
       )}
 
-      {screen === "home" && (
+      {visibleScreen === "home" && (
         <HomeScreen
           {...p}
           completedToday={completedToday}
           totalMissions={totalMissions}
           childName={childName}
-          lastMission={lastMission}
+          lastMission={lastMissionDate === YESTERDAY ? lastMission : null}
           showSuggestion={appSettings.nudgingEnabled ? showSuggestion : false}
           skipSensitivity={appSettings.skipSensitivity}
           onSettings={() => setScreen("settings")}
@@ -1273,27 +1532,47 @@ export default function App() {
           nextBlock={nextBlock}
           scheduleEnabled={appSettings.scheduleEnabled}
           onOpenDay={() => setScreen("day")}
+          highlightSettings={highlightSettings && !onboardingDone}
           onBreathing={
             appSettings.breathingEnabled ? openBreathingScreen : undefined
           }
           showMorningNudge={showMorningNudge}
           onMorningNudge={() => {
-            speak(tSpeak("home.morning_nudge_speak", undefined, appSettings.rtlChildSex ?? "male"));
+            speak(
+              tSpeak(
+                "home.morning_nudge_speak",
+                undefined,
+                appSettings.rtlChildSex ?? "male",
+              ),
+            );
             setScreen("pick");
           }}
+          beforeRewardEnabled={appSettings.beforeRewardEnabled}
+          beforeRewardRequired={appSettings.beforeRewardMissionCount ?? 1}
+          beforeRewardCompleted={
+            beforeRewardActive ? beforeRewardCompleted : 0
+          }
+          onBeforeReward={startBeforeRewardBridge}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
         />
       )}
 
-      {screen === "pick" && (
+      {visibleScreen === "pick" && (
         <MissionPickScreen
           {...p}
           firstTime={firstMission}
-          missions={dayMissions.length > 0 ? dayMissions : null}
+          missions={
+            beforeRewardActive && beforeRewardMissions.length > 0
+              ? beforeRewardMissions
+              : missionPickMissions
+          }
           missionTypeById={missionTypeById}
           doneIds={doneIdsToday}
+          beforeRewardMode={beforeRewardActive}
           bonusMission={
-            appSettings.infinityLoopEnabled && appSettings.bonusAfterCompletion
+            !beforeRewardActive &&
+            appSettings.infinityLoopEnabled &&
+            appSettings.bonusAfterCompletion
               ? bonusMission
               : null
           }
@@ -1303,7 +1582,7 @@ export default function App() {
         />
       )}
 
-      {screen === "active" && (
+      {visibleScreen === "active" && (
         <ActiveScreen
           {...p}
           mission={mission}
@@ -1313,7 +1592,7 @@ export default function App() {
         />
       )}
 
-      {screen === "celebrate" && (
+      {visibleScreen === "celebrate" && (
         <CelebrateScreen
           {...p}
           mission={mission}
@@ -1321,16 +1600,34 @@ export default function App() {
           completedToday={completedToday}
           isVeryExcited={isVeryExcited}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
-          onContinue={() => setScreen("pick")}
+          onContinue={() => {
+            if (beforeRewardUnlocked) {
+              setBeforeRewardUnlocked(false);
+              speak(
+                tSpeak(
+                  "beforeReward.unlocked_speak",
+                  undefined,
+                  appSettings.rtlChildSex ?? "male",
+                ),
+              );
+              openRewardsScreen({ beforeRewardOnly: true });
+              return;
+            }
+            setScreen("pick");
+          }}
           onRewards={openRewardsScreen}
           onBack={() => setScreen("home")}
         />
       )}
 
-      {screen === "rewards" && (
+      {visibleScreen === "rewards" && (
         <RewardsScreen
           {...p}
-          rewards={effectiveRewards}
+          rewards={
+            beforeRewardRewardsOnly && beforeRewardRewards.length > 0
+              ? beforeRewardRewards
+              : effectiveRewards
+          }
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           onBack={() => setScreen("home")}
           onRedeem={handleRewardRedeem}
@@ -1338,7 +1635,7 @@ export default function App() {
         />
       )}
 
-      {screen === "settings" && (
+      {visibleScreen === "settings" && (
         <SettingsScreen
           onClose={async () => {
             await syncProgressFromStorage();
@@ -1351,6 +1648,11 @@ export default function App() {
             setPinEnabled(s.pinEnabled);
             setTtsEnabled(s.ttsEnabled);
           }}
+          childOnboardingDone={onboardingDone}
+          onStartChildOnboarding={() => {
+            setHighlightSettings(false);
+            setScreen("child_onboarding");
+          }}
           onProgressReset={() => {
             setStars(0);
             setTotalEver(0);
@@ -1362,6 +1664,7 @@ export default function App() {
             setSkipCount(0);
             setDoneIdsToday([]);
             setFirstMission(true);
+            setLastMissionDate(null);
             setIsVeryExcited(false);
             syncProgressFromStorage().catch(console.log);
           }}
@@ -1370,11 +1673,12 @@ export default function App() {
         />
       )}
 
-      {screen === "day" && (
+      {visibleScreen === "day" && (
         <DayScreen
           blocks={appSettings.scheduleBlocks}
           isWeekendDay={isWeekendDay}
           speak={speak}
+          buddyDjModeEnabled={appSettings.buddyDjModeEnabled}
           onClose={() => setScreen("home")}
           onStartMission={(missionId: number) => {
             const m = allMissionPool.find((x) => x.id === missionId);
@@ -1383,13 +1687,14 @@ export default function App() {
         />
       )}
 
-      {screen === "breathing" && (
+      {visibleScreen === "breathing" && (
         <BreathingScreen
           speak={speak}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           musicEnabled={appSettings.breathingMusicEnabled}
           guidanceEnabled={appSettings.breathingGuidanceEnabled}
           introEnabled={breathingIntroRuns < 10}
+          comfortPreference={breathingComfortPreference}
           onSessionStart={handleBreathingSessionStart}
           onMusicChange={handleBreathingMusicChange}
           onGuidanceChange={handleBreathingGuidanceChange}
@@ -1407,19 +1712,26 @@ export default function App() {
       )}
 
       {/* ── FIXED BUDDY + PROGRESS BAR OVERLAY (all screens except Settings) ───────── */}
-      {onboardingDone &&
+      {parentOnboardingDone &&
         !showPinScreen &&
-        screen !== "settings" &&
+        visibleScreen !== "child_onboarding" &&
+        visibleScreen !== "settings" &&
         showGlobalBuddy && (
-          <View style={s.topOverlay} pointerEvents="box-none">
-            <View style={s.topOverlayContent}>
+          <View
+            style={[
+              s.topOverlay,
+              isTabletWidth || isShortHeight ? s.topOverlayCompact : null,
+              s.boxNonePointerEvents,
+            ]}
+          >
+            <View style={[s.topOverlayContent, { maxWidth: contentMaxWidth }]}>
               <View
                 style={[
                   s.buddyBubbleWrap,
                   {
                     minHeight:
                       overlayBuddySize +
-                      (screen === "active" && tinyFactBubble ? 70 : 10),
+                      (visibleScreen === "active" && tinyFactBubble ? 70 : 10),
                   },
                 ]}
               >
@@ -1428,8 +1740,16 @@ export default function App() {
                   speak={speak}
                   size={overlayBuddySize}
                   celebrate={fixedOverlayCelebrate}
+                  onTap={() => {
+                    const elevatedMood: BuddyMood =
+                      fixedOverlayMood === "very-excited" ||
+                      fixedOverlayMood === "proud"
+                        ? "very-excited"
+                        : "happy";
+                    flashBuddyMood(elevatedMood, 1400);
+                  }}
                 />
-                {screen === "active" && tinyFactBubble && (
+                {visibleScreen === "active" && tinyFactBubble && (
                   <View style={[s.tinyFactBubble, { top: tinyFactBubbleTop }]}>
                     <T style={s.tinyFactText} speak={speak}>
                       {`💡 ${tinyFactBubble}`}
@@ -1440,6 +1760,7 @@ export default function App() {
               </View>
               <ProgressBar
                 total={totalEver}
+                available={stars}
                 speak={speak}
                 rtlChildSex={appSettings.rtlChildSex ?? "male"}
               />
@@ -1448,6 +1769,41 @@ export default function App() {
         )}
 
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
+      {showRedeemedAlert && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowRedeemedAlert(false)}
+        >
+          <View style={s.rewardAlertOverlay}>
+            <View style={s.rewardAlertCard}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => speak(redeemedAlertTitle)}
+              >
+                <Text style={s.rewardAlertTitle}>{redeemedAlertTitle}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => speak(redeemedAlertMessage)}
+                style={s.rewardAlertMessageWrap}
+              >
+                <Text style={s.rewardAlertMessage}>{redeemedAlertMessage}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={s.rewardAlertButton}
+                onPress={() => setShowRedeemedAlert(false)}
+              >
+                <Text style={s.rewardAlertButtonTxt}>
+                  {t("rewards.redeemed_alert_close")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       {showPinScreen && (
         <View style={s.pinOverlay}>
           <KeyboardAvoidingView
@@ -1526,7 +1882,7 @@ export default function App() {
 
       <Confetti
         key={celebrateConfettiKey}
-        trigger={screen === "celebrate" && showCelebrateConfetti}
+        trigger={visibleScreen === "celebrate" && showCelebrateConfetti}
       />
     </SafeAreaView>
   );
@@ -1569,15 +1925,18 @@ const s = StyleSheet.create({
     paddingTop: 18,
     backgroundColor: C.bg, // solid backing — content scrolls behind, not through
 
-    paddingHorizontal: 20,
-    pointerEvents: "box-none",
+    paddingHorizontal: 16,
+  },
+  boxNonePointerEvents: { pointerEvents: "box-none" },
+  topOverlayCompact: {
+    paddingTop: 8,
   },
   topOverlayContent: {
     width: "100%",
     alignItems: "center",
     backgroundColor: C.bg, // solid backing — content scrolls behind, not through
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: 8,
+    paddingBottom: 6,
     pointerEvents: "auto",
   },
   buddyBubbleWrap: {
@@ -1619,35 +1978,6 @@ const s = StyleSheet.create({
     transform: [{ rotate: "45deg" }],
   },
 
-  // Onboarding
-  onboardingTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    textAlign: "center",
-    marginVertical: 24,
-    color: C.text,
-    paddingHorizontal: 20,
-  },
-  onboardingInput: {
-    width: "80%",
-    borderWidth: 2,
-    borderColor: "#a1d4b8",
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 24,
-    textAlign: "center",
-    backgroundColor: C.white,
-    color: C.text,
-  },
-  onboardingBtn: {
-    marginTop: 32,
-    backgroundColor: C.green,
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: 999,
-  },
-  onboardingBtnTxt: { color: C.white, fontSize: 20, fontWeight: "600" },
-
   pinOverlay: {
     position: "absolute",
     top: 0,
@@ -1659,6 +1989,55 @@ const s = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     zIndex: 2000,
+  },
+  rewardAlertOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.72)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+    zIndex: 2100,
+  },
+  rewardAlertCard: {
+    width: "100%",
+    maxWidth: 520,
+    backgroundColor: C.white,
+    borderRadius: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
+    alignItems: "center",
+  },
+  rewardAlertTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: C.text,
+    textAlign: "center",
+    marginBottom: 14,
+  },
+  rewardAlertMessageWrap: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  rewardAlertMessage: {
+    fontSize: 17,
+    lineHeight: 24,
+    color: C.muted,
+    textAlign: "center",
+  },
+  rewardAlertButton: {
+    backgroundColor: C.green,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  rewardAlertButtonTxt: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: C.white,
   },
   pinKeyboardWrap: {
     width: "100%",

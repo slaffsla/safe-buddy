@@ -38,14 +38,17 @@ export function T({
 
 export function ProgressBar({
   total,
+  available,
   speak,
   rtlChildSex = "male",
 }: {
   total: number;
+  available?: number;
   speak: (t: string) => void;
   rtlChildSex?: RtlChildSex;
 }) {
-  const { pct } = getProgress(total);
+  const { pct, prev } = getProgress(total);
+  const redeemable = available ?? total;
   const emotionalLabel =
     total === 0
       ? tSpeak("progress.label_first", undefined, rtlChildSex)
@@ -66,7 +69,7 @@ export function ProgressBar({
         speak(
           tSpeak(
             "progress.stars_speak",
-            { label: emotionalLabel, count: total },
+            { label: emotionalLabel, available: redeemable, total },
             rtlChildSex,
           ),
         )
@@ -75,9 +78,17 @@ export function ProgressBar({
     >
       <View style={s.pbRow}>
         <Text style={s.pbEmotion}>{emotionalLabel}</Text>
-        <Text style={s.pbStars}>⭐ {total}</Text>
+        <View style={s.pbStarsPill}>
+          <Text style={s.pbStarsLabel}>{t("progress.available_short")}</Text>
+          <Text style={s.pbStars}>⭐ {redeemable}</Text>
+        </View>
       </View>
-      <View style={s.pbTrack}>
+      <View
+        style={[
+          s.pbTrack,
+          { backgroundColor: prev >= 35 ? C.greenLt : C.track },
+        ]}
+      >
         <View style={[s.pbFill, { width: `${Math.round(pct * 100)}%` }]} />
       </View>
     </TouchableOpacity>
@@ -89,12 +100,14 @@ export function ProgressBar({
 export function ReflectiveBoost({
   lastMission,
   speak,
+  rtlChildSex = "male",
 }: {
   lastMission: string | null;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   if (!lastMission) return null;
-  const text = t("reflect.boost", { title: lastMission });
+  const text = tSpeak("reflect.boost", { title: lastMission }, rtlChildSex);
   return (
     <TouchableOpacity
       style={s.reflectCard}
@@ -142,22 +155,15 @@ export function Confetti({ trigger }: { trigger: boolean }) {
   if (!trigger) return null;
   const { width } = Dimensions.get("window");
   return (
-    <View pointerEvents="none" style={s.confettiOverlay}>
+    <View style={[s.confettiOverlay, s.noPointerEvents]}>
       <ConfettiCannon
-        count={64}
+        count={128}
         origin={{ x: width / 2, y: 0 }}
         autoStart={true}
         fadeOut={true}
         explosionSpeed={520}
         fallSpeed={3600}
-        colors={[
-          C.green,
-          C.greenLt,
-          C.gold,
-          C.border,
-          "#8FCFB8",
-          "#EEF2FF",
-        ]}
+        colors={[C.green, C.greenLt, C.gold, C.border, "#8FCFB8", "#EEF2FF"]}
       />
     </View>
   );
@@ -167,10 +173,11 @@ export function Confetti({ trigger }: { trigger: boolean }) {
 
 const s = StyleSheet.create({
   confettiOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 2000,
     elevation: 2000,
   },
+  noPointerEvents: { pointerEvents: "none" },
 
   // Progress bar
   pbWrap: {
@@ -195,7 +202,23 @@ const s = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  pbStars: { fontSize: 13, fontWeight: "700", color: C.green },
+  pbStarsPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: "#F4FAF7",
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
+  },
+  pbStarsLabel: {
+    fontSize: 10,
+    color: C.muted,
+    fontWeight: "600",
+  },
+  pbStars: { fontSize: 13, fontWeight: "800", color: C.green },
   pbTrack: {
     height: 8,
     backgroundColor: C.track,

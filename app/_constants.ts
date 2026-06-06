@@ -9,7 +9,7 @@
 // locales) holds the translations. Helper functions in this file resolve
 // to the active locale via i18n; the screens never see hardcoded Russian.
 
-import { i18n, t } from "./i18n";
+import { i18n, RtlChildSex, t, tGender } from "./i18n";
 
 /** Parent-created missions/rewards use ids at or above this (see SettingsScreen). */
 export const CUSTOM_CONTENT_ID_OFFSET = 10000;
@@ -118,6 +118,7 @@ export interface PoolMission {
   subtitle: string;
   stars: 1 | 2;
   emoji: string;
+  imageUri?: string;
   category: MissionCategory;
   slot: MissionSlot;
   weekdayDefault: boolean;
@@ -154,10 +155,10 @@ export const MISSION_POOL: PoolMission[] = [
   },
   {
     id: 2,
-    title: "Наклонись к пальцам ног",
+    title: "Попробуй дотянуться до пальцев ног",
     subtitle: "Медленно",
     stars: 1,
-    emoji: "🙆",
+    emoji: "🦶",
     category: "movement",
     slot: "morning",
     weekdayDefault: true,
@@ -482,6 +483,7 @@ export interface MissionConfig {
   subtitle: string;
   stars: number;
   emoji: string;
+  imageUri?: string;
   type: MissionType;
 }
 
@@ -585,6 +587,7 @@ export interface MorningStep {
   id: number;
   title: string;
   emoji: string;
+  imageUri?: string;
 }
 
 export const DEFAULT_MORNING_STEPS: MorningStep[] = [
@@ -595,9 +598,12 @@ export const DEFAULT_MORNING_STEPS: MorningStep[] = [
 
 // Returns localized morning step title, falling back to pool / custom step title
 export function getMorningStepTitle(id: number, fallback?: string): string {
-  const poolFallback =
-    fallback ?? DEFAULT_MORNING_STEPS.find((s) => s.id === id)?.title ?? "";
-  if (!DEFAULT_MORNING_STEPS.some((s) => s.id === id)) return poolFallback;
+  const defaultStep = DEFAULT_MORNING_STEPS.find((s) => s.id === id);
+  const poolFallback = fallback ?? defaultStep?.title ?? "";
+  if (!defaultStep) return poolFallback;
+  if (fallback?.trim() && fallback.trim() !== defaultStep.title) {
+    return fallback.trim();
+  }
   return localizedOrFallback(`morning_step_titles.ms${id}`, poolFallback);
 }
 
@@ -611,6 +617,7 @@ export interface ScheduleBlock {
   id: number;
   title: string;
   emoji: string;
+  imageUri?: string;
   startTime: string; // 'HH:MM' 24h
   endTime: string; // 'HH:MM'
   missionId?: number; // optional — tapping current block can launch this mission
@@ -983,8 +990,9 @@ export function getProgress(total: number) {
     if (m <= total) prev = m;
     else break;
   }
-  const pct = next === prev ? 1 : Math.min((total - prev) / (next - prev), 1);
-  return { next, pct };
+  const max = MILESTONES[MILESTONES.length - 1];
+  const pct = Math.min(total / max, 1);
+  return { next, prev, pct };
 }
 
 export const shouldShowConfetti = (n: number) => CONFETTI_AT.includes(n);
@@ -1056,7 +1064,7 @@ function hashDateToSeed(dateStr: string): number {
  * Creates a seeded pseudo-random number generator using the Mulberry32 algorithm.
  * Returns a function that produces deterministic random values between 0 and 1.
  */
-function createSeededRandom(seed: number): () => number {
+export function createSeededRandom(seed: number): () => number {
   let state = seed >>> 0;
 
   return function random(): number {
@@ -1066,6 +1074,21 @@ function createSeededRandom(seed: number): () => number {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+export function pickRandomItem<T>(
+  items: readonly T[],
+  random: () => number = Math.random,
+): T | undefined {
+  if (items.length === 0) return undefined;
+  return items[Math.floor(random() * items.length)];
+}
+
+export function pickSeededItem<T>(
+  items: readonly T[],
+  seed: number,
+): T | undefined {
+  return pickRandomItem(items, createSeededRandom(seed));
 }
 
 /**
@@ -1187,23 +1210,49 @@ export function shouldBeVeryExcited(
 export function getProgressionMessage(
   totalMissions: number,
   completedToday: number,
+  rtlChildSex: RtlChildSex = "male",
 ): string {
-  if (totalMissions === 1) return t("progression.first_mission");
-  if (completedToday === 1) return t("progression.started_today");
-  if (completedToday === 2) return t("progression.two_today");
-  if (completedToday === 3) return t("progression.three_today");
-  if (completedToday >= 4) return t("progression.more_today");
-  if (totalMissions === 5) return t("progression.five_total");
-  if (totalMissions === 10) return t("progression.ten_total");
-  return t("progression.default");
+  if (totalMissions === 1) {
+    return tGender("progression.first_mission", undefined, rtlChildSex);
+  }
+  if (completedToday === 1) {
+    return tGender("progression.started_today", undefined, rtlChildSex);
+  }
+  if (completedToday === 2) {
+    return tGender("progression.two_today", undefined, rtlChildSex);
+  }
+  if (completedToday === 3) {
+    return tGender("progression.three_today", undefined, rtlChildSex);
+  }
+  if (completedToday >= 4) {
+    return tGender("progression.more_today", undefined, rtlChildSex);
+  }
+  if (totalMissions === 5) {
+    return tGender("progression.five_total", undefined, rtlChildSex);
+  }
+  if (totalMissions === 10) {
+    return tGender("progression.ten_total", undefined, rtlChildSex);
+  }
+  return tGender("progression.default", undefined, rtlChildSex);
 }
 
-export function getMilestoneMessage(totalEver: number): string {
-  if (totalEver >= 10 && totalEver < 11) return t("milestone.ten");
-  if (totalEver >= 20 && totalEver < 22) return t("milestone.twenty");
-  if (totalEver >= 50 && totalEver < 52) return t("milestone.fifty");
-  if (totalEver >= 100 && totalEver < 102) return t("milestone.hundred");
-  return t("milestone.default", { count: totalEver });
+export function getMilestoneMessage(
+  totalEver: number,
+  rtlChildSex: RtlChildSex = "male",
+): string {
+  if (totalEver >= 10 && totalEver < 11) {
+    return tGender("milestone.ten", undefined, rtlChildSex);
+  }
+  if (totalEver >= 20 && totalEver < 22) {
+    return tGender("milestone.twenty", undefined, rtlChildSex);
+  }
+  if (totalEver >= 50 && totalEver < 52) {
+    return tGender("milestone.fifty", undefined, rtlChildSex);
+  }
+  if (totalEver >= 100 && totalEver < 102) {
+    return tGender("milestone.hundred", undefined, rtlChildSex);
+  }
+  return tGender("milestone.default", { count: totalEver }, rtlChildSex);
 }
 
 // Expo Router: suppress "missing default export" warning for non-route files

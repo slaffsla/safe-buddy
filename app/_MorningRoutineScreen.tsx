@@ -2,8 +2,9 @@
 // Step-by-step checklist. Triggered once per day before noon.
 // Earns morningStars on full completion.
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,13 +12,13 @@ import {
   View,
 } from "react-native";
 import {
-  BUDDY_FIXED_SPACER,
   C,
   MorningStep,
   getMorningStepTitle,
 } from "./_constants";
 import { Confetti } from "./_SharedUI";
-import { RtlChildSex, t, tSpeak } from "./i18n";
+import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
 
 interface Props {
   childName: string;
@@ -29,6 +30,13 @@ interface Props {
   onSkip: () => void;
 }
 
+const STEP_COLORS = [
+  { bg: "#F4FAF7", border: "#CFE9DD", well: "#DFF5EC" },
+  { bg: "#FFF8E7", border: "#F1D58E", well: "#FFE7B8" },
+  { bg: "#EEF2FF", border: "#D6DDFC", well: "#E1E7FF" },
+  { bg: "#FFF1E9", border: "#F5C7B5", well: "#FFD9CB" },
+];
+
 export default function MorningRoutineScreen({
   childName,
   steps = [],
@@ -38,15 +46,44 @@ export default function MorningRoutineScreen({
   onComplete,
   onSkip,
 }: Props) {
+  const { contentMaxWidth, noOverlayTopPadding, screenPadding } =
+    useLayoutMetrics();
   const [doneIds, setDoneIds] = useState<number[]>([]);
   const [finished, setFinished] = useState(false);
+  const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Defensive: handle empty or invalid steps
   const validSteps = steps.filter((s) => s && s.id != null);
-  if (validSteps.length === 0) {
+
+  useEffect(() => {
+    return () => {
+      if (skipTimerRef.current) {
+        clearTimeout(skipTimerRef.current);
+        skipTimerRef.current = null;
+      }
+      if (completeTimerRef.current) {
+        clearTimeout(completeTimerRef.current);
+        completeTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (validSteps.length > 0) return;
+    if (skipTimerRef.current) {
+      clearTimeout(skipTimerRef.current);
+    }
     // If no valid steps, skip directly to avoid soft lock
-    setTimeout(() => onSkip(), 100);
-    return null;
-  }
+    skipTimerRef.current = setTimeout(() => onSkip(), 100);
+    return () => {
+      if (skipTimerRef.current) {
+        clearTimeout(skipTimerRef.current);
+        skipTimerRef.current = null;
+      }
+    };
+  }, [onSkip, validSteps.length]);
+
+  if (validSteps.length === 0) return null;
 
   const allDone = doneIds.length === validSteps.length && validSteps.length > 0;
   const greeting = childName
@@ -65,30 +102,51 @@ export default function MorningRoutineScreen({
   function handleComplete() {
     setFinished(true);
     speak(tSpeak("morning.ready_speak", undefined, rtlChildSex));
-    setTimeout(() => onComplete(stars), 3500);
+    if (completeTimerRef.current) clearTimeout(completeTimerRef.current);
+    completeTimerRef.current = setTimeout(() => onComplete(stars), 3500);
   }
 
   // Celebrate state — shown briefly before onComplete fires
   if (finished) {
     return (
-      <View style={s.screen}>
+      <View
+        style={[
+          s.screen,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+            paddingTop: noOverlayTopPadding,
+          },
+        ]}
+      >
         <Confetti trigger />
-        <View style={{ height: BUDDY_FIXED_SPACER }} />
         <Text style={s.celebTitle}>{t("morning.celeb_title")}</Text>
         <Text style={s.celebSub}>
           {stars === 1
-            ? t("morning.earned_one")
-            : t("morning.earned_many", {
-                stars: Array(stars).fill("⭐").join(""),
-              })}
+            ? tGender("morning.earned_one", undefined, rtlChildSex)
+            : tGender(
+                "morning.earned_many",
+                {
+                  stars: Array(stars).fill("⭐").join(""),
+                },
+                rtlChildSex,
+              )}
         </Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={s.scroll}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+    <ScrollView
+      contentContainerStyle={[
+        s.scroll,
+        {
+          maxWidth: contentMaxWidth,
+          padding: screenPadding,
+          paddingTop: noOverlayTopPadding,
+        },
+      ]}
+    >
       <View style={s.headerText}>
         <Text style={s.greeting}>{greeting}</Text>
         <TouchableOpacity
@@ -99,44 +157,68 @@ export default function MorningRoutineScreen({
       </View>
 
       {/* Step checklist */}
-      <View style={s.card}>
+      <View style={s.stepList}>
         {validSteps.map((step, idx) => {
           const done = doneIds.includes(step.id);
+          const colors = STEP_COLORS[idx % STEP_COLORS.length];
           return (
-            <View key={step.id}>
-              {idx > 0 && <View style={s.divider} />}
-              <TouchableOpacity
-                style={s.stepRow}
-                onPress={() => toggleStep(step)}
-                activeOpacity={0.7}
+            <TouchableOpacity
+              key={`morning-step-${step.id}-${idx}`}
+              style={[
+                s.stepRow,
+                {
+                  backgroundColor: colors.bg,
+                  borderColor: colors.border,
+                },
+                done && s.stepRowDone,
+              ]}
+              onPress={() => toggleStep(step)}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  s.stepIconWell,
+                  { backgroundColor: colors.well, borderColor: colors.border },
+                  done && s.stepIconWellDone,
+                ]}
               >
-                <Text style={s.stepEmoji}>{step.emoji}</Text>
-                <Text style={[s.stepTitle, done && s.stepDone]}>
-                  {getMorningStepTitle(step.id, step.title)}
-                </Text>
-                <View style={[s.checkbox, done && s.checkboxDone]}>
-                  {done && <Text style={s.checkmark}>✓</Text>}
-                </View>
-              </TouchableOpacity>
-            </View>
+                {step.imageUri ? (
+                  <Image
+                    source={{ uri: step.imageUri }}
+                    style={s.stepThumb}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text style={s.stepEmoji}>{step.emoji}</Text>
+                )}
+              </View>
+              <Text style={[s.stepTitle, done && s.stepDone]}>
+                {getMorningStepTitle(step.id, step.title)}
+              </Text>
+              <View style={[s.checkbox, done && s.checkboxDone]}>
+                {done && <Text style={s.checkmark}>✓</Text>}
+              </View>
+            </TouchableOpacity>
           );
         })}
       </View>
 
       {/* Progress dots */}
       <View style={s.dotsRow}>
-        {validSteps.map((step) => (
+        {validSteps.map((step, idx) => (
           <View
-            key={step.id}
+            key={`morning-dot-${step.id}-${idx}`}
             style={[s.dot, doneIds.includes(step.id) && s.dotDone]}
           />
         ))}
       </View>
 
       <Text style={s.rewardLabel}>
-        {t("morning.reward_label", {
-          stars: Array(stars).fill("⭐").join(""),
-        })}
+        {tGender(
+          "morning.reward_label",
+          { stars: Array(stars).fill("⭐").join("") },
+          rtlChildSex,
+        )}
       </Text>
 
       {/* Complete — disabled until all steps done */}
@@ -147,15 +229,19 @@ export default function MorningRoutineScreen({
       >
         <Text style={s.btnPrimaryTxt}>
           {allDone
-            ? t("morning.btn_done")
-            : t("morning.btn_remaining", {
-                count: validSteps.length - doneIds.length,
-              })}
+            ? tGender("morning.btn_done", undefined, rtlChildSex)
+            : tGender(
+                "morning.btn_remaining",
+                { count: validSteps.length - doneIds.length },
+                rtlChildSex,
+              )}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
-        <Text style={s.btnSkipTxt}>{t("morning.btn_skip")}</Text>
+        <Text style={s.btnSkipTxt}>
+          {tGender("morning.btn_skip", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -163,15 +249,17 @@ export default function MorningRoutineScreen({
 
 const s = StyleSheet.create({
   screen: {
-    flex: 1,
+    flexGrow: 1,
+    width: "100%",
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
     backgroundColor: C.bg,
   },
   scroll: {
+    width: "100%",
+    alignSelf: "center",
     alignItems: "center",
-    padding: 20,
     paddingBottom: 52,
     backgroundColor: C.bg,
   },
@@ -183,40 +271,69 @@ const s = StyleSheet.create({
     width: "100%",
     marginBottom: 24,
   },
-  headerText: { flex: 1 },
-  greeting: { fontSize: 22, fontWeight: "700", color: C.text },
-  subGreeting: { fontSize: 14, color: C.muted, marginTop: 4 },
+  headerText: { width: "100%", alignItems: "center", marginBottom: 10 },
+  greeting: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: C.text,
+    textAlign: "center",
+  },
+  subGreeting: {
+    fontSize: 14,
+    color: C.muted,
+    marginTop: 4,
+    textAlign: "center",
+  },
 
-  card: {
+  stepList: {
     width: "100%",
-    backgroundColor: "#FFFDF9",
-    borderRadius: 16,
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
-    overflow: "hidden",
+    gap: 8,
     marginBottom: 16,
   },
-  stepRow: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
-  stepEmoji: { fontSize: 26, width: 34 },
-  stepTitle: { flex: 1, fontSize: 16, fontWeight: "500", color: C.text },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  stepRowDone: { opacity: 0.66 },
+  stepIconWell: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    overflow: "hidden",
+  },
+  stepIconWellDone: {
+    backgroundColor: "#F0F0EC",
+    borderColor: "#DDD8CF",
+  },
+  stepEmoji: { fontSize: 25 },
+  stepThumb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 13,
+    backgroundColor: C.bg,
+  },
+  stepTitle: { flex: 1, fontSize: 16, fontWeight: "600", color: C.text },
   stepDone: { color: C.muted, textDecorationLine: "line-through" },
   checkbox: {
     width: 28,
     height: 28,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: "#DED8CE",
+    borderColor: "rgba(107,107,104,0.24)",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: C.bg,
+    backgroundColor: "rgba(255,255,255,0.62)",
   },
   checkboxDone: { backgroundColor: C.green, borderColor: C.green },
   checkmark: { color: C.white, fontSize: 14, fontWeight: "700" },
-  divider: {
-    height: 0.5,
-    backgroundColor: "rgba(107,107,104,0.16)",
-    marginHorizontal: 16,
-  },
 
   dotsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.border },

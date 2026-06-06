@@ -1,7 +1,9 @@
 // _HomeScreen.tsx — SafeBuddy home screen
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Animated,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,15 +11,16 @@ import {
   View,
 } from "react-native";
 import {
-  BUDDY_FIXED_SPACER,
   C,
   ScheduleBlock,
   getDailySuggestion,
   getProgressionMessage,
   getScheduleTitle,
 } from "./_constants";
-import { RtlChildSex, t, tSpeak } from "./i18n";
+import { useLayoutMetrics } from "../lib/layoutMetrics";
+import { visualAssets, type VisualAssetSource } from "../lib/visualAssets";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
+import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 interface HomeScreenProps {
   stars: number;
@@ -42,7 +45,36 @@ interface HomeScreenProps {
   onBreathing?: () => void;
   showMorningNudge?: boolean;
   onMorningNudge?: () => void;
+  beforeRewardEnabled?: boolean;
+  beforeRewardRequired?: number;
+  beforeRewardCompleted?: number;
+  onBeforeReward?: () => void;
+  highlightSettings?: boolean;
   rtlChildSex?: RtlChildSex;
+}
+
+function ScheduleIcon({
+  block,
+  next = false,
+}: {
+  block: ScheduleBlock;
+  next?: boolean;
+}) {
+  return (
+    <View style={[s.scheduleEmojiWell, next && s.scheduleNextEmojiWell]}>
+      {block.imageUri ? (
+        <Image
+          source={{ uri: block.imageUri }}
+          style={s.scheduleThumb}
+          resizeMode="cover"
+        />
+      ) : (
+        <Text style={next ? s.scheduleNextEmoji : s.scheduleEmoji}>
+          {block.emoji}
+        </Text>
+      )}
+    </View>
+  );
 }
 
 export default function HomeScreen({
@@ -67,15 +99,62 @@ export default function HomeScreen({
   onBreathing,
   showMorningNudge,
   onMorningNudge,
+  beforeRewardEnabled,
+  beforeRewardRequired = 1,
+  beforeRewardCompleted = 0,
+  onBeforeReward,
+  highlightSettings = false,
   rtlChildSex = "male",
 }: HomeScreenProps) {
+  const { homeContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+    useLayoutMetrics();
   const threshold = Math.max(1, skipSensitivity ?? 2);
-  const [idleMsg] = useState(() =>
-    skipCount >= threshold
-      ? t("home.idle_calm")
-      : Math.random() > 0.7
-        ? t("buddy.idle_alt")
-        : t("buddy.idle"),
+  const [useAltIdle] = React.useState(() => Math.random() > 0.7);
+  const [settingsPulse] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    if (!highlightSettings) {
+      settingsPulse.setValue(0);
+      return;
+    }
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(settingsPulse, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: false,
+        }),
+        Animated.timing(settingsPulse, {
+          toValue: 0,
+          duration: 900,
+          useNativeDriver: false,
+        }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [highlightSettings, settingsPulse]);
+
+  const settingsHighlightStyle = highlightSettings
+    ? {
+        backgroundColor: settingsPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: ["rgba(225,245,238,0)", "rgba(225,245,238,1)"],
+        }),
+        borderColor: settingsPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: ["rgba(29,107,79,0)", "rgba(29,107,79,0.55)"],
+        }),
+      }
+    : null;
+  const idleMsg = useMemo(
+    () =>
+      skipCount >= threshold
+        ? t("home.idle_calm")
+        : useAltIdle
+          ? t("buddy.idle_alt")
+          : t("buddy.idle"),
+    [skipCount, threshold, useAltIdle],
   );
 
   const greeting = childName
@@ -84,21 +163,38 @@ export default function HomeScreen({
   const suggestion = getDailySuggestion();
   const progressMsg =
     totalMissions > 0
-      ? getProgressionMessage(totalMissions, completedToday)
+      ? getProgressionMessage(totalMissions, completedToday, rtlChildSex)
       : null;
 
   return (
-    <ScrollView contentContainerStyle={s.homeScroll}>
-      <T style={s.greeting} speak={speak}>
+    <ScrollView
+      contentContainerStyle={[
+        s.homeScroll,
+        isLargeTablet && s.homeScrollLarge,
+        {
+          maxWidth: contentMaxWidth,
+          padding: screenPadding,
+          paddingTop: homeContentSpacer,
+        },
+      ]}
+    >
+      <T style={[s.greeting, isLargeTablet && s.greetingLarge]} speak={speak}>
         {greeting}
       </T>
-      <ReflectiveBoost lastMission={lastMission} speak={speak} />
+      <ReflectiveBoost
+        lastMission={lastMission}
+        speak={speak}
+        rtlChildSex={rtlChildSex}
+      />
       {progressMsg && (
-        <T style={s.progressionMsg} speak={speak}>
+        <T
+          style={[s.progressionMsg, isLargeTablet && s.progressionMsgLarge]}
+          speak={speak}
+        >
           {progressMsg}
         </T>
       )}
-      <T style={s.msg} speak={speak}>
+      <T style={[s.msg, isLargeTablet && s.msgLarge]} speak={speak}>
         {idleMsg}
       </T>
       {showMorningNudge && (
@@ -107,12 +203,55 @@ export default function HomeScreen({
           onPress={onMorningNudge}
           activeOpacity={0.85}
         >
-          <Text style={s.morningNudgeIcon}>🌅</Text>
+          <View style={s.morningNudgeIconWell}>
+            <Image
+              source={visualAssets.graphics.sunrise}
+              style={s.morningNudgeIcon}
+              resizeMode="contain"
+            />
+          </View>
           <View style={s.morningNudgeContent}>
-            <Text style={s.morningNudgeTitle}>{t("home.morning_nudge_title")}</Text>
-            <Text style={s.morningNudgeText}>{t("home.morning_nudge_sub")}</Text>
+            <Text style={s.morningNudgeTitle}>
+              {t("home.morning_nudge_title")}
+            </Text>
+            <Text style={s.morningNudgeText}>
+              {t("home.morning_nudge_sub")}
+            </Text>
           </View>
           <Text style={s.morningNudgeCta}>{t("home.morning_nudge_cta")}</Text>
+        </TouchableOpacity>
+      )}
+      {beforeRewardEnabled && onBeforeReward && (
+        <TouchableOpacity
+          style={s.beforeRewardCard}
+          onPress={onBeforeReward}
+          activeOpacity={0.85}
+        >
+          <View style={s.beforeRewardIconWell}>
+            <Image
+              source={visualAssets.graphics.rewardGift}
+              style={s.beforeRewardIcon}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={s.morningNudgeContent}>
+            <Text style={s.morningNudgeTitle}>
+              {t("home.before_reward_title")}
+            </Text>
+            <Text style={s.morningNudgeText}>
+              {beforeRewardCompleted > 0
+                ? t("home.before_reward_progress", {
+                    done: beforeRewardCompleted,
+                    count: beforeRewardRequired,
+                  })
+                : t("home.before_reward_sub", {
+                    count: beforeRewardRequired,
+                  })}
+            </Text>
+          </View>
+          <Text style={s.morningNudgeCta}>
+            {tGender("home.before_reward_cta", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       )}
       {showSuggestion && (
@@ -131,17 +270,21 @@ export default function HomeScreen({
               style={s.scheduleNow}
               onPress={() =>
                 speak(
-                  tSpeak("home.schedule_now_speak", {
-                    title: getScheduleTitle(
-                      currentBlock.id,
-                      currentBlock.title,
-                    ),
-                  }, rtlChildSex),
+                  tSpeak(
+                    "home.schedule_now_speak",
+                    {
+                      title: getScheduleTitle(
+                        currentBlock.id,
+                        currentBlock.title,
+                      ),
+                    },
+                    rtlChildSex,
+                  ),
                 )
               }
               activeOpacity={0.8}
             >
-              <Text style={s.scheduleEmoji}>{currentBlock.emoji}</Text>
+              <ScheduleIcon block={currentBlock} />
               <View style={s.scheduleInfo}>
                 <Text style={s.scheduleNowLabel}>{t("home.schedule_now")}</Text>
                 <Text style={s.scheduleTitle}>
@@ -158,16 +301,22 @@ export default function HomeScreen({
               style={s.scheduleNext}
               onPress={() =>
                 speak(
-                  tSpeak("home.schedule_next_speak", {
-                    title: getScheduleTitle(nextBlock.id, nextBlock.title),
-                  }, rtlChildSex),
+                  tSpeak(
+                    "home.schedule_next_speak",
+                    {
+                      title: getScheduleTitle(nextBlock.id, nextBlock.title),
+                    },
+                    rtlChildSex,
+                  ),
                 )
               }
               activeOpacity={0.8}
             >
-              <Text style={s.scheduleNextEmoji}>{nextBlock.emoji}</Text>
+              <ScheduleIcon block={nextBlock} next />
               <View style={s.scheduleInfo}>
-                <Text style={s.scheduleNextLabel}>{t("home.schedule_next")}</Text>
+                <Text style={s.scheduleNextLabel}>
+                  {t("home.schedule_next")}
+                </Text>
                 <Text style={s.scheduleNextTitle}>
                   {getScheduleTitle(nextBlock.id, nextBlock.title)}
                 </Text>
@@ -178,36 +327,139 @@ export default function HomeScreen({
         </View>
       )}
 
-      <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>{t("home.btn_pick_mission")}</Text>
+      <TouchableOpacity
+        style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
+        onPress={onStart}
+      >
+        <HomeButtonIcon
+          source={visualAssets.graphics.missionRocket}
+          large={isLargeTablet}
+          boost
+          inverted
+        />
+        <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
+          {tGender("home.btn_pick_mission", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       {scheduleEnabled && onOpenDay && (
-        <TouchableOpacity style={s.btnDay} onPress={onOpenDay}>
-          <Text style={s.btnDayTxt}>{t("home.btn_my_day")}</Text>
+        <TouchableOpacity
+          style={[s.btnDay, isLargeTablet && s.btnTallLarge]}
+          onPress={onOpenDay}
+        >
+          <HomeButtonIcon
+            source={visualAssets.graphics.schedule}
+            large={isLargeTablet}
+            boost
+          />
+          <Text style={[s.btnDayTxt, isLargeTablet && s.btnTextLarge]}>
+            {tGender("home.btn_my_day", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity style={s.btnSecondary} onPress={onRewards}>
-        <Text style={s.btnSecondaryTxt}>{t("home.btn_rewards")}</Text>
+      <TouchableOpacity
+        style={[s.btnSecondary, isLargeTablet && s.btnTallLarge]}
+        onPress={onRewards}
+      >
+        <HomeButtonIcon
+          source={visualAssets.graphics.rewardGift}
+          large={isLargeTablet}
+          boost
+        />
+        <Text style={[s.btnSecondaryTxt, isLargeTablet && s.btnTextLarge]}>
+          {tGender("home.btn_rewards", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       {onBreathing && (
-        <TouchableOpacity style={s.btnBreathing} onPress={onBreathing}>
-          <Text style={s.btnBreathingTxt}>{t("home.btn_breathing")}</Text>
+        <TouchableOpacity
+          style={[s.btnBreathing, isLargeTablet && s.btnTallLarge]}
+          onPress={onBreathing}
+        >
+          <HomeButtonIcon
+            source={visualAssets.graphics.breathSwirl}
+            large={isLargeTablet}
+            boost
+          />
+          <Text style={[s.btnBreathingTxt, isLargeTablet && s.btnTextLarge]}>
+            {tGender("home.btn_breathing", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity style={s.btnSettings} onPress={onSettings}>
-        <Text style={s.btnSettingsTxt}>{t("home.btn_settings")}</Text>
-      </TouchableOpacity>
+      <Animated.View
+        style={[
+          s.settingsHighlightWrap,
+          isLargeTablet && s.settingsHighlightWrapLarge,
+          settingsHighlightStyle,
+        ]}
+      >
+        <TouchableOpacity
+          style={[s.btnSettings, isLargeTablet && s.btnSettingsLarge]}
+          onPress={onSettings}
+        >
+          <HomeButtonIcon
+            source={visualAssets.graphics.settings}
+            large={isLargeTablet}
+            small
+          />
+          <Text
+            style={[s.btnSettingsTxt, isLargeTablet && s.btnSettingsTxtLarge]}
+          >
+            {tGender("home.btn_settings", undefined, rtlChildSex)}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
     </ScrollView>
+  );
+}
+
+function HomeButtonIcon({
+  source,
+  large,
+  inverted,
+  small,
+  boost,
+}: {
+  source: VisualAssetSource;
+  large: boolean;
+  inverted?: boolean;
+  small?: boolean;
+  boost?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        s.homeButtonIconSlot,
+        large && s.homeButtonIconSlotLarge,
+        small && s.homeButtonIconSmall,
+        small && large && s.homeButtonIconSmallLarge,
+      ]}
+    >
+      <Image
+        source={source}
+        style={[
+          s.homeButtonIcon,
+          large && s.homeButtonIconLarge,
+          boost && s.homeButtonIconBoost,
+          boost && large && s.homeButtonIconBoostLarge,
+          small && s.homeButtonIconSmallImage,
+          small && large && s.homeButtonIconSmallImageLarge,
+          inverted && s.homeButtonIconInverted,
+        ]}
+        resizeMode="contain"
+      />
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   homeScroll: {
+    width: "100%",
+    alignSelf: "center",
     alignItems: "center",
-    padding: 20,
     paddingBottom: 52,
-    paddingTop: BUDDY_FIXED_SPACER,
     backgroundColor: C.bg,
+  },
+  homeScrollLarge: {
+    paddingBottom: 96,
   },
   greeting: {
     fontSize: 22,
@@ -216,6 +468,7 @@ const s = StyleSheet.create({
     textAlign: "center",
     marginBottom: 4,
   },
+  greetingLarge: { fontSize: 28, lineHeight: 34 },
   progressionMsg: {
     fontSize: 15,
     color: C.green,
@@ -224,6 +477,7 @@ const s = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 22,
   },
+  progressionMsgLarge: { fontSize: 18, lineHeight: 26 },
   msg: {
     fontSize: 17,
     color: C.text,
@@ -232,19 +486,55 @@ const s = StyleSheet.create({
     lineHeight: 25,
     paddingHorizontal: 8,
   },
+  msgLarge: { fontSize: 22, lineHeight: 32, marginVertical: 12 },
   morningNudgeCard: {
     width: "100%",
-    backgroundColor: "#FFFDF9",
+    backgroundColor: "#FFF8E7",
     borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
+    borderWidth: 1,
+    borderColor: "#F1D58E",
     padding: 12,
     marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
-  morningNudgeIcon: { fontSize: 22 },
+  morningNudgeIconWell: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: "#FFF8E7",
+    borderWidth: 0.5,
+    borderColor: "#F1D58E",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  morningNudgeIcon: { width: 38, height: 38 },
+  beforeRewardCard: {
+    width: "100%",
+    backgroundColor: "#F4FAF7",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#CFE9DD",
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  beforeRewardIconWell: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: "#E1F5EE",
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  beforeRewardIcon: { width: 40, height: 40 },
   morningNudgeContent: { flex: 1 },
   morningNudgeTitle: {
     fontSize: 13,
@@ -265,13 +555,23 @@ const s = StyleSheet.create({
   btnPrimary: {
     backgroundColor: C.green,
     borderRadius: 16,
-    paddingVertical: 17,
+    paddingVertical: 14,
     paddingHorizontal: 32,
     marginTop: 10,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+  btnPrimaryLarge: {
+    borderRadius: 18,
+    paddingVertical: 18,
+    marginTop: 18,
+    gap: 14,
   },
   btnPrimaryTxt: { fontSize: 19, color: "#fff", fontWeight: "700" },
+  btnPrimaryTxtLarge: { fontSize: 24 },
   btnSecondary: {
     backgroundColor: "#FFF9EC",
     borderRadius: 16,
@@ -282,18 +582,26 @@ const s = StyleSheet.create({
     marginTop: 8,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
   },
   btnSecondaryTxt: { fontSize: 17, color: "#92400E", fontWeight: "600" },
+  btnTallLarge: { paddingVertical: 18, borderRadius: 18, marginTop: 12 },
+  btnTextLarge: { fontSize: 21 },
   btnDay: {
-    backgroundColor: "#FFFDF9",
+    backgroundColor: "#F4FAF7",
     borderRadius: 16,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: "#CFE9DD",
     paddingVertical: 13,
     paddingHorizontal: 32,
     marginTop: 8,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
   },
   btnDayTxt: { fontSize: 16, color: C.green, fontWeight: "600" },
   btnBreathing: {
@@ -306,10 +614,82 @@ const s = StyleSheet.create({
     marginTop: 8,
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
   },
   btnBreathingTxt: { fontSize: 16, color: "#1E4E8C", fontWeight: "600" },
-  btnSettings: { marginTop: 8, padding: 12, alignItems: "center" },
+  settingsHighlightWrap: {
+    width: "100%",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "transparent",
+    marginTop: 8,
+  },
+  settingsHighlightWrapLarge: { borderRadius: 18, marginTop: 14 },
+  btnSettings: {
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: "#FFFDF9",
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+  },
   btnSettingsTxt: { fontSize: 14, color: C.muted },
+  btnSettingsLarge: { padding: 16 },
+  btnSettingsTxtLarge: { fontSize: 18 },
+  homeButtonIconSlot: {
+    width: 34,
+    height: 34,
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "visible",
+  },
+  homeButtonIconSlotLarge: {
+    width: 46,
+    height: 46,
+  },
+  homeButtonIcon: {
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+  },
+  homeButtonIconLarge: {
+    width: 58,
+    height: 58,
+  },
+  homeButtonIconBoost: {
+    width: 54,
+    height: 54,
+  },
+  homeButtonIconBoostLarge: {
+    width: 72,
+    height: 72,
+  },
+  homeButtonIconSmall: {
+    width: 24,
+    height: 24,
+    opacity: 0.72,
+  },
+  homeButtonIconSmallLarge: {
+    width: 30,
+    height: 30,
+  },
+  homeButtonIconSmallImage: {
+    width: 32,
+    height: 32,
+  },
+  homeButtonIconSmallImageLarge: {
+    width: 40,
+    height: 40,
+  },
+  homeButtonIconInverted: {
+    opacity: 0.96,
+  },
 
   scheduleCard: { width: "100%", marginBottom: 12, gap: 6 },
   scheduleNow: {
@@ -317,7 +697,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     backgroundColor: C.greenLt,
     borderRadius: 14,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: "#CFE9DD",
     padding: 14,
     gap: 12,
@@ -325,15 +705,39 @@ const s = StyleSheet.create({
   scheduleNext: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFDF9",
+    backgroundColor: "#EEF2FF",
     borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
+    borderWidth: 1,
+    borderColor: "#D6DDFC",
     padding: 12,
     gap: 12,
     opacity: 0.85,
   },
-  scheduleEmoji: { fontSize: 28 },
+  scheduleEmojiWell: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: "#FFFDF9",
+    borderWidth: 0.5,
+    borderColor: "#CFE9DD",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    overflow: "hidden",
+  },
+  scheduleNextEmojiWell: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    borderColor: "#D6DDFC",
+    opacity: 0.92,
+  },
+  scheduleThumb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 14,
+  },
+  scheduleEmoji: { fontSize: 26 },
   scheduleNextEmoji: { fontSize: 22 },
   scheduleInfo: { flex: 1 },
   scheduleNowLabel: {

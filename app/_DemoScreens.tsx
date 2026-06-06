@@ -1,10 +1,17 @@
 // _DemoScreens.tsx — SafeBuddy demo / onboarding flow screens
 
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { T } from "./_SharedUI";
-import { BUDDY_FIXED_SPACER, C } from "./_constants";
-import { t, tDemoStepPraise, tDemoStepTitle } from "./i18n";
+import { C } from "./_constants";
+import { RtlChildSex, t, tDemoStepPraise, tDemoStepTitle, tGender } from "./i18n";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
+
+const DEMO_COLORS = [
+  { bg: "#F4FAF7", border: "#CFE9DD", well: "#DFF5EC" },
+  { bg: "#FFF8E7", border: "#F1D58E", well: "#FFE7B8" },
+  { bg: "#EEF2FF", border: "#D6DDFC", well: "#E1E7FF" },
+];
 
 // ── DemoIntroScreen ───────────────────────────────────────────────────────────
 
@@ -12,27 +19,31 @@ export function DemoIntroScreen({
   onStart,
   onSkip,
   speak,
+  rtlChildSex = "male",
 }: {
   onStart: () => void;
   onSkip: () => void;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   return (
-    <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+    <ScrollView contentContainerStyle={s.screen}>
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <T style={s.msg} speak={speak}>
-        {t("demo.intro_title")}
+        {tGender("demo.intro_title", undefined, rtlChildSex)}
       </T>
       <T style={s.sub} speak={speak}>
-        {t("demo.intro_sub")}
+        {tGender("demo.intro_sub", undefined, rtlChildSex)}
       </T>
       <TouchableOpacity style={s.btnPrimary} onPress={onStart}>
-        <Text style={s.btnPrimaryTxt}>{t("demo.intro_start")}</Text>
+        <Text style={s.btnPrimaryTxt}>
+          {tGender("demo.intro_start", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={s.btnSkip} onPress={onSkip}>
         <Text style={s.btnSkipTxt}>{t("common.skip")}</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -44,6 +55,7 @@ export function DemoStepScreen({
   totalSteps,
   onDone,
   speak,
+  rtlChildSex = "male",
 }: {
   step: {
     id?: string;
@@ -56,6 +68,7 @@ export function DemoStepScreen({
   totalSteps: number;
   onDone: () => void;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   const [done, setDone] = useState(false);
   // Resolve translated copy with the canonical Russian title/praise as fallback
@@ -66,6 +79,7 @@ export function DemoStepScreen({
   const localizedPraise = step.id
     ? tDemoStepPraise(step.id, t(step.praiseKey))
     : step.praise;
+  const colors = DEMO_COLORS[stepIndex % DEMO_COLORS.length];
 
   function handleDone() {
     if (done) return;
@@ -75,37 +89,51 @@ export function DemoStepScreen({
   }
 
   return (
-    <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
+    <ScrollView contentContainerStyle={s.screen}>
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
       <View style={s.stepCounter}>
         {Array(totalSteps)
           .fill(0)
           .map((_: any, i: number) => (
             <View
-              key={i}
+              key={`demo-dot-${i}`}
               style={[s.stepDot, i <= stepIndex && s.stepDotActive]}
             />
           ))}
       </View>
       <TouchableOpacity
-        style={s.demoCard}
+        style={[
+          s.demoCard,
+          { backgroundColor: colors.bg, borderColor: colors.border },
+        ]}
         onPress={() => speak(localizedTitle)}
         activeOpacity={0.85}
       >
-        <Text style={s.demoEmoji}>{step.emoji}</Text>
+        <View
+          style={[
+            s.demoEmojiWell,
+            { backgroundColor: colors.well, borderColor: colors.border },
+          ]}
+        >
+          <Text style={s.demoEmoji}>{step.emoji}</Text>
+        </View>
         <Text style={s.demoTitle}>{localizedTitle}</Text>
-        <Text style={s.tapHint}>{t("demo.step_tap_hint")}</Text>
+        <Text style={s.tapHint}>
+          {tGender("demo.step_tap_hint", undefined, rtlChildSex)}
+        </Text>
       </TouchableOpacity>
       {!done ? (
         <TouchableOpacity style={s.btnPrimary} onPress={handleDone}>
-          <Text style={s.btnPrimaryTxt}>{t("demo.step_done")}</Text>
+          <Text style={s.btnPrimaryTxt}>
+            {tGender("demo.step_done", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       ) : (
-        <View style={s.praiseRow}>
+        <View style={[s.praiseRow, { borderColor: colors.border }]}>
           <Text style={s.praiseText}>{localizedPraise} 🎉</Text>
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -115,27 +143,35 @@ export function DemoCompleteScreen({
   onGoToMissions,
   onGoHome,
   speak,
+  rtlChildSex = "male",
 }: {
   onGoToMissions: () => void;
   onGoHome: () => void;
   speak: (t: string) => void;
+  rtlChildSex?: RtlChildSex;
 }) {
   return (
-    <View style={s.screen}>
-      <View style={{ height: BUDDY_FIXED_SPACER }} />
-      <Text style={s.celebTitle}>{t("demo.complete_title")}</Text>
+    <ScrollView contentContainerStyle={s.screen}>
+      <View style={{ height: BUDDY_CONTENT_SPACER }} />
+      <Text style={s.celebTitle}>
+        {tGender("demo.complete_title", undefined, rtlChildSex)}
+      </Text>
       <T style={s.msg} speak={speak}>
-        {t("demo.complete_msg")}
+        {tGender("demo.complete_msg", undefined, rtlChildSex)}
       </T>
       <View style={s.demoCompleteButtons}>
         <TouchableOpacity style={s.btnPrimary} onPress={onGoToMissions}>
-          <Text style={s.btnPrimaryTxt}>{t("demo.complete_yes")}</Text>
+          <Text style={s.btnPrimaryTxt}>
+            {tGender("demo.complete_yes", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.btnSecondary} onPress={onGoHome}>
-          <Text style={s.btnSecondaryTxt}>{t("demo.complete_later")}</Text>
+          <Text style={s.btnSecondaryTxt}>
+            {tGender("demo.complete_later", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -143,7 +179,10 @@ export function DemoCompleteScreen({
 
 const s = StyleSheet.create({
   screen: {
-    flex: 1,
+    flexGrow: 1,
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
@@ -178,21 +217,39 @@ const s = StyleSheet.create({
   demoCard: {
     backgroundColor: "#FFFDF9",
     borderRadius: 20,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: "#DED8CE",
     padding: 32,
     alignItems: "center",
     width: "100%",
     marginVertical: 12,
   },
-  demoEmoji: { fontSize: 64, marginBottom: 12 },
+  demoEmojiWell: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  demoEmoji: { fontSize: 58 },
   demoTitle: {
     fontSize: 22,
     fontWeight: "700",
     color: C.text,
     textAlign: "center",
   },
-  praiseRow: { marginTop: 16, alignItems: "center" },
+  praiseRow: {
+    marginTop: 16,
+    alignItems: "center",
+    backgroundColor: "#F4FAF7",
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    width: "100%",
+  },
   praiseText: { fontSize: 26, fontWeight: "800", color: C.green },
 
   demoCompleteButtons: { width: "100%", marginTop: 8 },

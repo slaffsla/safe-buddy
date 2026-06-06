@@ -2,7 +2,7 @@
   "expo": {
     "name": "RealoKids",
     "slug": "realokids",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "icon": "./assets/Character/buddy-happy.png",
     "scheme": "realokids",
     "orientation": "portrait",
@@ -13,7 +13,7 @@
         "backgroundColor": "#F7F6F2"
       },
       "package": "com.slaff.realokids",
-      "versionCode": 1
+      "permissions": ["android.permission.MODIFY_AUDIO_SETTINGS"]
     },
     "ios": {
       "icon": "./assets/Character/buddy-happy.png",
@@ -40,18 +40,34 @@
           }
         }
       ],
-      "expo-audio"
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-font",
+      "expo-localization",
+      "expo-web-browser",
+      "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "RealoKids lets parents choose pictures for schedule, routine, and mission items."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "d8ca8d09-35ff-4f03-a069-471bcba052f9"
+      }
     },
-    "runtimeVersion": {
-      "policy": "sdkVersion"
-    },
+    "runtimeVersion": "1.0.2",
     "owner": "slaff"
   }
 }

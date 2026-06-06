@@ -1,7 +1,7 @@
 // _BreathingScreen.tsx — SafeBuddy 3-minute guided breathing
 //
 // Safety constraints (non-negotiable, see ticket):
-//   • Maximum session: 3 minutes. Hard-coded. Never derived from settings.
+//   • Maximum session: 130 seconds. Hard-coded. Never derived from settings.
 //   • Pattern is 3-1-4 (inhale, pause, exhale).
 //   • Breath holds never exceed 7s; here the pause is 1s.
 //   • The animated circle sets the pace; the child follows it.
@@ -18,26 +18,29 @@ import {
   setIsAudioActiveAsync,
   type AudioPlayer,
 } from "expo-audio";
-import { FontAwesome5 } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
   Easing,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { BUDDY_CONTENT_SPACER, CONTENT_MAX_WIDTH } from "../lib/layoutMetrics";
+import { visualAssets } from "../lib/visualAssets";
+import { ChildPreference } from "../lib/childPreferences";
 import Buddy from "./_Buddy";
-import { BUDDY_FIXED_SPACER, C } from "./_constants";
-import { RtlChildSex, t, tSpeak } from "./i18n";
+import { C, type BuddyMood } from "./_constants";
+import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
 
-// Hard-coded session length. Do not lift to settings.
-const BREATHING_DURATION_MS = 120_000;
+// Hard-coded session length (2m10s). Do not lift to settings.
+const BREATHING_DURATION_MS = 130_000;
 
 // Breathing rhythm: 3s inhale, 1s pause, 4s exhale.
 // Labels are resolved via i18n at render time so they follow the device locale.
@@ -47,6 +50,8 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
   { labelKey: "breathing.phase_out", duration: 4000, target: 0.74 },
 ];
 const EXHALE_PET_MULTIPLIER = 1.15;
+const AUDIO_SYNC_INTERVAL_MS = 350;
+const AUDIO_SYNC_DRIFT_SEC = 0.1;
 const GUIDANCE_FULL_CYCLES = 3;
 const GUIDANCE_SOFT_CYCLES = 1;
 const GUIDANCE_SOFT_VOLUME = 0.65;
@@ -71,6 +76,7 @@ interface Props {
   onMusicChange?: (enabled: boolean) => void;
   onGuidanceChange?: (enabled: boolean) => void;
   rtlChildSex?: RtlChildSex;
+  comfortPreference?: ChildPreference | null;
 }
 
 type State = "idle" | "priming" | "active" | "complete";
@@ -88,11 +94,13 @@ export default function BreathingScreen({
   onMusicChange,
   onGuidanceChange,
   rtlChildSex = "male",
+  comfortPreference = null,
 }: Props) {
   const [state, setState] = useState<State>("idle");
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [isPetting, setIsPetting] = useState(false);
+  const [buddyTapMood, setBuddyTapMood] = useState<BuddyMood | null>(null);
   const [showNatureFact, setShowNatureFact] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [prepRemainingMs, setPrepRemainingMs] = useState(PREP_HINT_DURATION_MS);
@@ -102,8 +110,13 @@ export default function BreathingScreen({
   const prepTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioSyncTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const natureFactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const natureFactHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const tailStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const buddyTapMoodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
   const natureFactShown = useRef(false);
@@ -118,6 +131,7 @@ export default function BreathingScreen({
   const guidanceStepRef = useRef(0);
   const guidanceEnabledRef = useRef(guidanceEnabled);
   const guidanceMuteUntilRef = useRef(0);
+  const allowCompletionTailAudioRef = useRef(false);
 
   // ── Lifecycle helpers ───────────────────────────────────────────────────────
   function clearTimers() {
@@ -145,7 +159,46 @@ export default function BreathingScreen({
       clearTimeout(natureFactHideTimerRef.current);
       natureFactHideTimerRef.current = null;
     }
+    if (audioSyncTickRef.current) {
+      clearInterval(audioSyncTickRef.current);
+      audioSyncTickRef.current = null;
+    }
+    if (tailStopTimerRef.current) {
+      clearTimeout(tailStopTimerRef.current);
+      tailStopTimerRef.current = null;
+    }
+    if (buddyTapMoodTimerRef.current) {
+      clearTimeout(buddyTapMoodTimerRef.current);
+      buddyTapMoodTimerRef.current = null;
+    }
   }
+
+  const getDesiredAudioSeconds = useCallback((sound?: AudioPlayer | null) => {
+    const elapsedSec = Math.max(0, Date.now() - sessionStart.current) / 1000;
+    const duration = Number(sound?.duration || 0);
+    if (duration > 0) {
+      return Math.max(0, Math.min(duration - 0.02, elapsedSec % duration));
+    }
+    return elapsedSec;
+  }, []);
+
+  const syncAudioToSession = useCallback(
+    async (sound: AudioPlayer, forceSeek = false) => {
+      if (stateRef.current !== "active") return;
+      const target = getDesiredAudioSeconds(sound);
+      const current = Number(sound.currentTime || 0);
+      if (
+        forceSeek ||
+        !Number.isFinite(current) ||
+        Math.abs(current - target) > AUDIO_SYNC_DRIFT_SEC
+      ) {
+        try {
+          await sound.seekTo(target);
+        } catch {}
+      }
+    },
+    [getDesiredAudioSeconds],
+  );
 
   const loadAndPlayAudio = useCallback(async () => {
     if (!musicEnabled) return;
@@ -156,7 +209,10 @@ export default function BreathingScreen({
     const token = ++audioLoadTokenRef.current;
     try {
       await setIsAudioActiveAsync(true);
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         return;
       }
       await setAudioModeAsync({
@@ -166,7 +222,10 @@ export default function BreathingScreen({
         shouldRouteThroughEarpiece: false,
         shouldPlayInBackground: false,
       });
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         return;
       }
     } catch (e) {
@@ -179,13 +238,17 @@ export default function BreathingScreen({
       });
       sound.loop = true;
       sound.volume = 0.65;
-      if (token !== audioLoadTokenRef.current || stateRef.current !== "active") {
+      if (
+        token !== audioLoadTokenRef.current ||
+        stateRef.current !== "active"
+      ) {
         try {
           sound.remove();
         } catch {}
         return;
       }
       soundRef.current = sound;
+      await syncAudioToSession(sound, true);
       sound.play();
       // iOS route/session quirk guard: retry once shortly after initial play.
       setTimeout(() => {
@@ -212,9 +275,14 @@ export default function BreathingScreen({
         audioLoadingRef.current = false;
       }
     }
-  }, [musicEnabled]);
+  }, [musicEnabled, syncAudioToSession]);
 
   const stopAudio = useCallback(() => {
+    allowCompletionTailAudioRef.current = false;
+    if (tailStopTimerRef.current) {
+      clearTimeout(tailStopTimerRef.current);
+      tailStopTimerRef.current = null;
+    }
     audioLoadTokenRef.current += 1;
     audioLoadingRef.current = false;
     const sound = soundRef.current;
@@ -228,6 +296,47 @@ export default function BreathingScreen({
     } catch {}
     setIsAudioActiveAsync(false).catch(() => {});
   }, []);
+
+  const allowAudioTailOnComplete = useCallback(() => {
+    const sound = soundRef.current;
+    if (!sound || !musicEnabled) {
+      stopAudio();
+      return;
+    }
+    allowCompletionTailAudioRef.current = true;
+    if (tailStopTimerRef.current) {
+      clearTimeout(tailStopTimerRef.current);
+      tailStopTimerRef.current = null;
+    }
+    try {
+      sound.loop = false;
+    } catch {}
+    const duration = Number(sound.duration || 0);
+    const current = Number(sound.currentTime || 0);
+    const hasKnownDuration = Number.isFinite(duration) && duration > 0.05;
+    const remainingSec = hasKnownDuration ? Math.max(0, duration - current) : 0;
+
+    // If playback already ended (or is effectively at the end), do not restart it.
+    if (hasKnownDuration && remainingSec <= 0.08) {
+      stopAudio();
+      return;
+    }
+
+    // Resume only when there is still meaningful audio left.
+    try {
+      if (!sound.playing && (!hasKnownDuration || remainingSec > 0.08)) {
+        sound.play();
+      }
+    } catch {}
+
+    const tailMs = Math.min(
+      9000,
+      Math.max(1200, Math.ceil(remainingSec * 1000) + 150),
+    );
+    tailStopTimerRef.current = setTimeout(() => {
+      stopAudio();
+    }, tailMs);
+  }, [musicEnabled, stopAudio]);
 
   function runPhase(idx: number) {
     const phase = PHASES[idx];
@@ -345,7 +454,7 @@ export default function BreathingScreen({
     }
     setPrepRemainingMs(PREP_HINT_DURATION_MS);
     setState("priming");
-    speak(petHintText);
+    speak(primingPromptText);
     const prepStart = Date.now();
     prepTickRef.current = setInterval(() => {
       const dt = Date.now() - prepStart;
@@ -359,7 +468,7 @@ export default function BreathingScreen({
 
   function finishSession() {
     clearTimers();
-    stopAudio();
+    allowAudioTailOnComplete();
     setIsPetting(false);
     isPettingRef.current = false;
     setShowNatureFact(false);
@@ -412,14 +521,40 @@ export default function BreathingScreen({
 
   useEffect(() => {
     if (state === "active") return;
+    if (state === "complete" && allowCompletionTailAudioRef.current) return;
     stopAudio();
   }, [state, stopAudio]);
+
+  useEffect(() => {
+    if (state !== "active" || !musicEnabled) return;
+    if (audioSyncTickRef.current) {
+      clearInterval(audioSyncTickRef.current);
+      audioSyncTickRef.current = null;
+    }
+    audioSyncTickRef.current = setInterval(() => {
+      const sound = soundRef.current;
+      if (!sound) return;
+      void syncAudioToSession(sound);
+    }, AUDIO_SYNC_INTERVAL_MS);
+    return () => {
+      if (audioSyncTickRef.current) {
+        clearInterval(audioSyncTickRef.current);
+        audioSyncTickRef.current = null;
+      }
+    };
+  }, [musicEnabled, state, syncAudioToSession]);
 
   useEffect(() => {
     isPettingRef.current = isPetting;
   }, [isPetting]);
 
   const petHintText = tSpeak("breathing.pet_hint", undefined, rtlChildSex);
+  const comfortPromptText = comfortPreference
+    ? t("breathing.comfort_prompt", { comfort: comfortPreference.title })
+    : null;
+  const primingPromptText = comfortPromptText
+    ? `${petHintText} ${comfortPromptText}`
+    : petHintText;
   const natureFactText = tSpeak(
     "tiny_facts.breathing_nature",
     undefined,
@@ -443,7 +578,7 @@ export default function BreathingScreen({
   if (state === "idle") {
     return (
       <View style={s.screen}>
-        <View style={{ height: BUDDY_FIXED_SPACER }} />
+        <View style={{ height: BUDDY_CONTENT_SPACER }} />
         <Text style={s.title}>{t("breathing.title")}</Text>
         <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
@@ -456,15 +591,21 @@ export default function BreathingScreen({
           onPress={startSession}
           activeOpacity={0.85}
         >
-          <Text style={s.btnPrimaryTxt}>{t("breathing.btn_start")}</Text>
+          <Text style={s.btnPrimaryTxt}>
+            {tGender("breathing.btn_start", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={s.btnSecondary}
-          onPress={onSkip}
-          activeOpacity={0.78}
-        >
-          <Text style={s.btnSecondaryTxt}>{t("breathing.btn_back")}</Text>
-        </TouchableOpacity>
+        <View style={s.footer} pointerEvents="box-none">
+          <TouchableOpacity
+            style={[s.btnSecondary, s.btnSecondaryFooter]}
+            onPress={onSkip}
+            activeOpacity={0.78}
+          >
+            <Text style={s.btnSecondaryTxt}>
+              {tGender("breathing.btn_back", undefined, rtlChildSex)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -472,33 +613,39 @@ export default function BreathingScreen({
   if (state === "priming") {
     return (
       <View style={s.screen}>
-        <View style={{ height: BUDDY_FIXED_SPACER }} />
+        <View style={{ height: BUDDY_CONTENT_SPACER }} />
         <Text style={s.title}>{t("breathing.title")}</Text>
         <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
         <View style={s.circleStatic}>
           <Text style={s.circleEmoji}>🌬️</Text>
-          <View style={s.prepCountdownOverlay} pointerEvents="none">
+          <View style={[s.prepCountdownOverlay, s.noPointerEvents]}>
             <Text style={s.prepCountdownTxt}>{prepCountdown}</Text>
           </View>
         </View>
 
         <TouchableOpacity
           style={s.natureFact}
-          onPressIn={() => speakCardText(petHintText)}
-          onPress={() => speakCardText(petHintText)}
+          onPressIn={() => speakCardText(primingPromptText)}
+          onPress={() => speakCardText(primingPromptText)}
           activeOpacity={0.8}
         >
-          <Text style={s.natureFactText}>💡 {petHintText}</Text>
+          <Text style={s.natureFactText}>
+            💡 {petHintText}
+            {comfortPromptText ? `\n${comfortPromptText}` : ""}
+          </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={s.btnSecondary}
-          onPress={handleExit}
-          activeOpacity={0.78}
-        >
-          <Text style={s.btnSecondaryTxt}>{t("breathing.btn_back")}</Text>
-        </TouchableOpacity>
+        <View style={s.footer} pointerEvents="box-none">
+          <TouchableOpacity
+            style={[s.btnSecondary, s.btnSecondaryFooter]}
+            onPress={handleExit}
+            activeOpacity={0.78}
+          >
+            <Text style={s.btnSecondaryTxt}>
+              {tGender("breathing.btn_back", undefined, rtlChildSex)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -506,24 +653,29 @@ export default function BreathingScreen({
   // ── COMPLETE ───────────────────────────────────────────────────────────────
   if (state === "complete") {
     return (
-      <View style={s.screen}>
-        <View style={{ height: BUDDY_FIXED_SPACER }} />
-        <Text style={s.celebTitle}>{t("breathing.celeb_title")}</Text>
-        <Text style={s.celebSub}>{t("breathing.celeb_sub")}</Text>
+      <View style={s.screenRoot}>
+        <View style={s.screen}>
+          <View style={{ height: BUDDY_CONTENT_SPACER }} />
+          <Text style={s.celebTitle}>{t("breathing.celeb_title")}</Text>
+          <Text style={s.celebSub}>{t("breathing.celeb_sub")}</Text>
 
-        <Animated.View
-          style={[s.circleActive, { transform: [{ scale: buddyScale }] }]}
-        >
-          <Text style={s.circleEmoji}>🌱</Text>
-        </Animated.View>
-
-        <TouchableOpacity
-          style={s.btnPrimary}
-          onPress={onComplete}
-          activeOpacity={0.85}
-        >
-          <Text style={s.btnPrimaryTxt}>{t("breathing.btn_done")}</Text>
-        </TouchableOpacity>
+          <Animated.View
+            style={[s.circleActive, { transform: [{ scale: buddyScale }] }]}
+          >
+            <Text style={s.circleEmoji}>🌱</Text>
+          </Animated.View>
+        </View>
+        <View style={s.footer} pointerEvents="box-none">
+          <TouchableOpacity
+            style={s.btnPrimaryFooter}
+            onPress={onComplete}
+            activeOpacity={0.85}
+          >
+            <Text style={s.btnPrimaryTxt}>
+              {tGender("breathing.btn_done", undefined, rtlChildSex)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -537,92 +689,153 @@ export default function BreathingScreen({
   const progress = Math.min(1, elapsedMs / BREATHING_DURATION_MS);
 
   return (
-    <View style={s.screen}>
-      <View style={s.topRightControls}>
-        <TouchableOpacity
-          style={[s.controlToggle, musicEnabled && s.controlToggleEnabled]}
-          onPress={() => onMusicChange?.(!musicEnabled)}
-          activeOpacity={0.75}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: musicEnabled }}
-          accessibilityLabel={t(
-            musicEnabled ? "breathing.music_off_a11y" : "breathing.music_on_a11y",
-          )}
-        >
-          <FontAwesome5
-            name="drum-steelpan"
-            size={18}
-            color={musicEnabled ? C.green : C.muted}
+    <View style={s.screenRoot}>
+      <View style={s.screen}>
+        <View style={s.topRightControls}>
+          <TouchableOpacity
+            style={[s.controlToggle, musicEnabled && s.controlToggleEnabled]}
+            onPress={() => onMusicChange?.(!musicEnabled)}
+            activeOpacity={0.75}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: musicEnabled }}
+            accessibilityLabel={t(
+              musicEnabled
+                ? "breathing.music_off_a11y"
+                : "breathing.music_on_a11y",
+            )}
+          >
+            <Image
+              source={visualAssets.graphics.handpan}
+              style={[
+                s.controlHandpanIcon,
+                !musicEnabled && s.controlHandpanIconMuted,
+              ]}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.controlToggle, guidanceEnabled && s.controlToggleEnabled]}
+            onPress={() => onGuidanceChange?.(!guidanceEnabled)}
+            activeOpacity={0.75}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: guidanceEnabled }}
+            accessibilityLabel={t(
+              guidanceEnabled
+                ? "breathing.guidance_off_a11y"
+                : "breathing.guidance_on_a11y",
+            )}
+          >
+            <Text style={s.guidanceToggleTxt}>
+              {guidanceEnabled ? "🔊" : "🔇"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Phase label + timer sit above Buddy */}
+        <Text style={s.phaseLabel}>{phaseLabel}</Text>
+        <Text style={s.timeLeft}>
+          {mm}:{ss}
+        </Text>
+
+        {/* Buddy IS the breathing element — no separate circle */}
+        <View style={s.buddyContainer}>
+          <Buddy
+            mood={buddyTapMood ?? "serene"}
+            speak={speak}
+            size={BUDDY_BASE}
+            phaseScale={buddyScale}
+            pettable={currentPhaseIndex !== 0}
+            onPettingChange={(petting) => {
+              setIsPetting(petting);
+              isPettingRef.current = petting;
+            }}
+            onTap={() => {
+              setBuddyTapMood("happy");
+              if (buddyTapMoodTimerRef.current) {
+                clearTimeout(buddyTapMoodTimerRef.current);
+              }
+              buddyTapMoodTimerRef.current = setTimeout(() => {
+                setBuddyTapMood(null);
+                buddyTapMoodTimerRef.current = null;
+              }, 1200);
+            }}
           />
-        </TouchableOpacity>
+        </View>
+        {showNatureFact && (
+          <TouchableOpacity
+            style={s.natureFact}
+            onPressIn={() => speakCardText(natureFactText)}
+            onPress={() => speakCardText(natureFactText)}
+            activeOpacity={0.8}
+          >
+            <Text style={s.natureFactText}>🌿 {natureFactText}</Text>
+          </TouchableOpacity>
+        )}
+        <View style={s.progressTrack}>
+          <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
+        </View>
+      </View>
+
+      <View style={s.footer} pointerEvents="box-none">
         <TouchableOpacity
-          style={[s.controlToggle, guidanceEnabled && s.controlToggleEnabled]}
-          onPress={() => onGuidanceChange?.(!guidanceEnabled)}
-          activeOpacity={0.75}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: guidanceEnabled }}
-          accessibilityLabel={t(
-            guidanceEnabled
-              ? "breathing.guidance_off_a11y"
-              : "breathing.guidance_on_a11y",
-          )}
+          style={s.btnExitFooter}
+          onPress={handleExit}
+          activeOpacity={0.7}
         >
-          <Text style={s.guidanceToggleTxt}>{guidanceEnabled ? "🔊" : "🔇"}</Text>
+          <Text style={s.btnExitTxt}>
+            {tGender("breathing.btn_finish", undefined, rtlChildSex)}
+          </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Phase label + timer sit above Buddy */}
-      <Text style={s.phaseLabel}>{phaseLabel}</Text>
-      <Text style={s.timeLeft}>
-        {mm}:{ss}
-      </Text>
-
-      {/* Buddy IS the breathing element — no separate circle */}
-      <View style={s.buddyContainer}>
-        <Buddy
-          mood="serene"
-          speak={speak}
-          size={BUDDY_BASE}
-          phaseScale={buddyScale}
-          pettable={currentPhaseIndex !== 0}
-          onPettingChange={(petting) => {
-            setIsPetting(petting);
-            isPettingRef.current = petting;
-          }}
-        />
-      </View>
-      {showNatureFact && (
-        <TouchableOpacity
-          style={s.natureFact}
-          onPressIn={() => speakCardText(natureFactText)}
-          onPress={() => speakCardText(natureFactText)}
-          activeOpacity={0.8}
-        >
-          <Text style={s.natureFactText}>🌿 {natureFactText}</Text>
-        </TouchableOpacity>
-      )}
-      <View style={s.progressTrack}>
-        <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
-      </View>
-
-      <TouchableOpacity
-        style={s.btnExit}
-        onPress={handleExit}
-        activeOpacity={0.7}
-      >
-        <Text style={s.btnExitTxt}>{t("breathing.btn_finish")}</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 const CIRCLE_BASE = 100;
 
 const s = StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    width: "100%",
+  },
   screen: {
     flex: 1,
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "flex-start",
     padding: 20,
+    paddingBottom: 0,
+  },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 8,
+    alignItems: "center",
+    zIndex: 10,
+    pointerEvents: "box-none",
+  },
+  btnSecondaryFooter: {
+    marginTop: 0,
+  },
+  btnPrimaryFooter: {
+    backgroundColor: C.green,
+    borderRadius: 16,
+    paddingVertical: 17,
+    paddingHorizontal: 48,
+    minWidth: 220,
+    alignItems: "center",
+  },
+  btnExitFooter: {
+    backgroundColor: "#F2F7FA",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#C8DAE6",
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    minWidth: 180,
+    alignItems: "center",
   },
 
   title: {
@@ -676,15 +889,22 @@ const s = StyleSheet.create({
     backgroundColor: C.greenLt,
     borderColor: "#CFE9DD",
   },
+  controlHandpanIcon: {
+    width: 26,
+    height: 22,
+  },
+  controlHandpanIconMuted: {
+    opacity: 0.45,
+  },
   guidanceToggleTxt: { fontSize: 20 },
 
   circleStatic: {
     width: CIRCLE_BASE,
     height: CIRCLE_BASE,
     borderRadius: CIRCLE_BASE / 2,
-    backgroundColor: C.greenLt,
+    backgroundColor: "#EAF6F8",
     borderWidth: 2,
-    borderColor: C.green,
+    borderColor: "#BBDDE5",
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 24,
@@ -693,9 +913,9 @@ const s = StyleSheet.create({
     width: CIRCLE_BASE,
     height: CIRCLE_BASE,
     borderRadius: CIRCLE_BASE / 2,
-    backgroundColor: C.greenLt,
+    backgroundColor: "#EAF6F8",
     borderWidth: 2,
-    borderColor: C.green,
+    borderColor: "#BBDDE5",
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 16,
@@ -708,10 +928,11 @@ const s = StyleSheet.create({
     top: 0,
     bottom: 0,
     borderRadius: CIRCLE_BASE / 2,
-    backgroundColor: C.greenLt,
+    backgroundColor: "rgba(234,246,248,0.94)",
     alignItems: "center",
     justifyContent: "center",
   },
+  noPointerEvents: { pointerEvents: "none" },
   prepCountdownTxt: {
     fontSize: 34,
     fontWeight: "800",
@@ -722,7 +943,7 @@ const s = StyleSheet.create({
     width: "90%",
     height: 6,
     borderRadius: 3,
-    backgroundColor: C.border,
+    backgroundColor: "#D8E7EC",
     marginTop: 20,
     overflow: "hidden",
   },
@@ -743,10 +964,10 @@ const s = StyleSheet.create({
   btnPrimaryTxt: { fontSize: 18, color: C.white, fontWeight: "700" },
 
   btnSecondary: {
-    backgroundColor: "#FFFDF9",
+    backgroundColor: "#F2F7FA",
     borderRadius: 16,
-    borderWidth: 0.5,
-    borderColor: "#CFE9DD",
+    borderWidth: 1,
+    borderColor: "#C8DAE6",
     paddingVertical: 15,
     paddingHorizontal: 48,
     marginTop: 12,
@@ -755,7 +976,7 @@ const s = StyleSheet.create({
   },
   btnSecondaryTxt: {
     fontSize: 16,
-    color: C.green,
+    color: "#1E4E8C",
     fontWeight: "600",
   },
   btnExit: {
@@ -792,10 +1013,10 @@ const s = StyleSheet.create({
     overflow: "visible",
   },
   natureFact: {
-    backgroundColor: C.greenLt,
+    backgroundColor: "#F4FAF7",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: C.green,
+    borderColor: "#CFE9DD",
     padding: 14,
     marginTop: 4,
     width: "100%",

@@ -651,104 +651,112 @@ export function CelebrateScreen({
     : getProgressionMessage(totalMissions, completedToday, rtlChildSex);
 
   return (
-    <View
-      style={[
-        s.screen,
-        {
-          maxWidth: contentMaxWidth,
-          padding: screenPadding,
-          paddingTop: buddyContentSpacer,
-          paddingBottom: isLargeTablet ? 128 : 96,
-        },
-      ]}
-    >
-      <T style={isVeryExcited ? s.milestoneTitle : s.celebTitle} speak={speak}>
-        {isVeryExcited ? t("celebrate.milestone_title") : t("celebrate.title")}
-      </T>
-      <T style={s.progressionMsg} speak={speak}>
-        {emotionalMsg}
-      </T>
-      <TouchableOpacity
-        style={[
-          s.earnedCard,
-          missionRowTint(mission.slot ?? "any"),
+    <View style={s.screenRoot}>
+      <ScrollView
+        style={s.screenScroll}
+        contentContainerStyle={[
+          s.screen,
+          s.celebrateScreenScroll,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+            paddingTop: buddyContentSpacer,
+            paddingBottom: isLargeTablet ? 128 : 96,
+          },
         ]}
-        onPress={() => speak(tSpeak("buddy.done", undefined, rtlChildSex))}
-        activeOpacity={0.85}
       >
-        <Image
-          source={visualAssets.graphics.completeBadge}
-          style={s.earnedGraphic}
-          resizeMode="contain"
-        />
-        <MissionIcon
-          item={mission}
-          wellStyle={s.earnedEmojiWell}
-          emojiStyle={s.earnedEmoji}
-          imageStyle={s.earnedThumb}
-        />
-        <Text style={s.earnedName}>
-          {getMissionTitle(mission.id, mission.title)}
-        </Text>
-        <View style={[s.mStarBadge, s.earnedStarBadge]}>
-          <Text style={s.earnedStars}>
-            {Array(mission.stars).fill("⭐").join(" ")}
+        <T
+          style={isVeryExcited ? s.milestoneTitle : s.celebTitle}
+          speak={speak}
+        >
+          {isVeryExcited
+            ? t("celebrate.milestone_title")
+            : t("celebrate.title")}
+        </T>
+        <T style={s.progressionMsg} speak={speak}>
+          {emotionalMsg}
+        </T>
+        <TouchableOpacity
+          style={[s.earnedCard, missionRowTint(mission.slot ?? "any")]}
+          onPress={() => speak(tSpeak("buddy.done", undefined, rtlChildSex))}
+          activeOpacity={0.85}
+        >
+          <Image
+            source={visualAssets.graphics.completeBadge}
+            style={s.earnedGraphic}
+            resizeMode="contain"
+          />
+          <MissionIcon
+            item={mission}
+            wellStyle={s.earnedEmojiWell}
+            emojiStyle={s.earnedEmoji}
+            imageStyle={s.earnedThumb}
+          />
+          <Text style={s.earnedName}>
+            {getMissionTitle(mission.id, mission.title)}
           </Text>
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
-        onPress={() => {
-          if (nextBoostKey) {
-            speak(tSpeak(nextBoostKey, undefined, rtlChildSex));
-          }
-          onContinue();
-        }}
-      >
-        <View
-          style={[
-            s.btnPrimaryIconWell,
-            isLargeTablet && s.btnPrimaryIconWellLarge,
-          ]}
+          <View style={[s.mStarBadge, s.earnedStarBadge]}>
+            <Text style={s.earnedStars}>
+              {Array(mission.stars).fill("⭐").join(" ")}
+            </Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
+          onPress={() => {
+            if (nextBoostKey) {
+              speak(tSpeak(nextBoostKey, undefined, rtlChildSex));
+            }
+            onContinue();
+          }}
         >
-          <Image
-            source={visualAssets.graphics.missionRocket}
+          <View
             style={[
-              s.btnPrimaryImageIcon,
-              isLargeTablet && s.btnPrimaryImageIconLarge,
+              s.btnPrimaryIconWell,
+              isLargeTablet && s.btnPrimaryIconWellLarge,
             ]}
-            resizeMode="contain"
-          />
-        </View>
-        <Text style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}>
-          {tGender(continueLabelKey ?? nextButtonKey, undefined, rtlChildSex)}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[s.btnSecondary, isLargeTablet && s.btnSecondaryLarge]}
-        onPress={onRewards}
-      >
-        <View
-          style={[
-            s.btnSecondaryIconWell,
-            isLargeTablet && s.btnSecondaryIconWellLarge,
-          ]}
+          >
+            <Image
+              source={visualAssets.graphics.missionRocket}
+              style={[
+                s.btnPrimaryImageIcon,
+                isLargeTablet && s.btnPrimaryImageIconLarge,
+              ]}
+              resizeMode="contain"
+            />
+          </View>
+          <Text
+            style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}
+          >
+            {tGender(continueLabelKey ?? nextButtonKey, undefined, rtlChildSex)}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.btnSecondary, isLargeTablet && s.btnSecondaryLarge]}
+          onPress={onRewards}
         >
-          <Image
-            source={visualAssets.graphics.rewardGift}
+          <View
             style={[
-              s.btnSecondaryImageIcon,
-              isLargeTablet && s.btnSecondaryImageIconLarge,
+              s.btnSecondaryIconWell,
+              isLargeTablet && s.btnSecondaryIconWellLarge,
             ]}
-            resizeMode="contain"
-          />
-        </View>
-        <Text
-          style={[s.btnSecondaryTxt, isLargeTablet && s.btnSecondaryTxtLarge]}
-        >
-          {tGender("celebrate.btn_rewards", undefined, rtlChildSex)}
-        </Text>
-      </TouchableOpacity>
+          >
+            <Image
+              source={visualAssets.graphics.rewardGift}
+              style={[
+                s.btnSecondaryImageIcon,
+                isLargeTablet && s.btnSecondaryImageIconLarge,
+              ]}
+              resizeMode="contain"
+            />
+          </View>
+          <Text
+            style={[s.btnSecondaryTxt, isLargeTablet && s.btnSecondaryTxtLarge]}
+          >
+            {tGender("celebrate.btn_rewards", undefined, rtlChildSex)}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
       <View style={s.footer}>
         <TouchableOpacity style={s.btnBack} onPress={onBack}>
           <Text style={s.btnBackTxt}>{t("common.back")}</Text>
@@ -1015,6 +1023,9 @@ const s = StyleSheet.create({
   },
   activeScreenScrollLarge: {
     paddingBottom: 120,
+  },
+  celebrateScreenScroll: {
+    justifyContent: "flex-start",
   },
   firstMissionScroll: {
     justifyContent: "flex-start",

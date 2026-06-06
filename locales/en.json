@@ -158,6 +158,8 @@
     "next_boost_adventure_1": "Adventure mode on.",
     "next_boost_adventure_2": "Let us see what is next.",
     "next_boost_adventure_3": "On to the next adventure.",
+    "all_done_praise_male": "I'm proud of you, champ!",
+    "all_done_praise_female": "I'm proud of you, sweetheart!",
     "btn_rewards": "See rewards"
   },
   "rewards": {
@@ -326,7 +328,8 @@
     "24": { "title": "Share something good", "subtitle": "With mom or dad" },
     "25": { "title": "Sit quietly", "subtitle": "One minute" },
     "26": { "title": "Draw something", "subtitle": "Anything" },
-    "27": { "title": "Look out the window", "subtitle": "One minute" }
+    "27": { "title": "Look out the window", "subtitle": "One minute" },
+    "28": { "title": "Do a quick exercise", "subtitle": "A few simple moves" }
   },
   "rewardItems": {
     "1": "Extra cartoon or video",
@@ -639,6 +642,7 @@
     "f25": "One minute of silence gives your brain a chance to sort itself out.",
     "f26": "Drawing activates a different part of your brain than words do.",
     "f27": "Looking out the window rests your eyes and your thoughts at the same time.",
+    "f28": "A few simple moves wake up your muscles and help your brain feel ready.",
     "breathing_nature": "Next time you are outside, try putting your attention on your breath for just a moment. Nature makes it easier."
   },
   "tiny_jokes": {

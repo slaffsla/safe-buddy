@@ -102,6 +102,16 @@ function rewardRedemptionSpeakKey(
     : "rewards.redeemed_speak_male";
 }
 
+function maybeAllMissionsDonePraiseKey(
+  rtlChildSex: "male" | "female",
+  chance = 0.3,
+) {
+  if (Math.random() >= chance) return null;
+  return rtlChildSex === "female"
+    ? "celebrate.all_done_praise_female"
+    : "celebrate.all_done_praise_male";
+}
+
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
 const BUDDY = {
@@ -954,6 +964,21 @@ export default function App() {
       : mission.stars >= 2
         ? "excited"
         : "happy";
+    const nextDoneIds =
+      typeof mission.id === "number" && !doneIdsToday.includes(mission.id)
+        ? [...doneIdsToday, mission.id]
+        : doneIdsToday;
+    const visibleMissionIds = (missionPickMissions ?? []).map((m) => m.id);
+    const finishedVisibleMissions =
+      !firstMission &&
+      !beforeRewardActive &&
+      typeof mission.id === "number" &&
+      visibleMissionIds.includes(mission.id) &&
+      visibleMissionIds.length > 0 &&
+      visibleMissionIds.every((id) => nextDoneIds.includes(id));
+    const allDonePraiseKey = finishedVisibleMissions
+      ? maybeAllMissionsDonePraiseKey(appSettings.rtlChildSex ?? "male")
+      : null;
 
     setStars((n) => n + mission.stars);
     setPrevTotalEver(totalEver);
@@ -974,9 +999,7 @@ export default function App() {
     setFirstMission(false);
     setIsVeryExcited(veryExcited);
     if (typeof mission.id === "number") {
-      setDoneIdsToday((ids) =>
-        ids.includes(mission.id) ? ids : [...ids, mission.id],
-      );
+      setDoneIdsToday(nextDoneIds);
     }
     setLastMission(getMissionTitle(mission.id, mission.title));
     const completedToday = todayStr();
@@ -990,6 +1013,9 @@ export default function App() {
     flashBuddyMood(completionMood);
     if (shouldShowConfetti(newTotal) || veryExcited) {
       triggerCelebrateConfetti(veryExcited ? "very-excited" : "excited");
+    }
+    if (allDonePraiseKey) {
+      speak(tSpeak(allDonePraiseKey, undefined, appSettings.rtlChildSex ?? "male"));
     }
     setScreen("celebrate");
   }

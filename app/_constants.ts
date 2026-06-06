@@ -297,6 +297,17 @@ export const MISSION_POOL: PoolMission[] = [
     weekdayDefault: true,
     weekendDefault: true,
   },
+  {
+    id: 28,
+    title: "Сделай зарядку",
+    subtitle: "Несколько простых движений",
+    stars: 1,
+    emoji: "🤸",
+    category: "movement",
+    slot: "morning",
+    weekdayDefault: true,
+    weekendDefault: true,
+  },
 
   // ── Self-care (new) ──────────────────────────────────────────────────
   {

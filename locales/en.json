@@ -597,7 +597,7 @@
     "type_permanent": "Always",
     "type_rotating": "Rotation",
     "type_inactive": "Inactive",
-    "image_pick": "Choose photo",
+    "image_pick": "Choose calm photo",
     "image_remove": "Remove photo",
     "image_guardrail": "Use a clear, calm square image. Emoji stays as backup.",
     "image_permission_title": "Photo access needed",

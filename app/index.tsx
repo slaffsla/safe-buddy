@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  ImageBackground,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -18,11 +17,12 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { pickPreferenceForUse } from "../lib/childPreferences";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
 import { visualAssets } from "../lib/visualAssets";
-import { pickPreferenceForUse } from "../lib/childPreferences";
 import { incrementLocalUsage } from "../localUsage";
 import BreathingScreen from "./_BreathingScreen";
 import Buddy from "./_Buddy";
@@ -480,6 +480,7 @@ export default function App() {
 
   const speak = useSpeech(ttsEnabled, appSettings.rtlChildSex ?? "male");
   const [useGentleHomeMood] = useState(() => Math.random() > 0.7);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { contentMaxWidth, isTabletWidth, isLargeTablet, isShortHeight } =
     useLayoutMetrics();
   const visibleScreen = screen;
@@ -1398,10 +1399,10 @@ export default function App() {
     bridgeSelectedMissions.length > 0
       ? bridgeSelectedMissions
       : bridgePreferredMissions.length > 0
-      ? bridgePreferredMissions
-      : bridgeFallbackMissions.length > 0
-        ? bridgeFallbackMissions
-        : bridgeMissionSources
+        ? bridgePreferredMissions
+        : bridgeFallbackMissions.length > 0
+          ? bridgeFallbackMissions
+          : bridgeMissionSources
   ).slice(0, 4);
 
   // Effective rewards list (parent overrides applied; disabled rewards hidden).
@@ -1455,6 +1456,22 @@ export default function App() {
     onboardingDone &&
     !showPinScreen &&
     visibleScreen !== "settings";
+  const doodleTileSize = 500;
+  const doodleColumns = Math.ceil(windowWidth / doodleTileSize) + 1;
+  const doodleRows = Math.ceil(windowHeight / doodleTileSize) + 1;
+  const renderDoodleTiles = (keyPrefix: string) =>
+    Array.from({ length: doodleRows }).map((_, row) => (
+      <View key={`${keyPrefix}-doodle-row-${row}`} style={s.appDoodleBgRow}>
+        {Array.from({ length: doodleColumns }).map((__, col) => (
+          <Image
+            key={`${keyPrefix}-doodle-tile-${row}-${col}`}
+            source={visualAssets.graphics.appBg}
+            style={s.appDoodleBgTile}
+            resizeMode="cover"
+          />
+        ))}
+      </View>
+    ));
 
   if (showMorning) {
     return (
@@ -1492,12 +1509,7 @@ export default function App() {
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
       {showMilestoneDoodleBg && (
-        <ImageBackground
-          source={visualAssets.graphics.appBg}
-          style={s.appDoodleBg}
-          imageStyle={s.appDoodleBgImage}
-          resizeMode="repeat"
-        />
+        <View style={s.appDoodleBg}>{renderDoodleTiles("screen")}</View>
       )}
 
       {visibleScreen === "demo_intro" && (
@@ -1578,9 +1590,7 @@ export default function App() {
           }}
           beforeRewardEnabled={appSettings.beforeRewardEnabled}
           beforeRewardRequired={appSettings.beforeRewardMissionCount ?? 1}
-          beforeRewardCompleted={
-            beforeRewardActive ? beforeRewardCompleted : 0
-          }
+          beforeRewardCompleted={beforeRewardActive ? beforeRewardCompleted : 0}
           onBeforeReward={startBeforeRewardBridge}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
         />
@@ -1760,10 +1770,22 @@ export default function App() {
             style={[
               s.topOverlay,
               isTabletWidth || isShortHeight ? s.topOverlayCompact : null,
+              showMilestoneDoodleBg ? s.topOverlayDoodleSanctuary : null,
               s.boxNonePointerEvents,
             ]}
           >
-            <View style={[s.topOverlayContent, { maxWidth: contentMaxWidth }]}>
+            {showMilestoneDoodleBg && (
+              <View style={s.topOverlayDoodleLayer}>
+                {renderDoodleTiles("overlay")}
+              </View>
+            )}
+            <View
+              style={[
+                s.topOverlayContent,
+                showMilestoneDoodleBg ? s.transparentBg : null,
+                { maxWidth: contentMaxWidth },
+              ]}
+            >
               <View
                 style={[
                   s.buddyBubbleWrap,
@@ -1947,13 +1969,19 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   appDoodleBg: {
     ...StyleSheet.absoluteFill,
-    opacity: 0.09,
     pointerEvents: "none",
     zIndex: 1,
+    overflow: "hidden",
   },
-  appDoodleBgImage: {
+  appDoodleBgRow: {
+    flexDirection: "row",
+    width: "100%",
+    height: 500,
+  },
+  appDoodleBgTile: {
     width: 500,
     height: 500,
+    opacity: 0.99,
   },
   center: { justifyContent: "center", alignItems: "center" },
   screen: {
@@ -1976,6 +2004,19 @@ const s = StyleSheet.create({
 
     paddingHorizontal: 16,
   },
+  topOverlayDoodleSanctuary: {
+    backgroundColor: C.bg,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "rgba(222,216,206,0.75)",
+    overflow: "hidden",
+  },
+  topOverlayDoodleLayer: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: C.bg,
+    pointerEvents: "none",
+    zIndex: 0,
+  },
+  transparentBg: { backgroundColor: "transparent" },
   boxNonePointerEvents: { pointerEvents: "box-none" },
   topOverlayCompact: {
     paddingTop: 8,
@@ -1987,6 +2028,7 @@ const s = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 6,
     pointerEvents: "auto",
+    zIndex: 1,
   },
   buddyBubbleWrap: {
     width: "100%",

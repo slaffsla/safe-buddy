@@ -120,6 +120,9 @@
   },
   "missionPick": {
     "title": "Pick a mission",
+    "before_reward_title": "First, then",
+    "before_reward_sub": "Pick a small mission before the reward.",
+    "before_reward_hint": "These are quick bridge missions",
     "first_title": "Choose your first tiny mission",
     "first_sub": "Pick one. Buddy will stay with you.",
     "first_hint": "Tap a card to begin. Hold it to hear it first.",

@@ -93,6 +93,7 @@ interface MissionPickProps {
   doneIds?: number[];
   bonusMission?: PoolMission | null;
   missionTypeById?: Record<number, "permanent" | "rotating" | "inactive">;
+  beforeRewardMode?: boolean;
   rtlChildSex?: RtlChildSex;
 }
 
@@ -105,6 +106,7 @@ export function MissionPickScreen({
   doneIds,
   bonusMission,
   missionTypeById,
+  beforeRewardMode = false,
   rtlChildSex = "male",
 }: MissionPickProps) {
   const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
@@ -263,8 +265,22 @@ export function MissionPickScreen({
           style={[s.pageTitle, isLargeTablet && s.pageTitleLarge]}
           speak={speak}
         >
-          {tGender("missionPick.title", undefined, rtlChildSex)}
+          {tGender(
+            beforeRewardMode
+              ? "missionPick.before_reward_title"
+              : "missionPick.title",
+            undefined,
+            rtlChildSex,
+          )}
         </T>
+        {beforeRewardMode && (
+          <T
+            style={[s.firstMissionSub, isLargeTablet && s.firstMissionSubLarge]}
+            speak={speak}
+          >
+            {tGender("missionPick.before_reward_sub", undefined, rtlChildSex)}
+          </T>
+        )}
 
         {allDone && (
           <View style={s.encoreCard}>
@@ -438,7 +454,13 @@ export function MissionPickScreen({
         })}
 
         <T style={s.hint} speak={speak}>
-          {tGender("missionPick.hint", undefined, rtlChildSex)}
+          {tGender(
+            beforeRewardMode
+              ? "missionPick.before_reward_hint"
+              : "missionPick.hint",
+            undefined,
+            rtlChildSex,
+          )}
         </T>
       </ScrollView>
       <View style={s.footer} pointerEvents="box-none">

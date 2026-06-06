@@ -136,6 +136,10 @@
   "missionPick": {
     "title": "בחר משימה",
     "title_female": "בחרי משימה",
+    "before_reward_title": "קודם ואז",
+    "before_reward_sub": "בחר משימה קטנה לפני הפרס.",
+    "before_reward_sub_female": "בחרי משימה קטנה לפני הפרס.",
+    "before_reward_hint": "אלה משימות מעבר קצרות",
     "first_title": "בחר משימה קטנה ראשונה",
     "first_title_female": "בחרי משימה קטנה ראשונה",
     "first_sub": "בחר אחת. Buddy יישאר כאן.",

@@ -1361,6 +1361,23 @@ export default function App() {
       : dayMissions.length > 0
         ? dayMissions
         : null;
+  const bridgeMissionSources = [
+    ...dayMissions,
+    ...activePool.filter((m) => !dayMissions.some((d) => d.id === m.id)),
+  ].filter((m) => !doneIdsToday.includes(m.id));
+  const bridgePreferredMissions = bridgeMissionSources.filter(
+    (m) => m.stars === 1 && m.category !== "social",
+  );
+  const bridgeFallbackMissions = bridgeMissionSources.filter(
+    (m) => m.stars === 1,
+  );
+  const beforeRewardMissions = (
+    bridgePreferredMissions.length > 0
+      ? bridgePreferredMissions
+      : bridgeFallbackMissions.length > 0
+        ? bridgeFallbackMissions
+        : bridgeMissionSources
+  ).slice(0, 4);
 
   // Effective rewards list (parent overrides applied; disabled rewards hidden).
   const effectiveRewards: Reward[] = allRewardPool
@@ -1523,11 +1540,18 @@ export default function App() {
         <MissionPickScreen
           {...p}
           firstTime={firstMission}
-          missions={missionPickMissions}
+          missions={
+            beforeRewardActive && beforeRewardMissions.length > 0
+              ? beforeRewardMissions
+              : missionPickMissions
+          }
           missionTypeById={missionTypeById}
           doneIds={doneIdsToday}
+          beforeRewardMode={beforeRewardActive}
           bonusMission={
-            appSettings.infinityLoopEnabled && appSettings.bonusAfterCompletion
+            !beforeRewardActive &&
+            appSettings.infinityLoopEnabled &&
+            appSettings.bonusAfterCompletion
               ? bonusMission
               : null
           }

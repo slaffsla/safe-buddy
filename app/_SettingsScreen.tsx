@@ -738,6 +738,13 @@ const C = {
   white: "#FFFFFF",
   green: "#1D6B4F",
   greenLt: "#E1F5EE",
+  mintBg: "#F4FAF7",
+  mintBorder: "#CFE9DD",
+  morningBg: "#FFF8E7",
+  morningBorder: "#F1D58E",
+  morningSoft: "#FFE7B8",
+  peachBg: "#FFF1E9",
+  peachBorder: "#F5C7B5",
   text: "#1A1A18",
   muted: "#6B6B68",
   border: "#E5E5E2",
@@ -750,13 +757,50 @@ const C = {
 
 // ── UI PRIMITIVES ─────────────────────────────────────────────────────────────
 
-function SectionHeader({ title, icon }: { title: string; icon: string }) {
+type SettingsTone = "default" | "mission" | "morning" | "soft";
+
+function SectionHeader({
+  title,
+  icon,
+  tone = "default",
+}: {
+  title: string;
+  icon: string;
+  tone?: SettingsTone;
+}) {
   return (
     <View style={u.sectionHeader}>
-      <Text style={u.sectionIcon}>{icon}</Text>
+      <View style={[u.sectionIconWell, toneStyle(tone, "iconWell")]}>
+        <Text style={u.sectionIcon}>{icon}</Text>
+      </View>
       <Text style={u.sectionTitle}>{title}</Text>
     </View>
   );
+}
+
+function toneStyle(tone: SettingsTone, part: "card" | "iconWell" | "action") {
+  if (tone === "mission") {
+    return part === "card"
+      ? u.cardMission
+      : part === "action"
+        ? u.actionMission
+        : u.sectionIconMission;
+  }
+  if (tone === "morning") {
+    return part === "card"
+      ? u.cardMorning
+      : part === "action"
+        ? u.actionMorning
+        : u.sectionIconMorning;
+  }
+  if (tone === "soft") {
+    return part === "card"
+      ? u.cardSoft
+      : part === "action"
+        ? u.actionSoft
+        : u.sectionIconSoft;
+  }
+  return null;
 }
 
 function SettingRow({
@@ -791,8 +835,14 @@ function Divider() {
   return <View style={u.divider} />;
 }
 
-function Card({ children }: { children: React.ReactNode }) {
-  return <View style={u.card}>{children}</View>;
+function Card({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: SettingsTone;
+}) {
+  return <View style={[u.card, toneStyle(tone, "card")]}>{children}</View>;
 }
 
 function PillSelector<T extends string>({
@@ -1473,14 +1523,18 @@ function MissionsSection({
 }) {
   return (
     <View>
-      <SectionHeader title={t("settings.missions_section")} icon="🎯" />
-      <Card>
+      <SectionHeader
+        title={t("settings.missions_section")}
+        icon="🎯"
+        tone="mission"
+      />
+      <Card tone="mission">
         <Text style={[u.rowSublabel, { padding: 12, textAlign: "center" }]}>
           {t("settings.missions_parent_hint")}
         </Text>
       </Card>
 
-      <Card>
+      <Card tone="mission">
         <SettingRow
           label={t("settings.infinity_loop")}
           sublabel={t("settings.infinity_loop_sub")}
@@ -1536,7 +1590,7 @@ function MissionsSection({
         )}
       </Card>
 
-      <Card>
+      <Card tone="mission">
         <SettingRow
           label={t("settings.rotation_soon")}
           sublabel={t("settings.rotation_soon_sub")}
@@ -2427,10 +2481,14 @@ function DailyRoutineSection({
 
   return (
     <View>
-      <SectionHeader title={t("settings.routine_section")} icon="🌅" />
+      <SectionHeader
+        title={t("settings.routine_section")}
+        icon="🌅"
+        tone="morning"
+      />
 
       {/* Morning routine toggle + star count + steps editor */}
-      <Card>
+      <Card tone="morning">
         <SettingRow
           label={t("settings.morning_label")}
           sublabel={t("settings.morning_sub")}
@@ -2595,7 +2653,10 @@ function DailyRoutineSection({
                   <>
                     <Divider />
                     <TouchableOpacity
-                      style={ss.scheduleManageBtn}
+                      style={[
+                        ss.scheduleManageBtn,
+                        toneStyle("morning", "action"),
+                      ]}
                       onPress={() => {
                         setEditingId(-1);
                         setStepTitle("");
@@ -2654,7 +2715,10 @@ function DailyRoutineSection({
               <>
                 <Divider />
                 <TouchableOpacity
-                  style={ss.scheduleManageBtn}
+                  style={[
+                    ss.scheduleManageBtn,
+                    toneStyle("morning", "action"),
+                  ]}
                   onPress={onOpenStepsManager}
                   activeOpacity={0.78}
                 >
@@ -2680,7 +2744,7 @@ function DailyRoutineSection({
       </Card>
 
       {showDayModeCard && (
-        <Card>
+        <Card tone="soft">
           <Text style={[u.rowLabel, { padding: 14, paddingBottom: 4 }]}>
             {t("settings.day_mode")}
           </Text>
@@ -5135,7 +5199,29 @@ const u = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  sectionIcon: { fontSize: 18 },
+  sectionIconWell: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F2EEE6",
+    borderWidth: 1,
+    borderColor: "#E3D8C7",
+  },
+  sectionIconMission: {
+    backgroundColor: C.mintBg,
+    borderColor: C.mintBorder,
+  },
+  sectionIconMorning: {
+    backgroundColor: C.morningBg,
+    borderColor: C.morningBorder,
+  },
+  sectionIconSoft: {
+    backgroundColor: C.peachBg,
+    borderColor: C.peachBorder,
+  },
+  sectionIcon: { fontSize: 17 },
   sectionTitle: {
     fontSize: 14,
     fontWeight: "600",
@@ -5152,6 +5238,30 @@ const u = StyleSheet.create({
     borderColor: "#DED8CE",
     overflow: "hidden",
     marginBottom: 8,
+  },
+  cardMission: {
+    backgroundColor: C.mintBg,
+    borderColor: C.mintBorder,
+  },
+  cardMorning: {
+    backgroundColor: C.morningBg,
+    borderColor: C.morningBorder,
+  },
+  cardSoft: {
+    backgroundColor: C.peachBg,
+    borderColor: C.peachBorder,
+  },
+  actionMission: {
+    backgroundColor: C.greenLt,
+    borderColor: C.mintBorder,
+  },
+  actionMorning: {
+    backgroundColor: "#FFF2D2",
+    borderColor: C.morningBorder,
+  },
+  actionSoft: {
+    backgroundColor: C.peachBg,
+    borderColor: C.peachBorder,
   },
 
   // Row

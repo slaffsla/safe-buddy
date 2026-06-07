@@ -1058,6 +1058,19 @@ function PinSection({
   const [setPinFocused, setSetPinFocused] = useState(false);
   const [removePinFocused, setRemovePinFocused] = useState(false);
 
+  function cancelPinModal() {
+    setShowSetPin(false);
+    setShowRemovePin(false);
+    setPinChallengeAction(null);
+    setNewPin("");
+    setConfirmPin("");
+    setRemovePinInput("");
+    setSetPinError("");
+    setRemovePinError("");
+    setSetPinFocused(false);
+    setRemovePinFocused(false);
+  }
+
   function handleSetPin() {
     if (!newPin || !confirmPin) {
       setSetPinError(t("pinChild.empty_msg"));
@@ -1237,13 +1250,7 @@ function PinSection({
         visible={showSetPin || showRemovePin}
         transparent
         animationType="fade"
-        onRequestClose={() => {
-          setShowSetPin(false);
-          setShowRemovePin(false);
-          setPinChallengeAction(null);
-          setSetPinFocused(false);
-          setRemovePinFocused(false);
-        }}
+        onRequestClose={cancelPinModal}
       >
         <View style={ss.pinOverlay}>
           <KeyboardAvoidingView
@@ -1317,13 +1324,7 @@ function PinSection({
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={ss.pinBtnCancel}
-                    onPress={() => {
-                      setShowSetPin(false);
-                      setNewPin("");
-                      setConfirmPin("");
-                      setSetPinError("");
-                      setSetPinFocused(false);
-                    }}
+                    onPress={cancelPinModal}
                   >
                     <Text style={ss.pinBtnCancelTxt}>
                       {t("settings.cancel")}
@@ -1373,13 +1374,7 @@ function PinSection({
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={ss.pinBtnCancel}
-                    onPress={() => {
-                      setShowRemovePin(false);
-                      setPinChallengeAction(null);
-                      setRemovePinInput("");
-                      setRemovePinError("");
-                      setRemovePinFocused(false);
-                    }}
+                    onPress={cancelPinModal}
                   >
                     <Text style={ss.pinBtnCancelTxt}>
                       {t("settings.cancel")}
@@ -4289,6 +4284,14 @@ export default function SettingsScreen({
     }
   }
 
+  function cancelProtectedPin() {
+    setShowPin(false);
+    setPinInput("");
+    setPinError("");
+    setPinFocused(false);
+    setPendingAction(null);
+  }
+
   function verifyAndRun() {
     if (!pinInput) {
       setPinError(t("pinChild.empty_msg"));
@@ -4710,13 +4713,7 @@ export default function SettingsScreen({
               </TouchableOpacity>
               <TouchableOpacity
                 style={ss.pinBtnCancel}
-                onPress={() => {
-                  setShowPin(false);
-                  setPinInput("");
-                  setPinError("");
-                  setPinFocused(false);
-                  setPendingAction(null);
-                }}
+                onPress={cancelProtectedPin}
               >
                 <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
               </TouchableOpacity>

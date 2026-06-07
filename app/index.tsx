@@ -1206,6 +1206,15 @@ export default function App() {
     setScreen("breathing");
   }
 
+  function cancelChildPin() {
+    setShowPinScreen(false);
+    setEnteredPin("");
+    setPinError("");
+    setPinFocused(false);
+    setPendingReward(null);
+    setPendingMissionComplete(false);
+  }
+
   function verifyPin() {
     if (enteredPin.length === 0) {
       setPinError(t("pinChild.empty_msg"));
@@ -1968,14 +1977,7 @@ export default function App() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={s.pinCancel}
-                onPress={() => {
-                  setShowPinScreen(false);
-                  setEnteredPin("");
-                  setPinError("");
-                  setPinFocused(false);
-                  setPendingReward(null);
-                  setPendingMissionComplete(false);
-                }}
+                onPress={cancelChildPin}
               >
                 <Text style={s.pinCancelTxt}>{t("pinChild.cancel")}</Text>
               </TouchableOpacity>

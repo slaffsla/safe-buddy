@@ -1057,8 +1057,23 @@ function PinSection({
   const [removePinError, setRemovePinError] = useState("");
   const [setPinFocused, setSetPinFocused] = useState(false);
   const [removePinFocused, setRemovePinFocused] = useState(false);
+  const pinReady = settings.pinEnabled && !!settings.parentPin;
+
+  useEffect(() => {
+    if (!settings.parentPin && settings.pinEnabled && !showSetPin) {
+      onChange({ pinEnabled: false, missionCompletionPinEnabled: false });
+    }
+  }, [
+    settings.parentPin,
+    settings.pinEnabled,
+    showSetPin,
+    onChange,
+  ]);
 
   function cancelPinModal() {
+    if (!settings.parentPin && settings.pinEnabled) {
+      onChange({ pinEnabled: false, missionCompletionPinEnabled: false });
+    }
     setShowSetPin(false);
     setShowRemovePin(false);
     setPinChallengeAction(null);
@@ -1096,14 +1111,11 @@ function PinSection({
   }
 
   function confirmRemovePin() {
-    Alert.alert(t("settings.pin_delete_title"), t("settings.pin_delete_msg"), [
-      { text: t("settings.cancel"), style: "cancel" },
-      {
-        text: t("settings.delete"),
-        style: "destructive",
-        onPress: () => onChange({ parentPin: "", pinEnabled: false }),
-      },
-    ]);
+    onChange({
+      parentPin: "",
+      pinEnabled: false,
+      missionCompletionPinEnabled: false,
+    });
   }
 
   function requestRemovePin() {
@@ -1183,14 +1195,24 @@ function PinSection({
           sublabel={t("settings.pin_sublabel")}
         >
           <Switch
-            value={settings.pinEnabled}
+            key={`pin-${pinReady ? "on" : "off"}`}
+            value={pinReady}
             onValueChange={(v) => {
               if (v && !settings.parentPin) {
+                onChange({
+                  pinEnabled: false,
+                  missionCompletionPinEnabled: false,
+                });
                 setShowSetPin(true);
               } else if (!v && settings.parentPin) {
                 requestRemovePin();
               } else {
-                onChange({ pinEnabled: v });
+                onChange({
+                  pinEnabled: v,
+                  missionCompletionPinEnabled: v
+                    ? settings.missionCompletionPinEnabled
+                    : false,
+                });
               }
             }}
             trackColor={{ false: C.track, true: C.green }}
@@ -1207,11 +1229,11 @@ function PinSection({
             onValueChange={(v) => onChange({ missionCompletionPinEnabled: v })}
             trackColor={{ false: C.track, true: C.green }}
             thumbColor={C.white}
-            disabled={!settings.pinEnabled || !settings.parentPin}
+            disabled={!pinReady}
           />
         </SettingRow>
 
-        {settings.pinEnabled && settings.parentPin ? (
+        {pinReady ? (
           <>
             <Divider />
             <SettingRow
@@ -4243,10 +4265,12 @@ export default function SettingsScreen({
     "main" | "schedule" | "routine"
   >("main");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settingsRef = useRef<AppSettings>(DEFAULT_SETTINGS);
 
   // Load on mount
   useEffect(() => {
     Promise.all([loadSettings(), loadProgress()]).then(([s, p]) => {
+      settingsRef.current = s;
       setSettings(s);
       setProgress(p);
       setLoading(false);
@@ -4255,7 +4279,8 @@ export default function SettingsScreen({
 
   // Auto-save with debounce — 800ms after last change
   function updateSettings(patch: Partial<AppSettings>) {
-    const next = { ...settings, ...patch };
+    const next = { ...settingsRef.current, ...patch };
+    settingsRef.current = next;
     if (patch.appLocale) {
       setAppLocale(patch.appLocale);
       setProgress((prev) => (prev ? { ...prev } : prev));

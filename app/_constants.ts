@@ -508,18 +508,40 @@ export const MISSION_POOL: PoolMission[] = [
 ];
 
 // Returns localized title for a mission, falling back to pool / custom title
-export function getMissionTitle(id: number, fallback?: string): string {
+export function getMissionTitle(
+  id: number,
+  fallback?: string,
+  ageProfile?: AgeProfile,
+): string {
   const poolFallback =
     fallback ?? MISSION_POOL.find((m) => m.id === id)?.title ?? "";
   if (id >= CUSTOM_CONTENT_ID_OFFSET) return poolFallback;
+  if (ageProfile) {
+    const ageSpecific = localizedOrFallback(
+      `missions.${id}.title_${ageProfile}`,
+      "",
+    );
+    if (ageSpecific.trim()) return ageSpecific;
+  }
   return localizedOrFallback(`missions.${id}.title`, poolFallback);
 }
 
 // Returns localized subtitle for a mission, falling back to pool / custom subtitle
-export function getMissionSubtitle(id: number, fallback?: string): string {
+export function getMissionSubtitle(
+  id: number,
+  fallback?: string,
+  ageProfile?: AgeProfile,
+): string {
   const poolFallback =
     fallback ?? MISSION_POOL.find((m) => m.id === id)?.subtitle ?? "";
   if (id >= CUSTOM_CONTENT_ID_OFFSET) return poolFallback;
+  if (ageProfile) {
+    const ageSpecific = localizedOrFallback(
+      `missions.${id}.subtitle_${ageProfile}`,
+      "",
+    );
+    if (ageSpecific.trim()) return ageSpecific;
+  }
   return localizedOrFallback(`missions.${id}.subtitle`, poolFallback);
 }
 

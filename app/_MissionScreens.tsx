@@ -16,6 +16,7 @@ import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
 import { visualAssets } from "../lib/visualAssets";
 import { T } from "./_SharedUI";
 import {
+  AgeProfile,
   C,
   currentSlot,
   getMilestoneMessage,
@@ -95,6 +96,7 @@ interface MissionPickProps {
   missionTypeById?: Record<number, "permanent" | "rotating" | "inactive">;
   beforeRewardMode?: boolean;
   rtlChildSex?: RtlChildSex;
+  ageProfile?: AgeProfile;
 }
 
 export function MissionPickScreen({
@@ -107,6 +109,7 @@ export function MissionPickScreen({
   bonusMission,
   beforeRewardMode = false,
   rtlChildSex = "male",
+  ageProfile,
 }: MissionPickProps) {
   const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
@@ -182,7 +185,7 @@ export function MissionPickScreen({
               onPress={() => onPick(m)}
               onLongPress={() =>
                 speak(
-                  `${getMissionTitle(m.id, m.title)}. ${getMissionSubtitle(m.id, m.subtitle)}`,
+                  `${getMissionTitle(m.id, m.title, ageProfile)}. ${getMissionSubtitle(m.id, m.subtitle, ageProfile)}`,
                 )
               }
               activeOpacity={0.75}
@@ -213,7 +216,7 @@ export function MissionPickScreen({
                     isLargeTablet && s.firstMissionCardTitleLarge,
                   ]}
                 >
-                  {getMissionTitle(m.id, m.title)}
+                  {getMissionTitle(m.id, m.title, ageProfile)}
                 </Text>
                 <Text
                   style={[
@@ -222,7 +225,7 @@ export function MissionPickScreen({
                     isLargeTablet && s.firstMissionCardSubLarge,
                   ]}
                 >
-                  {getMissionSubtitle(m.id, m.subtitle)}
+                  {getMissionSubtitle(m.id, m.subtitle, ageProfile)}
                 </Text>
               </View>
               <View
@@ -308,7 +311,7 @@ export function MissionPickScreen({
                   onPress={() => onPick(bonusMission)}
                   onLongPress={() =>
                     speak(
-                      `${getMissionTitle(bonusMission.id, bonusMission.title)}. ${getMissionSubtitle(bonusMission.id, bonusMission.subtitle)}`,
+                      `${getMissionTitle(bonusMission.id, bonusMission.title, ageProfile)}. ${getMissionSubtitle(bonusMission.id, bonusMission.subtitle, ageProfile)}`,
                     )
                   }
                 >
@@ -320,12 +323,13 @@ export function MissionPickScreen({
                   />
                   <View style={s.mInfo}>
                     <Text style={s.mTitle}>
-                      {getMissionTitle(bonusMission.id, bonusMission.title)}
+                      {getMissionTitle(bonusMission.id, bonusMission.title, ageProfile)}
                     </Text>
                     <Text style={s.mSub}>
                       {getMissionSubtitle(
                         bonusMission.id,
                         bonusMission.subtitle,
+                        ageProfile,
                       )}
                     </Text>
                   </View>
@@ -387,7 +391,7 @@ export function MissionPickScreen({
                             tSpeak(
                               "missionPick.already_done",
                               {
-                                title: getMissionTitle(m.id, m.title),
+                                title: getMissionTitle(m.id, m.title, ageProfile),
                               },
                               rtlChildSex,
                             ),
@@ -395,7 +399,7 @@ export function MissionPickScreen({
                       }}
                       onLongPress={() =>
                         speak(
-                          `${getMissionTitle(m.id, m.title)}. ${getMissionSubtitle(m.id, m.subtitle)}`,
+                          `${getMissionTitle(m.id, m.title, ageProfile)}. ${getMissionSubtitle(m.id, m.subtitle, ageProfile)}`,
                         )
                       }
                       activeOpacity={isDone ? 1 : 0.7}
@@ -408,10 +412,10 @@ export function MissionPickScreen({
                       />
                       <View style={s.mInfo}>
                         <Text style={[s.mTitle, isDone && s.mTitleDone]}>
-                          {getMissionTitle(m.id, m.title)}
+                          {getMissionTitle(m.id, m.title, ageProfile)}
                         </Text>
                         <Text style={[s.mSub, isDone && s.mSubDone]}>
-                          {getMissionSubtitle(m.id, m.subtitle)}
+                          {getMissionSubtitle(m.id, m.subtitle, ageProfile)}
                         </Text>
                       </View>
                       {isDone ? (
@@ -457,12 +461,14 @@ export function ActiveScreen({
   onSkip,
   speak,
   rtlChildSex = "male",
+  ageProfile,
 }: {
   mission: any;
   onDone: () => void;
   onSkip: () => void;
   speak: (t: string) => void;
   rtlChildSex?: RtlChildSex;
+  ageProfile?: AgeProfile;
 }) {
   const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
@@ -500,7 +506,7 @@ export function ActiveScreen({
         ]}
         onPress={() =>
           speak(
-            `${getMissionTitle(mission.id, mission.title)}. ${getMissionSubtitle(mission.id, mission.subtitle)}`,
+            `${getMissionTitle(mission.id, mission.title, ageProfile)}. ${getMissionSubtitle(mission.id, mission.subtitle, ageProfile)}`,
           )
         }
         activeOpacity={0.85}
@@ -518,10 +524,10 @@ export function ActiveScreen({
           ]}
         />
         <Text style={[s.activeTitle, isLargeTablet && s.activeTitleLarge]}>
-          {getMissionTitle(mission.id, mission.title)}
+          {getMissionTitle(mission.id, mission.title, ageProfile)}
         </Text>
         <Text style={[s.activeSub, isLargeTablet && s.activeSubLarge]}>
-          {getMissionSubtitle(mission.id, mission.subtitle)}
+          {getMissionSubtitle(mission.id, mission.subtitle, ageProfile)}
         </Text>
         <View style={[s.mStarBadge, s.activeStarBadge]}>
           {Array(mission.stars)
@@ -573,6 +579,7 @@ export function CelebrateScreen({
   onBack,
   continueLabelKey,
   rtlChildSex = "male",
+  ageProfile,
 }: {
   mission: any;
   stars: number;
@@ -586,6 +593,7 @@ export function CelebrateScreen({
   onBack: () => void;
   continueLabelKey?: string;
   rtlChildSex?: RtlChildSex;
+  ageProfile?: AgeProfile;
 }) {
   const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
@@ -670,7 +678,7 @@ export function CelebrateScreen({
             imageStyle={s.earnedThumb}
           />
           <Text style={s.earnedName}>
-            {getMissionTitle(mission.id, mission.title)}
+            {getMissionTitle(mission.id, mission.title, ageProfile)}
           </Text>
           <View style={[s.mStarBadge, s.earnedStarBadge]}>
             <Text style={s.earnedStars}>

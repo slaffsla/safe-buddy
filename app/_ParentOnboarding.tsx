@@ -114,7 +114,9 @@ function LanguageToggle({
   onChange: (locale: AppLocale) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const currentOption = LANGUAGE_OPTIONS.find((option) => option.value === value);
+  const currentOption = LANGUAGE_OPTIONS.find(
+    (option) => option.value === value,
+  );
   const visibleOptions = expanded
     ? [
         ...(currentOption ? [currentOption] : []),
@@ -855,7 +857,7 @@ const s = StyleSheet.create({
     width: 126,
     height: 126,
     borderRadius: 63,
-    opacity: 0.8,
+    opacity: 0.62,
   },
   handoffGlowLeft: {
     left: -38,
@@ -863,24 +865,24 @@ const s = StyleSheet.create({
     backgroundColor: "#DFF5EC",
   },
   handoffGlowRight: {
-    right: -42,
-    top: -36,
+    right: -45,
+    top: -58,
     backgroundColor: "#FFE1D6",
   },
   handoffSprigLeft: {
-    left: 28,
-    bottom: 24,
+    left: 88,
+    bottom: 11,
     width: 88,
     height: 88,
     opacity: 0.82,
   },
   handoffMagic: {
-    right: 56,
-    top: 28,
-    width: 74,
-    height: 74,
-    opacity: 0.88,
-    transform: [{ rotate: "10deg" }],
+    right: 104,
+    top: 40,
+    width: 58,
+    height: 58,
+    opacity: 0.74,
+    transform: [{ rotate: "-1deg" }],
   },
   handoffChip: {
     position: "absolute",

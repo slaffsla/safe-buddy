@@ -38,6 +38,48 @@ export function setAppLocale(locale: AppLocale) {
   i18n.locale = locale;
 }
 
+function ruPlural(count: number, one: string, few: string, many: string) {
+  const abs = Math.abs(count);
+  const mod10 = abs % 10;
+  const mod100 = abs % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
+
+export function formatMissionCount(count: number): string {
+  const locale = getAppLocale();
+  if (locale === "ru") {
+    return `${count} ${ruPlural(count, "миссия", "миссии", "миссий")}`;
+  }
+  if (locale === "he") {
+    return count === 1 ? "משימה אחת" : `${count} משימות`;
+  }
+  return `${count} ${count === 1 ? "mission" : "missions"}`;
+}
+
+export function formatStepCount(count: number): string {
+  const locale = getAppLocale();
+  if (locale === "ru") {
+    return `${count} ${ruPlural(count, "шаг", "шага", "шагов")}`;
+  }
+  if (locale === "he") {
+    return count === 1 ? "שלב אחד" : `${count} שלבים`;
+  }
+  return `${count} ${count === 1 ? "step" : "steps"}`;
+}
+
+export function formatItemCount(count: number): string {
+  const locale = getAppLocale();
+  if (locale === "ru") {
+    return `${count} ${ruPlural(count, "пункт", "пункта", "пунктов")}`;
+  }
+  if (locale === "he") {
+    return count === 1 ? "פריט אחד" : `${count} פריטים`;
+  }
+  return `${count} ${count === 1 ? "item" : "items"}`;
+}
+
 /**
  * Translate a key. Optional params for {{interpolation}}.
  * Falls back to ru.json if the key is missing in the current locale.

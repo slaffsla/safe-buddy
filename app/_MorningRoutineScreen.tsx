@@ -16,7 +16,7 @@ import {
   MorningStep,
   getMorningStepTitle,
 } from "./_constants";
-import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
+import { formatStepCount, RtlChildSex, t, tGender, tSpeak } from "./i18n";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
 import { visualAssets } from "../lib/visualAssets";
 
@@ -240,7 +240,10 @@ export default function MorningRoutineScreen({
             ? tGender("morning.btn_done", undefined, rtlChildSex)
             : tGender(
                 "morning.btn_remaining",
-                { count: validSteps.length - doneIds.length },
+                {
+                  count: validSteps.length - doneIds.length,
+                  countLabel: formatStepCount(validSteps.length - doneIds.length),
+                },
                 rtlChildSex,
               )}
         </Text>

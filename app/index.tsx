@@ -84,7 +84,13 @@ import SettingsScreen, {
 } from "./_SettingsScreen";
 import { Confetti, ProgressBar, T } from "./_SharedUI";
 import { SpeechCallOptions } from "./_speechTypes";
-import { AppLocale, getTtsLanguage, t, tSpeak } from "./i18n";
+import {
+  AppLocale,
+  formatMissionCount,
+  getTtsLanguage,
+  t,
+  tSpeak,
+} from "./i18n";
 
 const YESTERDAY = (() => {
   const d = new Date();
@@ -1142,7 +1148,7 @@ export default function App() {
     speak(
       tSpeak(
         "beforeReward.start_speak",
-        { count: required },
+        { count: required, countLabel: formatMissionCount(required) },
         appSettings.rtlChildSex ?? "male",
       ),
     );

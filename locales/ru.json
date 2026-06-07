@@ -35,8 +35,8 @@
     "morning_nudge_cta": "Начать",
     "morning_nudge_speak": "Утренний старт. Давай выберем миссию.",
     "before_reward_title": "Перед наградой",
-    "before_reward_sub": "Миссий перед наградой: {{count}}.",
-    "before_reward_progress": "Готово: {{done}} из {{count}}.",
+    "before_reward_sub": "Перед наградой: {{countLabel}}.",
+    "before_reward_progress": "Готово: {{doneLabel}}. Осталось: {{remainingLabel}}.",
     "before_reward_cta": "Начать",
     "btn_pick_mission": "Выбрать миссию",
     "btn_my_day": "Мой день",
@@ -45,7 +45,7 @@
     "btn_settings": "Настройки для родителей"
   },
   "beforeReward": {
-    "start_speak": "Миссий перед наградой: {{count}}. Потом награда.",
+    "start_speak": "Перед наградой: {{countLabel}}. Потом награда.",
     "unlocked_speak": "Отличная работа. Награда готова."
   },
   "onboarding": {
@@ -237,7 +237,7 @@
     "earned_many_female": "Ты заработала {{stars}}",
     "reward_label": "Выполни все шаги и получи {{stars}}",
     "btn_done": "🌟 Готово!",
-    "btn_remaining": "Осталось {{count}}",
+    "btn_remaining": "Осталось: {{countLabel}}",
     "btn_skip": "Пропустить утреннюю рутину"
   },
   "breathing": {
@@ -451,9 +451,9 @@
     "snapshot_title": "Снимок прогресса",
     "snapshot_privacy": "Хранится только на этом устройстве. Удобно отправить скриншотом.",
     "snapshot_today": "Сегодня",
-    "snapshot_today_value": "{{count}} миссий",
+    "snapshot_today_value": "{{countLabel}}",
     "snapshot_all_time": "За всё время",
-    "snapshot_all_time_value": "{{count}} миссий",
+    "snapshot_all_time_value": "{{countLabel}}",
     "snapshot_morning": "Утренняя рутина",
     "snapshot_morning_done": "Выполнена {{date}}",
     "snapshot_first_reward": "Первая награда",
@@ -607,7 +607,7 @@
     "morning_stars_sub": "За весь комплект шагов",
     "morning_steps_heading": "Шаги утренней рутины",
     "morning_manage_title": "Управлять утренней рутиной",
-    "morning_summary_steps": "Настроено · {{count}} шагов",
+    "morning_summary_steps": "Настроено · {{countLabel}}",
     "step_name_placeholder": "Название шага",
     "add_step": "+ Добавить шаг",
     "day_mode": "Режим дня",
@@ -633,7 +633,7 @@
     "schedule_limit_msg": "Максимум {{max}} пунктов в дне",
     "schedule_invalid_title": "Проверь название и время",
     "schedule_invalid_msg": "Формат времени ЧЧ:ММ (например 08:00)",
-    "schedule_summary_on": "Настроено · {{count}} пунктов",
+    "schedule_summary_on": "Настроено · {{countLabel}}",
     "schedule_summary_off": "Выключено",
     "notifications_section": "Уведомления",
     "morning_reminder": "Утреннее напоминание",

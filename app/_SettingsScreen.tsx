@@ -84,6 +84,9 @@ import {
 } from "./_constants";
 import {
   AppLocale,
+  formatItemCount,
+  formatMissionCount,
+  formatStepCount,
   getAppLocale,
   i18n,
   isRtl,
@@ -939,12 +942,14 @@ function ProgressSection({ progress }: { progress: ProgressData }) {
       label: t("settings.snapshot_today"),
       value: t("settings.snapshot_today_value", {
         count: completedToday,
+        countLabel: formatMissionCount(completedToday),
       }),
     },
     {
       label: t("settings.snapshot_all_time"),
       value: t("settings.snapshot_all_time_value", {
         count: totalMissions,
+        countLabel: formatMissionCount(totalMissions),
       }),
     },
     {
@@ -2660,6 +2665,9 @@ function DailyRoutineSection({
                     <Text style={ss.scheduleManageBtnSub}>
                       {t("settings.morning_summary_steps", {
                         count: String(settings.morningSteps.length),
+                        countLabel: formatStepCount(
+                          settings.morningSteps.length,
+                        ),
                       })}
                     </Text>
                   </View>
@@ -4726,6 +4734,9 @@ export default function SettingsScreen({
                 {settings.scheduleEnabled
                   ? tx("settings.schedule_summary_on", {
                       count: String((settings.scheduleBlocks ?? []).length),
+                      countLabel: formatItemCount(
+                        (settings.scheduleBlocks ?? []).length,
+                      ),
                     })
                   : tx("settings.schedule_summary_off")}
               </Text>

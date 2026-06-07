@@ -35,8 +35,8 @@
     "morning_nudge_cta": "Start",
     "morning_nudge_speak": "Morning check-in. Let's pick a mission.",
     "before_reward_title": "Before a reward",
-    "before_reward_sub": "Small missions first: {{count}}. Then the reward.",
-    "before_reward_progress": "{{done}} of {{count}} missions done.",
+    "before_reward_sub": "{{countLabel}} before the reward.",
+    "before_reward_progress": "{{doneLabel}} done. {{remainingLabel}} to go.",
     "before_reward_cta": "Start",
     "btn_pick_mission": "Pick a mission",
     "btn_my_day": "My day",
@@ -45,7 +45,7 @@
     "btn_settings": "Parent settings"
   },
   "beforeReward": {
-    "start_speak": "Small missions first: {{count}}. Then your reward.",
+    "start_speak": "{{countLabel}} before your reward.",
     "unlocked_speak": "Nice work. Your reward is ready."
   },
   "onboarding": {
@@ -227,7 +227,7 @@
     "earned_many": "You earned {{stars}}",
     "reward_label": "Finish all steps and get {{stars}}",
     "btn_done": "🌟 Done!",
-    "btn_remaining": "{{count}} left",
+    "btn_remaining": "{{countLabel}} left",
     "btn_skip": "Skip morning routine"
   },
   "breathing": {
@@ -443,9 +443,9 @@
     "snapshot_title": "Progress snapshot",
     "snapshot_privacy": "Stored only on this device. Easy to screenshot for parent feedback.",
     "snapshot_today": "Today",
-    "snapshot_today_value": "{{count}} missions",
+    "snapshot_today_value": "{{countLabel}}",
     "snapshot_all_time": "All time",
-    "snapshot_all_time_value": "{{count}} missions",
+    "snapshot_all_time_value": "{{countLabel}}",
     "snapshot_morning": "Morning routine",
     "snapshot_morning_done": "Done {{date}}",
     "snapshot_first_reward": "First reward",
@@ -599,7 +599,7 @@
     "morning_stars_sub": "For completing all steps",
     "morning_steps_heading": "Morning routine steps",
     "morning_manage_title": "Manage morning routine",
-    "morning_summary_steps": "Configured · {{count}} steps",
+    "morning_summary_steps": "Configured · {{countLabel}}",
     "step_name_placeholder": "Step name",
     "add_step": "+ Add step",
     "day_mode": "Day mode",
@@ -625,7 +625,7 @@
     "schedule_limit_msg": "Maximum {{max}} items per day",
     "schedule_invalid_title": "Check name and time",
     "schedule_invalid_msg": "Time format HH:MM (e.g. 08:00)",
-    "schedule_summary_on": "Configured · {{count}} items",
+    "schedule_summary_on": "Configured · {{countLabel}}",
     "schedule_summary_off": "Disabled",
     "notifications_section": "Notifications",
     "morning_reminder": "Morning reminder",

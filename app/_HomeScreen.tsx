@@ -20,7 +20,13 @@ import {
 import { useLayoutMetrics } from "../lib/layoutMetrics";
 import { visualAssets, type VisualAssetSource } from "../lib/visualAssets";
 import { DailySuggestion, ReflectiveBoost, T } from "./_SharedUI";
-import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
+import {
+  formatMissionCount,
+  RtlChildSex,
+  t,
+  tGender,
+  tSpeak,
+} from "./i18n";
 
 interface HomeScreenProps {
   stars: number;
@@ -243,9 +249,15 @@ export default function HomeScreen({
                 ? t("home.before_reward_progress", {
                     done: beforeRewardCompleted,
                     count: beforeRewardRequired,
+                    doneLabel: formatMissionCount(beforeRewardCompleted),
+                    countLabel: formatMissionCount(beforeRewardRequired),
+                    remainingLabel: formatMissionCount(
+                      Math.max(0, beforeRewardRequired - beforeRewardCompleted),
+                    ),
                   })
                 : t("home.before_reward_sub", {
                     count: beforeRewardRequired,
+                    countLabel: formatMissionCount(beforeRewardRequired),
                   })}
             </Text>
           </View>

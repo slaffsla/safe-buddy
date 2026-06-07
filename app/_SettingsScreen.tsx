@@ -67,6 +67,7 @@ import {
   getMorningStepTitle,
   getStoredMissionTitle,
   MISSION_POOL,
+  MissionCategory,
   MissionConfig,
   MissionEnergy,
   MissionOverride,
@@ -3209,6 +3210,16 @@ function ParentZoneView({
     return tx(`reward_titles.r${reward.id}`, { defaultValue: reward.title });
   }
 
+  function missionCategoryLabel(category: MissionCategory) {
+    return tx(`settings.category_${category}`);
+  }
+
+  function defaultEnergyForCategory(category: MissionCategory): MissionEnergy {
+    if (category === "movement") return "active";
+    if (category === "tidy") return "steady";
+    return "low";
+  }
+
   // Add-form state for custom missions (shared between weekday/weekend cards).
   const [showAddMission, setShowAddMission] = useState(false);
   const [draftMissionEmoji, setDraftMissionEmoji] = useState("");
@@ -3217,6 +3228,8 @@ function ParentZoneView({
   >();
   const [draftMissionTitle, setDraftMissionTitle] = useState("");
   const [draftMissionSubtitle, setDraftMissionSubtitle] = useState("");
+  const [draftMissionCategory, setDraftMissionCategory] =
+    useState<MissionCategory>("movement");
 
   // Add-form state for custom rewards.
   const [showAddReward, setShowAddReward] = useState(false);
@@ -3364,10 +3377,11 @@ function ParentZoneView({
       stars: 1,
       emoji: draftMissionEmoji || "✨",
       imageUri: draftMissionImageUri,
-      category: "movement",
+      category: draftMissionCategory,
       slot: "any",
       weekdayDefault: true,
       weekendDefault: true,
+      energy: defaultEnergyForCategory(draftMissionCategory),
     };
     // Also register a MissionConfig so the daily picker treats it like
     // any rotating mission (visible in the daily pool, with an editable type).
@@ -3389,6 +3403,7 @@ function ParentZoneView({
     setDraftMissionImageUri(undefined);
     setDraftMissionTitle("");
     setDraftMissionSubtitle("");
+    setDraftMissionCategory("movement");
   }
 
   async function pickDraftMissionImage() {
@@ -3586,6 +3601,11 @@ function ParentZoneView({
                 <Text style={pz.typePillTxt}>{tx("settings.type_custom")}</Text>
               </View>
             )}
+            <View style={[pz.typePill, pz.typePillFamily]}>
+              <Text style={pz.typePillTxt}>
+                {missionCategoryLabel(m.category)}
+              </Text>
+            </View>
             <MissionTypePill mission={m} type={mType} />
           </View>
           <Switch
@@ -3778,6 +3798,18 @@ function ParentZoneView({
           placeholder={tx("settings.mission_hint_placeholder")}
           placeholderTextColor={C.muted}
         />
+        <PillSelector
+          compact
+          options={[
+            { label: tx("settings.category_movement"), value: "movement" },
+            { label: tx("settings.category_selfcare"), value: "selfcare" },
+            { label: tx("settings.category_tidy"), value: "tidy" },
+            { label: tx("settings.category_social"), value: "social" },
+            { label: tx("settings.category_calm"), value: "calm" },
+          ]}
+          value={draftMissionCategory}
+          onChange={(v) => setDraftMissionCategory(v as MissionCategory)}
+        />
         <View style={u.imageEditRow}>
           <View style={u.imagePreviewBox}>
             {draftMissionImageUri ? (
@@ -3824,6 +3856,7 @@ function ParentZoneView({
               setDraftMissionImageUri(undefined);
               setDraftMissionTitle("");
               setDraftMissionSubtitle("");
+              setDraftMissionCategory("movement");
             }}
           >
             <Text style={u.btnCancelTxt}>{tx("settings.cancel")}</Text>
@@ -4139,6 +4172,7 @@ const pz = StyleSheet.create({
   typePillRotating: { backgroundColor: C.goldBdr },
   typePillInactive: { backgroundColor: C.muted },
   typePillCustom: { backgroundColor: "#7C5CFF" },
+  typePillFamily: { backgroundColor: "#6B8F7A" },
   typePillTxt: {
     fontSize: 10,
     fontWeight: "700",

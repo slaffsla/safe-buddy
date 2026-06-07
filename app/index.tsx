@@ -30,6 +30,7 @@ import ChildOnboarding from "./_ChildOnboarding";
 import {
   AgeProfile,
   BuddyMood,
+  CUSTOM_CONTENT_ID_OFFSET,
   DEFAULT_MORNING_STEPS,
   DEMO_STEPS,
   effectiveMissionEnabled,
@@ -160,9 +161,52 @@ const K = {
   CHILD_AGE: "sb_child_age",
   TINY_FACT_LAST_SHOWN: "sb_tiny_fact_last_shown",
   BREATHING_INTRO_RUNS: "sb_breathing_intro_runs",
+  MISSION_SKIP_REST: "sb_mission_skip_rest",
 };
 
 const TINY_FACT_IDLE_MIN_MS = 2000;
+const MISSION_SKIP_REST_THRESHOLD = 3;
+const MISSION_SKIP_REST_DAYS = 7;
+
+type MissionSkipRestState = {
+  lastMissionId: number | null;
+  streak: number;
+  restedUntil: Record<number, string>;
+};
+
+const DEFAULT_SKIP_REST_STATE: MissionSkipRestState = {
+  lastMissionId: null,
+  streak: 0,
+  restedUntil: {},
+};
+
+function addDays(dateStr: string, days: number): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function normalizeSkipRestState(raw: string, today: string): MissionSkipRestState {
+  try {
+    const parsed = JSON.parse(raw) as Partial<MissionSkipRestState>;
+    const restedUntil =
+      parsed.restedUntil && typeof parsed.restedUntil === "object"
+        ? Object.fromEntries(
+            Object.entries(parsed.restedUntil).filter(
+              ([, until]) => typeof until === "string" && until >= today,
+            ),
+          )
+        : {};
+    return {
+      lastMissionId:
+        typeof parsed.lastMissionId === "number" ? parsed.lastMissionId : null,
+      streak: typeof parsed.streak === "number" ? Math.max(0, parsed.streak) : 0,
+      restedUntil,
+    };
+  } catch {
+    return DEFAULT_SKIP_REST_STATE;
+  }
+}
 const TINY_FACT_IDLE_JITTER_MS = 3000;
 const TINY_FACT_VISIBLE_MS = 10000;
 const FIRST_EXPERIENCE_MISSION_IDS = [4, 15, 13, 17, 1, 3, 20, 2];
@@ -458,6 +502,8 @@ export default function App() {
   const [firstReward, setFirstReward] = useState(false);
   const [showMorning, setShowMorning] = useState(false);
   const [doneIdsToday, setDoneIdsToday] = useState<number[]>([]);
+  const [skipRestState, setSkipRestState] =
+    useState<MissionSkipRestState>(DEFAULT_SKIP_REST_STATE);
   const [showGlobalBuddy, setShowGlobalBuddy] = useState(true);
   const [breathingIntroRuns, setBreathingIntroRuns] = useState(0);
 
@@ -580,6 +626,7 @@ export default function App() {
           K.CHILD_AGE,
           K.TINY_FACT_LAST_SHOWN,
           K.BREATHING_INTRO_RUNS,
+          K.MISSION_SKIP_REST,
         ]);
         // multiGet returns [key, string|null][] — coerce nulls to '' for safe parseInt
         const v: Record<string, string> = Object.fromEntries(
@@ -587,6 +634,10 @@ export default function App() {
         );
         const today = todayStr();
         const newDay = v[K.LAST_DATE] !== today;
+        const nextSkipRestState = normalizeSkipRestState(
+          v[K.MISSION_SKIP_REST],
+          today,
+        );
 
         const st = v[K.STARS] ? parseInt(v[K.STARS], 10) : 0;
         const tot = v[K.TOTAL_EVER] ? parseInt(v[K.TOTAL_EVER], 10) : st;
@@ -609,6 +660,7 @@ export default function App() {
         setTotalMissions(tm);
         setChildName(v[K.CHILD_NAME] || "");
         setSkipCount(sk);
+        setSkipRestState(nextSkipRestState);
         setFirstReward(v[K.FIRST_REWARD] === "true");
         setFirstMission(tm === 0);
         setParentOnboardingDone(v[K.PARENT_ONBOARDING_DONE] === "true");
@@ -787,10 +839,36 @@ export default function App() {
 
   const handleSkip = useCallback(() => {
     incrementLocalUsage("missionsSkipped").catch(console.log);
+    if (
+      typeof mission?.id === "number" &&
+      mission.id < CUSTOM_CONTENT_ID_OFFSET
+    ) {
+      const today = todayStr();
+      setSkipRestState((prev) => {
+        const streak =
+          prev.lastMissionId === mission.id ? prev.streak + 1 : 1;
+        const restedUntil =
+          streak >= MISSION_SKIP_REST_THRESHOLD
+            ? {
+                ...prev.restedUntil,
+                [mission.id]: addDays(today, MISSION_SKIP_REST_DAYS),
+              }
+            : prev.restedUntil;
+        const next = {
+          lastMissionId: mission.id,
+          streak: streak >= MISSION_SKIP_REST_THRESHOLD ? 0 : streak,
+          restedUntil,
+        };
+        AsyncStorage.setItem(K.MISSION_SKIP_REST, JSON.stringify(next)).catch(
+          console.log,
+        );
+        return next;
+      });
+    }
     setSkipCount((n) => n + 1);
     setMission(null);
     setScreen("home");
-  }, []);
+  }, [mission]);
 
   const flashBuddyMood = useCallback((mood: BuddyMood, duration = 2200) => {
     setTransientMood(mood);
@@ -1326,6 +1404,12 @@ export default function App() {
     ...REWARDS,
     ...(appSettings.customRewards ?? []),
   ];
+  const today = todayStr();
+  const restedMissionIds = new Set(
+    Object.entries(skipRestState.restedUntil)
+      .filter(([, until]) => until >= today)
+      .map(([id]) => Number(id)),
+  );
 
   // Active pool: enabled for this day mode by parent override, and not inactive (mission-type setting)
   // Each mission's `stars` is replaced with the parent-override value (falls back to pool default).
@@ -1333,7 +1417,8 @@ export default function App() {
     .filter(
       (m) =>
         effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
-        missionTypeById[m.id] !== "inactive",
+        missionTypeById[m.id] !== "inactive" &&
+        !restedMissionIds.has(m.id),
     )
     .map((m) => ({
       ...m,
@@ -1348,7 +1433,6 @@ export default function App() {
     // Permanents are always included first; remaining slots filled from the
     // rest of the active pool via the deterministic daily picker.
     const size = Math.max(4, Math.min(10, appSettings.dailyPickerSize ?? 5));
-    const today = todayStr();
     const permanent = activePool.filter(
       (m) => missionTypeById[m.id] === "permanent",
     );
@@ -1356,7 +1440,10 @@ export default function App() {
       (m) => missionTypeById[m.id] !== "permanent",
     );
     const remaining = Math.max(0, size - permanent.length);
-    const fillers = selectDailyMissions(others, today, remaining);
+    const fillers = selectDailyMissions(others, today, remaining, {
+      ageProfile,
+      energy: appSettings.childEnergyLevel ?? "auto",
+    });
     const subsetIds = new Set<number>([
       ...permanent.map((m) => m.id),
       ...fillers.map((m) => m.id),
@@ -1407,7 +1494,8 @@ export default function App() {
     ...MISSIONS_EASY.filter(
       (m) =>
         effectiveMissionEnabled(m.id, dayMode, missionOverrides) &&
-        missionTypeById[m.id] !== "inactive",
+        missionTypeById[m.id] !== "inactive" &&
+        !restedMissionIds.has(m.id),
     ).map((m) => ({
       ...m,
       stars: effectiveMissionStars(m.id, missionOverrides) as 1 | 2,

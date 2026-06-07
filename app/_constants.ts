@@ -111,6 +111,7 @@ export type MissionCategory =
   | "tidy"
   | "social"
   | "calm";
+export type MissionEnergy = "low" | "steady" | "active";
 
 export interface PoolMission {
   id: number;
@@ -123,6 +124,8 @@ export interface PoolMission {
   slot: MissionSlot;
   weekdayDefault: boolean;
   weekendDefault: boolean;
+  ageBands?: AgeProfile[];
+  energy?: MissionEnergy;
 }
 
 export interface Reward {
@@ -152,6 +155,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "morning",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle"],
+    energy: "steady",
   },
   {
     id: 2,
@@ -163,6 +168,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "morning",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 3,
@@ -174,6 +181,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "afternoon",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle"],
+    energy: "active",
   },
   {
     id: 4,
@@ -185,6 +194,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "morning",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 5,
@@ -196,6 +207,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["middle", "teen"],
+    energy: "low",
   },
   {
     id: 7,
@@ -207,6 +220,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "steady",
   },
   {
     id: 8,
@@ -218,6 +233,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: false,
     weekendDefault: true,
+    ageBands: ["middle", "teen"],
+    energy: "low",
   },
   {
     id: 9,
@@ -229,6 +246,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "evening",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle"],
+    energy: "steady",
   },
   {
     id: 10,
@@ -240,6 +259,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle"],
+    energy: "low",
   },
   {
     id: 11,
@@ -251,6 +272,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "afternoon",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["middle", "teen"],
+    energy: "steady",
   },
   {
     id: 12,
@@ -262,6 +285,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "evening",
     weekdayDefault: false,
     weekendDefault: true,
+    ageBands: ["middle", "teen"],
+    energy: "steady",
   },
   // ── Movement (new) ──────────────────────────────────────────────────
   {
@@ -274,6 +299,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "steady",
   },
   {
     id: 14,
@@ -285,6 +312,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "afternoon",
     weekdayDefault: false,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 15,
@@ -296,6 +325,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "morning",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "steady",
   },
   {
     id: 28,
@@ -307,6 +338,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "morning",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle"],
+    energy: "active",
   },
 
   // ── Self-care (new) ──────────────────────────────────────────────────
@@ -320,6 +353,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "morning",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 17,
@@ -331,6 +366,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 18,
@@ -342,6 +379,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "afternoon",
     weekdayDefault: false,
     weekendDefault: true,
+    ageBands: ["middle", "teen"],
+    energy: "low",
   },
 
   // ── Tidy (new) ───────────────────────────────────────────────────────
@@ -355,6 +394,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "morning",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["middle", "teen"],
+    energy: "steady",
   },
   {
     id: 20,
@@ -366,6 +407,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 21,
@@ -377,6 +420,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "evening",
     weekdayDefault: false,
     weekendDefault: true,
+    ageBands: ["middle", "teen"],
+    energy: "steady",
   },
 
   // ── Social (new) ─────────────────────────────────────────────────────
@@ -390,6 +435,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 23,
@@ -401,6 +448,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: false,
     weekendDefault: true,
+    ageBands: ["little", "middle"],
+    energy: "low",
   },
   {
     id: 24,
@@ -412,6 +461,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "evening",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
 
   // ── Calm (new category) ──────────────────────────────────────────────
@@ -425,6 +476,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 26,
@@ -436,6 +489,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "afternoon",
     weekdayDefault: false,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
   {
     id: 27,
@@ -447,6 +502,8 @@ export const MISSION_POOL: PoolMission[] = [
     slot: "any",
     weekdayDefault: true,
     weekendDefault: true,
+    ageBands: ["little", "middle", "teen"],
+    energy: "low",
   },
 ];
 
@@ -1102,6 +1159,43 @@ export function pickSeededItem<T>(
   return pickRandomItem(items, createSeededRandom(seed));
 }
 
+export interface MissionSelectionOptions {
+  ageProfile?: AgeProfile;
+  energy?: MissionEnergy | "auto";
+}
+
+function missionSelectionScore(
+  mission: PoolMission,
+  options?: MissionSelectionOptions,
+): number {
+  let score = 0;
+  if (mission.id >= CUSTOM_CONTENT_ID_OFFSET) {
+    score += 2;
+  }
+  if (
+    options?.ageProfile &&
+    mission.ageBands?.includes(options.ageProfile)
+  ) {
+    score += 3;
+  }
+  if (options?.energy && options.energy !== "auto") {
+    if (mission.energy === options.energy) {
+      score += 3;
+    } else if (
+      options.energy === "low" &&
+      (mission.energy ?? "steady") !== "active"
+    ) {
+      score += 1;
+    } else if (
+      options.energy === "active" &&
+      (mission.energy ?? "steady") !== "low"
+    ) {
+      score += 1;
+    }
+  }
+  return score;
+}
+
 /**
  * Selects a deterministic subset of missions for the given date.
  *
@@ -1120,6 +1214,7 @@ export function selectDailyMissions(
   pool: PoolMission[],
   dateStr: string,
   size: number,
+  options?: MissionSelectionOptions,
 ): PoolMission[] {
   if (size <= 0 || pool.length === 0) return [];
   if (pool.length <= size) return pool.slice();
@@ -1132,9 +1227,14 @@ export function selectDailyMissions(
     const j = Math.floor(random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
+  shuffled.sort(
+    (a, b) =>
+      missionSelectionScore(b, options) - missionSelectionScore(a, options),
+  );
 
   const selected: PoolMission[] = [];
   const usedSlots = new Set<MissionSlot>();
+  const usedCategories = new Set<MissionCategory>();
 
   // First pass: ensure diversity by picking one from each time-bound slot
   const TIME_BOUND_SLOTS: MissionSlot[] = ["morning", "afternoon", "evening"];
@@ -1148,10 +1248,20 @@ export function selectDailyMissions(
     ) {
       selected.push(mission);
       usedSlots.add(mission.slot);
+      usedCategories.add(mission.category);
     }
   }
 
-  // Second pass: fill remaining slots from the shuffled pool
+  // Second pass: prefer a spread across mission families
+  for (const mission of shuffled) {
+    if (selected.length >= size) break;
+    if (!selected.includes(mission) && !usedCategories.has(mission.category)) {
+      selected.push(mission);
+      usedCategories.add(mission.category);
+    }
+  }
+
+  // Third pass: fill remaining slots from the shuffled pool
   for (const mission of shuffled) {
     if (selected.length >= size) break;
     if (!selected.includes(mission)) {

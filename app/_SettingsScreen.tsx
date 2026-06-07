@@ -68,6 +68,7 @@ import {
   getStoredMissionTitle,
   MISSION_POOL,
   MissionConfig,
+  MissionEnergy,
   MissionOverride,
   MissionOverrideMap,
   MissionType,
@@ -122,6 +123,7 @@ export interface AppSettings {
   // Child
   childName: string;
   ageProfileOverride: "auto" | "little" | "middle" | "teen";
+  childEnergyLevel: MissionEnergy | "auto";
   rtlChildSex: RtlChildSex;
 
   // Security
@@ -203,6 +205,7 @@ function buildDefaultSettings(): AppSettings {
     appLocale: getAppLocale(),
     childName: "",
     ageProfileOverride: "auto",
+    childEnergyLevel: "auto",
     rtlChildSex: "male",
     parentPin: "",
     pinEnabled: false,
@@ -1698,6 +1701,29 @@ function BuddySection({
               onChange={(v) =>
                 onChange({
                   ageProfileOverride: v as AppSettings["ageProfileOverride"],
+                })
+              }
+            />
+          </View>
+        </SettingRow>
+        <Divider />
+        <SettingRow
+          label={t("settings.energy_label")}
+          sublabel={t("settings.energy_sub")}
+        >
+          <View>
+            <PillSelector
+              compact
+              options={[
+                { label: t("settings.energy_auto"), value: "auto" },
+                { label: t("settings.energy_low"), value: "low" },
+                { label: t("settings.energy_steady"), value: "steady" },
+                { label: t("settings.energy_active"), value: "active" },
+              ]}
+              value={settings.childEnergyLevel ?? "auto"}
+              onChange={(v) =>
+                onChange({
+                  childEnergyLevel: v as AppSettings["childEnergyLevel"],
                 })
               }
             />

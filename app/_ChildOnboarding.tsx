@@ -31,10 +31,10 @@ interface ChildOnboardingProps {
 
 const AGE_OPTIONS = [4, 5, 6, 7, 8, 9, 10, 11, 12];
 const CHILD_BUDDY = {
-  hello: require("../assets/Character/Buddy2.png"),
-  calm: require("../assets/Character/Buddy1.png"),
-  gentle: require("../assets/Character/Buddy3.png"),
-  happy: require("../assets/Character/Buddy4.png"),
+  hello: require("../assets/Character/soft/Buddy2-soft.png"),
+  calm: require("../assets/Character/soft/Buddy1-soft.png"),
+  gentle: require("../assets/Character/soft/Buddy3-soft.png"),
+  happy: require("../assets/Character/soft/Buddy4-soft.png"),
 };
 
 export default function ChildOnboarding({

@@ -105,7 +105,6 @@ export function MissionPickScreen({
   missions,
   doneIds,
   bonusMission,
-  missionTypeById,
   beforeRewardMode = false,
   rtlChildSex = "male",
 }: MissionPickProps) {
@@ -372,20 +371,12 @@ export function MissionPickScreen({
               {isOpen &&
                 items.map((m) => {
                   const isDone = done.has(m.id);
-                  const mType = missionTypeById?.[m.id];
-                  const tintStyle =
-                    mType === "permanent"
-                      ? s.mCardPermanent
-                      : mType === "rotating"
-                        ? s.mCardRotating
-                        : null;
                   return (
                     <TouchableOpacity
                       key={m.id}
                       style={[
                         s.mCard,
                         missionRowTint(m.slot),
-                        tintStyle,
                         m.stars >= 2 && s.mCardBig,
                         isDone && s.mCardDone,
                       ]}
@@ -422,20 +413,6 @@ export function MissionPickScreen({
                         <Text style={[s.mSub, isDone && s.mSubDone]}>
                           {getMissionSubtitle(m.id, m.subtitle)}
                         </Text>
-                        {!isDone && mType === "permanent" && (
-                          <View style={[s.typePill, s.typePillPermanent]}>
-                            <Text style={s.typePillTxtPermanent}>
-                              {t("missionPick.type_permanent")}
-                            </Text>
-                          </View>
-                        )}
-                        {!isDone && mType === "rotating" && (
-                          <View style={[s.typePill, s.typePillRotating]}>
-                            <Text style={s.typePillTxtRotating}>
-                              {t("missionPick.type_rotating")}
-                            </Text>
-                          </View>
-                        )}
                       </View>
                       {isDone ? (
                         <Text style={s.mDoneBadge}>✓</Text>
@@ -1269,29 +1246,6 @@ const s = StyleSheet.create({
     fontWeight: "800",
     marginLeft: 8,
     overflow: "hidden",
-  },
-
-  // Type pills (mission cards)
-  typePill: {
-    alignSelf: "flex-start",
-    marginTop: 6,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-  },
-  typePillPermanent: { backgroundColor: C.green },
-  typePillRotating: { backgroundColor: C.goldBdr },
-  typePillTxtPermanent: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: C.white,
-    letterSpacing: 0.3,
-  },
-  typePillTxtRotating: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: C.white,
-    letterSpacing: 0.3,
   },
 
   // Encore / bonus

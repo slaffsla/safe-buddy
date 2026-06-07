@@ -906,6 +906,16 @@ export function getTinyWonderFacts(limit = 13): string[] {
   return facts;
 }
 
+export function getTinyBuddyWit(limit = 10): string[] {
+  const lines: string[] = [];
+  for (let i = 1; i <= limit; i += 1) {
+    const key = `tiny_buddy_wit.b${i}`;
+    const result = i18n.t(key, { defaultValue: "" });
+    if (result && result !== key) lines.push(result);
+  }
+  return lines;
+}
+
 export function getTinyJokes(limit = 20): string[] {
   const jokes: string[] = [];
   for (let i = 1; i <= limit; i += 1) {

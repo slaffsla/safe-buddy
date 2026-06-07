@@ -44,6 +44,7 @@ import {
   getNextBlock,
   getRewardTitle,
   getStoredMissionTitle,
+  getTinyBuddyWit,
   getTinyFact,
   getTinyJokes,
   getTinyWonderFacts,
@@ -162,9 +163,42 @@ const K = {
 };
 
 const TINY_FACT_IDLE_MIN_MS = 2000;
-const TINY_WONDER_FACT_CHANCE = 0.25;
 const MISSION_SKIP_REST_THRESHOLD = 3;
 const MISSION_SKIP_REST_DAYS = 7;
+
+type TinyFactPoolKind = "mission" | "ordinary" | "wonder" | "wit";
+
+const TINY_FACT_POOL_WEIGHTS: Record<
+  AgeProfile,
+  Record<TinyFactPoolKind, number>
+> = {
+  little: { mission: 6, ordinary: 7, wonder: 1, wit: 1 },
+  middle: { mission: 5, ordinary: 5, wonder: 3, wit: 2 },
+  teen: { mission: 3, ordinary: 3, wonder: 4, wit: 6 },
+};
+
+function pickWeightedTinyFactPool(
+  pools: Partial<Record<TinyFactPoolKind, string[]>>,
+  ageProfile: AgeProfile,
+): string[] {
+  const weights = TINY_FACT_POOL_WEIGHTS[ageProfile];
+  const available = (Object.keys(weights) as TinyFactPoolKind[])
+    .map((kind) => ({
+      kind,
+      weight: weights[kind],
+      pool: pools[kind] ?? [],
+    }))
+    .filter((entry) => entry.weight > 0 && entry.pool.length > 0);
+
+  if (available.length === 0) return [];
+  const totalWeight = available.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = Math.random() * totalWeight;
+  for (const entry of available) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.pool;
+  }
+  return available[available.length - 1].pool;
+}
 
 type MissionSkipRestState = {
   lastMissionId: number | null;
@@ -928,10 +962,12 @@ export default function App() {
     );
     const allJokes = getTinyJokes();
     const allWonderFacts = getTinyWonderFacts();
+    const allBuddyWit = getTinyBuddyWit();
     if (
       allFacts.length === 0 &&
       allJokes.length === 0 &&
-      allWonderFacts.length === 0
+      allWonderFacts.length === 0 &&
+      allBuddyWit.length === 0
     ) {
       return () => {
         cancelled = true;
@@ -941,18 +977,16 @@ export default function App() {
 
     function pickFact(): string {
       const missionFact = getTinyFact(mission.id);
-      const wantsWonderFact =
-        allWonderFacts.length > 0 && Math.random() < TINY_WONDER_FACT_CHANCE;
-      // Mix jokes into the tiny-facts stream, but keep mission fact slightly
-      // preferred when one exists.
       const ordinaryFacts = [...allFacts, ...allJokes];
-      const mixed =
-        wantsWonderFact || ordinaryFacts.length === 0
-          ? allWonderFacts
-          : ordinaryFacts;
-      const pool = missionFact
-        ? [missionFact, ...mixed.filter((f) => f !== missionFact)]
-        : mixed;
+      const pool = pickWeightedTinyFactPool(
+        {
+          mission: missionFact ? [missionFact] : [],
+          ordinary: ordinaryFacts,
+          wonder: allWonderFacts,
+          wit: allBuddyWit,
+        },
+        ageProfile,
+      );
       const withoutLast = pool.filter((f) => f !== tinyFactLastTextRef.current);
       const source = withoutLast.length > 0 ? withoutLast : pool;
       return source[Math.floor(Math.random() * source.length)];

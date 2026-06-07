@@ -184,8 +184,6 @@ const s = StyleSheet.create({
     width: "100%",
     backgroundColor: "#FFFDF9",
     borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: "#DED8CE",
     padding: 10,
     marginBottom: 14,
   },

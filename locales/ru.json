@@ -25,6 +25,7 @@
     "greeting_with_name": "Привет, {{name}}!",
     "greeting": "Привет!",
     "idle_calm": "Всё нормально. Я здесь с тобой",
+    "idle_calm_preference": "Можно сделать паузу. На секунду подумай про {{comfort}}.",
     "schedule_now": "Сейчас",
     "schedule_next": "Потом",
     "schedule_until": "до {{time}}",

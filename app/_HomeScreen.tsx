@@ -27,6 +27,7 @@ import {
   tGender,
   tSpeak,
 } from "./i18n";
+import { ChildPreference } from "../lib/childPreferences";
 
 interface HomeScreenProps {
   stars: number;
@@ -57,6 +58,7 @@ interface HomeScreenProps {
   onBeforeReward?: () => void;
   highlightSettings?: boolean;
   rtlChildSex?: RtlChildSex;
+  skipComfortPreference?: ChildPreference | null;
 }
 
 function ScheduleIcon({
@@ -111,6 +113,7 @@ export default function HomeScreen({
   onBeforeReward,
   highlightSettings = false,
   rtlChildSex = "male",
+  skipComfortPreference = null,
 }: HomeScreenProps) {
   const { homeContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
@@ -156,11 +159,17 @@ export default function HomeScreen({
   const idleMsg = useMemo(
     () =>
       skipCount >= threshold
-        ? t("home.idle_calm")
+        ? skipComfortPreference
+          ? tGender(
+              "home.idle_calm_preference",
+              { comfort: skipComfortPreference.title },
+              rtlChildSex,
+            )
+          : t("home.idle_calm")
         : useAltIdle
           ? t("buddy.idle_alt")
           : t("buddy.idle"),
-    [skipCount, threshold, useAltIdle],
+    [skipCount, threshold, skipComfortPreference, rtlChildSex, useAltIdle],
   );
 
   const greeting = childName

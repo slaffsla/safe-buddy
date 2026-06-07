@@ -607,6 +607,15 @@ export default function App() {
       ),
     [appSettings.childPreferences],
   );
+  const homeSkipComfortPreference = useMemo(() => {
+    const threshold = Math.max(1, appSettings.skipSensitivity ?? 2);
+    if (skipCount < threshold) return null;
+    return pickPreferenceForUse(
+      appSettings.childPreferences,
+      "calming",
+      `${todayStr()}:home-skip:${skipCount}`,
+    );
+  }, [appSettings.childPreferences, appSettings.skipSensitivity, skipCount]);
 
   // ── Load all state ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1756,6 +1765,7 @@ export default function App() {
           beforeRewardCompleted={beforeRewardActive ? beforeRewardCompleted : 0}
           onBeforeReward={startBeforeRewardBridge}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
+          skipComfortPreference={homeSkipComfortPreference}
         />
       )}
 

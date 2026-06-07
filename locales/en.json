@@ -25,6 +25,7 @@
     "greeting_with_name": "Hi {{name}}!",
     "greeting": "Hi!",
     "idle_calm": "It's okay. I'm here with you.",
+    "idle_calm_preference": "It's okay to pause. Maybe think of {{comfort}} for a moment.",
     "schedule_now": "Now",
     "schedule_next": "Next",
     "schedule_until": "until {{time}}",

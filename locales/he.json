@@ -27,6 +27,7 @@
     "greeting_with_name": "היי {{name}}!",
     "greeting": "היי!",
     "idle_calm": "הכול בסדר. אני כאן.",
+    "idle_calm_preference": "אפשר לעצור רגע. אולי לחשוב על {{comfort}}.",
     "schedule_now": "עכשיו",
     "schedule_next": "אחר כך",
     "schedule_until": "עד {{time}}",

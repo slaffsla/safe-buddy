@@ -954,9 +954,11 @@ export default function App() {
         allWonderFacts.length > 0 && Math.random() < TINY_WONDER_FACT_CHANCE;
       // Mix jokes into the tiny-facts stream, but keep mission fact slightly
       // preferred when one exists.
-      const mixed = wantsWonderFact
-        ? allWonderFacts
-        : [...allFacts, ...allJokes];
+      const ordinaryFacts = [...allFacts, ...allJokes];
+      const mixed =
+        wantsWonderFact || ordinaryFacts.length === 0
+          ? allWonderFacts
+          : ordinaryFacts;
       const pool = missionFact
         ? [missionFact, ...mixed.filter((f) => f !== missionFact)]
         : mixed;

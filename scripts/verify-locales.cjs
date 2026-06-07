@@ -54,6 +54,8 @@ if (missionIds.length !== uniqueMissionIds.size) {
 }
 
 const builtInMissionIds = [...uniqueMissionIds].filter((id) => id < 1000);
+const baseLocale = readJson(localeFiles[0].file);
+const wonderFactKeys = Object.keys(baseLocale.tiny_wonder_facts ?? {});
 for (const { code, file } of localeFiles) {
   const locale = readJson(file);
   for (const id of builtInMissionIds) {
@@ -63,6 +65,11 @@ for (const { code, file } of localeFiles) {
     }
     if (!locale.tiny_facts?.[`f${id}`]) {
       fail(`${code}: missing tiny_facts.f${id}`);
+    }
+  }
+  for (const key of wonderFactKeys) {
+    if (!locale.tiny_wonder_facts?.[key]) {
+      fail(`${code}: missing tiny_wonder_facts.${key}`);
     }
   }
 }

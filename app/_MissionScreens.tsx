@@ -113,12 +113,19 @@ export function MissionPickScreen({
 }: MissionPickProps) {
   const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
-  const pool = !missions || missions.length === 0 ? MISSION_POOL : missions;
+  const pool =
+    !missions || missions.length === 0
+      ? beforeRewardMode
+        ? []
+        : MISSION_POOL
+      : missions;
 
   const done = new Set<number>(doneIds ?? []);
   const remaining = pool.filter((m) => !done.has(m.id)).length;
   const allDone = pool.length > 0 && remaining === 0;
   const showBonus = allDone && !!bonusMission && !done.has(bonusMission.id);
+  const showBeforeRewardEmpty =
+    beforeRewardMode && (pool.length === 0 || (allDone && !showBonus));
 
   const active = currentSlot();
   const orderedSlots = [
@@ -284,7 +291,7 @@ export function MissionPickScreen({
           </T>
         )}
 
-        {allDone && (
+        {allDone && !showBeforeRewardEmpty && (
           <View style={s.encoreCard}>
             <Image
               source={visualAssets.graphics.completeBadge}
@@ -341,6 +348,30 @@ export function MissionPickScreen({
                 </TouchableOpacity>
               </>
             )}
+          </View>
+        )}
+
+        {showBeforeRewardEmpty && (
+          <View style={s.encoreCard}>
+            <Image
+              source={visualAssets.graphics.completeBadge}
+              style={s.encoreGraphic}
+              resizeMode="contain"
+            />
+            <T style={s.encoreTitle} speak={speak}>
+              {tGender(
+                "missionPick.before_reward_empty_title",
+                undefined,
+                rtlChildSex,
+              )}
+            </T>
+            <T style={s.encoreSub} speak={speak}>
+              {tGender(
+                "missionPick.before_reward_empty_sub",
+                undefined,
+                rtlChildSex,
+              )}
+            </T>
           </View>
         )}
 
@@ -436,7 +467,9 @@ export function MissionPickScreen({
 
         <T style={s.hint} speak={speak}>
           {tGender(
-            beforeRewardMode
+            showBeforeRewardEmpty
+              ? "missionPick.before_reward_empty_hint"
+              : beforeRewardMode
               ? "missionPick.before_reward_hint"
               : "missionPick.hint",
             undefined,

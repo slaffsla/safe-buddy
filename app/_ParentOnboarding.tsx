@@ -9,6 +9,7 @@ import {
   Easing,
   Image,
   ImageStyle,
+  PanResponder,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -643,6 +644,8 @@ function Screen4() {
 // ── Main component ────────────────────────────────────────────────────────────
 
 const SCREENS = [Screen1, Screen2, Screen3, Screen4];
+const SWIPE_DISTANCE = 58;
+const SWIPE_VELOCITY = 0.35;
 
 export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
   const { onboardingMaxWidth, screenPadding, isTabletWidth, isLargeTablet } =
@@ -653,6 +656,30 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
   const CurrentScreen = SCREENS[step];
 
   const speak = (_: string) => {};
+
+  function goToStep(nextStep: number) {
+    setStep(Math.max(0, Math.min(SCREENS.length - 1, nextStep)));
+  }
+
+  const swipeResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) => {
+      const horizontal = Math.abs(gesture.dx);
+      const vertical = Math.abs(gesture.dy);
+      return horizontal > 18 && horizontal > vertical * 1.35;
+    },
+    onPanResponderRelease: (_, gesture) => {
+      const horizontal = Math.abs(gesture.dx);
+      const isSwipe =
+        horizontal > SWIPE_DISTANCE || Math.abs(gesture.vx) > SWIPE_VELOCITY;
+      if (!isSwipe || horizontal < Math.abs(gesture.dy) * 1.2) return;
+      if (gesture.dx < 0) {
+        setStep((current) => Math.min(SCREENS.length - 1, current + 1));
+      } else {
+        setStep((current) => Math.max(0, current - 1));
+      }
+    },
+    onPanResponderTerminationRequest: () => true,
+  });
 
   function handleLocaleChange(nextLocale: AppLocale) {
     setAppLocale(nextLocale);
@@ -700,6 +727,7 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
       <View
         key={`parent-onboarding-${locale}`}
         style={[s.content, isLargeTablet && s.contentLarge]}
+        {...swipeResponder.panHandlers}
       >
         <CurrentScreen speak={speak} />
       </View>
@@ -729,7 +757,7 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
         ) : (
           <TouchableOpacity
             style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
-            onPress={() => setStep((n) => n + 1)}
+            onPress={() => goToStep(step + 1)}
           >
             <Text
               style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}
@@ -838,8 +866,6 @@ const s = StyleSheet.create({
     marginTop: 4,
     marginBottom: 20,
     backgroundColor: "#FFF3DE",
-    borderWidth: 1,
-    borderColor: "#F6D8A8",
     overflow: "hidden",
   },
   handoffStageTablet: {
@@ -920,10 +946,8 @@ const s = StyleSheet.create({
   bodyLarge: { fontSize: 21, lineHeight: 31, marginBottom: 24 },
 
   noteCard: {
-    backgroundColor: C.greenLt,
+    backgroundColor: "rgba(225,245,238,0.78)",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.green,
     padding: 14,
     width: "100%",
     overflow: "hidden",

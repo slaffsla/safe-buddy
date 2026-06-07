@@ -738,8 +738,8 @@ const C = {
   white: "#FFFFFF",
   green: "#1D6B4F",
   greenLt: "#E1F5EE",
-  mintBg: "#F4FAF7",
-  mintBorder: "#CFE9DD",
+  mintBg: "#E1F5EE",
+  mintBorder: "#BFE5D5",
   morningBg: "#FFF8E7",
   morningBorder: "#F1D58E",
   morningSoft: "#FFE7B8",
@@ -2955,6 +2955,23 @@ function ScheduleSection({
     return tx(`schedule_titles.s${block.id}`, { defaultValue: block.title });
   }
 
+  function scheduleItemTone(block: ScheduleBlock) {
+    const fallback =
+      DEFAULT_SCHEDULE.find((item) => item.id === block.id)?.color ??
+      C.mintBg;
+    return {
+      backgroundColor: block.color ?? fallback,
+      borderColor:
+        block.color === "#EEF2FF"
+          ? "#D9E0FF"
+          : block.color === "#FFF8E7"
+            ? C.morningBorder
+            : block.color === "#E1F5EE"
+              ? C.mintBorder
+              : "#E1DACD",
+    };
+  }
+
   return (
     <View>
       <SectionHeader title={tx("settings.schedule_section")} icon="📅" />
@@ -2974,9 +2991,8 @@ function ScheduleSection({
 
       {settings.scheduleEnabled && (
         <Card>
-          {sortedBlocks.map((it, idx) => (
+          {sortedBlocks.map((it) => (
             <View key={it.id}>
-              {idx > 0 && <Divider />}
               {editingId === it.id ? (
                 <View style={u.editBlock}>
                   <View style={{ flexDirection: "row", gap: 8 }}>
@@ -3032,7 +3048,7 @@ function ScheduleSection({
                   </View>
                 </View>
               ) : (
-                <View style={u.scheduleItemWrap}>
+                <View style={[u.scheduleItemWrap, scheduleItemTone(it)]}>
                   <View style={u.scheduleMainRow}>
                     <ScheduleIcon item={it} />
                     <View style={{ flex: 1 }}>
@@ -4914,9 +4930,7 @@ const ss = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderColor: C.border,
-    backgroundColor: C.white,
+    backgroundColor: C.bg,
   },
   headerTitle: {
     flex: 1,
@@ -5242,6 +5256,7 @@ const u = StyleSheet.create({
   cardMission: {
     backgroundColor: C.mintBg,
     borderColor: C.mintBorder,
+    borderWidth: 1,
   },
   cardMorning: {
     backgroundColor: C.morningBg,
@@ -5252,7 +5267,7 @@ const u = StyleSheet.create({
     borderColor: C.peachBorder,
   },
   actionMission: {
-    backgroundColor: C.greenLt,
+    backgroundColor: "#D8F1E7",
     borderColor: C.mintBorder,
   },
   actionMorning: {
@@ -5508,7 +5523,13 @@ const u = StyleSheet.create({
     gap: 8,
   },
   editCostRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
-  scheduleItemWrap: { paddingHorizontal: 4, paddingVertical: 2 },
+  scheduleItemWrap: {
+    marginHorizontal: 10,
+    marginVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
   scheduleMainRow: {
     flexDirection: "row",
     alignItems: "center",

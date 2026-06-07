@@ -38,15 +38,15 @@ function hasTranslationValue(key: string): boolean {
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
 export const BUDDY = {
-  calm: require("../assets/Character/buddy-calm.png"),
-  "gentle-reminder": require("../assets/Character/buddy-gentle-reminder.png"),
-  serene: require("../assets/Character/buddy-serene.png"),
-  encouraging: require("../assets/Character/buddy-encouraging.png"),
-  thinking: require("../assets/Character/buddy-thinking.png"),
-  excited: require("../assets/Character/buddy-excited.png"),
-  happy: require("../assets/Character/buddy-happy.png"),
-  proud: require("../assets/Character/buddy-proud.png"),
-  "very-excited": require("../assets/Character/buddy-very-excited.png"),
+  calm: require("../assets/Character/soft/buddy-calm-soft.png"),
+  "gentle-reminder": require("../assets/Character/soft/buddy-gentle-reminder-soft.png"),
+  serene: require("../assets/Character/soft/buddy-serene-soft.png"),
+  encouraging: require("../assets/Character/soft/buddy-encouraging-soft.png"),
+  thinking: require("../assets/Character/soft/buddy-thinking-soft.png"),
+  excited: require("../assets/Character/soft/buddy-excited-soft.png"),
+  happy: require("../assets/Character/soft/buddy-happy-soft.png"),
+  proud: require("../assets/Character/soft/buddy-proud-soft.png"),
+  "very-excited": require("../assets/Character/soft/buddy-very-excited-soft.png"),
 } as const;
 
 export const BUDDY_FIXED_SPACER = 280;

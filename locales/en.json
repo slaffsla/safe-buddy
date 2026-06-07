@@ -163,6 +163,7 @@
     "next_boost_adventure_3": "On to the next adventure.",
     "all_done_praise_male": "I'm proud of you, champ!",
     "all_done_praise_female": "I'm proud of you, sweetheart!",
+    "preference_love_speak": "Nice work. Maybe later there is time for something like {{love}}.",
     "btn_rewards": "See rewards"
   },
   "rewards": {

@@ -190,6 +190,7 @@
     "next_boost_adventure_3": "קדימה להרפתקה הבאה.",
     "all_done_praise_male": "אני גאה בך, אלוף!",
     "all_done_praise_female": "אני גאה בך, אלופה!",
+    "preference_love_speak": "עבודה יפה. אולי אחר כך יהיה זמן למשהו כמו {{love}}.",
     "btn_rewards": "לראות פרסים"
   },
   "rewards": {

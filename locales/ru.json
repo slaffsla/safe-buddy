@@ -169,6 +169,7 @@
     "next_boost_adventure_3": "К следующему приключению.",
     "all_done_praise_male": "Горжусь тобой, чемпион!",
     "all_done_praise_female": "Горжусь тобой, умница!",
+    "preference_love_speak": "Хорошая работа. Может быть, позже будет время для чего-то вроде {{love}}.",
     "btn_rewards": "Посмотреть награды"
   },
   "rewards": {

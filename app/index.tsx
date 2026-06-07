@@ -1067,6 +1067,11 @@ export default function App() {
     const allDonePraiseKey = finishedVisibleMissions
       ? maybeAllMissionsDonePraiseKey(appSettings.rtlChildSex ?? "male")
       : null;
+    const lovePreference = pickPreferenceForUse(
+      appSettings.childPreferences,
+      "motivation",
+      `${todayStr()}:${mission.id}:${newTotal}`,
+    );
 
     setStars((n) => n + mission.stars);
     setPrevTotalEver(totalEver);
@@ -1090,13 +1095,13 @@ export default function App() {
       setDoneIdsToday(nextDoneIds);
     }
     setLastMission(getMissionTitle(mission.id, mission.title, ageProfile));
-    const completedToday = todayStr();
+    const completedDate = todayStr();
     AsyncStorage.multiSet([
       [
         K.LAST_MISSION,
         JSON.stringify({ id: mission.id, title: mission.title }),
       ],
-      [K.LAST_MISSION_DATE, completedToday],
+      [K.LAST_MISSION_DATE, completedDate],
     ]).catch(console.log);
     flashBuddyMood(completionMood);
     if (shouldShowConfetti(newTotal) || veryExcited) {
@@ -1105,6 +1110,14 @@ export default function App() {
     if (allDonePraiseKey) {
       speak(
         tSpeak(allDonePraiseKey, undefined, appSettings.rtlChildSex ?? "male"),
+      );
+    } else if (lovePreference) {
+      speak(
+        tSpeak(
+          "celebrate.preference_love_speak",
+          { love: lovePreference.title },
+          appSettings.rtlChildSex ?? "male",
+        ),
       );
     }
     setScreen("celebrate");

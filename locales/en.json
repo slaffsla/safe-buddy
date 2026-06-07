@@ -218,6 +218,7 @@
     "greeting": "Good morning!",
     "subgreeting": "Shall we start together?",
     "ready_speak": "Great. You are ready for the day.",
+    "complete_speak": "Great. Morning started. You are ready for the day.",
     "celeb_title": "Morning started! 🌟",
     "earned_one": "You earned ⭐",
     "earned_many": "You earned {{stars}}",

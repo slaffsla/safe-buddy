@@ -101,7 +101,7 @@ export default function MorningRoutineScreen({
 
   function handleComplete() {
     setFinished(true);
-    speak(tSpeak("morning.ready_speak", undefined, rtlChildSex));
+    speak(tSpeak("morning.complete_speak", undefined, rtlChildSex));
     if (completeTimerRef.current) clearTimeout(completeTimerRef.current);
     completeTimerRef.current = setTimeout(() => onComplete(stars), 3500);
   }

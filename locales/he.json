@@ -246,6 +246,8 @@
     "subgreeting": "נתחיל יחד?",
     "ready_speak": "מעולה. אתה מוכן להיום",
     "ready_speak_female": "מעולה. את מוכנה להיום",
+    "complete_speak": "מעולה. הבוקר התחיל. אתה מוכן להיום",
+    "complete_speak_female": "מעולה. הבוקר התחיל. את מוכנה להיום",
     "celeb_title": "הבוקר התחיל! 🌟",
     "earned_one": "הרווחת ⭐",
     "earned_many": "הרווחת {{stars}}",

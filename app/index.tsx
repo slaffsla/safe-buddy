@@ -1015,7 +1015,9 @@ export default function App() {
       triggerCelebrateConfetti(veryExcited ? "very-excited" : "excited");
     }
     if (allDonePraiseKey) {
-      speak(tSpeak(allDonePraiseKey, undefined, appSettings.rtlChildSex ?? "male"));
+      speak(
+        tSpeak(allDonePraiseKey, undefined, appSettings.rtlChildSex ?? "male"),
+      );
     }
     setScreen("celebrate");
   }
@@ -2022,7 +2024,7 @@ const s = StyleSheet.create({
   appDoodleBgTile: {
     width: 500,
     height: 500,
-    opacity: 0.89,
+    opacity: 0.59,
   },
   center: { justifyContent: "center", alignItems: "center" },
   screen: {

@@ -16,9 +16,9 @@ import {
   MorningStep,
   getMorningStepTitle,
 } from "./_constants";
-import { Confetti } from "./_SharedUI";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
+import { visualAssets } from "../lib/visualAssets";
 
 interface Props {
   childName: string;
@@ -106,32 +106,40 @@ export default function MorningRoutineScreen({
     completeTimerRef.current = setTimeout(() => onComplete(stars), 3500);
   }
 
-  // Celebrate state — shown briefly before onComplete fires
+  // Calm completion state — shown briefly before the app returns home.
   if (finished) {
     return (
-      <View
-        style={[
-          s.screen,
-          {
-            maxWidth: contentMaxWidth,
-            padding: screenPadding,
-            paddingTop: noOverlayTopPadding,
-          },
-        ]}
-      >
-        <Confetti trigger />
-        <Text style={s.celebTitle}>{t("morning.celeb_title")}</Text>
-        <Text style={s.celebSub}>
-          {stars === 1
-            ? tGender("morning.earned_one", undefined, rtlChildSex)
-            : tGender(
-                "morning.earned_many",
-                {
-                  stars: Array(stars).fill("⭐").join(""),
-                },
-                rtlChildSex,
-              )}
-        </Text>
+      <View style={s.screenRoot}>
+        <View
+          style={[
+            s.screen,
+            {
+              maxWidth: contentMaxWidth,
+              padding: screenPadding,
+              paddingTop: noOverlayTopPadding,
+            },
+          ]}
+        >
+          <View style={s.completeCard}>
+            <Image
+              source={visualAssets.graphics.sunrise}
+              style={s.completeGraphic}
+              resizeMode="contain"
+            />
+            <Text style={s.celebTitle}>{t("morning.celeb_title")}</Text>
+            <Text style={s.celebSub}>
+              {stars === 1
+                ? tGender("morning.earned_one", undefined, rtlChildSex)
+                : tGender(
+                    "morning.earned_many",
+                    {
+                      stars: Array(stars).fill("⭐").join(""),
+                    },
+                    rtlChildSex,
+                  )}
+            </Text>
+          </View>
+        </View>
       </View>
     );
   }
@@ -248,20 +256,23 @@ export default function MorningRoutineScreen({
 }
 
 const s = StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: C.bg,
+  },
   screen: {
     flexGrow: 1,
     width: "100%",
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: C.bg,
   },
   scroll: {
     width: "100%",
     alignSelf: "center",
     alignItems: "center",
     paddingBottom: 52,
-    backgroundColor: C.bg,
   },
 
   headerRow: {
@@ -359,12 +370,31 @@ const s = StyleSheet.create({
   btnSkip: { marginTop: 14, padding: 10 },
   btnSkipTxt: { fontSize: 13, color: C.muted, textAlign: "center" },
 
+  completeCard: {
+    width: "100%",
+    backgroundColor: "#FFFDF9",
+    borderRadius: 18,
+    borderWidth: 0.5,
+    borderColor: "#DED8CE",
+    paddingVertical: 24,
+    paddingHorizontal: 18,
+    alignItems: "center",
+  },
+  completeGraphic: {
+    width: 92,
+    height: 92,
+    marginBottom: 4,
+  },
   celebTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "800",
     color: C.green,
+    textAlign: "center",
+  },
+  celebSub: {
+    fontSize: 17,
+    color: C.muted,
     marginTop: 8,
     textAlign: "center",
   },
-  celebSub: { fontSize: 18, color: C.muted, marginTop: 8 },
 });

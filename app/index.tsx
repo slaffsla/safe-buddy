@@ -46,6 +46,7 @@ import {
   getStoredMissionTitle,
   getTinyFact,
   getTinyJokes,
+  getTinyWonderFacts,
   isWeekend,
   MISSION_POOL,
   MISSIONS_EASY,
@@ -171,6 +172,7 @@ const K = {
 };
 
 const TINY_FACT_IDLE_MIN_MS = 2000;
+const TINY_WONDER_FACT_CHANCE = 0.25;
 const MISSION_SKIP_REST_THRESHOLD = 3;
 const MISSION_SKIP_REST_DAYS = 7;
 
@@ -934,7 +936,12 @@ export default function App() {
       (f): f is string => !!f,
     );
     const allJokes = getTinyJokes();
-    if (allFacts.length === 0 && allJokes.length === 0) {
+    const allWonderFacts = getTinyWonderFacts();
+    if (
+      allFacts.length === 0 &&
+      allJokes.length === 0 &&
+      allWonderFacts.length === 0
+    ) {
       return () => {
         cancelled = true;
         clearTimeout(clearBubbleTimer);
@@ -943,9 +950,13 @@ export default function App() {
 
     function pickFact(): string {
       const missionFact = getTinyFact(mission.id);
+      const wantsWonderFact =
+        allWonderFacts.length > 0 && Math.random() < TINY_WONDER_FACT_CHANCE;
       // Mix jokes into the tiny-facts stream, but keep mission fact slightly
       // preferred when one exists.
-      const mixed = [...allFacts, ...allJokes];
+      const mixed = wantsWonderFact
+        ? allWonderFacts
+        : [...allFacts, ...allJokes];
       const pool = missionFact
         ? [missionFact, ...mixed.filter((f) => f !== missionFact)]
         : mixed;

@@ -896,6 +896,16 @@ export function getTinyFact(missionId: number): string | null {
   return result ? result : null;
 }
 
+export function getTinyWonderFacts(limit = 12): string[] {
+  const facts: string[] = [];
+  for (let i = 1; i <= limit; i += 1) {
+    const key = `tiny_wonder_facts.w${i}`;
+    const result = i18n.t(key, { defaultValue: "" });
+    if (result && result !== key) facts.push(result);
+  }
+  return facts;
+}
+
 export function getTinyJokes(limit = 20): string[] {
   const jokes: string[] = [];
   for (let i = 1; i <= limit; i += 1) {

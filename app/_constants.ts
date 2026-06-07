@@ -18,6 +18,23 @@ function localizedOrFallback(key: string, fallback: string): string {
   return i18n.t(key, { defaultValue: fallback });
 }
 
+function hasTranslationValue(key: string): boolean {
+  const locale = i18n.locale ?? i18n.defaultLocale ?? "ru";
+  for (const candidateLocale of [locale, i18n.defaultLocale ?? "ru"]) {
+    const parts = key.split(".");
+    let node: any = i18n.translations[candidateLocale];
+    for (const part of parts) {
+      if (!node || typeof node !== "object" || !(part in node)) {
+        node = undefined;
+        break;
+      }
+      node = node[part];
+    }
+    if (typeof node === "string" && node.trim()) return true;
+  }
+  return false;
+}
+
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
 export const BUDDY = {
@@ -517,11 +534,8 @@ export function getMissionTitle(
     fallback ?? MISSION_POOL.find((m) => m.id === id)?.title ?? "";
   if (id >= CUSTOM_CONTENT_ID_OFFSET) return poolFallback;
   if (ageProfile) {
-    const ageSpecific = localizedOrFallback(
-      `missions.${id}.title_${ageProfile}`,
-      "",
-    );
-    if (ageSpecific.trim()) return ageSpecific;
+    const ageKey = `missions.${id}.title_${ageProfile}`;
+    if (hasTranslationValue(ageKey)) return i18n.t(ageKey);
   }
   return localizedOrFallback(`missions.${id}.title`, poolFallback);
 }
@@ -536,11 +550,8 @@ export function getMissionSubtitle(
     fallback ?? MISSION_POOL.find((m) => m.id === id)?.subtitle ?? "";
   if (id >= CUSTOM_CONTENT_ID_OFFSET) return poolFallback;
   if (ageProfile) {
-    const ageSpecific = localizedOrFallback(
-      `missions.${id}.subtitle_${ageProfile}`,
-      "",
-    );
-    if (ageSpecific.trim()) return ageSpecific;
+    const ageKey = `missions.${id}.subtitle_${ageProfile}`;
+    if (hasTranslationValue(ageKey)) return i18n.t(ageKey);
   }
   return localizedOrFallback(`missions.${id}.subtitle`, poolFallback);
 }

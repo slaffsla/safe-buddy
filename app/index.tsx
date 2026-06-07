@@ -830,11 +830,15 @@ export default function App() {
       setMission(m);
       setSkipCount(0);
       speak(
-        `${getMissionTitle(m.id, m.title)}. ${getMissionSubtitle(m.id, m.subtitle)}`,
+        `${getMissionTitle(m.id, m.title, ageProfile)}. ${getMissionSubtitle(
+          m.id,
+          m.subtitle,
+          ageProfile,
+        )}`,
       );
       setScreen("active");
     },
-    [speak],
+    [ageProfile, speak],
   );
 
   const handleSkip = useCallback(() => {
@@ -1079,7 +1083,7 @@ export default function App() {
     if (typeof mission.id === "number") {
       setDoneIdsToday(nextDoneIds);
     }
-    setLastMission(getMissionTitle(mission.id, mission.title));
+    setLastMission(getMissionTitle(mission.id, mission.title, ageProfile));
     const completedToday = todayStr();
     AsyncStorage.multiSet([
       [
@@ -1756,6 +1760,7 @@ export default function App() {
               : null
           }
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
+          ageProfile={ageProfile}
           onPick={pickMission}
           onBack={() => setScreen("home")}
         />
@@ -1766,6 +1771,7 @@ export default function App() {
           {...p}
           mission={mission}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
+          ageProfile={ageProfile}
           onDone={completeMission}
           onSkip={handleSkip}
         />
@@ -1779,6 +1785,7 @@ export default function App() {
           completedToday={completedToday}
           isVeryExcited={isVeryExcited}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
+          ageProfile={ageProfile}
           continueLabelKey={
             beforeRewardUnlocked ? beforeRewardContinueLabelKey : undefined
           }

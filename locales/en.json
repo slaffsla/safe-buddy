@@ -303,17 +303,45 @@
   "missions": {
     "1": { "title": "Stand on one foot", "subtitle": "Five seconds" },
     "2": { "title": "Reach for your toes", "subtitle": "Slowly" },
-    "3": { "title": "Jump three times", "subtitle": "Calmly" },
+    "3": {
+      "title": "Jump three times",
+      "subtitle": "Calmly",
+      "title_little": "Do three rocket jumps",
+      "subtitle_little": "Soft landings",
+      "title_teen": "Move for thirty seconds",
+      "subtitle_teen": "Three jumps count"
+    },
     "4": { "title": "Drink some water", "subtitle": "Slowly" },
-    "5": { "title": "Phone-free time", "subtitle": "One minute" },
+    "5": {
+      "title": "Phone-free time",
+      "subtitle": "One minute",
+      "title_little": "Tiny screen break",
+      "subtitle_little": "One minute",
+      "title_teen": "Take a short screen break",
+      "subtitle_teen": "One minute"
+    },
     "7": {
       "title": "Make a strong fist for three seconds",
       "subtitle": "Then release"
     },
     "8": { "title": "Phone-free time", "subtitle": "Two minutes" },
-    "9": { "title": "Tidy your toys", "subtitle": "One corner" },
+    "9": {
+      "title": "Tidy your toys",
+      "subtitle": "One corner",
+      "title_little": "Park your toys",
+      "subtitle_little": "One small corner",
+      "title_teen": "Reset one corner",
+      "subtitle_teen": "Make it easier to use"
+    },
     "10": { "title": "Give a hug", "subtitle": "Quietly" },
-    "11": { "title": "Ask mom or dad how to help", "subtitle": "A small task" },
+    "11": {
+      "title": "Ask mom or dad how to help",
+      "subtitle": "A small task",
+      "title_little": "Ask how you can help",
+      "subtitle_little": "One tiny job",
+      "title_teen": "Choose one way to help",
+      "subtitle_teen": "Ask or notice what is needed"
+    },
     "12": { "title": "Tidy a little at home", "subtitle": "Just a bit" },
     "13": { "title": "Shake your hands", "subtitle": "Ten seconds" },
     "14": { "title": "Walk across the room", "subtitle": "There and back" },
@@ -321,16 +349,37 @@
     "16": { "title": "Wash your face", "subtitle": "With cool water" },
     "17": { "title": "Three deep breaths", "subtitle": "Slow and calm" },
     "18": { "title": "Drink more water", "subtitle": "Second glass" },
-    "19": { "title": "Make your bed", "subtitle": "Smooth the blanket" },
+    "19": {
+      "title": "Make your bed",
+      "subtitle": "Smooth the blanket",
+      "title_little": "Smooth your blanket",
+      "subtitle_little": "Make the bed cozy",
+      "title_teen": "Reset your bed",
+      "subtitle_teen": "Smooth the blanket"
+    },
     "20": { "title": "Take your plate", "subtitle": "To the sink" },
     "21": { "title": "Tidy your clothes", "subtitle": "In a neat stack" },
     "22": { "title": "Say thank you", "subtitle": "To someone today" },
     "23": { "title": "Smile at someone", "subtitle": "Just because" },
     "24": { "title": "Share something good", "subtitle": "With mom or dad" },
-    "25": { "title": "Sit quietly", "subtitle": "One minute" },
+    "25": {
+      "title": "Sit quietly",
+      "subtitle": "One minute",
+      "title_little": "Quiet body minute",
+      "subtitle_little": "One minute",
+      "title_teen": "Take one quiet minute",
+      "subtitle_teen": "No pressure"
+    },
     "26": { "title": "Draw something", "subtitle": "Anything" },
     "27": { "title": "Look out the window", "subtitle": "One minute" },
-    "28": { "title": "Do a quick exercise", "subtitle": "A few simple moves" }
+    "28": {
+      "title": "Do a quick exercise",
+      "subtitle": "A few simple moves",
+      "title_little": "Move with Buddy",
+      "subtitle_little": "A few simple moves",
+      "title_teen": "Quick movement reset",
+      "subtitle_teen": "A few simple moves"
+    }
   },
   "rewardItems": {
     "1": "Extra cartoon or video",

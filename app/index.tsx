@@ -2024,7 +2024,7 @@ const s = StyleSheet.create({
   appDoodleBgTile: {
     width: 500,
     height: 500,
-    opacity: 0.59,
+    opacity: 0.55,
   },
   center: { justifyContent: "center", alignItems: "center" },
   screen: {

@@ -1,0 +1,17 @@
+stages:
+  - verify
+
+verify:
+  image: node:20
+  stage: verify
+  script:
+    - npm ci
+    - npm run verify
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+  before_script:
+    - npm config set cache .npm --global

@@ -665,7 +665,9 @@ export default function BreathingScreen({
         <View style={s.screen}>
           <View style={{ height: BUDDY_CONTENT_SPACER }} />
           <Text style={s.celebTitle}>{t("breathing.celeb_title")}</Text>
-          <Text style={s.celebSub}>{t("breathing.celeb_sub")}</Text>
+          <Text style={s.celebSub}>
+            {tGender("breathing.celeb_sub", undefined, rtlChildSex)}
+          </Text>
 
           <Animated.View
             style={[s.circleActive, { transform: [{ scale: buddyScale }] }]}

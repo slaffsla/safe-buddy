@@ -104,7 +104,13 @@ export function pickPreferenceForUse(
   const index = baseHash % candidates.length;
   const preference = candidates[index];
   const frequencyGate = hashString(`${use}:${seed}:${preference.id}`) % 10;
-  const threshold = preference.frequency === "sometimes" ? 4 : 1;
+  const devBoost =
+    typeof __DEV__ !== "undefined" && __DEV__ && use === "calming";
+  const threshold = devBoost
+    ? 9
+    : preference.frequency === "sometimes"
+      ? 4
+      : 1;
 
   return frequencyGate <= threshold ? preference : null;
 }

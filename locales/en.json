@@ -150,6 +150,10 @@
   "celebrate": {
     "title": "Mission done! 🎉",
     "milestone_title": "🏆 Amazing!",
+    "all_done_title": "All missions done today!",
+    "all_done_msg": "You finished every mission waiting for you today.",
+    "all_done_speak": "All missions done for today. I am proud of you, champ.",
+    "all_done_speak_female": "All missions done for today. I am proud of you, sweetheart.",
     "earned_total": "Ready now: ⭐ {{stars}}",
     "btn_next": "Next mission",
     "btn_next_challenge": "Next challenge",

@@ -173,6 +173,11 @@
   "celebrate": {
     "title": "המשימה הושלמה! 🎉",
     "milestone_title": "🏆 מדהים!",
+    "all_done_title": "כל המשימות להיום הושלמו!",
+    "all_done_msg": "סיימת את כל המשימות שחיכו לך היום.",
+    "all_done_msg_female": "סיימת את כל המשימות שחיכו לך היום.",
+    "all_done_speak": "כל המשימות להיום הושלמו. אני גאה בך, אלוף!",
+    "all_done_speak_female": "כל המשימות להיום הושלמו. אני גאה בך, אלופה!",
     "earned_total": "זמין עכשיו: ⭐ {{stars}}",
     "btn_next": "המשימה הבאה",
     "btn_next_challenge": "האתגר הבא",

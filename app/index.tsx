@@ -110,16 +110,6 @@ function rewardRedemptionSpeakKey(
     : "rewards.redeemed_speak_male";
 }
 
-function maybeAllMissionsDonePraiseKey(
-  rtlChildSex: "male" | "female",
-  chance = 0.3,
-) {
-  if (Math.random() >= chance) return null;
-  return rtlChildSex === "female"
-    ? "celebrate.all_done_praise_female"
-    : "celebrate.all_done_praise_male";
-}
-
 // ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
 
 const BUDDY = {
@@ -552,6 +542,7 @@ export default function App() {
   const tinyFactLastTextRef = useRef<string | null>(null);
   const [showCelebrateConfetti, setShowCelebrateConfetti] = useState(false);
   const [celebrateConfettiKey, setCelebrateConfettiKey] = useState(0);
+  const [celebrateAllDone, setCelebrateAllDone] = useState(false);
   const celebrateConfettiTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -1086,9 +1077,6 @@ export default function App() {
       visibleMissionIds.includes(mission.id) &&
       visibleMissionIds.length > 0 &&
       visibleMissionIds.every((id) => nextDoneIds.includes(id));
-    const allDonePraiseKey = finishedVisibleMissions
-      ? maybeAllMissionsDonePraiseKey(appSettings.rtlChildSex ?? "male")
-      : null;
     const lovePreference = pickPreferenceForUse(
       appSettings.childPreferences,
       "motivation",
@@ -1117,6 +1105,7 @@ export default function App() {
       setDoneIdsToday(nextDoneIds);
     }
     setLastMission(getMissionTitle(mission.id, mission.title, ageProfile));
+    setCelebrateAllDone(finishedVisibleMissions);
     const completedDate = todayStr();
     AsyncStorage.multiSet([
       [
@@ -1126,12 +1115,18 @@ export default function App() {
       [K.LAST_MISSION_DATE, completedDate],
     ]).catch(console.log);
     flashBuddyMood(completionMood);
-    if (shouldShowConfetti(newTotal) || veryExcited) {
-      triggerCelebrateConfetti(veryExcited ? "very-excited" : "excited");
+    if (finishedVisibleMissions || shouldShowConfetti(newTotal) || veryExcited) {
+      triggerCelebrateConfetti(
+        finishedVisibleMissions || veryExcited ? "very-excited" : "excited",
+      );
     }
-    if (allDonePraiseKey) {
+    if (finishedVisibleMissions) {
       speak(
-        tSpeak(allDonePraiseKey, undefined, appSettings.rtlChildSex ?? "male"),
+        tSpeak(
+          "celebrate.all_done_speak",
+          undefined,
+          appSettings.rtlChildSex ?? "male",
+        ),
       );
     } else if (lovePreference) {
       speak(
@@ -1826,6 +1821,7 @@ export default function App() {
           totalMissions={totalMissions}
           completedToday={completedToday}
           isVeryExcited={isVeryExcited}
+          allMissionsDone={celebrateAllDone}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           ageProfile={ageProfile}
           continueLabelKey={
@@ -1833,6 +1829,7 @@ export default function App() {
           }
           onContinue={() => {
             clearCelebrateConfetti();
+            setCelebrateAllDone(false);
             if (beforeRewardUnlocked) {
               setBeforeRewardUnlocked(false);
               speak(
@@ -1849,10 +1846,12 @@ export default function App() {
           }}
           onRewards={() => {
             clearCelebrateConfetti();
+            setCelebrateAllDone(false);
             openRewardsScreen();
           }}
           onBack={() => {
             clearCelebrateConfetti();
+            setCelebrateAllDone(false);
             setScreen("home");
           }}
         />

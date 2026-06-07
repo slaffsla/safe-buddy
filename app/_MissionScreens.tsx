@@ -606,6 +606,7 @@ export function CelebrateScreen({
   totalMissions,
   completedToday,
   isVeryExcited,
+  allMissionsDone = false,
   onContinue,
   onRewards,
   speak,
@@ -620,6 +621,7 @@ export function CelebrateScreen({
   totalMissions: number;
   completedToday: number;
   isVeryExcited: boolean;
+  allMissionsDone?: boolean;
   onContinue: () => void;
   onRewards: () => void;
   speak: (t: string) => void;
@@ -664,9 +666,16 @@ export function CelebrateScreen({
     return keys[seed % keys.length];
   }, [completedToday, continueLabelKey, mission, nextButtonKey, totalEver]);
   if (!mission) return null;
-  const emotionalMsg = isVeryExcited
+  const emotionalMsg = allMissionsDone
+    ? tGender("celebrate.all_done_msg", undefined, rtlChildSex)
+    : isVeryExcited
     ? getMilestoneMessage(totalEver, rtlChildSex)
     : getProgressionMessage(totalMissions, completedToday, rtlChildSex);
+  const titleText = allMissionsDone
+    ? tGender("celebrate.all_done_title", undefined, rtlChildSex)
+    : isVeryExcited
+      ? t("celebrate.milestone_title")
+      : t("celebrate.title");
 
   return (
     <View style={s.screenRoot}>
@@ -684,12 +693,10 @@ export function CelebrateScreen({
         ]}
       >
         <T
-          style={isVeryExcited ? s.milestoneTitle : s.celebTitle}
+          style={isVeryExcited || allMissionsDone ? s.milestoneTitle : s.celebTitle}
           speak={speak}
         >
-          {isVeryExcited
-            ? t("celebrate.milestone_title")
-            : t("celebrate.title")}
+          {titleText}
         </T>
         <T style={s.progressionMsg} speak={speak}>
           {emotionalMsg}

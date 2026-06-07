@@ -323,11 +323,12 @@
     "started_today": "התחלת היום",
     "two_today": "שתי משימות היום",
     "three_today": "שלוש משימות היום",
-    "more_today": "התקדמות יפה מאוד",
-    "more_today_female": "התקדמות יפה מאוד",
+    "more_today": "אתה מתקדם יפה מאוד",
+    "more_today_female": "את מתקדמת יפה מאוד",
     "five_total": "חמש משימות בסך הכול",
     "ten_total": "עשר משימות",
-    "default": "אני רואה התקדמות יפה"
+    "default": "אני רואה שאתה מתקדם",
+    "default_female": "אני רואה שאת מתקדמת"
   },
   "milestone": {
     "ten": "עשרה כוכבים! התקדמות נהדרת",

@@ -1,50 +1,96 @@
-# Welcome to your Expo app 👋
+# RealoKids
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+RealoKids is an Expo/React Native app for helping children build small daily
+habits with a calm Buddy character, missions, rewards, breathing, routines, and
+parent-managed personalization.
 
-## Get started
+The product direction is intentionally low-stimulation: supportive, playful,
+and useful without turning habits into pressure or noise.
 
-1. Install dependencies
+## Stack
 
-   ```bash
-   npm install
-   ```
+- Expo SDK 56, React Native 0.85, React 19
+- Expo Router
+- TypeScript
+- `i18n-js` locales: English, Russian, Hebrew
+- AsyncStorage for local app state
+- Expo Speech, Haptics, Audio, Image Picker
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Quick Start
 
 ```bash
-npm run reset-project
+npm install
+npm run web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Useful scripts:
 
-## Learn more
+```bash
+npm run start          # Expo dev server
+npm run android        # Native Android dev build
+npm run ios            # Native iOS dev build
+npm run verify         # Locale checks, typecheck, lint
+npm run verify:locales # Locale/version coverage only
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Run `npm run verify` before handing off changes.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Project Map
 
-## Join the community
+- `app/index.tsx` - main app state, navigation, TTS, mission completion flow
+- `app/_MissionScreens.tsx` - mission picker, active mission, celebration,
+  rewards
+- `app/_SettingsScreen.tsx` - settings and PIN-guarded Parent Zone
+- `app/_constants.ts` - built-in missions, rewards, schedule, age helpers,
+  localized lookup helpers
+- `locales/` - translated app copy
+- `lib/childPreferences.ts` - parent-authored child loves/comforts
+- `memory/RELEASE_QA.md` - manual release checklist
 
-Join our community of developers creating universal apps.
+## Product Notes
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Parent Zone is for configuration, custom missions/rewards, child preferences,
+  images, schedule, and routine setup.
+- Child-facing flows should stay simple, warm, and scroll-safe on small screens.
+- TTS should avoid queues/clipping by default. Playful overlapping audio belongs
+  only where explicitly designed.
+- Tiny facts are grouped internally so their serving chance can be tuned by age:
+  mission facts, jokes, wonder facts, and Buddy wit.
+- Gender-aware copy matters in Hebrew/Russian paths. Prefer `tGender` for UI and
+  `tSpeak` for spoken strings when variants may exist.
+
+## Releases
+
+The app version must stay aligned across:
+
+- `package.json`
+- `package-lock.json`
+- `app.json` `expo.version`
+- `app.json` `expo.runtimeVersion`
+
+`npm run verify:locales` checks this alignment.
+
+EAS config:
+
+```bash
+eas build --profile preview --platform android
+eas build --profile production --platform android
+eas submit --profile production --platform android
+```
+
+GitLab CI currently runs:
+
+```bash
+npm ci
+npm run verify
+```
+
+Before release, also run the manual checklist in `memory/RELEASE_QA.md`.
+
+## Design Guardrails
+
+- Keep Buddy visually protected and emotionally central.
+- Avoid overstimulation: confetti, TTS, facts, and nudges should feel earned.
+- Prefer compact, practical parent settings over exposing every internal knob.
+- Add personalization only when it has a clear job: motivation, calming, or
+  family fit.

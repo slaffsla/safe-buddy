@@ -41,6 +41,7 @@ interface BuddyProps {
   onTap?: () => void;
   // Optional external phase scale (used by BreathingScreen to sync phases).
   phaseScale?: Animated.Value | Animated.AnimatedInterpolation<number>;
+  ambientMaxScale?: number;
   fixed?: boolean; // If true, Buddy stays fixed on screen (absolute positioning)
   fixedBottom?: number; // Distance from bottom when fixed (default: 180)
   fixedTop?: number; // Distance from top when fixed
@@ -60,6 +61,7 @@ export default function Buddy({
   onPettingChange,
   onTap,
   phaseScale,
+  ambientMaxScale = 1.19,
   fixed = false,
   fixedBottom,
   fixedTop = 90,
@@ -100,7 +102,7 @@ export default function Buddy({
       breathAnim.current = Animated.loop(
         Animated.sequence([
           Animated.timing(breathScale, {
-            toValue: 1.19,
+            toValue: ambientMaxScale,
             duration: 2800,
             useNativeDriver: true,
           }),
@@ -119,7 +121,7 @@ export default function Buddy({
     return () => {
       breathAnim.current?.stop();
     };
-  }, [breathScale, isAmbient, phaseScale]);
+  }, [ambientMaxScale, breathScale, isAmbient, phaseScale]);
 
   useEffect(() => {
     if (!celebrate) return;

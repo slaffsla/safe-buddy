@@ -20,7 +20,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { pickPreferenceForUse } from "../lib/childPreferences";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
 import { visualAssets } from "../lib/visualAssets";
@@ -516,6 +516,7 @@ function useSpeech(enabled: boolean, rtlChildSex: "male" | "female" = "male") {
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const safeInsets = useSafeAreaInsets();
   // Core state
   const [ready, setReady] = useState(false);
   const [screen, setScreen] = useState<string>("home");
@@ -1667,6 +1668,10 @@ export default function App() {
     ),
   );
   const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);
+  const hasTopCutout = safeInsets.top >= 32;
+  const topOverlayPaddingTop =
+    (isTabletWidth || isShortHeight ? 8 : 18) + (hasTopCutout ? 10 : 0);
+  const overlayBuddyAmbientMaxScale = hasTopCutout ? 1.1 : 1.19;
   const showFixedBuddyOverlay =
     parentOnboardingDone &&
     !showPinScreen &&
@@ -1997,7 +2002,7 @@ export default function App() {
         <View
           style={[
             s.topOverlay,
-            isTabletWidth || isShortHeight ? s.topOverlayCompact : null,
+            { paddingTop: topOverlayPaddingTop },
             s.boxNonePointerEvents,
           ]}
         >
@@ -2017,6 +2022,7 @@ export default function App() {
                 speak={speak}
                 size={overlayBuddySize}
                 celebrate={fixedOverlayCelebrate}
+                ambientMaxScale={overlayBuddyAmbientMaxScale}
                 onTap={() => {
                   const elevatedMood: BuddyMood =
                     fixedOverlayMood === "very-excited" ||

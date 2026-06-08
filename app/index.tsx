@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -2087,7 +2088,13 @@ export default function App() {
             keyboardVerticalOffset={20}
             style={s.pinKeyboardWrap}
           >
-            <View style={s.pinCard}>
+            <ScrollView
+              style={s.pinModalScroll}
+              contentContainerStyle={s.pinModalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={s.pinCard}>
               <Image
                 source={BUDDY.calm}
                 style={{
@@ -2144,7 +2151,8 @@ export default function App() {
               >
                 <Text style={s.pinCancelTxt}>{t("pinChild.cancel")}</Text>
               </TouchableOpacity>
-            </View>
+              </View>
+            </ScrollView>
           </KeyboardAvoidingView>
         </View>
       )}
@@ -2270,9 +2278,11 @@ const s = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingTop: 72,
+    paddingBottom: 12,
     zIndex: 2000,
   },
   rewardAlertOverlay: {
@@ -2325,13 +2335,23 @@ const s = StyleSheet.create({
     color: C.white,
   },
   pinKeyboardWrap: {
+    flex: 1,
     width: "100%",
     alignItems: "center",
+  },
+  pinModalScroll: {
+    width: "100%",
+  },
+  pinModalScrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingBottom: 24,
   },
   pinCard: {
     backgroundColor: C.white,
     borderRadius: 20,
-    paddingVertical: 28,
+    paddingVertical: 22,
     paddingHorizontal: 22,
     alignItems: "center",
     width: "100%",

@@ -1339,7 +1339,13 @@ function PinSection({
             keyboardVerticalOffset={20}
             style={ss.pinKeyboardWrap}
           >
-            <View style={ss.pinCard}>
+            <ScrollView
+              style={ss.pinModalScroll}
+              contentContainerStyle={ss.pinModalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={ss.pinCard}>
               {showSetPin ? (
                 <>
                   <Text style={ss.pinTitle}>
@@ -1463,7 +1469,8 @@ function PinSection({
                   </TouchableOpacity>
                 </>
               )}
-            </View>
+              </View>
+            </ScrollView>
           </KeyboardAvoidingView>
         </View>
       </Modal>
@@ -4856,7 +4863,13 @@ export default function SettingsScreen({
             keyboardVerticalOffset={20}
             style={ss.pinKeyboardWrap}
           >
-            <View style={ss.pinCard}>
+            <ScrollView
+              style={ss.pinModalScroll}
+              contentContainerStyle={ss.pinModalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={ss.pinCard}>
               <Text style={ss.pinTitle}>{t("settings.pin_enter_title")}</Text>
               <TextInput
                 keyboardType="numeric"
@@ -4893,7 +4906,8 @@ export default function SettingsScreen({
               >
                 <Text style={ss.pinBtnCancelTxt}>{t("settings.cancel")}</Text>
               </TouchableOpacity>
-            </View>
+              </View>
+            </ScrollView>
           </KeyboardAvoidingView>
         </View>
       )}
@@ -5100,18 +5114,30 @@ const ss = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingTop: 72,
+    paddingBottom: 12,
   },
   pinKeyboardWrap: {
+    flex: 1,
     width: "100%",
     alignItems: "center",
+  },
+  pinModalScroll: {
+    width: "100%",
+  },
+  pinModalScrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingBottom: 24,
   },
   pinCard: {
     backgroundColor: C.white,
     borderRadius: 20,
-    paddingVertical: 28,
+    paddingVertical: 22,
     paddingHorizontal: 22,
     alignItems: "center",
     width: "100%",

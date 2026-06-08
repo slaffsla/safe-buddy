@@ -126,10 +126,6 @@ const BUDDY = {
   "very-excited": require("../assets/Character/soft/buddy-very-excited-soft.png"),
 };
 
-const PROTECTED_EDGE_FADE_STOPS = [
-  0.82, 0.68, 0.54, 0.4, 0.28, 0.18, 0.1, 0.04,
-];
-
 // ── MOOD TRIGGER LOGIC ────────────────────────────────────────────────────────
 // calm            → home default, quiet idle, breathing sessions
 // gentle-reminder → home alternate (~30%), morning, after 2 skips
@@ -2051,14 +2047,6 @@ export default function App() {
               speak={speak}
               rtlChildSex={appSettings.rtlChildSex ?? "male"}
             />
-            <View style={[s.protectedEdgeFade, s.noPointerEvents]}>
-              {PROTECTED_EDGE_FADE_STOPS.map((opacity, index) => (
-                <View
-                  key={`protected-edge-${index}`}
-                  style={[s.protectedEdgeFadeBand, { opacity }]}
-                />
-              ))}
-            </View>
           </View>
         </View>
       )}
@@ -2238,30 +2226,16 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
   },
   boxNonePointerEvents: { pointerEvents: "box-none" },
-  noPointerEvents: { pointerEvents: "none" },
   topOverlayCompact: {
     paddingTop: 8,
   },
   topOverlayContent: {
     width: "100%",
     alignItems: "center",
-    position: "relative",
     paddingTop: 8,
     paddingBottom: 6,
     pointerEvents: "auto",
     zIndex: 1,
-  },
-  protectedEdgeFade: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: -48,
-    height: 48,
-    zIndex: 0,
-  },
-  protectedEdgeFadeBand: {
-    flex: 1,
-    backgroundColor: "#F8F6EF",
   },
   buddyBubbleWrap: {
     width: "100%",

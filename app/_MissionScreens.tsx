@@ -12,7 +12,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { CONTENT_MAX_WIDTH, useLayoutMetrics } from "../lib/layoutMetrics";
+import {
+  CONTENT_MAX_WIDTH,
+  useLayoutMetrics,
+} from "../lib/layoutMetrics";
 import { visualAssets } from "../lib/visualAssets";
 import { T } from "./_SharedUI";
 import {
@@ -111,7 +114,7 @@ export function MissionPickScreen({
   rtlChildSex = "male",
   ageProfile,
 }: MissionPickProps) {
-  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+  const { buddyViewportTop, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   const pool =
     !missions || missions.length === 0
@@ -144,39 +147,46 @@ export function MissionPickScreen({
 
   if (firstTime && pool.length > 0) {
     return (
-      <ScrollView
-        contentContainerStyle={[
-          s.scroll,
-          s.firstMissionScroll,
-          isLargeTablet && s.scrollLarge,
-          {
-            maxWidth: contentMaxWidth,
-            padding: screenPadding,
-            paddingTop: buddyContentSpacer,
-          },
-        ]}
-      >
-        <View
-          style={[s.firstMissionHero, isLargeTablet && s.firstMissionHeroLarge]}
+      <View style={s.screenRoot}>
+        <ScrollView
+          style={{ marginTop: buddyViewportTop }}
+          contentContainerStyle={[
+            s.scroll,
+            s.firstMissionScroll,
+            isLargeTablet && s.scrollLarge,
+            {
+              maxWidth: contentMaxWidth,
+              padding: screenPadding,
+            },
+          ]}
         >
-          <Image
-            source={visualAssets.graphics.missionRocket}
+          <View
             style={[
-              s.firstMissionHeroGraphic,
-              isLargeTablet && s.firstMissionHeroGraphicLarge,
+              s.firstMissionHero,
+              isLargeTablet && s.firstMissionHeroLarge,
             ]}
-            resizeMode="contain"
-          />
-          <T style={[s.pageTitle, s.firstMissionTitle]} speak={speak}>
-            {tGender("missionPick.first_title", undefined, rtlChildSex)}
-          </T>
-          <T
-            style={[s.firstMissionSub, isLargeTablet && s.firstMissionSubLarge]}
-            speak={speak}
           >
-            {tGender("missionPick.first_sub", undefined, rtlChildSex)}
-          </T>
-        </View>
+            <Image
+              source={visualAssets.graphics.missionRocket}
+              style={[
+                s.firstMissionHeroGraphic,
+                isLargeTablet && s.firstMissionHeroGraphicLarge,
+              ]}
+              resizeMode="contain"
+            />
+            <T style={[s.pageTitle, s.firstMissionTitle]} speak={speak}>
+              {tGender("missionPick.first_title", undefined, rtlChildSex)}
+            </T>
+            <T
+              style={[
+                s.firstMissionSub,
+                isLargeTablet && s.firstMissionSubLarge,
+              ]}
+              speak={speak}
+            >
+              {tGender("missionPick.first_sub", undefined, rtlChildSex)}
+            </T>
+          </View>
 
         <View style={s.firstMissionList}>
           {pool.slice(0, 3).map((m, index) => (
@@ -248,24 +258,24 @@ export function MissionPickScreen({
           ))}
         </View>
 
-        <T style={s.hint} speak={speak}>
-          {tGender("missionPick.first_hint", undefined, rtlChildSex)}
-        </T>
-      </ScrollView>
+          <T style={s.hint} speak={speak}>
+            {tGender("missionPick.first_hint", undefined, rtlChildSex)}
+          </T>
+        </ScrollView>
+      </View>
     );
   }
 
   return (
     <View style={s.screenRoot}>
       <ScrollView
-        style={s.screenScroll}
+        style={[s.screenScroll, { marginTop: buddyViewportTop }]}
         contentContainerStyle={[
           s.scroll,
           isLargeTablet && s.scrollLarge,
           {
             maxWidth: contentMaxWidth,
             padding: screenPadding,
-            paddingTop: buddyContentSpacer,
             paddingBottom: isLargeTablet ? 128 : 96,
           },
         ]}
@@ -503,7 +513,7 @@ export function ActiveScreen({
   rtlChildSex?: RtlChildSex;
   ageProfile?: AgeProfile;
 }) {
-  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+  const { buddyViewportTop, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   if (!mission) return null;
   const doneLabel = tGender("active.btn_done", undefined, rtlChildSex).replace(
@@ -511,18 +521,19 @@ export function ActiveScreen({
     "",
   );
   return (
-    <ScrollView
-      contentContainerStyle={[
-        s.screen,
-        s.activeScreenScroll,
-        isLargeTablet && s.activeScreenScrollLarge,
-        {
-          maxWidth: contentMaxWidth,
-          padding: screenPadding,
-          paddingTop: buddyContentSpacer,
-        },
-      ]}
-    >
+    <View style={s.screenRoot}>
+      <ScrollView
+        style={{ marginTop: buddyViewportTop }}
+        contentContainerStyle={[
+          s.screen,
+          s.activeScreenScroll,
+          isLargeTablet && s.activeScreenScrollLarge,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+          },
+        ]}
+      >
       <TouchableOpacity
         onPress={() => speak(tSpeak("buddy.start", undefined, rtlChildSex))}
         activeOpacity={0.65}
@@ -593,7 +604,8 @@ export function ActiveScreen({
           {tGender("active.btn_skip", undefined, rtlChildSex)}
         </Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -630,7 +642,7 @@ export function CelebrateScreen({
   rtlChildSex?: RtlChildSex;
   ageProfile?: AgeProfile;
 }) {
-  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+  const { buddyViewportTop, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   const nextButtonKey = React.useMemo(() => {
     if (!mission || mission.stars < 2) return "celebrate.btn_next";
@@ -680,14 +692,13 @@ export function CelebrateScreen({
   return (
     <View style={s.screenRoot}>
       <ScrollView
-        style={s.screenScroll}
+        style={[s.screenScroll, { marginTop: buddyViewportTop }]}
         contentContainerStyle={[
           s.screen,
           s.celebrateScreenScroll,
           {
             maxWidth: contentMaxWidth,
             padding: screenPadding,
-            paddingTop: buddyContentSpacer,
             paddingBottom: isLargeTablet ? 128 : 96,
           },
         ]}
@@ -922,13 +933,13 @@ export function RewardsScreen({
   rewards?: typeof REWARDS;
   rtlChildSex?: RtlChildSex;
 }) {
-  const { buddyContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+  const { buddyViewportTop, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   const list = rewards ?? REWARDS;
   return (
     <View style={s.screenRoot}>
       <ScrollView
-        style={s.rewardsScrollView}
+        style={[s.rewardsScrollView, { marginTop: buddyViewportTop }]}
         contentContainerStyle={[
           s.scroll,
           s.rewardsScroll,
@@ -936,7 +947,6 @@ export function RewardsScreen({
           {
             maxWidth: contentMaxWidth,
             padding: screenPadding,
-            paddingTop: buddyContentSpacer,
             paddingBottom: isLargeTablet ? 128 : 96,
           },
         ]}

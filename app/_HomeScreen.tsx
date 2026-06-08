@@ -115,7 +115,7 @@ export default function HomeScreen({
   rtlChildSex = "male",
   skipComfortPreference = null,
 }: HomeScreenProps) {
-  const { homeContentSpacer, contentMaxWidth, screenPadding, isLargeTablet } =
+  const { buddyViewportTop, contentMaxWidth, screenPadding, isLargeTablet } =
     useLayoutMetrics();
   const threshold = Math.max(1, skipSensitivity ?? 2);
   const [useAltIdle] = React.useState(() => Math.random() > 0.7);
@@ -182,17 +182,18 @@ export default function HomeScreen({
       : null;
 
   return (
-    <ScrollView
-      contentContainerStyle={[
-        s.homeScroll,
-        isLargeTablet && s.homeScrollLarge,
-        {
-          maxWidth: contentMaxWidth,
-          padding: screenPadding,
-          paddingTop: homeContentSpacer,
-        },
-      ]}
-    >
+    <View style={s.screenRoot}>
+      <ScrollView
+        style={{ marginTop: buddyViewportTop }}
+        contentContainerStyle={[
+          s.homeScroll,
+          isLargeTablet && s.homeScrollLarge,
+          {
+            maxWidth: contentMaxWidth,
+            padding: screenPadding,
+          },
+        ]}
+      >
       <T style={[s.greeting, isLargeTablet && s.greetingLarge]} speak={speak}>
         {greeting}
       </T>
@@ -428,7 +429,8 @@ export default function HomeScreen({
           </Text>
         </TouchableOpacity>
       </Animated.View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -472,6 +474,10 @@ function HomeButtonIcon({
 }
 
 const s = StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    width: "100%",
+  },
   homeScroll: {
     width: "100%",
     alignSelf: "center",

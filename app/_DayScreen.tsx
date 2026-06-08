@@ -121,7 +121,7 @@ export default function DayScreen({
   onClose,
   onStartMission,
 }: DayScreenProps) {
-  const { contentMaxWidth, screenPadding, isLargeTablet, buddyContentSpacer } =
+  const { contentMaxWidth, screenPadding, isLargeTablet, buddyViewportTop } =
     useLayoutMetrics();
   const scrollRef = useRef<ScrollView | null>(null);
   const blockYRef = useRef<Record<number, number>>({});
@@ -169,7 +169,10 @@ export default function DayScreen({
         style={[
           s.header,
           isLargeTablet && s.headerLarge,
-          { maxWidth: contentMaxWidth + screenPadding * 2 },
+          {
+            maxWidth: contentMaxWidth + screenPadding * 2,
+            marginTop: buddyViewportTop,
+          },
         ]}
       >
         <Text style={[s.headerTitle, isLargeTablet && s.headerTitleLarge]}>
@@ -187,7 +190,6 @@ export default function DayScreen({
             flexGrow: 1,
             maxWidth: contentMaxWidth,
             padding: screenPadding,
-            paddingTop: buddyContentSpacer,
             paddingBottom: isLargeTablet ? 70 : 50,
           },
         ]}

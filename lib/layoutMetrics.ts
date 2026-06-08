@@ -22,6 +22,8 @@ export function getLayoutMetrics({ width, height }: WindowSize) {
     isTabletWidth && !isLargeTablet && !isShortHeight
       ? buddyContentSpacer + 88
       : buddyContentSpacer;
+  const buddyViewportTop =
+    buddyContentSpacer + (isLargeTablet ? 92 : isTabletWidth ? 64 : 52);
 
   return {
     isTabletWidth,
@@ -33,6 +35,7 @@ export function getLayoutMetrics({ width, height }: WindowSize) {
     uiScale: isLargeTablet ? 1.16 : isTabletWidth ? 1.04 : 1,
     buddyContentSpacer,
     homeContentSpacer,
+    buddyViewportTop,
     noOverlayTopPadding: isShortHeight
       ? 26
       : isLargeTablet
@@ -58,6 +61,7 @@ export const SCREEN_PADDING = initialMetrics.screenPadding;
 export const UI_SCALE = initialMetrics.uiScale;
 export const BUDDY_CONTENT_SPACER = initialMetrics.buddyContentSpacer;
 export const HOME_CONTENT_SPACER = initialMetrics.homeContentSpacer;
+export const BUDDY_VIEWPORT_TOP = initialMetrics.buddyViewportTop;
 export const NO_OVERLAY_TOP_PADDING = initialMetrics.noOverlayTopPadding;
 
 export const createSpacer = (height = BUDDY_CONTENT_SPACER) => ({ height });

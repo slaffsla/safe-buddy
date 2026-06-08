@@ -1663,6 +1663,12 @@ export default function App() {
     ),
   );
   const tinyFactBubbleTop = Math.round(overlayBuddySize * 0.56);
+  const showFixedBuddyOverlay =
+    parentOnboardingDone &&
+    !showPinScreen &&
+    visibleScreen !== "child_onboarding" &&
+    visibleScreen !== "settings" &&
+    showGlobalBuddy;
   const showMilestoneDoodleBg =
     appSettings.doodleBackgroundEnabled !== false &&
     totalEver >= 20 &&
@@ -1983,73 +1989,57 @@ export default function App() {
       )}
 
       {/* ── FIXED BUDDY + PROGRESS BAR OVERLAY (all screens except Settings) ───────── */}
-      {parentOnboardingDone &&
-        !showPinScreen &&
-        visibleScreen !== "child_onboarding" &&
-        visibleScreen !== "settings" &&
-        showGlobalBuddy && (
-          <View
-            style={[
-              s.topOverlay,
-              isTabletWidth || isShortHeight ? s.topOverlayCompact : null,
-              showMilestoneDoodleBg ? s.topOverlayDoodleSanctuary : null,
-              s.boxNonePointerEvents,
-            ]}
-          >
-            {showMilestoneDoodleBg && (
-              <View style={s.topOverlayDoodleLayer}>
-                {renderDoodleTiles("overlay")}
-              </View>
-            )}
+      {showFixedBuddyOverlay && (
+        <View
+          style={[
+            s.topOverlay,
+            isTabletWidth || isShortHeight ? s.topOverlayCompact : null,
+            s.boxNonePointerEvents,
+          ]}
+        >
+          <View style={[s.topOverlayContent, { maxWidth: contentMaxWidth }]}>
             <View
               style={[
-                s.topOverlayContent,
-                showMilestoneDoodleBg ? s.transparentBg : null,
-                { maxWidth: contentMaxWidth },
+                s.buddyBubbleWrap,
+                {
+                  minHeight:
+                    overlayBuddySize +
+                    (visibleScreen === "active" && tinyFactBubble ? 70 : 10),
+                },
               ]}
             >
-              <View
-                style={[
-                  s.buddyBubbleWrap,
-                  {
-                    minHeight:
-                      overlayBuddySize +
-                      (visibleScreen === "active" && tinyFactBubble ? 70 : 10),
-                  },
-                ]}
-              >
-                <Buddy
-                  mood={fixedOverlayMood}
-                  speak={speak}
-                  size={overlayBuddySize}
-                  celebrate={fixedOverlayCelebrate}
-                  onTap={() => {
-                    const elevatedMood: BuddyMood =
-                      fixedOverlayMood === "very-excited" ||
-                      fixedOverlayMood === "proud"
-                        ? "very-excited"
-                        : "happy";
-                    flashBuddyMood(elevatedMood, 1400);
-                  }}
-                />
-                {visibleScreen === "active" && tinyFactBubble && (
-                  <View style={[s.tinyFactBubble, { top: tinyFactBubbleTop }]}>
-                    <T style={s.tinyFactText} speak={speak}>
-                      {`💡 ${tinyFactBubble}`}
-                    </T>
-                    <View style={s.tinyFactTail} />
-                  </View>
-                )}
-              </View>
-              <ProgressBar
-                total={totalEver}
-                available={stars}
+              <Buddy
+                mood={fixedOverlayMood}
                 speak={speak}
-                rtlChildSex={appSettings.rtlChildSex ?? "male"}
+                size={overlayBuddySize}
+                celebrate={fixedOverlayCelebrate}
+                onTap={() => {
+                  const elevatedMood: BuddyMood =
+                    fixedOverlayMood === "very-excited" ||
+                    fixedOverlayMood === "proud"
+                      ? "very-excited"
+                      : "happy";
+                  flashBuddyMood(elevatedMood, 1400);
+                }}
               />
+              {visibleScreen === "active" && tinyFactBubble && (
+                <View style={[s.tinyFactBubble, { top: tinyFactBubbleTop }]}>
+                  <T style={s.tinyFactText} speak={speak}>
+                    {`💡 ${tinyFactBubble}`}
+                  </T>
+                  <View style={s.tinyFactTail} />
+                </View>
+              )}
             </View>
+            <ProgressBar
+              total={totalEver}
+              available={stars}
+              speak={speak}
+              rtlChildSex={appSettings.rtlChildSex ?? "male"}
+            />
           </View>
-        )}
+        </View>
+      )}
 
       {/* ── PARENT PIN OVERLAY ──────────────────────────────────────────────── */}
       {showRedeemedAlert && (
@@ -2218,15 +2208,6 @@ const s = StyleSheet.create({
 
     paddingHorizontal: 16,
   },
-  topOverlayDoodleSanctuary: {
-    overflow: "hidden",
-  },
-  topOverlayDoodleLayer: {
-    ...StyleSheet.absoluteFill,
-    pointerEvents: "none",
-    zIndex: 0,
-  },
-  transparentBg: { backgroundColor: "transparent" },
   boxNonePointerEvents: { pointerEvents: "box-none" },
   topOverlayCompact: {
     paddingTop: 8,
@@ -2425,10 +2406,6 @@ const s = StyleSheet.create({
   // Progress bar
   pbWrap: {
     width: "100%",
-    backgroundColor: C.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
     padding: 12,
     marginBottom: 14,
   },

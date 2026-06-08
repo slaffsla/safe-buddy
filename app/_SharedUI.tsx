@@ -182,8 +182,6 @@ const s = StyleSheet.create({
   // Progress bar
   pbWrap: {
     width: "100%",
-    backgroundColor: "#FFFDF9",
-    borderRadius: 14,
     padding: 10,
     marginBottom: 14,
   },

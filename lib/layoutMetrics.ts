@@ -22,8 +22,7 @@ export function getLayoutMetrics({ width, height }: WindowSize) {
     isTabletWidth && !isLargeTablet && !isShortHeight
       ? buddyContentSpacer + 88
       : buddyContentSpacer;
-  const buddyViewportTop =
-    buddyContentSpacer + (isLargeTablet ? 92 : isTabletWidth ? 64 : 52);
+  const buddyViewportTop = buddyContentSpacer;
 
   return {
     isTabletWidth,

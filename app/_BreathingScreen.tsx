@@ -37,7 +37,7 @@ import { C, type BuddyMood } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
-export const BUDDY_BASE = Math.round(SCREEN_W * 0.46); // ~20% larger than before
+export const BUDDY_BASE = Math.round(SCREEN_W * 0.39);
 
 // Hard-coded session length (2m10s). Do not lift to settings.
 const BREATHING_DURATION_MS = 130_000;
@@ -1045,24 +1045,25 @@ const s = StyleSheet.create({
   },
   celebSub: { fontSize: 17, color: C.text, marginTop: 6, textAlign: "center" },
   buddyContainer: {
-    width: BUDDY_BASE * 1.45,
-    height: BUDDY_BASE * 1.45,
+    width: BUDDY_BASE * 1.5,
+    height: BUDDY_BASE * 1.58,
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 12,
+    marginTop: 10,
+    marginBottom: 14,
     overflow: "visible",
   },
   buddyOuterGlow: {
     position: "absolute",
-    width: BUDDY_BASE * 1.38,
-    height: BUDDY_BASE * 1.38,
+    width: BUDDY_BASE * 1.32,
+    height: BUDDY_BASE * 1.32,
     borderRadius: BUDDY_BASE,
     backgroundColor: "rgba(255,248,231,0.72)",
   },
   buddyInnerGlow: {
     position: "absolute",
-    width: BUDDY_BASE * 1.1,
-    height: BUDDY_BASE * 1.1,
+    width: BUDDY_BASE * 1.04,
+    height: BUDDY_BASE * 1.04,
     borderRadius: BUDDY_BASE,
     backgroundColor: "rgba(225,245,238,0.68)",
     borderWidth: 1,

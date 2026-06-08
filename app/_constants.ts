@@ -49,7 +49,7 @@ export const BUDDY = {
   "very-excited": require("../assets/Character/soft/buddy-very-excited-soft.png"),
 } as const;
 
-export const BUDDY_FIXED_SPACER = 280;
+export const BUDDY_FIXED_SPACER = 190;
 export const BUDDY_FIXED_TOP = 90;
 export type BuddyMood = keyof typeof BUDDY;
 
@@ -1225,10 +1225,7 @@ function missionSelectionScore(
   if (mission.id >= CUSTOM_CONTENT_ID_OFFSET) {
     score += 2;
   }
-  if (
-    options?.ageProfile &&
-    mission.ageBands?.includes(options.ageProfile)
-  ) {
+  if (options?.ageProfile && mission.ageBands?.includes(options.ageProfile)) {
     score += 3;
   }
   if (options?.energy && options.energy !== "auto") {

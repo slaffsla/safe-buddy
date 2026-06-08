@@ -38,6 +38,7 @@ import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 export const BUDDY_BASE = Math.round(SCREEN_W * 0.39);
+const BREATHING_OVERLAY_CLEARANCE = BUDDY_CONTENT_SPACER + 20;
 
 // Hard-coded session length (2m10s). Do not lift to settings.
 const BREATHING_DURATION_MS = 130_000;
@@ -578,7 +579,7 @@ export default function BreathingScreen({
   if (state === "idle") {
     return (
       <View style={s.screen}>
-        <View style={{ height: BUDDY_CONTENT_SPACER }} />
+        <View style={{ height: BREATHING_OVERLAY_CLEARANCE }} />
         <Text style={s.title}>{t("breathing.title")}</Text>
         <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
@@ -617,7 +618,7 @@ export default function BreathingScreen({
   if (state === "priming") {
     return (
       <View style={s.screen}>
-        <View style={{ height: BUDDY_CONTENT_SPACER }} />
+        <View style={{ height: BREATHING_OVERLAY_CLEARANCE }} />
         <Text style={s.title}>{t("breathing.title")}</Text>
         <Text style={s.subtitle}>{t("breathing.subtitle")}</Text>
 
@@ -663,7 +664,7 @@ export default function BreathingScreen({
     return (
       <View style={s.screenRoot}>
         <View style={s.screen}>
-          <View style={{ height: BUDDY_CONTENT_SPACER }} />
+          <View style={{ height: BREATHING_OVERLAY_CLEARANCE }} />
           <Text style={s.celebTitle}>{t("breathing.celeb_title")}</Text>
           <Text style={s.celebSub}>
             {tGender("breathing.celeb_sub", undefined, rtlChildSex)}
@@ -940,7 +941,7 @@ const s = StyleSheet.create({
     borderColor: "#D4EDE1",
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 24,
+    marginVertical: 16,
   },
   circleActive: {
     width: CIRCLE_BASE + 20,
@@ -997,7 +998,7 @@ const s = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 17,
     paddingHorizontal: 48,
-    marginTop: 22,
+    marginTop: 14,
     minWidth: 220,
     alignItems: "center",
   },

@@ -1418,6 +1418,9 @@ export default function App() {
         <StatusBar style="dark" />
         <ParentOnboarding
           onLocaleChange={handleParentOnboardingLocaleChange}
+          onChildSexChange={(rtlChildSex) => {
+            setAppSettings((prev) => ({ ...prev, rtlChildSex }));
+          }}
           onDone={async () => {
             await AsyncStorage.setItem(K.PARENT_ONBOARDING_DONE, "true");
             setParentOnboardingDone(true);

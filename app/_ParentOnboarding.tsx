@@ -22,11 +22,18 @@ import { useLayoutMetrics } from "../lib/layoutMetrics";
 import { visualAssets, VisualAssetSource } from "../lib/visualAssets";
 import Buddy from "./_Buddy";
 import { C } from "./_constants";
-import { AppLocale, getAppLocale, setAppLocale, t } from "./i18n";
+import {
+  AppLocale,
+  RtlChildSex,
+  getAppLocale,
+  setAppLocale,
+  t,
+} from "./i18n";
 
 interface Props {
   onDone: () => void;
   onLocaleChange?: (locale: AppLocale) => void;
+  onChildSexChange?: (sex: RtlChildSex) => void;
 }
 
 const SETTINGS_KEY = "sb_settings_v1";
@@ -104,6 +111,19 @@ async function persistOnboardingLocale(appLocale: AppLocale) {
     );
   } catch (error) {
     console.log("Locale save error", error);
+  }
+}
+
+async function persistOnboardingChildSex(rtlChildSex: RtlChildSex) {
+  try {
+    const raw = await AsyncStorage.getItem(SETTINGS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    await AsyncStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify({ ...parsed, rtlChildSex }),
+    );
+  } catch (error) {
+    console.log("Child sex save error", error);
   }
 }
 
@@ -476,7 +496,75 @@ function Screen2({ speak }: { speak: (t: string) => void }) {
 
 // ── Screen 3 — Breathing ──────────────────────────────────────────────────────
 
-function Screen3() {
+function ChildSexSetup({
+  value,
+  onChange,
+  highlight = false,
+}: {
+  value: RtlChildSex | null;
+  onChange: (sex: RtlChildSex) => void;
+  highlight?: boolean;
+}) {
+  const { isLargeTablet } = useOnboardingLayout();
+  const options: { value: RtlChildSex; label: string }[] = [
+    { value: "male", label: t("parent_onboarding.child_sex_boy") },
+    { value: "female", label: t("parent_onboarding.child_sex_girl") },
+  ];
+
+  return (
+    <View
+      style={[
+        s.sexCard,
+        highlight && s.sexCardHighlight,
+        isLargeTablet && s.sexCardLarge,
+      ]}
+    >
+      <Text style={[s.sexTitle, isLargeTablet && s.sexTitleLarge]}>
+        {t("parent_onboarding.child_sex_title")}
+      </Text>
+      <Text style={[s.sexSub, isLargeTablet && s.sexSubLarge]}>
+        {t("parent_onboarding.child_sex_sub")}
+      </Text>
+      <View style={s.sexOptions}>
+        {options.map((option) => {
+          const active = value === option.value;
+          return (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                s.sexOption,
+                active && s.sexOptionActive,
+                isLargeTablet && s.sexOptionLarge,
+              ]}
+              onPress={() => onChange(option.value)}
+              activeOpacity={0.78}
+            >
+              <Text
+                style={[
+                  s.sexOptionText,
+                  active && s.sexOptionTextActive,
+                  isLargeTablet && s.sexOptionTextLarge,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function Screen3({
+  childSex,
+  onChildSexChange,
+  childSexMissing,
+}: {
+  childSex: RtlChildSex | null;
+  onChildSexChange: (sex: RtlChildSex) => void;
+  childSexMissing?: boolean;
+}) {
   const { isTabletWidth, isLargeTablet, screenScroll } = useOnboardingLayout();
   const items: {
     image?: VisualAssetSource;
@@ -518,6 +606,11 @@ function Screen3() {
       <Text style={[s.body, isLargeTablet && s.bodyLarge]}>
         {t("parent_onboarding.screen3_body")}
       </Text>
+      <ChildSexSetup
+        value={childSex}
+        onChange={onChildSexChange}
+        highlight={childSexMissing}
+      />
       <View
         style={[
           s.featureCard,
@@ -643,19 +736,41 @@ function Screen4() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const SCREENS = [Screen1, Screen2, Screen3, Screen4];
+const SCREENS = [Screen1, Screen2, Screen3, Screen4] as const;
 const SWIPE_DISTANCE = 58;
 const SWIPE_VELOCITY = 0.35;
 
-export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
+export default function ParentOnboarding({
+  onDone,
+  onLocaleChange,
+  onChildSexChange,
+}: Props) {
   const { onboardingMaxWidth, screenPadding, isTabletWidth, isLargeTablet } =
     useOnboardingLayout();
   const [step, setStep] = useState(0);
   const [locale, setLocale] = useState<AppLocale>(() => getAppLocale());
+  const [childSex, setChildSex] = useState<RtlChildSex | null>(null);
+  const [childSexMissing, setChildSexMissing] = useState(false);
   const isLast = step === SCREENS.length - 1;
   const CurrentScreen = SCREENS[step];
 
   const speak = (_: string) => {};
+
+  useEffect(() => {
+    let cancelled = false;
+    AsyncStorage.getItem(SETTINGS_KEY)
+      .then((raw) => {
+        if (cancelled || !raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed.rtlChildSex === "male" || parsed.rtlChildSex === "female") {
+          setChildSex(parsed.rtlChildSex);
+        }
+      })
+      .catch(console.log);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function goToStep(nextStep: number) {
     setStep(Math.max(0, Math.min(SCREENS.length - 1, nextStep)));
@@ -688,6 +803,22 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
     persistOnboardingLocale(nextLocale);
   }
 
+  function handleChildSexChange(nextSex: RtlChildSex) {
+    setChildSex(nextSex);
+    setChildSexMissing(false);
+    onChildSexChange?.(nextSex);
+    persistOnboardingChildSex(nextSex);
+  }
+
+  function finishOnboarding() {
+    if (!childSex) {
+      setChildSexMissing(true);
+      setStep(2);
+      return;
+    }
+    onDone();
+  }
+
   return (
     <View style={s.root}>
       <View style={s.topBar}>
@@ -715,7 +846,7 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
           </View>
           <View style={s.topActions} key={locale}>
             <LanguageToggle value={locale} onChange={handleLocaleChange} />
-            <TouchableOpacity onPress={onDone} style={s.skipBtn}>
+            <TouchableOpacity onPress={finishOnboarding} style={s.skipBtn}>
               <Text style={[s.skipTxt, isLargeTablet && s.skipTxtLarge]}>
                 {t("parent_onboarding.skip")}
               </Text>
@@ -729,7 +860,12 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
         style={[s.content, isLargeTablet && s.contentLarge]}
         {...swipeResponder.panHandlers}
       >
-        <CurrentScreen speak={speak} />
+        <CurrentScreen
+          speak={speak}
+          childSex={childSex}
+          onChildSexChange={handleChildSexChange}
+          childSexMissing={childSexMissing}
+        />
       </View>
 
       <View
@@ -746,7 +882,7 @@ export default function ParentOnboarding({ onDone, onLocaleChange }: Props) {
         {isLast ? (
           <TouchableOpacity
             style={[s.btnPrimary, isLargeTablet && s.btnPrimaryLarge]}
-            onPress={onDone}
+            onPress={finishOnboarding}
           >
             <Text
               style={[s.btnPrimaryTxt, isLargeTablet && s.btnPrimaryTxtLarge]}
@@ -1106,6 +1242,77 @@ const s = StyleSheet.create({
   featureTitleLarge: { fontSize: 21, lineHeight: 28 },
   featureSub: { fontSize: 13, color: C.muted, lineHeight: 18, marginTop: 2 },
   featureSubLarge: { fontSize: 17, lineHeight: 25, marginTop: 4 },
+
+  sexCard: {
+    width: "100%",
+    backgroundColor: "#F4FAF7",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#CFE9DD",
+    padding: 14,
+    marginBottom: 14,
+  },
+  sexCardHighlight: {
+    borderColor: C.green,
+    backgroundColor: "#E1F5EE",
+  },
+  sexCardLarge: {
+    borderRadius: 20,
+    padding: 22,
+    marginBottom: 22,
+  },
+  sexTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: C.text,
+    textAlign: "center",
+  },
+  sexTitleLarge: { fontSize: 21, lineHeight: 28 },
+  sexSub: {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 18,
+    textAlign: "center",
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  sexSubLarge: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginTop: 6,
+    marginBottom: 16,
+  },
+  sexOptions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  sexOption: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#BFE5D5",
+    backgroundColor: C.white,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+  },
+  sexOptionActive: {
+    backgroundColor: C.green,
+    borderColor: C.green,
+  },
+  sexOptionLarge: {
+    minHeight: 58,
+    borderRadius: 18,
+  },
+  sexOptionText: {
+    color: C.green,
+    fontWeight: "800",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  sexOptionTextActive: { color: C.white },
+  sexOptionTextLarge: { fontSize: 19 },
 
   patternBadge: {
     backgroundColor: C.greenLt,

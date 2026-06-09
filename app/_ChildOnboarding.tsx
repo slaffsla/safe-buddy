@@ -10,6 +10,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useLayoutMetrics } from "../lib/layoutMetrics";
@@ -75,6 +76,7 @@ export default function ChildOnboarding({
     [rtlChildSex],
   );
 
+  const { width: windowWidth } = useWindowDimensions();
   const buddySize = isLargeTablet
     ? 340
     : isTabletWidth
@@ -85,22 +87,39 @@ export default function ChildOnboarding({
   const maxWidth = isLargeTablet
     ? Math.min(contentMaxWidth + 120, 840)
     : contentMaxWidth;
-  const stageWidth = maxWidth - screenPadding * 2;
-  const factBubbleWidth = isLargeTablet ? 460 : isTabletWidth ? 410 : 340;
-  const factBubbleHeight = isLargeTablet ? 300 : isTabletWidth ? 260 : 214;
-  const factBubbleTailX = factBubbleWidth * 0.055;
-  const factBubbleTailY = factBubbleHeight * 0.23;
+  const stageWidth = Math.min(maxWidth, windowWidth) - screenPadding * 2;
+  const factBubbleDefaultWidth = isLargeTablet
+    ? 460
+    : isTabletWidth
+      ? 410
+      : 340;
+  const bubbleGap = isLargeTablet ? 16 : isTabletWidth ? 14 : 12;
+  const tailRatio = 0.055;
   const buddyBodyRightAtMouth = stageWidth / 2 + buddySize * 0.32;
+  const maxRightBubbleWidth = Math.max(
+    0,
+    (stageWidth - buddyBodyRightAtMouth - bubbleGap) / (1 - tailRatio),
+  );
+  const factBubbleWidth = Math.round(
+    Math.min(factBubbleDefaultWidth, maxRightBubbleWidth),
+  );
+  const factBubbleHeight = Math.round(Math.max(96, factBubbleWidth * 0.63));
+  const factBubbleTailX = factBubbleWidth * tailRatio;
+  const factBubbleTailY = factBubbleHeight * 0.23;
   const factBubbleLeft = Math.max(
     0,
     Math.min(
-      stageWidth - factBubbleWidth * 0.34,
-      buddyBodyRightAtMouth + 8 - factBubbleTailX,
+      stageWidth - factBubbleWidth,
+      buddyBodyRightAtMouth + bubbleGap - factBubbleTailX,
     ),
+  );
+  const factBubbleTop = Math.max(
+    18,
+    Math.round(buddySize / 3 - factBubbleTailY + 28),
   );
   const factBubbleStyle = {
     left: factBubbleLeft,
-    top: Math.max(24, Math.round(buddySize / 3 - factBubbleTailY + 28)),
+    top: factBubbleTop,
     width: factBubbleWidth,
     height: factBubbleHeight,
     paddingTop: isLargeTablet ? 82 : isTabletWidth ? 68 : 54,
@@ -206,9 +225,12 @@ export default function ChildOnboarding({
     if (step !== "ready") return;
     if (readySubSpokenRef.current) return;
     readySubSpokenRef.current = true;
-    const readySubTimer = setTimeout(() => {
-      speakRef.current(tg(readySubKey));
-    }, estimateSpeechMs(currentLine) + 220);
+    const readySubTimer = setTimeout(
+      () => {
+        speakRef.current(tg(readySubKey));
+      },
+      estimateSpeechMs(currentLine) + 220,
+    );
     return () => clearTimeout(readySubTimer);
   }, [currentLine, readySubKey, step, tg]);
 
@@ -293,7 +315,13 @@ export default function ChildOnboarding({
                   imageStyle={s.factBubbleImage}
                   resizeMode="stretch"
                 >
-                  <Text style={[s.factText, isLargeTablet && s.factTextLarge]}>
+                  <Text
+                    style={[
+                      s.factText,
+                      isLargeTablet && s.factTextLarge,
+                      factBubbleWidth < 220 && s.factTextSmall,
+                    ]}
+                  >
                     {tinyFactText}
                   </Text>
                 </ImageBackground>
@@ -524,6 +552,10 @@ const s = StyleSheet.create({
     color: C.green,
     fontWeight: "600",
     textAlign: "center",
+  },
+  factTextSmall: {
+    fontSize: 10,
+    lineHeight: 14,
   },
   factTextLarge: { fontSize: 16, lineHeight: 22 },
   title: {

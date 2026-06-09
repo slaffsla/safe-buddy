@@ -13,7 +13,9 @@
         "backgroundColor": "#F7F6F2"
       },
       "package": "com.slaff.realokids",
-      "permissions": ["android.permission.MODIFY_AUDIO_SETTINGS"]
+      "permissions": [
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "ios": {
       "icon": "./assets/Character/buddy-happy.png",

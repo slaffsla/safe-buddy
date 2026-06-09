@@ -73,6 +73,7 @@
     "ready_title": "Nice to meet you.",
     "ready_title_named": "Nice to meet you, {{name}}.",
     "ready_sub": "Let's win your first star!",
+    "ready_sub_next": "Let's win your next star!",
     "ready_start": "Start"
   },
   "parent_onboarding": {

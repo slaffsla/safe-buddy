@@ -87,6 +87,8 @@
     "ready_title_named": "נעים מאוד להכיר, {{name}}.",
     "ready_sub": "בוא נרוויח כוכב ראשון!",
     "ready_sub_female": "בואי נרוויח כוכב ראשון!",
+    "ready_sub_next": "בוא נרוויח את הכוכב הבא!",
+    "ready_sub_next_female": "בואי נרוויח את הכוכב הבא!",
     "ready_start": "להתחיל"
   },
   "parent_onboarding": {

@@ -24,6 +24,7 @@ type ChildOnboardingStep = "meet" | "name" | "age" | "ready";
 interface ChildOnboardingProps {
   initialName: string;
   initialAge: number;
+  earnedStars?: number;
   rtlChildSex: RtlChildSex;
   speak: SpeakFn;
   onComplete: (name: string, age: number | null) => void;
@@ -40,6 +41,7 @@ const CHILD_BUDDY = {
 export default function ChildOnboarding({
   initialName,
   initialAge,
+  earnedStars = 0,
   rtlChildSex,
   speak,
   onComplete,
@@ -110,6 +112,8 @@ export default function ChildOnboarding({
     .replace(" can sleep ", " can sleep\n")
     .replace("могут спать ", "могут спать\n")
     .replace("יכולים לישון ", "יכולים לישון\n");
+  const readySubKey =
+    earnedStars > 0 ? "onboarding.ready_sub_next" : "onboarding.ready_sub";
 
   const currentLine = useMemo(() => {
     if (step === "meet") {
@@ -203,10 +207,10 @@ export default function ChildOnboarding({
     if (readySubSpokenRef.current) return;
     readySubSpokenRef.current = true;
     const readySubTimer = setTimeout(() => {
-      speakRef.current(tg("onboarding.ready_sub"));
+      speakRef.current(tg(readySubKey));
     }, estimateSpeechMs(currentLine) + 220);
     return () => clearTimeout(readySubTimer);
-  }, [currentLine, step, tg]);
+  }, [currentLine, readySubKey, step, tg]);
 
   function markInteraction() {
     lastInteractionAtRef.current = Date.now();
@@ -463,7 +467,7 @@ export default function ChildOnboarding({
                 : tg("onboarding.ready_title")}
             </Text>
             <Text style={[s.subtitle, isLargeTablet && s.subtitleLarge]}>
-              {tg("onboarding.ready_sub")}
+              {tg(readySubKey)}
             </Text>
             <TouchableOpacity
               style={[s.primaryBtn, isLargeTablet && s.primaryBtnLarge]}

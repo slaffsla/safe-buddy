@@ -1441,6 +1441,7 @@ export default function App() {
         <ChildOnboarding
           initialName={childName}
           initialAge={childAge}
+          earnedStars={totalEver}
           rtlChildSex={appSettings.rtlChildSex ?? "male"}
           speak={speak}
           onComplete={completeChildOnboarding}

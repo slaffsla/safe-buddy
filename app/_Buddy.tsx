@@ -42,6 +42,7 @@ interface BuddyProps {
   // Optional external phase scale (used by BreathingScreen to sync phases).
   phaseScale?: Animated.Value | Animated.AnimatedInterpolation<number>;
   ambientMaxScale?: number;
+  nameMarginTop?: number;
   fixed?: boolean; // If true, Buddy stays fixed on screen (absolute positioning)
   fixedBottom?: number; // Distance from bottom when fixed (default: 180)
   fixedTop?: number; // Distance from top when fixed
@@ -62,6 +63,7 @@ export default function Buddy({
   onTap,
   phaseScale,
   ambientMaxScale = 1.19,
+  nameMarginTop,
   fixed = false,
   fixedBottom,
   fixedTop = 90,
@@ -380,7 +382,14 @@ export default function Buddy({
         </Animated.View>
       </TouchableOpacity>
 
-      <Text style={s.buddyName}>{t("buddy.name")}</Text>
+      <Text
+        style={[
+          s.buddyName,
+          nameMarginTop !== undefined ? { marginTop: nameMarginTop } : null,
+        ]}
+      >
+        {t("buddy.name")}
+      </Text>
 
       {pettable && showHearts && (
         <View style={s.heartsContainer}>

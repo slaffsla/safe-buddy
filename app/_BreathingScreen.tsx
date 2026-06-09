@@ -37,7 +37,7 @@ import { C, type BuddyMood } from "./_constants";
 import { RtlChildSex, t, tGender, tSpeak } from "./i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
-export const BUDDY_BASE = Math.round(SCREEN_W * 0.39);
+export const BUDDY_BASE = Math.min(Math.round(SCREEN_W * 0.39), 320);
 const BREATHING_OVERLAY_CLEARANCE = BUDDY_CONTENT_SPACER + 20;
 
 // Hard-coded session length (2m10s). Do not lift to settings.
@@ -763,6 +763,7 @@ export default function BreathingScreen({
             speak={speak}
             size={BUDDY_BASE}
             phaseScale={buddyScale}
+            nameMarginTop={18}
             pettable={currentPhaseIndex !== 0}
             onPettingChange={(petting) => {
               setIsPetting(petting);

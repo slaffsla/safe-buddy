@@ -51,8 +51,6 @@ const PHASES: { labelKey: string; duration: number; target: number }[] = [
   { labelKey: "breathing.phase_out", duration: 4000, target: 0.74 },
 ];
 const EXHALE_PET_MULTIPLIER = 1.15;
-const AUDIO_SYNC_INTERVAL_MS = 350;
-const AUDIO_SYNC_DRIFT_SEC = 0.1;
 const GUIDANCE_FULL_CYCLES = 3;
 const GUIDANCE_SOFT_CYCLES = 1;
 const GUIDANCE_SOFT_VOLUME = 0.65;
@@ -111,7 +109,6 @@ export default function BreathingScreen({
   const prepTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const audioSyncTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const natureFactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const natureFactHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -160,10 +157,6 @@ export default function BreathingScreen({
       clearTimeout(natureFactHideTimerRef.current);
       natureFactHideTimerRef.current = null;
     }
-    if (audioSyncTickRef.current) {
-      clearInterval(audioSyncTickRef.current);
-      audioSyncTickRef.current = null;
-    }
     if (tailStopTimerRef.current) {
       clearTimeout(tailStopTimerRef.current);
       tailStopTimerRef.current = null;
@@ -173,33 +166,6 @@ export default function BreathingScreen({
       buddyTapMoodTimerRef.current = null;
     }
   }
-
-  const getDesiredAudioSeconds = useCallback((sound?: AudioPlayer | null) => {
-    const elapsedSec = Math.max(0, Date.now() - sessionStart.current) / 1000;
-    const duration = Number(sound?.duration || 0);
-    if (duration > 0) {
-      return Math.max(0, Math.min(duration - 0.02, elapsedSec % duration));
-    }
-    return elapsedSec;
-  }, []);
-
-  const syncAudioToSession = useCallback(
-    async (sound: AudioPlayer, forceSeek = false) => {
-      if (stateRef.current !== "active") return;
-      const target = getDesiredAudioSeconds(sound);
-      const current = Number(sound.currentTime || 0);
-      if (
-        forceSeek ||
-        !Number.isFinite(current) ||
-        Math.abs(current - target) > AUDIO_SYNC_DRIFT_SEC
-      ) {
-        try {
-          await sound.seekTo(target);
-        } catch {}
-      }
-    },
-    [getDesiredAudioSeconds],
-  );
 
   const loadAndPlayAudio = useCallback(async () => {
     if (!musicEnabled) return;
@@ -237,7 +203,7 @@ export default function BreathingScreen({
       const sound = createAudioPlayer(source, {
         keepAudioSessionActive: true,
       });
-      sound.loop = true;
+      sound.loop = false;
       sound.volume = 0.65;
       if (
         token !== audioLoadTokenRef.current ||
@@ -249,7 +215,6 @@ export default function BreathingScreen({
         return;
       }
       soundRef.current = sound;
-      await syncAudioToSession(sound, true);
       sound.play();
       // iOS route/session quirk guard: retry once shortly after initial play.
       setTimeout(() => {
@@ -276,7 +241,7 @@ export default function BreathingScreen({
         audioLoadingRef.current = false;
       }
     }
-  }, [musicEnabled, syncAudioToSession]);
+  }, [musicEnabled]);
 
   const stopAudio = useCallback(() => {
     allowCompletionTailAudioRef.current = false;
@@ -331,7 +296,7 @@ export default function BreathingScreen({
     } catch {}
 
     const tailMs = Math.min(
-      9000,
+      15000,
       Math.max(1200, Math.ceil(remainingSec * 1000) + 150),
     );
     tailStopTimerRef.current = setTimeout(() => {
@@ -525,25 +490,6 @@ export default function BreathingScreen({
     if (state === "complete" && allowCompletionTailAudioRef.current) return;
     stopAudio();
   }, [state, stopAudio]);
-
-  useEffect(() => {
-    if (state !== "active" || !musicEnabled) return;
-    if (audioSyncTickRef.current) {
-      clearInterval(audioSyncTickRef.current);
-      audioSyncTickRef.current = null;
-    }
-    audioSyncTickRef.current = setInterval(() => {
-      const sound = soundRef.current;
-      if (!sound) return;
-      void syncAudioToSession(sound);
-    }, AUDIO_SYNC_INTERVAL_MS);
-    return () => {
-      if (audioSyncTickRef.current) {
-        clearInterval(audioSyncTickRef.current);
-        audioSyncTickRef.current = null;
-      }
-    };
-  }, [musicEnabled, state, syncAudioToSession]);
 
   useEffect(() => {
     isPettingRef.current = isPetting;

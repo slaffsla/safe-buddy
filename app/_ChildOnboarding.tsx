@@ -78,12 +78,12 @@ export default function ChildOnboarding({
 
   const { width: windowWidth } = useWindowDimensions();
   const buddySize = isLargeTablet
-    ? 340
+    ? 300
     : isTabletWidth
-      ? 290
+      ? 255
       : isShortHeight
-        ? 205
-        : 250;
+        ? 176
+        : 212;
   const maxWidth = isLargeTablet
     ? Math.min(contentMaxWidth + 120, 840)
     : contentMaxWidth;
@@ -91,83 +91,48 @@ export default function ChildOnboarding({
     220,
     Math.min(maxWidth, windowWidth) - screenPadding * 2,
   );
-  const buddyStageMinHeight = Math.max(300, Math.round(buddySize + 92));
-  const factBubbleDefaultWidth = isLargeTablet
-    ? 460
-    : isTabletWidth
-      ? 410
-      : 340;
-  const factBubbleMaxWidth = Math.max(180, stageWidth - 16);
-  const factBubbleMinReadableWidth = Math.min(
+  const buddyStageMinHeight = Math.max(270, Math.round(buddySize + 96));
+  const factBubbleCap = isLargeTablet ? 340 : isTabletWidth ? 300 : 255;
+  const factBubbleMaxWidth = Math.max(
+    180,
+    Math.min(factBubbleCap, stageWidth - 24),
+  );
+  const factBubbleMinWidth = Math.min(
     factBubbleMaxWidth,
-    isShortHeight ? 188 : 210,
+    isShortHeight ? 188 : 208,
   );
-  const bubbleGap = isLargeTablet ? 16 : isTabletWidth ? 14 : 12;
-  const tailRatio = 0.055;
-  const buddyBodyRightAtMouth = stageWidth / 2 + buddySize * 0.32;
-  const maxRightBubbleWidth = Math.max(
-    0,
-    (stageWidth - buddyBodyRightAtMouth - bubbleGap) / (1 - tailRatio),
+  const factBubbleTargetWidth = Math.round(
+    stageWidth * (isLargeTablet ? 0.48 : isTabletWidth ? 0.54 : 0.66),
   );
-  const canPlaceBubbleRight = maxRightBubbleWidth >= factBubbleMinReadableWidth;
-  const factBubbleWidth = Math.round(
-    canPlaceBubbleRight
-      ? Math.min(factBubbleDefaultWidth, maxRightBubbleWidth)
-      : Math.min(factBubbleDefaultWidth, factBubbleMaxWidth),
+  const factBubbleWidth = Math.max(
+    factBubbleMinWidth,
+    Math.min(factBubbleMaxWidth, factBubbleTargetWidth),
   );
-  const factBubbleHeight = Math.round(Math.max(96, factBubbleWidth * 0.63));
-  const factBubbleTailX = factBubbleWidth * tailRatio;
-  const factBubbleTailY = factBubbleHeight * 0.23;
-  const factBubbleLeft = canPlaceBubbleRight
-    ? Math.max(
-        0,
-        Math.min(
-          stageWidth - factBubbleWidth,
-          buddyBodyRightAtMouth + bubbleGap - factBubbleTailX,
-        ),
-      )
-    : Math.max(0, Math.round((stageWidth - factBubbleWidth) / 2));
-  const desiredFactBubbleTop = Math.round(
-    buddySize / 3 - factBubbleTailY + (canPlaceBubbleRight ? 28 : 16),
+  const factBubbleHeight = Math.round(Math.max(146, factBubbleWidth * 0.72));
+  const factBubbleLeft = Math.max(
+    8,
+    Math.min(
+      stageWidth - factBubbleWidth - 8,
+      Math.round(stageWidth / 2 - factBubbleWidth * 0.34),
+    ),
   );
   const factBubbleTop = Math.max(
-    8,
-    Math.min(desiredFactBubbleTop, buddyStageMinHeight - factBubbleHeight - 8),
+    4,
+    Math.min(
+      Math.round(buddySize * 0.31),
+      buddyStageMinHeight - factBubbleHeight - 8,
+    ),
   );
-  const compactFactBubble = factBubbleWidth < 240 || !canPlaceBubbleRight;
+  const compactFactBubble = factBubbleWidth < 250;
   const factBubbleStyle = {
     left: factBubbleLeft,
     top: factBubbleTop,
     width: factBubbleWidth,
     height: factBubbleHeight,
-    paddingTop: compactFactBubble
-      ? Math.max(28, Math.round(factBubbleHeight * 0.2))
-      : isLargeTablet
-        ? 82
-        : isTabletWidth
-          ? 68
-          : 54,
-    paddingRight: compactFactBubble
-      ? Math.max(22, Math.round(factBubbleWidth * 0.13))
-      : isLargeTablet
-        ? 58
-        : isTabletWidth
-          ? 50
-          : 40,
-    paddingBottom: compactFactBubble
-      ? Math.max(28, Math.round(factBubbleHeight * 0.2))
-      : isLargeTablet
-        ? 70
-        : isTabletWidth
-          ? 58
-          : 46,
-    paddingLeft: compactFactBubble
-      ? Math.max(34, Math.round(factBubbleWidth * 0.18))
-      : isLargeTablet
-        ? 90
-        : isTabletWidth
-          ? 82
-          : 66,
+    paddingTop: Math.max(42, Math.round(factBubbleHeight * 0.25)),
+    paddingRight: Math.max(24, Math.round(factBubbleWidth * 0.13)),
+    paddingBottom: Math.max(34, Math.round(factBubbleHeight * 0.2)),
+    paddingLeft: Math.max(48, Math.round(factBubbleWidth * 0.23)),
   };
   const tinyFactText = t("onboarding.tiny_fact_bear_sleep")
     .replace(" can sleep ", " can sleep\n")
@@ -358,6 +323,9 @@ export default function ChildOnboarding({
                   resizeMode="stretch"
                 >
                   <Text
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.82}
+                    numberOfLines={3}
                     style={[
                       s.factText,
                       isLargeTablet && s.factTextLarge,
@@ -589,15 +557,16 @@ const s = StyleSheet.create({
     opacity: 0.98,
   },
   factText: {
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 18,
     color: C.green,
     fontWeight: "600",
     textAlign: "center",
+    includeFontPadding: false,
   },
   factTextSmall: {
-    fontSize: 10,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
   },
   factTextLarge: { fontSize: 16, lineHeight: 22 },
   title: {

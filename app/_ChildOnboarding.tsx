@@ -91,53 +91,89 @@ export default function ChildOnboarding({
     220,
     Math.min(maxWidth, windowWidth) - screenPadding * 2,
   );
-  const buddyStageMinHeight = Math.max(270, Math.round(buddySize + 96));
-  const factBubbleCap = isLargeTablet ? 340 : isTabletWidth ? 300 : 255;
-  const factBubbleMaxWidth = Math.max(
-    180,
-    Math.min(factBubbleCap, stageWidth - 24),
+  const meetLayout =
+    stageWidth < 300
+      ? "narrow"
+      : stageWidth < 380
+        ? "compact"
+        : stageWidth < 520
+          ? "phone"
+          : "tablet";
+  const meetBuddySize =
+    meetLayout === "narrow"
+      ? Math.round(stageWidth * 0.49)
+      : meetLayout === "compact"
+        ? 154
+        : meetLayout === "phone"
+          ? 180
+          : isLargeTablet
+            ? 260
+            : 220;
+  const factBubbleCap =
+    meetLayout === "narrow"
+      ? 180
+      : meetLayout === "compact"
+        ? 210
+        : meetLayout === "phone"
+          ? 250
+          : isLargeTablet
+            ? 410
+            : 350;
+  const mouthAnchorOffsetRatio = 0.07;
+  const bubbleTailXRatio = 0.08;
+  const bubbleTailYRatio = 0.24;
+  const bubbleRightOfTailRatio = 1 - bubbleTailXRatio;
+  const meetBuddyLeft = Math.round(
+    (stageWidth - meetBuddySize - 8) / 2,
   );
-  const factBubbleMinWidth = Math.min(
-    factBubbleMaxWidth,
-    isShortHeight ? 188 : 208,
-  );
-  const factBubbleTargetWidth = Math.round(
-    stageWidth * (isLargeTablet ? 0.48 : isTabletWidth ? 0.54 : 0.66),
-  );
-  const factBubbleWidth = Math.max(
-    factBubbleMinWidth,
-    Math.min(factBubbleMaxWidth, factBubbleTargetWidth),
-  );
-  const factBubbleHeight = Math.round(Math.max(146, factBubbleWidth * 0.72));
-  const factBubbleLeft = Math.max(
-    8,
-    Math.min(
-      stageWidth - factBubbleWidth - 8,
-      Math.round(stageWidth / 2 - factBubbleWidth * 0.34),
+  const meetBuddyTop = meetLayout === "tablet" ? 14 : 10;
+  const mouthAnchorX =
+    stageWidth / 2 + meetBuddySize * mouthAnchorOffsetRatio;
+  const mouthAnchorY =
+    meetBuddyTop + meetBuddySize * 0.44;
+  const maxBubbleWidth = Math.max(
+    104,
+    Math.floor(
+      (stageWidth - 8 - mouthAnchorX) /
+        bubbleRightOfTailRatio,
     ),
   );
-  const factBubbleTop = Math.max(
-    4,
-    Math.min(
-      Math.round(buddySize * 0.31),
-      buddyStageMinHeight - factBubbleHeight - 8,
+  const factBubbleWidth = Math.min(factBubbleCap, maxBubbleWidth);
+  const factBubbleHeight = Math.round(
+    Math.max(118, factBubbleWidth * 0.68),
+  );
+  const factBubbleLeft = Math.round(
+    mouthAnchorX - factBubbleWidth * bubbleTailXRatio,
+  );
+  const factBubbleTop = Math.round(
+    mouthAnchorY - factBubbleHeight * bubbleTailYRatio,
+  );
+  const buddyStageMinHeight = Math.max(
+    250,
+    Math.ceil(
+      Math.max(
+        meetBuddyTop + meetBuddySize + 32,
+        factBubbleTop + factBubbleHeight,
+      ) + 12,
     ),
   );
-  const compactFactBubble = factBubbleWidth < 250;
+  const compactFactBubble = factBubbleWidth < 220;
+  const meetBuddyStyle = {
+    left: meetBuddyLeft,
+    top: meetBuddyTop,
+    width: meetBuddySize + 8,
+  };
   const factBubbleStyle = {
     left: factBubbleLeft,
     top: factBubbleTop,
     width: factBubbleWidth,
     height: factBubbleHeight,
-    paddingTop: Math.max(42, Math.round(factBubbleHeight * 0.25)),
-    paddingRight: Math.max(24, Math.round(factBubbleWidth * 0.13)),
-    paddingBottom: Math.max(34, Math.round(factBubbleHeight * 0.2)),
-    paddingLeft: Math.max(48, Math.round(factBubbleWidth * 0.23)),
+    paddingTop: Math.max(28, Math.round(factBubbleHeight * 0.28)),
+    paddingRight: Math.max(18, Math.round(factBubbleWidth * 0.11)),
+    paddingBottom: Math.max(20, Math.round(factBubbleHeight * 0.18)),
+    paddingLeft: Math.max(28, Math.round(factBubbleWidth * 0.17)),
   };
-  const tinyFactText = t("onboarding.tiny_fact_bear_sleep")
-    .replace(" can sleep ", " can sleep\n")
-    .replace("могут спать ", "могут спать\n")
-    .replace("יכולים לישון ", "יכולים לישון\n");
+  const tinyFactText = t("onboarding.tiny_fact_bear_sleep");
   const readySubKey =
     earnedStars > 0 ? "onboarding.ready_sub_next" : "onboarding.ready_sub";
 
@@ -293,28 +329,30 @@ export default function ChildOnboarding({
         {step === "meet" && (
           <>
             <View style={[s.buddyStage, { minHeight: buddyStageMinHeight }]}>
-              <Buddy
-                mood={firstPetDone ? "happy" : "calm"}
-                imageSource={
-                  firstPetDone ? CHILD_BUDDY.happy : CHILD_BUDDY.hello
-                }
-                pettable
-                pettingMood="happy"
-                pettingHeartMode="pronounced"
-                tapHeartsInPetting
-                pettingStartDelayMs={180}
-                onPettingChange={handlePettingChange}
-                onTap={() => {
-                  markInteraction();
-                  speak(
-                    firstPetDone
-                      ? tg("onboarding.meet_after_pet_sub")
-                      : currentLine,
-                  );
-                }}
-                speak={speak}
-                size={buddySize}
-              />
+              <View style={[s.meetBuddy, meetBuddyStyle]}>
+                <Buddy
+                  mood={firstPetDone ? "happy" : "calm"}
+                  imageSource={
+                    firstPetDone ? CHILD_BUDDY.happy : CHILD_BUDDY.hello
+                  }
+                  pettable
+                  pettingMood="happy"
+                  pettingHeartMode="pronounced"
+                  tapHeartsInPetting
+                  pettingStartDelayMs={180}
+                  onPettingChange={handlePettingChange}
+                  onTap={() => {
+                    markInteraction();
+                    speak(
+                      firstPetDone
+                        ? tg("onboarding.meet_after_pet_sub")
+                        : currentLine,
+                    );
+                  }}
+                  speak={speak}
+                  size={meetBuddySize}
+                />
+              </View>
               {factVisible && (
                 <ImageBackground
                   source={visualAssets.graphics.buddyBubble}
@@ -324,8 +362,8 @@ export default function ChildOnboarding({
                 >
                   <Text
                     adjustsFontSizeToFit
-                    minimumFontScale={0.82}
-                    numberOfLines={3}
+                    minimumFontScale={0.72}
+                    numberOfLines={5}
                     style={[
                       s.factText,
                       isLargeTablet && s.factTextLarge,
@@ -542,15 +580,18 @@ const s = StyleSheet.create({
   contentLarge: { paddingVertical: 52 },
   buddyStage: {
     width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
     position: "relative",
     marginBottom: 8,
     minHeight: 330,
   },
+  meetBuddy: {
+    position: "absolute",
+    alignItems: "center",
+  },
   factBubble: {
     position: "absolute",
     justifyContent: "center",
+    zIndex: 1,
     pointerEvents: "none",
   },
   factBubbleImage: {

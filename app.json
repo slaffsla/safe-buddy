@@ -2,7 +2,7 @@
   "expo": {
     "name": "RealoKids",
     "slug": "realokids",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "icon": "./assets/Character/buddy-happy.png",
     "scheme": "realokids",
     "orientation": "portrait",
@@ -74,7 +74,7 @@
         "projectId": "d8ca8d09-35ff-4f03-a069-471bcba052f9"
       }
     },
-    "runtimeVersion": "1.0.2",
+    "runtimeVersion": "1.0.3",
     "owner": "slaff"
   }
 }

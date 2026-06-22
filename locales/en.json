@@ -59,6 +59,7 @@
     "save_error": "Save failed",
     "meet_title": "Hi! I'm Buddy.",
     "meet_prompt": "Pet me gently.",
+    "meet_bubble_prompt": "Pet me.",
     "meet_after_pet_title": "That felt nice.",
     "meet_after_pet_sub": "I can stay with you while you earn little stars.",
     "meet_next": "Next",

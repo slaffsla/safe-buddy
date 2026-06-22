@@ -32,6 +32,11 @@ interface ChildOnboardingProps {
 }
 
 const AGE_OPTIONS = [4, 5, 6, 7, 8, 9, 10, 11, 12];
+const BUBBLE_AFTER_SPEECH_MS = 1000;
+const BUBBLE_IDLE_GATE_MS = 2600;
+const BUBBLE_IDLE_FOR_MS = 850;
+const BUBBLE_IDLE_POLL_MS = 200;
+const BUBBLE_HARD_SHOW_MS = 5200;
 const CHILD_BUDDY = {
   hello: require("../assets/Character/soft/Buddy2-soft.png"),
   calm: require("../assets/Character/soft/Buddy1-soft.png"),
@@ -57,13 +62,15 @@ export default function ChildOnboarding({
   } = useLayoutMetrics();
   const [step, setStep] = useState<ChildOnboardingStep>("meet");
   const [firstPetDone, setFirstPetDone] = useState(false);
-  const [factVisible, setFactVisible] = useState(false);
+  const [meetBubble, setMeetBubble] = useState<"pet" | "fact" | null>(null);
   const [name, setName] = useState(initialName);
   const [age, setAge] = useState<number | null>(
     initialAge > 0 ? initialAge : null,
   );
   const firstPetSpokenRef = useRef(false);
   const readySubSpokenRef = useRef(false);
+  const petPromptAllowedRef = useRef(false);
+  const petPromptSpokenRef = useRef(false);
   const factSpokenRef = useRef(false);
   const factAllowedRef = useRef(false);
   const meetStartedAtRef = useRef(0);
@@ -87,21 +94,24 @@ export default function ChildOnboarding({
   const maxWidth = isLargeTablet
     ? Math.min(contentMaxWidth + 120, 840)
     : contentMaxWidth;
-  const stageWidth = Math.max(
+  const meetStageWidth = Math.max(
     220,
-    Math.min(maxWidth, windowWidth) - screenPadding * 2,
+    Math.min(
+      windowWidth - 16,
+      isLargeTablet ? 1040 : isTabletWidth ? 820 : 560,
+    ),
   );
   const meetLayout =
-    stageWidth < 300
+    meetStageWidth < 300
       ? "narrow"
-      : stageWidth < 380
+      : meetStageWidth < 380
         ? "compact"
-        : stageWidth < 520
+        : meetStageWidth < 520
           ? "phone"
           : "tablet";
   const meetBuddySize =
     meetLayout === "narrow"
-      ? Math.round(stageWidth * 0.49)
+      ? Math.round(meetStageWidth * 0.49)
       : meetLayout === "compact"
         ? 154
         : meetLayout === "phone"
@@ -115,38 +125,49 @@ export default function ChildOnboarding({
       : meetLayout === "compact"
         ? 210
         : meetLayout === "phone"
-          ? 250
+          ? 280
           : isLargeTablet
-            ? 410
-            : 350;
+            ? 520
+            : 430;
   const mouthAnchorOffsetRatio = 0.07;
   const bubbleTailXRatio = 0.08;
   const bubbleTailYRatio = 0.24;
   const bubbleRightOfTailRatio = 1 - bubbleTailXRatio;
   const meetBuddyLeft = Math.round(
-    (stageWidth - meetBuddySize - 8) / 2,
+    (meetStageWidth - meetBuddySize - 8) / 2,
   );
   const meetBuddyTop = meetLayout === "tablet" ? 14 : 10;
   const mouthAnchorX =
-    stageWidth / 2 + meetBuddySize * mouthAnchorOffsetRatio;
+    meetStageWidth / 2 + meetBuddySize * mouthAnchorOffsetRatio;
   const mouthAnchorY =
     meetBuddyTop + meetBuddySize * 0.44;
   const maxBubbleWidth = Math.max(
     104,
     Math.floor(
-      (stageWidth - 8 - mouthAnchorX) /
+      (meetStageWidth - 8 - mouthAnchorX) /
         bubbleRightOfTailRatio,
     ),
   );
   const factBubbleWidth = Math.min(factBubbleCap, maxBubbleWidth);
+  const factBubbleHeightCap =
+    meetLayout === "tablet"
+      ? isLargeTablet
+        ? 280
+        : 240
+      : meetLayout === "phone"
+        ? 175
+        : 150;
   const factBubbleHeight = Math.round(
-    Math.max(118, factBubbleWidth * 0.68),
+    Math.max(
+      118,
+      Math.min(factBubbleHeightCap, factBubbleWidth * 0.68),
+    ),
   );
   const factBubbleLeft = Math.round(
     mouthAnchorX - factBubbleWidth * bubbleTailXRatio,
   );
   const factBubbleTop = Math.round(
-    mouthAnchorY - factBubbleHeight * bubbleTailYRatio,
+    mouthAnchorY - factBubbleHeight * bubbleTailYRatio + 7,
   );
   const buddyStageMinHeight = Math.max(
     250,
@@ -168,12 +189,14 @@ export default function ChildOnboarding({
     top: factBubbleTop,
     width: factBubbleWidth,
     height: factBubbleHeight,
-    paddingTop: Math.max(28, Math.round(factBubbleHeight * 0.28)),
-    paddingRight: Math.max(18, Math.round(factBubbleWidth * 0.11)),
-    paddingBottom: Math.max(20, Math.round(factBubbleHeight * 0.18)),
-    paddingLeft: Math.max(28, Math.round(factBubbleWidth * 0.17)),
+    paddingTop: Math.max(22, Math.round(factBubbleHeight * 0.22)),
+    paddingRight: Math.max(22, Math.round(factBubbleWidth * 0.15)),
+    paddingBottom: Math.max(24, Math.round(factBubbleHeight * 0.24)),
+    paddingLeft: Math.max(22, Math.round(factBubbleWidth * 0.13)),
   };
   const tinyFactText = t("onboarding.tiny_fact_bear_sleep");
+  const meetBubbleText =
+    meetBubble === "pet" ? tg("onboarding.meet_bubble_prompt") : tinyFactText;
   const readySubKey =
     earnedStars > 0 ? "onboarding.ready_sub_next" : "onboarding.ready_sub";
 
@@ -208,9 +231,20 @@ export default function ChildOnboarding({
     return Math.max(1100, Math.min(4200, text.length * 55 + 650));
   }
 
+  const showPetPrompt = useCallback(() => {
+    if (!petPromptAllowedRef.current) return;
+    setMeetBubble("pet");
+    if (!petPromptSpokenRef.current) {
+      petPromptSpokenRef.current = true;
+      speakRef.current(tg("onboarding.meet_bubble_prompt"), {
+        volume: 0.85,
+      });
+    }
+  }, [tg]);
+
   function showTinyFact() {
     if (!factAllowedRef.current) return;
-    setFactVisible(true);
+    setMeetBubble("fact");
     if (!factSpokenRef.current) {
       factSpokenRef.current = true;
       speakRef.current(t("onboarding.tiny_fact_bear_sleep"), {
@@ -223,46 +257,46 @@ export default function ChildOnboarding({
     if (step !== "meet") return;
     meetStartedAtRef.current = Date.now();
     lastInteractionAtRef.current = Date.now();
+    petPromptAllowedRef.current = true;
+    petPromptSpokenRef.current = false;
     factSpokenRef.current = false;
     factAllowedRef.current = false;
-    const initialFactDelay =
-      estimateSpeechMs(tg("onboarding.meet_title")) + 1000;
+    const initialPromptDelay =
+      estimateSpeechMs(tg("onboarding.meet_title")) + BUBBLE_AFTER_SPEECH_MS;
     postPetSequenceTimersRef.current = [
-      setTimeout(() => {
-        factAllowedRef.current = true;
-        showTinyFact();
-      }, initialFactDelay),
+      setTimeout(showPetPrompt, initialPromptDelay),
     ];
 
     let idlePoll: ReturnType<typeof setInterval> | null = null;
     const idleGate = setTimeout(() => {
       idlePoll = setInterval(() => {
         const idleFor = Date.now() - lastInteractionAtRef.current;
-        if (idleFor >= 850) {
-          showTinyFact();
+        if (idleFor >= BUBBLE_IDLE_FOR_MS) {
+          showPetPrompt();
           if (idlePoll) {
             clearInterval(idlePoll);
             idlePoll = null;
           }
         }
-      }, 200);
-    }, 2600);
+      }, BUBBLE_IDLE_POLL_MS);
+    }, BUBBLE_IDLE_GATE_MS);
 
     const hardShow = setTimeout(() => {
-      showTinyFact();
+      showPetPrompt();
       if (idlePoll) {
         clearInterval(idlePoll);
         idlePoll = null;
       }
-    }, 5200);
+    }, BUBBLE_HARD_SHOW_MS);
 
     return () => {
+      petPromptAllowedRef.current = false;
       clearTimeout(idleGate);
       clearTimeout(hardShow);
       if (idlePoll) clearInterval(idlePoll);
       clearPostPetSequenceTimers();
     };
-  }, [step, tg]);
+  }, [showPetPrompt, step, tg]);
 
   useEffect(() => {
     if (step !== "ready") return;
@@ -285,15 +319,19 @@ export default function ChildOnboarding({
     if (!petting) return;
     markInteraction();
     if (firstPetDone) return;
+    petPromptAllowedRef.current = false;
     setFirstPetDone(true);
-    setFactVisible(false);
+    setMeetBubble(null);
     if (!firstPetSpokenRef.current) {
       firstPetSpokenRef.current = true;
       clearPostPetSequenceTimers();
       const afterPetTitle = tg("onboarding.meet_after_pet_title");
       const companionLine = tg("onboarding.meet_after_pet_sub");
       const companionDelay = estimateSpeechMs(afterPetTitle) + 220;
-      const factDelay = companionDelay + estimateSpeechMs(companionLine) + 1000;
+      const factDelay =
+        companionDelay +
+        estimateSpeechMs(companionLine) +
+        BUBBLE_AFTER_SPEECH_MS;
       postPetSequenceTimersRef.current = [
         setTimeout(() => speakRef.current(companionLine), companionDelay),
         setTimeout(() => {
@@ -328,7 +366,15 @@ export default function ChildOnboarding({
       >
         {step === "meet" && (
           <>
-            <View style={[s.buddyStage, { minHeight: buddyStageMinHeight }]}>
+            <View
+              style={[
+                s.buddyStage,
+                {
+                  width: meetStageWidth,
+                  minHeight: buddyStageMinHeight,
+                },
+              ]}
+            >
               <View style={[s.meetBuddy, meetBuddyStyle]}>
                 <Buddy
                   mood={firstPetDone ? "happy" : "calm"}
@@ -353,7 +399,7 @@ export default function ChildOnboarding({
                   size={meetBuddySize}
                 />
               </View>
-              {factVisible && (
+              {meetBubble && (
                 <ImageBackground
                   source={visualAssets.graphics.buddyBubble}
                   style={[s.factBubble, factBubbleStyle]}
@@ -368,9 +414,10 @@ export default function ChildOnboarding({
                       s.factText,
                       isLargeTablet && s.factTextLarge,
                       compactFactBubble && s.factTextSmall,
+                      meetBubble === "pet" && s.petPromptText,
                     ]}
                   >
-                    {tinyFactText}
+                    {meetBubbleText}
                   </Text>
                 </ImageBackground>
               )}
@@ -610,6 +657,10 @@ const s = StyleSheet.create({
     lineHeight: 16,
   },
   factTextLarge: { fontSize: 16, lineHeight: 22 },
+  petPromptText: {
+    fontSize: 18,
+    lineHeight: 24,
+  },
   title: {
     fontSize: 30,
     lineHeight: 36,

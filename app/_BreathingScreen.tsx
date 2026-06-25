@@ -704,28 +704,30 @@ export default function BreathingScreen({
         <View style={s.buddyContainer}>
           <View style={[s.buddyOuterGlow, s.noPointerEvents]} />
           <View style={[s.buddyInnerGlow, s.noPointerEvents]} />
-          <Buddy
-            mood={buddyTapMood ?? "serene"}
-            speak={speak}
-            size={BUDDY_BASE}
-            phaseScale={buddyScale}
-            nameMarginTop={18}
-            pettable={currentPhaseIndex !== 0}
-            onPettingChange={(petting) => {
-              setIsPetting(petting);
-              isPettingRef.current = petting;
-            }}
-            onTap={() => {
-              setBuddyTapMood("happy");
-              if (buddyTapMoodTimerRef.current) {
-                clearTimeout(buddyTapMoodTimerRef.current);
-              }
-              buddyTapMoodTimerRef.current = setTimeout(() => {
-                setBuddyTapMood(null);
-                buddyTapMoodTimerRef.current = null;
-              }, 1200);
-            }}
-          />
+          <View style={s.breathingBuddyOffset}>
+            <Buddy
+              mood={buddyTapMood ?? "serene"}
+              speak={speak}
+              size={BUDDY_BASE}
+              phaseScale={buddyScale}
+              nameMarginTop={10}
+              pettable={currentPhaseIndex !== 0}
+              onPettingChange={(petting) => {
+                setIsPetting(petting);
+                isPettingRef.current = petting;
+              }}
+              onTap={() => {
+                setBuddyTapMood("happy");
+                if (buddyTapMoodTimerRef.current) {
+                  clearTimeout(buddyTapMoodTimerRef.current);
+                }
+                buddyTapMoodTimerRef.current = setTimeout(() => {
+                  setBuddyTapMood(null);
+                  buddyTapMoodTimerRef.current = null;
+                }, 1200);
+              }}
+            />
+          </View>
         </View>
         {showNatureFact && (
           <TouchableOpacity
@@ -1000,6 +1002,10 @@ const s = StyleSheet.create({
     marginTop: 10,
     marginBottom: 14,
     overflow: "visible",
+  },
+  breathingBuddyOffset: {
+    alignItems: "center",
+    transform: [{ translateY: 8 }],
   },
   buddyOuterGlow: {
     position: "absolute",

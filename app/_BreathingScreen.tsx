@@ -1,4 +1,4 @@
-// _BreathingScreen.tsx — SafeBuddy 3-minute guided breathing
+// _BreathingScreen.tsx — SafeBuddy guided breathing
 //
 // Safety constraints (non-negotiable, see ticket):
 //   • Maximum session: 130 seconds. Hard-coded. Never derived from settings.
@@ -8,9 +8,9 @@
 //   • Exit button is always visible. No guilt messaging on early exit.
 //   • No stars, no economy connection.
 //
-// Structurally mirrors _MorningRoutineScreen.tsx — early-return for the
-// "complete" state, BUDDY_FIXED_SPACER at the top so the global Buddy
-// overlay is visible, same speak prop usage.
+// Structurally mirrors _MorningRoutineScreen.tsx: early-return for the
+// "complete" state, top clearance for the global Buddy overlay, and the
+// same speak prop usage.
 
 import {
   createAudioPlayer,

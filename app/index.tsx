@@ -30,6 +30,7 @@ import Buddy from "./_Buddy";
 import ChildOnboarding from "./_ChildOnboarding";
 import {
   AgeProfile,
+  BUDDY,
   BuddyMood,
   CUSTOM_CONTENT_ID_OFFSET,
   DEFAULT_MORNING_STEPS,
@@ -111,20 +112,6 @@ function rewardRedemptionSpeakKey(
     ? "rewards.redeemed_speak_female"
     : "rewards.redeemed_speak_male";
 }
-
-// ── CHARACTER IMAGES ──────────────────────────────────────────────────────────
-
-const BUDDY = {
-  calm: require("../assets/Character/soft/buddy-calm-soft.png"),
-  "gentle-reminder": require("../assets/Character/soft/buddy-gentle-reminder-soft.png"),
-  serene: require("../assets/Character/soft/buddy-serene-soft.png"),
-  encouraging: require("../assets/Character/soft/buddy-encouraging-soft.png"),
-  thinking: require("../assets/Character/soft/buddy-thinking-soft.png"),
-  excited: require("../assets/Character/soft/buddy-excited-soft.png"),
-  happy: require("../assets/Character/soft/buddy-happy-soft.png"),
-  proud: require("../assets/Character/soft/buddy-proud-soft.png"),
-  "very-excited": require("../assets/Character/soft/buddy-very-excited-soft.png"),
-};
 
 // ── MOOD TRIGGER LOGIC ────────────────────────────────────────────────────────
 // calm            → home default, quiet idle, breathing sessions
@@ -2102,17 +2089,17 @@ export default function App() {
               showsVerticalScrollIndicator={false}
             >
               <View style={s.pinCard}>
-              <Image
-                source={BUDDY.calm}
-                style={{
-                  width: 80,
-                  height: 80,
-                  backgroundColor: "transparent",
-                  marginBottom: 16,
-                }}
-                resizeMode="contain"
-              />
-              <Text style={s.pinTitle}>{t("pinChild.title")}</Text>
+                <Image
+                  source={BUDDY.calm}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    backgroundColor: "transparent",
+                    marginBottom: 16,
+                  }}
+                  resizeMode="contain"
+                />
+                <Text style={s.pinTitle}>{t("pinChild.title")}</Text>
               {pendingReward && (
                 <Text style={s.pinSub}>
                   {t("pinChild.unlock_label", {

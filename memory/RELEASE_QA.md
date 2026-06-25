@@ -58,8 +58,8 @@ TypeScript, and lint.
 
 - Doodle background appears after 20 lifetime stars when enabled.
 - Doodle background does not cover buttons/text.
-- Buddy protected area has no visible boundary line.
-- Buddy is not crowded by other UI.
+- Fixed Buddy area keeps nearby UI from crowding Buddy.
+- Scrolled content does not feel visually stuck under the Buddy overlay.
 - Cards look calm, not overstimulating.
 - No text clips inside buttons on a small Android screen.
 - Hebrew/Russian text does not overflow compact controls.

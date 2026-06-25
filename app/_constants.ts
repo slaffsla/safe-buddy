@@ -50,7 +50,6 @@ export const BUDDY = {
 } as const;
 
 export const BUDDY_FIXED_SPACER = 190;
-export const BUDDY_FIXED_TOP = 90;
 export type BuddyMood = keyof typeof BUDDY;
 
 // ── STORAGE KEYS ──────────────────────────────────────────────────────────────

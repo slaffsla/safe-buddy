@@ -4006,8 +4006,15 @@ function ParentZoneView({
         <TouchableOpacity onPress={onBack} style={ss.backBtn}>
           <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
         </TouchableOpacity>
-        <Text style={ss.headerTitle}>{tx("settings.parent_zone_header")}</Text>
-        <View style={{ width: 80 }} />
+        <Text
+          style={ss.headerTitle}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.72}
+        >
+          {tx("settings.parent_zone_header")}
+        </Text>
+        <View style={ss.headerRight} />
       </View>
       <ScrollView
         key={`pz-scroll-${settings.appLocale}`}
@@ -4572,7 +4579,14 @@ export default function SettingsScreen({
           >
             <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
           </TouchableOpacity>
-          <Text style={ss.headerTitle}>{tx("settings.schedule_section")}</Text>
+          <Text
+            style={ss.headerTitle}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.72}
+          >
+            {tx("settings.schedule_section")}
+          </Text>
           <View style={ss.headerRight}>
             <Text style={ss.subHeaderMeta}>{scheduleCount}</Text>
           </View>
@@ -4603,7 +4617,14 @@ export default function SettingsScreen({
           >
             <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
           </TouchableOpacity>
-          <Text style={ss.headerTitle}>{tx("settings.routine_section")}</Text>
+          <Text
+            style={ss.headerTitle}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.72}
+          >
+            {tx("settings.routine_section")}
+          </Text>
           <View style={ss.headerRight}>
             <Text style={ss.subHeaderMeta}>{stepsCount}</Text>
           </View>
@@ -4634,7 +4655,14 @@ export default function SettingsScreen({
         <TouchableOpacity onPress={onClose} style={ss.backBtn}>
           <Text style={ss.backBtnTxt}>{tx("settings.back")}</Text>
         </TouchableOpacity>
-        <Text style={ss.headerTitle}>{tx("settings.title")}</Text>
+        <Text
+          style={ss.headerTitle}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.72}
+        >
+          {tx("settings.title")}
+        </Text>
         <View style={ss.headerRight}>
           <LanguageToggle
             value={settings.appLocale}
@@ -4942,25 +4970,27 @@ const ss = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: C.bg,
   },
   headerTitle: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 16,
+    lineHeight: 20,
     fontWeight: "600",
     color: C.text,
     textAlign: "center",
+    minWidth: 0,
   },
-  backBtn: { width: 114, paddingVertical: 4, paddingHorizontal: 8 },
-  backBtnTxt: { fontSize: 15, color: C.green, fontWeight: "500" },
-  headerRight: { width: 114, alignItems: "flex-end" },
+  backBtn: { width: 84, paddingVertical: 4, paddingHorizontal: 4 },
+  backBtnTxt: { fontSize: 14, color: C.green, fontWeight: "500" },
+  headerRight: { width: 62, alignItems: "flex-end" },
   subHeaderMeta: { fontSize: 15, color: C.muted, fontWeight: "600" },
   langToggle: {
     flexDirection: "row",
     backgroundColor: C.bg,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: C.border,
     padding: 2,
@@ -4970,13 +5000,14 @@ const ss = StyleSheet.create({
     borderColor: C.green,
   },
   langBtn: {
-    minWidth: 34,
-    paddingVertical: 5,
+    minWidth: 30,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
     alignItems: "center",
-    borderRadius: 9,
+    borderRadius: 8,
   },
   langBtnActive: { backgroundColor: C.green },
-  langBtnTxt: { fontSize: 11, color: C.muted, fontWeight: "700" },
+  langBtnTxt: { fontSize: 10, color: C.muted, fontWeight: "700" },
   langBtnTxtActive: { color: C.white },
   scroll: { flex: 1 },
   content: {
@@ -5306,9 +5337,19 @@ const u = StyleSheet.create({
   },
 
   // Row
-  row: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12 },
-  rowLabels: { flex: 1, minWidth: 0 },
-  rowLabel: { fontSize: 14, fontWeight: "500", color: C.text },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    gap: 8,
+  },
+  rowLabels: { flex: 1, minWidth: 116, flexShrink: 1 },
+  rowLabel: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: "500",
+    color: C.text,
+  },
   rowSublabel: { fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 17 },
   rowLabelWithInfo: { flexDirection: "row", alignItems: "center", gap: 6 },
   rowLabelWithIcon: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -5357,7 +5398,8 @@ const u = StyleSheet.create({
   rowControl: {
     alignItems: "flex-end",
     justifyContent: "center",
-    flexShrink: 0,
+    flexShrink: 1,
+    maxWidth: "52%",
   },
   subheading: {
     fontSize: 13,
@@ -5383,9 +5425,11 @@ const u = StyleSheet.create({
     paddingTop: 8,
   },
   pillRowCompact: {
-    flexWrap: "nowrap",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
     padding: 0,
-    gap: 4,
+    gap: 3,
+    maxWidth: 154,
   },
   pill: {
     paddingVertical: 6,
@@ -5397,8 +5441,8 @@ const u = StyleSheet.create({
   },
   pillActive: { backgroundColor: C.green, borderColor: C.green },
   pillTxt: { fontSize: 13, color: C.muted, fontWeight: "500" },
-  pillCompact: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 14 },
-  pillTxtCompact: { fontSize: 11 },
+  pillCompact: { paddingVertical: 3, paddingHorizontal: 7, borderRadius: 13 },
+  pillTxtCompact: { fontSize: 10, lineHeight: 13 },
   pillTxtActive: { color: C.white },
 
   // Stepper

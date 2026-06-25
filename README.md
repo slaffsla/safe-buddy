@@ -8,7 +8,7 @@ missions: move a little, tidy a corner, drink water, take a breath, or connect
 with someone nearby. The child does the action in real life, earns stars, and
 can redeem them for rewards chosen by the parent.
 
-Parents can~~~~ use RealoKids before screen time, snacks, stories, or play. One or
+Parents can use RealoKids before screen time, snacks, stories, or play. One or
 two small missions become a bridge into the next thing, without turning the app
 itself into the main attraction.
 

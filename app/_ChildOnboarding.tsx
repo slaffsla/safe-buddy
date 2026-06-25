@@ -97,7 +97,7 @@ export default function ChildOnboarding({
   const meetStageWidth = Math.max(
     220,
     Math.min(
-      windowWidth - 16,
+      windowWidth - 4,
       isLargeTablet ? 1040 : isTabletWidth ? 820 : 560,
     ),
   );
@@ -130,7 +130,7 @@ export default function ChildOnboarding({
             ? 520
             : 430;
   const mouthAnchorOffsetRatio = 0.07;
-  const bubbleTailXRatio = 0.08;
+  const bubbleTailXRatio = 0.045;
   const bubbleTailYRatio = 0.24;
   const bubbleRightOfTailRatio = 1 - bubbleTailXRatio;
   const meetBuddyLeft = Math.round(
@@ -144,7 +144,7 @@ export default function ChildOnboarding({
   const maxBubbleWidth = Math.max(
     104,
     Math.floor(
-      (meetStageWidth - 8 - mouthAnchorX) /
+      (meetStageWidth - 4 - mouthAnchorX) /
         bubbleRightOfTailRatio,
     ),
   );
@@ -160,7 +160,7 @@ export default function ChildOnboarding({
   const factBubbleHeight = Math.round(
     Math.max(
       118,
-      Math.min(factBubbleHeightCap, factBubbleWidth * 0.68),
+      Math.min(factBubbleHeightCap, factBubbleWidth * 0.66),
     ),
   );
   const factBubbleLeft = Math.round(
@@ -189,10 +189,10 @@ export default function ChildOnboarding({
     top: factBubbleTop,
     width: factBubbleWidth,
     height: factBubbleHeight,
-    paddingTop: Math.max(22, Math.round(factBubbleHeight * 0.22)),
-    paddingRight: Math.max(22, Math.round(factBubbleWidth * 0.15)),
-    paddingBottom: Math.max(24, Math.round(factBubbleHeight * 0.24)),
-    paddingLeft: Math.max(22, Math.round(factBubbleWidth * 0.13)),
+    paddingTop: Math.max(20, Math.round(factBubbleHeight * 0.2)),
+    paddingRight: Math.max(16, Math.round(factBubbleWidth * 0.1)),
+    paddingBottom: Math.max(26, Math.round(factBubbleHeight * 0.25)),
+    paddingLeft: Math.max(18, Math.round(factBubbleWidth * 0.1)),
   };
   const tinyFactText = t("onboarding.tiny_fact_bear_sleep");
   const meetBubbleText =
